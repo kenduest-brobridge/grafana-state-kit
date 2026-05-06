@@ -21,6 +21,13 @@ Current AI-maintained status only.
 - Older entries moved to [`ai-status-archive-2026-04-28.md`](/Users/kendlee/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-04-28.md).
 - Older entries moved to [`ai-status-archive-2026-05-02.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-02.md).
 
+## 2026-05-02 - Extend mutation action adapters
+- State: Done
+- Scope: Rust internal review projections/envelopes for access import dry-run, datasource import dry-run, datasource live mutation preview, and alert plan rows; focused domain tests; full Rust validation; TODO trace. Public JSON, CLI behavior, `ReviewRisk`, `ReviewRequest`, legacy dashboard import dry-run, generated docs, and Python implementation are out of scope.
+- Baseline: Dashboard plan, datasource plan, access plan, and workspace preview already projected into `ReviewMutationAction`, but selected dry-run/import rows still only had domain-local review evidence.
+- Current Update: Added internal-only adapters that normalize proven action/status/blocked-reason fields into `ReviewMutationAction` while preserving original domain rows as `raw`.
+- Result: Focused access/datasource/alert tests and full Rust validation pass.
+
 ## 2026-05-02 - Re-audit mutation review envelope evidence
 - State: Done
 - Scope: Maintainer-only mutation review envelope evidence audit across dashboard/workspace, access/datasource, alert/sync, TODO routing, and AI workflow validation. Rust behavior, public JSON, CLI behavior, generated docs, and Python implementation are out of scope.
@@ -55,10 +62,3 @@ Current AI-maintained status only.
 - Baseline: The dashboard directory re-layering TODO required a fresh inventory before any later move, and recent ownership/Git Sync/permission boundary work changed the best next candidates.
 - Current Update: Added `docs/internal/dashboard-directory-relayering-inventory.md` with mixed-responsibility files, stable boundaries, and candidate future moves for prompt-lane transform, export-org source discovery, and status live collector namespace cleanup.
 - Result: The inventory checkpoint is complete; actual `git mv` work remains gated behind one-boundary-per-commit guardrails.
-
-## 2026-04-27 - Move dashboard prompt transform boundary
-- State: Done
-- Scope: Rust dashboard prompt transform module layout, facade re-exports, focused prompt/export tests, full Rust validation, and TODO trace. Public CLI/docs, generated docs, Python implementation, and behavior changes are out of scope.
-- Baseline: The dashboard re-layering inventory identified root-level `prompt*.rs` files as a shared prompt-lane transform boundary used by live export and offline raw-to-prompt.
-- Current Update: Moved the prompt transform and helper files under `rust/src/commands/dashboard/export_prompt/`, kept `commands/dashboard/mod.rs` as the public facade, and rewired direct consumers plus test support to the new module.
-- Result: Focused raw-to-prompt, export prompt, inventory, library-panel, and export-diff tests pass; full Rust validation is run for the commit.

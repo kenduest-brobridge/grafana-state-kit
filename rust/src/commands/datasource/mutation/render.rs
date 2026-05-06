@@ -8,6 +8,177 @@
 use serde_json::{Map, Value};
 
 use crate::common::{message, requested_columns_include_all, Result};
+use crate::review_contract::{
+    build_review_mutation_envelope, review_action_rank, ReviewMutationAction,
+    ReviewMutationActionInput, ReviewMutationEnvelope, REVIEW_ACTION_BLOCKED,
+    REVIEW_ACTION_BLOCKED_AMBIGUOUS, REVIEW_ACTION_BLOCKED_UID_MISMATCH,
+    REVIEW_ACTION_WOULD_CREATE, REVIEW_ACTION_WOULD_DELETE, REVIEW_ACTION_WOULD_UPDATE,
+    REVIEW_REASON_AMBIGUOUS_LIVE_NAME_MATCH, REVIEW_REASON_UID_NAME_MISMATCH,
+    REVIEW_STATUS_BLOCKED, REVIEW_STATUS_READY,
+};
+
+#[derive(Debug, Clone)]
+#[cfg_attr(not(test), allow(dead_code))]
+pub(crate) struct DatasourceLiveMutationReviewProjection {
+    pub(crate) domains: Vec<&'static str>,
+    pub(crate) actions: Vec<ReviewMutationAction>,
+}
+
+fn mutation_row_value(row: &[String], index: usize) -> &str {
+    row.get(index).map(String::as_str).unwrap_or("")
+}
+
+fn build_live_mutation_row_raw(row: &[String]) -> Value {
+    Value::Object(Map::from_iter(vec![
+        (
+            "operation".to_string(),
+            Value::String(mutation_row_value(row, 0).to_string()),
+        ),
+        (
+            "uid".to_string(),
+            Value::String(mutation_row_value(row, 1).to_string()),
+        ),
+        (
+            "name".to_string(),
+            Value::String(mutation_row_value(row, 2).to_string()),
+        ),
+        (
+            "type".to_string(),
+            Value::String(mutation_row_value(row, 3).to_string()),
+        ),
+        (
+            "match".to_string(),
+            Value::String(mutation_row_value(row, 4).to_string()),
+        ),
+        (
+            "action".to_string(),
+            Value::String(mutation_row_value(row, 5).to_string()),
+        ),
+        (
+            "targetId".to_string(),
+            Value::String(mutation_row_value(row, 6).to_string()),
+        ),
+    ]))
+}
+
+fn live_mutation_review_identity(row: &[String]) -> String {
+    let uid = mutation_row_value(row, 1).trim();
+    if !uid.is_empty() {
+        return uid.to_string();
+    }
+    let name = mutation_row_value(row, 2).trim();
+    if !name.is_empty() {
+        return name.to_string();
+    }
+    let operation = mutation_row_value(row, 0).trim();
+    if !operation.is_empty() {
+        return operation.to_string();
+    }
+    "unknown".to_string()
+}
+
+fn live_mutation_review_action_id(row: &[String], identity: &str) -> String {
+    let operation = mutation_row_value(row, 0).trim();
+    let target_id = mutation_row_value(row, 6).trim();
+    let identity_kind = if mutation_row_value(row, 1).trim().is_empty() {
+        "identity"
+    } else {
+        "uid"
+    };
+    format!(
+        "datasource-live-mutation:{}:{}:{}:target:{}",
+        if operation.is_empty() {
+            "unknown"
+        } else {
+            operation
+        },
+        identity_kind,
+        identity,
+        if target_id.is_empty() {
+            "none"
+        } else {
+            target_id
+        }
+    )
+}
+
+fn live_mutation_review_details(row: &[String]) -> Option<String> {
+    let mut parts = vec![
+        format!("operation={}", mutation_row_value(row, 0)),
+        format!("match={}", mutation_row_value(row, 4)),
+    ];
+    if !mutation_row_value(row, 6).trim().is_empty() {
+        parts.push(format!("targetId={}", mutation_row_value(row, 6)));
+    }
+    (!parts.is_empty()).then(|| parts.join(" "))
+}
+
+fn normalize_live_mutation_review_action(
+    row: &[String],
+) -> (&'static str, &'static str, Option<String>) {
+    match mutation_row_value(row, 5) {
+        "would-create" => (REVIEW_ACTION_WOULD_CREATE, REVIEW_STATUS_READY, None),
+        "would-update" => (REVIEW_ACTION_WOULD_UPDATE, REVIEW_STATUS_READY, None),
+        "would-delete" => (REVIEW_ACTION_WOULD_DELETE, REVIEW_STATUS_READY, None),
+        "would-fail-ambiguous-uid" | "would-fail-ambiguous-name" => (
+            REVIEW_ACTION_BLOCKED_AMBIGUOUS,
+            REVIEW_STATUS_BLOCKED,
+            Some(REVIEW_REASON_AMBIGUOUS_LIVE_NAME_MATCH.to_string()),
+        ),
+        "would-fail-uid-name-mismatch" => (
+            REVIEW_ACTION_BLOCKED_UID_MISMATCH,
+            REVIEW_STATUS_BLOCKED,
+            Some(REVIEW_REASON_UID_NAME_MISMATCH.to_string()),
+        ),
+        _ => (REVIEW_ACTION_BLOCKED, REVIEW_STATUS_BLOCKED, None),
+    }
+}
+
+fn live_mutation_row_to_review_action(row: &[String]) -> ReviewMutationAction {
+    let identity = live_mutation_review_identity(row);
+    let action_id = live_mutation_review_action_id(row, &identity);
+    let (action, status, blocked_reason) = normalize_live_mutation_review_action(row);
+    ReviewMutationActionInput {
+        action_id,
+        action: action.to_string(),
+        domain: "datasource".to_string(),
+        resource_kind: "datasource".to_string(),
+        identity,
+        status: status.to_string(),
+        blocked_reason,
+        details: live_mutation_review_details(row),
+        review_hints: Vec::new(),
+        raw: build_live_mutation_row_raw(row),
+    }
+    .into()
+}
+
+#[cfg_attr(not(test), allow(dead_code))]
+pub(crate) fn build_live_mutation_review_projection(
+    rows: &[Vec<String>],
+) -> DatasourceLiveMutationReviewProjection {
+    let mut actions = rows
+        .iter()
+        .map(|row| live_mutation_row_to_review_action(row))
+        .collect::<Vec<_>>();
+    actions.sort_by(|left, right| {
+        left.kind_order
+            .cmp(&right.kind_order)
+            .then_with(|| review_action_rank(&left.action).cmp(&review_action_rank(&right.action)))
+            .then_with(|| left.identity.cmp(&right.identity))
+            .then_with(|| left.action_id.cmp(&right.action_id))
+    });
+    DatasourceLiveMutationReviewProjection {
+        domains: vec!["datasource"],
+        actions,
+    }
+}
+
+#[cfg_attr(not(test), allow(dead_code))]
+pub(crate) fn build_live_mutation_review_envelope(rows: &[Vec<String>]) -> ReviewMutationEnvelope {
+    let projection = build_live_mutation_review_projection(rows);
+    build_review_mutation_envelope(projection.actions, &projection.domains)
+}
 
 pub(crate) fn render_live_mutation_table(
     rows: &[Vec<String>],
@@ -227,4 +398,111 @@ pub(crate) fn render_import_table(
         format_row(&values)
     }));
     lines
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::review_contract::{
+        REVIEW_ACTION_BLOCKED_UID_MISMATCH, REVIEW_ACTION_WOULD_DELETE,
+        REVIEW_REASON_UID_NAME_MISMATCH, REVIEW_STATUS_BLOCKED, REVIEW_STATUS_READY,
+    };
+    use serde_json::json;
+
+    #[test]
+    fn live_mutation_preview_review_projection_and_envelope_preserve_row_evidence() {
+        let rows = vec![
+            vec![
+                "delete".to_string(),
+                "prom-main".to_string(),
+                "Prometheus Main".to_string(),
+                "prometheus".to_string(),
+                "exists-uid".to_string(),
+                "would-delete".to_string(),
+                "7".to_string(),
+            ],
+            vec![
+                "add".to_string(),
+                "loki-main".to_string(),
+                "Loki Main".to_string(),
+                "loki".to_string(),
+                "uid-name-mismatch".to_string(),
+                "would-fail-uid-name-mismatch".to_string(),
+                "12".to_string(),
+            ],
+        ];
+
+        let projection = build_live_mutation_review_projection(&rows);
+
+        assert_eq!(projection.domains, vec!["datasource"]);
+        assert_eq!(projection.actions.len(), 2);
+
+        let blocked = &projection.actions[0];
+        assert_eq!(
+            blocked.action_id,
+            "datasource-live-mutation:add:uid:loki-main:target:12"
+        );
+        assert_eq!(blocked.action, REVIEW_ACTION_BLOCKED_UID_MISMATCH);
+        assert_eq!(blocked.status, REVIEW_STATUS_BLOCKED);
+        assert_eq!(blocked.identity, "loki-main");
+        assert_eq!(
+            blocked.blocked_reason.as_deref(),
+            Some(REVIEW_REASON_UID_NAME_MISMATCH)
+        );
+        assert_eq!(
+            blocked.details.as_deref(),
+            Some("operation=add match=uid-name-mismatch targetId=12")
+        );
+        assert_eq!(
+            blocked.raw,
+            json!({
+                "operation": "add",
+                "uid": "loki-main",
+                "name": "Loki Main",
+                "type": "loki",
+                "match": "uid-name-mismatch",
+                "action": "would-fail-uid-name-mismatch",
+                "targetId": "12",
+            })
+        );
+
+        let ready = &projection.actions[1];
+        assert_eq!(
+            ready.action_id,
+            "datasource-live-mutation:delete:uid:prom-main:target:7"
+        );
+        assert_eq!(ready.action, REVIEW_ACTION_WOULD_DELETE);
+        assert_eq!(ready.status, REVIEW_STATUS_READY);
+        assert_eq!(ready.identity, "prom-main");
+        assert_eq!(ready.blocked_reason, None);
+        assert_eq!(
+            ready.details.as_deref(),
+            Some("operation=delete match=exists-uid targetId=7")
+        );
+        assert_eq!(
+            ready.raw,
+            json!({
+                "operation": "delete",
+                "uid": "prom-main",
+                "name": "Prometheus Main",
+                "type": "prometheus",
+                "match": "exists-uid",
+                "action": "would-delete",
+                "targetId": "7",
+            })
+        );
+
+        let envelope = build_live_mutation_review_envelope(&rows);
+        assert_eq!(envelope.actions, projection.actions);
+        assert_eq!(envelope.summary.action_count, 2);
+        assert_eq!(envelope.summary.blocked_count, 1);
+        assert_eq!(envelope.domains.len(), 1);
+        assert_eq!(envelope.domains[0].id, "datasource");
+        assert_eq!(envelope.domains[0].delete, 1);
+        assert_eq!(envelope.domains[0].blocked, 1);
+        assert_eq!(
+            envelope.blocked_reasons,
+            vec![REVIEW_REASON_UID_NAME_MISMATCH.to_string()]
+        );
+    }
 }

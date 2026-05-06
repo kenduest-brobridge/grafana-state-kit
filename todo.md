@@ -188,8 +188,11 @@ with narrow validation and a final full Rust test run when code changes.
 - [x] Re-audit request evidence before introducing `ReviewRequest`: current
   request-like shapes still represent different layers, so `ReviewRequest`
   remains blocked.
-- [ ] Extend internal `ReviewMutationAction` adapters to the next proven
-  dry-run/import surfaces without changing public JSON.
+- [x] Extend internal `ReviewMutationAction` adapters to the next proven
+  dry-run/import surfaces without changing public JSON. Access import dry-run,
+  datasource import dry-run, datasource live mutation preview, and alert plan
+  rows now have internal review projections/envelopes while preserving their
+  public row payloads as `raw`.
 - [x] Add adapter tests that assert action, status, reason, identity, ordering,
   and blocked-reason behavior.
 
@@ -401,10 +404,10 @@ Current baseline:
 
 Action:
 
-- [ ] Extend shared `ReviewMutationAction` adapters to access import dry-run,
+- [x] Extend shared `ReviewMutationAction` adapters to access import dry-run,
   datasource import dry-run, datasource live mutation preview, and alert plan
   rows where mapping is lossless.
-- [ ] Keep legacy dashboard import dry-run out of the adapter until its
+- [x] Keep legacy dashboard import dry-run out of the adapter until its
   `would-skip-*` / `would-fail-*` actions can be mapped without hiding
   operator-facing reasons.
 - [ ] Keep `ReviewRisk` blocked until at least one non-dashboard mutation
@@ -412,8 +415,9 @@ Action:
   fields.
 - [ ] Keep `ReviewRequest` blocked until at least two domains need the same
   request layer and fields.
-- [ ] Keep domain-specific payloads behind a shared review wrapper.
-- [ ] Avoid changing public JSON contracts until a migration path is defined.
+- [x] Keep domain-specific payloads behind a shared review wrapper for the
+  current adapter pass.
+- [x] Avoid changing public JSON contracts in the current adapter pass.
 - [x] Start with one internal model or adapter. Do not force all domains to adopt the envelope in the first commit.
 
 Current evidence:
@@ -421,9 +425,9 @@ Current evidence:
 - Dashboard/access now prove a shared action/status/blocked-reason shape, and
   dashboard plan, datasource plan, access plan, and workspace preview already
   project into the internal mutation action envelope. Alert/sync live apply now
-  prove the common apply-result evidence shape. The next ready work is adapter
-  coverage for dry-run/import rows that already have action/status/reason
-  evidence.
+  prove the common apply-result evidence shape. Access import dry-run,
+  datasource import dry-run, datasource live mutation preview, and alert plan
+  now also have internal mutation action adapters.
 - `ReviewRisk` and `ReviewRequest` remain intentionally blocked. Current risk
   records are still only dashboard-governance shaped (`GovernanceRiskSpec` and
   `GovernanceRiskRow`). Current request-like structs represent different
