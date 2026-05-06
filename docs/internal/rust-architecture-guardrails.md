@@ -87,7 +87,7 @@ Current high-value refactor candidates usually follow that order in this repo:
 - `alert_cli_defs.rs`
 - `dashboard/history.rs`
 - `dashboard/browse_input.rs`
-- datasource import/export helpers
+- remaining datasource import/export helpers outside the split import dry-run rendering/review/secret-visibility modules
 - large CLI/help tests
 
 Already handled and no longer current candidates:

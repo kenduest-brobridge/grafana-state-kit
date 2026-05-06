@@ -19,6 +19,10 @@ use super::{DatasourceImportArgs, DatasourceImportInputFormat};
 mod datasource_export_support;
 #[path = "import/dry_run.rs"]
 mod datasource_import_dry_run;
+#[path = "import/dry_run_output.rs"]
+mod datasource_import_dry_run_output;
+#[path = "import/dry_run_review.rs"]
+mod datasource_import_dry_run_review;
 #[path = "import/routed.rs"]
 mod datasource_import_export_routed;
 #[path = "import/support.rs"]
@@ -27,6 +31,8 @@ mod datasource_import_export_support;
 mod datasource_import_payload;
 #[path = "import/plan.rs"]
 mod datasource_import_plan;
+#[path = "import/dry_run_secret_visibility.rs"]
+mod datasource_import_secret_visibility;
 
 pub(crate) use datasource_export_support::{
     build_all_orgs_export_index, build_all_orgs_export_metadata, build_all_orgs_output_dir,
@@ -37,9 +43,15 @@ pub(crate) use datasource_export_support::{
     validate_import_org_auth, write_yaml_file, DATASOURCE_PROVISIONING_FILENAME,
     DATASOURCE_PROVISIONING_SUBDIR,
 };
-pub(crate) use datasource_import_dry_run::{
-    build_datasource_import_dry_run_json_value, collect_datasource_import_dry_run_report,
-    print_datasource_import_dry_run_report,
+pub(crate) use datasource_import_dry_run::collect_datasource_import_dry_run_report;
+pub(crate) use datasource_import_dry_run_output::{
+    build_datasource_import_dry_run_json_value, print_datasource_import_dry_run_report,
+};
+#[cfg(test)]
+#[allow(unused_imports)]
+pub(crate) use datasource_import_dry_run_review::{
+    build_datasource_import_dry_run_review_envelope,
+    build_datasource_import_dry_run_review_projection, DatasourceImportDryRunReviewProjection,
 };
 #[cfg(test)]
 #[allow(unused_imports)]

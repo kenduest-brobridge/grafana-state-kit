@@ -48,3 +48,10 @@
 - Baseline: Several read/aggregation paths owned `serde_json::Value` or domain status rows but borrowed them and cloned maps, arrays, or status fields back out during normalization.
 - Current Update: Consumed owned dashboard response objects, moved existing sync availability arrays, extracted request-backed contact-point identifiers without whole-object clones, and merged live multi-org domain statuses by consuming per-org rows.
 - Result: Focused dashboard/sync/status tests and full Rust validation pass.
+
+## 2026-05-02 - Re-audit mutation review envelope evidence
+- State: Done
+- Scope: Maintainer-only mutation review envelope evidence audit across dashboard/workspace, access/datasource, alert/sync, TODO routing, and AI workflow validation. Rust behavior, public JSON, CLI behavior, generated docs, and Python implementation are out of scope.
+- Baseline: `ReviewRisk` and `ReviewRequest` were still listed as open work even though the backlog also said their cross-domain evidence was weak.
+- Current Update: Recorded worker-backed evidence that `ReviewMutationAction` adapter coverage is ready to continue for selected dry-run/import rows, while `ReviewRisk` and `ReviewRequest` remain intentionally blocked.
+- Result: The next implementation job is now narrower: extend internal mutation action adapters without changing public JSON.
