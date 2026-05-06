@@ -41,6 +41,10 @@ mod alert_live_project_status;
 mod alert_output;
 #[path = "project_status/staged.rs"]
 mod alert_project_status;
+#[path = "runtime_plan_document.rs"]
+mod alert_runtime_plan_document;
+#[path = "runtime_review.rs"]
+mod alert_runtime_review;
 #[path = "runtime_support.rs"]
 mod alert_runtime_support;
 #[path = "support/mod.rs"]

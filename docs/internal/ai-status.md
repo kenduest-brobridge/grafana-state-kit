@@ -21,6 +21,12 @@ Current AI-maintained status only.
 - Older entries moved to [`ai-status-archive-2026-04-28.md`](/Users/kendlee/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-04-28.md).
 - Older entries moved to [`ai-status-archive-2026-05-02.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-02.md).
 
+## 2026-05-02 - Split alert runtime support helpers
+- State: Done
+- Scope: Rust alert runtime architecture trace for splitting plan/delete/import/diff document construction and alert plan review projections out of `runtime_support.rs`. Public CLI/JSON behavior, generated docs, and Python implementation are out of scope.
+- Current Update: Recorded the new focused alert runtime modules in the maintainer trace while main owns focused Rust validation.
+- Result: The active trace reflects the behavior-preserving alert runtime support re-layering.
+
 ## 2026-05-02 - Consume mutation review adapters
 - State: Done
 - Scope: Rust internal shared review-adapter consumption for access import dry-run, datasource import dry-run, datasource live mutation, and alert plan rows; focused tests; TODO trace. Public JSON, CLI behavior, generated docs, and Python implementation are out of scope.
@@ -52,10 +58,3 @@ Current AI-maintained status only.
 - Baseline: `ReviewRisk` and `ReviewRequest` were still listed as open work even though the backlog also said their cross-domain evidence was weak.
 - Current Update: Recorded worker-backed evidence that `ReviewMutationAction` adapter coverage is ready to continue for selected dry-run/import rows, while `ReviewRisk` and `ReviewRequest` remain intentionally blocked.
 - Result: The next implementation job is now narrower: extend internal mutation action adapters without changing public JSON.
-
-## 2026-05-02 - Reduce proven JSON clone hot spots
-- State: Done
-- Scope: Rust dashboard API response normalization, sync live availability merge, status multi-org aggregation, focused regression tests, full Rust validation, TODO trace, and AI workflow validation. Public JSON, CLI behavior, live transport semantics, and Python implementation are out of scope.
-- Baseline: Several read/aggregation paths owned `serde_json::Value` or domain status rows but borrowed them and cloned maps, arrays, or status fields back out during normalization.
-- Current Update: Consumed owned dashboard response objects, moved existing sync availability arrays, extracted request-backed contact-point identifiers without whole-object clones, and merged live multi-org domain statuses by consuming per-org rows.
-- Result: Focused dashboard/sync/status tests and full Rust validation pass.

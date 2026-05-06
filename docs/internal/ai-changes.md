@@ -21,6 +21,12 @@ Current AI change log only.
 - Older entries moved to [`ai-changes-archive-2026-04-28.md`](/Users/kendlee/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-04-28.md).
 - Older entries moved to [`ai-changes-archive-2026-05-02.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-02.md).
 
+## 2026-05-02 - Split alert runtime support helpers
+- Summary: split alert runtime support responsibilities so plan/delete/import/diff document construction lives in `runtime_plan_document.rs` and alert plan review projections live in `runtime_review.rs`, leaving `runtime_support.rs` as the narrower runtime assembly surface.
+- Tests: main is running focused Rust validation for the refactor; this update is maintainer trace only.
+- Impact: `rust/src/commands/alert/runtime_support.rs`, `rust/src/commands/alert/runtime_plan_document.rs`, `rust/src/commands/alert/runtime_review.rs`, and AI trace docs. Public CLI/JSON behavior, generated docs, and Python implementation are intentionally unchanged.
+- Rollback/Risk: low behavior-preserving module split. Rollback would move the extracted helper code back into `runtime_support.rs` without changing external output.
+
 ## 2026-05-02 - Consume mutation review adapters
 - Summary: added `build_review_mutation_summary_rows(&ReviewMutationEnvelope)` as a shared internal consumer for access import dry-run, datasource import dry-run, datasource live mutation, and alert plan review adapters.
 - Tests: worker tests prove those adapters feed the shared summary consumer without public JSON drift.
@@ -84,10 +90,3 @@ Current AI change log only.
 - Test Run: `make quality-ai-workflow`; `git diff --check`.
 - Impact: `docs/internal/dashboard-directory-relayering-inventory.md`, `todo.md`, and AI trace docs. No Rust code, public CLI/docs, generated docs, or runtime behavior changed.
 - Rollback/Risk: low documentation-only checkpoint. Rollback would remove the fresh inventory and leave the future re-layering TODO without current evidence.
-
-## 2026-04-27 - Move dashboard prompt transform boundary
-- Summary: moved the shared dashboard prompt transform from root-level `prompt*.rs` modules into `dashboard/export_prompt/`, preserving facade re-exports for live export, raw-to-prompt, inspect, import validation, list metadata, and tests.
-- Tests: covered raw-to-prompt conversion, prompt document generation, dashboard export/import inventory wiring, live library-panel prompt export support, and export-diff/test-support re-exports.
-- Test Run: `cargo test --manifest-path rust/Cargo.toml --quiet build_external_export_document`; `cargo test --manifest-path rust/Cargo.toml --quiet raw_to_prompt`; `cargo test --manifest-path rust/Cargo.toml --quiet dashboard_export_import_inventory_rust_tests`; `cargo test --manifest-path rust/Cargo.toml --quiet collect_library_panel_exports_with_request_records_failures_as_warnings`; `cargo test --manifest-path rust/Cargo.toml --quiet export_diff_rust_tests`; full Rust validation.
-- Impact: `rust/src/commands/dashboard/export_prompt/`, dashboard facade/consumer imports, `todo.md`, and AI trace docs. Public CLI/docs, generated artifacts, Python implementation, and runtime behavior are intentionally unchanged.
-- Rollback/Risk: low behavior-preserving module move. Rollback would restore the old root-level `prompt*.rs` layout; focused prompt/export tests cover the import wiring.

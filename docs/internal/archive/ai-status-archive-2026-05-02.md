@@ -41,3 +41,10 @@
 - Baseline: Dashboard, datasource, access staged, and selected live producers already used the internal `StatusProducer` model, while staged alert/sync/promotion and live alert/access/sync/promotion document-backed rows still built `StatusReading` directly before feeding shared status aggregation.
 - Current Update: Converted the document-backed staged/live status builders to domain-owned `StatusProducer` inputs and left read-failed, multi-org merge, and transport-only fallback rows outside the producer trait.
 - Result: Focused producer tests, full Rust tests, clippy, and AI workflow validation pass.
+
+## 2026-05-02 - Reduce proven JSON clone hot spots
+- State: Done
+- Scope: Rust dashboard API response normalization, sync live availability merge, status multi-org aggregation, focused regression tests, full Rust validation, TODO trace, and AI workflow validation. Public JSON, CLI behavior, live transport semantics, and Python implementation are out of scope.
+- Baseline: Several read/aggregation paths owned `serde_json::Value` or domain status rows but borrowed them and cloned maps, arrays, or status fields back out during normalization.
+- Current Update: Consumed owned dashboard response objects, moved existing sync availability arrays, extracted request-backed contact-point identifiers without whole-object clones, and merged live multi-org domain statuses by consuming per-org rows.
+- Result: Focused dashboard/sync/status tests and full Rust validation pass.
