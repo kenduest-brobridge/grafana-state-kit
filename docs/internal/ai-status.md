@@ -21,6 +21,13 @@ Current AI-maintained status only.
 - Older entries moved to [`ai-status-archive-2026-04-28.md`](/Users/kendlee/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-04-28.md).
 - Older entries moved to [`ai-status-archive-2026-05-02.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-02.md).
 
+## 2026-05-02 - Re-audit mutation review envelope evidence
+- State: Done
+- Scope: Maintainer-only mutation review envelope evidence audit across dashboard/workspace, access/datasource, alert/sync, TODO routing, and AI workflow validation. Rust behavior, public JSON, CLI behavior, generated docs, and Python implementation are out of scope.
+- Baseline: `ReviewRisk` and `ReviewRequest` were still listed as open work even though the backlog also said their cross-domain evidence was weak.
+- Current Update: Recorded worker-backed evidence that `ReviewMutationAction` adapter coverage is ready to continue for selected dry-run/import rows, while `ReviewRisk` and `ReviewRequest` remain intentionally blocked.
+- Result: The next implementation job is now narrower: extend internal mutation action adapters without changing public JSON.
+
 ## 2026-05-02 - Reduce proven JSON clone hot spots
 - State: Done
 - Scope: Rust dashboard API response normalization, sync live availability merge, status multi-org aggregation, focused regression tests, full Rust validation, TODO trace, and AI workflow validation. Public JSON, CLI behavior, live transport semantics, and Python implementation are out of scope.
@@ -55,10 +62,3 @@ Current AI-maintained status only.
 - Baseline: The dashboard re-layering inventory identified root-level `prompt*.rs` files as a shared prompt-lane transform boundary used by live export and offline raw-to-prompt.
 - Current Update: Moved the prompt transform and helper files under `rust/src/commands/dashboard/export_prompt/`, kept `commands/dashboard/mod.rs` as the public facade, and rewired direct consumers plus test support to the new module.
 - Result: Focused raw-to-prompt, export prompt, inventory, library-panel, and export-diff tests pass; full Rust validation is run for the commit.
-
-## 2026-04-27 - Guard dashboard permissions as adjacent evidence
-- State: Done
-- Scope: Rust dashboard permission-artifact rejection, dashboard/raw-to-prompt/review regressions, sync/access workspace boundary tests, and TODO trace. Permission restore/apply behavior, public JSON changes, generated docs, and Python implementation are out of scope.
-- Baseline: Directory-based dashboard flows skipped `permissions.json`, but single-object dashboard flows could still treat dashboard permission artifacts as dashboard JSON.
-- Current Update: Rejected dashboard permission bundle/export artifacts in the shared dashboard object extractor, wired the inventory regression module into the Rust suite, and added sync/access tests proving permission bundles stay out of dashboard source and access-bundle collection.
-- Result: Focused dashboard, raw-to-prompt, sync bundle, and access plan tests pass.

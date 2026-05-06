@@ -21,6 +21,14 @@ Current AI change log only.
 - Older entries moved to [`ai-changes-archive-2026-04-28.md`](/Users/kendlee/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-04-28.md).
 - Older entries moved to [`ai-changes-archive-2026-05-02.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-02.md).
 
+## 2026-05-02 - Re-audit mutation review envelope evidence
+- Summary: refreshed the mutation review envelope inventory with worker-backed evidence across dashboard/workspace, access/datasource, and alert/sync review surfaces.
+- Tests: no Rust tests were needed because this is maintainer-only evidence and TODO routing. Validation covered AI workflow rules and whitespace checks.
+- Test Run: `make quality-ai-workflow`; `git diff --check`.
+- Impact: `docs/internal/mutation-review-envelope-inventory.md`, `todo.md`, and AI trace docs. Runtime behavior, public JSON, CLI behavior, generated docs, and Python implementation are intentionally unchanged.
+- Rollback/Risk: low documentation-only checkpoint. Rollback would restore the previous ambiguous TODO state where blocked `ReviewRisk` / `ReviewRequest` work looked equally ready as mutation action adapter coverage.
+- Follow-up: implement the next adapter pass for access import dry-run, datasource import dry-run, datasource live mutation preview, and alert plan rows only where the mapping is lossless and internal-only.
+
 ## 2026-05-02 - Reduce proven JSON clone hot spots
 - Summary: removed avoidable `serde_json::Value`/object clones in owned Rust read and aggregation paths without changing public JSON or transport behavior.
 - Tests: covered dashboard API response normalization, dashboard version timestamp lookup, sync live availability merge, request-backed contact-point availability extraction, live multi-org status aggregation, broader dashboard/sync_live/status filters, and full Rust validation.
@@ -85,10 +93,3 @@ Current AI change log only.
 - Test Run: `cargo test --manifest-path rust/Cargo.toml raw_to_prompt --quiet`; `cargo test --manifest-path rust/Cargo.toml export_dashboards_with_request_includes_live_library_panel_elements_in_prompt_variant --quiet`; `cargo fmt --manifest-path rust/Cargo.toml --all --check`.
 - Impact: `rust/src/commands/dashboard/raw_to_prompt/resolution.rs`, `rust/src/commands/dashboard/raw_to_prompt/prompt_paths.rs`, `rust/src/commands/dashboard/raw_to_prompt/rust_tests.rs`, `todo.md`, and AI trace docs. Live export `__elements`, dashboard v2 rejection, Python implementation, and generated docs are intentionally unchanged.
 - Rollback/Risk: low behavior-boundary change. Rollback would reintroduce live library-panel fetches into raw-to-prompt; focused raw-to-prompt and live export tests cover the intended split.
-
-## 2026-04-26 - Type dashboard ownership evidence
-- Summary: extended the existing `DashboardTargetOwnership` model with typed label parsing and evidence-note helpers, then reused it in the sync live dashboard write guard instead of rebuilding `ownership=...` strings locally.
-- Tests: added ownership evidence helper coverage for duplicate preservation, known ownership insertion, unknown labels, and direct-write blocking; preserved dashboard plan and sync live owned-dashboard guard behavior.
-- Test Run: `cargo test --manifest-path rust/Cargo.toml --quiet target_ownership_evidence`; `cargo test --manifest-path rust/Cargo.toml --quiet dashboard_plan_blocks_git_sync_managed`; `cargo test --manifest-path rust/Cargo.toml --quiet sync_live_client_rejects_owned_dashboard_before_transport`; `cargo test --manifest-path rust/Cargo.toml --quiet execute_live_apply_with_request_rejects_owned_dashboard_before_transport`; `cargo fmt --manifest-path rust/Cargo.toml --all --check`.
-- Impact: `rust/src/commands/dashboard/import/target.rs`, `rust/src/grafana/api/sync_live_apply_dashboard.rs`, `todo.md`, and AI trace docs. Public JSON fields, direct live write policy, generated docs, and Python implementation are intentionally unchanged.
-- Rollback/Risk: low internal-model change. Rollback would restore local string construction in sync live apply; focused ownership and sync live guard tests cover the behavior.

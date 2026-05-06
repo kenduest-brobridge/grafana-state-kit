@@ -182,9 +182,14 @@ with narrow validation and a final full Rust test run when code changes.
 - [x] Map datasource plan actions into an internal `ReviewMutationAction`
   projection without adding a public `review` field to datasource plan JSON.
 - [x] Keep `raw` payload available for domain-specific evidence.
-- [ ] Add `risk` only after real risk evidence exists in at least two domains.
-- [ ] Avoid introducing public `ReviewRequest` until two mutation-review domains
-  prove the same request fields.
+- [x] Re-audit `risk` evidence before introducing `ReviewRisk`: dashboard
+  governance is still the only mature risk taxonomy, so `ReviewRisk` remains
+  blocked.
+- [x] Re-audit request evidence before introducing `ReviewRequest`: current
+  request-like shapes still represent different layers, so `ReviewRequest`
+  remains blocked.
+- [ ] Extend internal `ReviewMutationAction` adapters to the next proven
+  dry-run/import surfaces without changing public JSON.
 - [x] Add adapter tests that assert action, status, reason, identity, ordering,
   and blocked-reason behavior.
 
@@ -396,23 +401,34 @@ Current baseline:
 
 Action:
 
-- [ ] Introduce a shared `ReviewRisk` concept.
-- [ ] Introduce a shared `ReviewRequest` concept.
+- [ ] Extend shared `ReviewMutationAction` adapters to access import dry-run,
+  datasource import dry-run, datasource live mutation preview, and alert plan
+  rows where mapping is lossless.
+- [ ] Keep legacy dashboard import dry-run out of the adapter until its
+  `would-skip-*` / `would-fail-*` actions can be mapped without hiding
+  operator-facing reasons.
+- [ ] Keep `ReviewRisk` blocked until at least one non-dashboard mutation
+  review domain emits stable `severity`, `category`, and `recommendation`
+  fields.
+- [ ] Keep `ReviewRequest` blocked until at least two domains need the same
+  request layer and fields.
 - [ ] Keep domain-specific payloads behind a shared review wrapper.
 - [ ] Avoid changing public JSON contracts until a migration path is defined.
 - [x] Start with one internal model or adapter. Do not force all domains to adopt the envelope in the first commit.
 
-Current blocker:
+Current evidence:
 
 - Dashboard/access now prove a shared action/status/blocked-reason shape, and
-  alert/sync live apply now prove the common apply-result evidence shape.
-  `ReviewRisk` and `ReviewRequest` still need cautious evidence handling.
-  Current risk records are still only dashboard-governance shaped
-  (`GovernanceRiskSpec` and `GovernanceRiskRow`). Current request structs do
-  not prove a shared review-request shape: dashboard source loading,
-  datasource import request planning, and dashboard import lookup request
-  closure wrappers represent different layers and should stay domain-local
-  until a second mutation-review domain emits the same evidence fields.
+  dashboard plan, datasource plan, access plan, and workspace preview already
+  project into the internal mutation action envelope. Alert/sync live apply now
+  prove the common apply-result evidence shape. The next ready work is adapter
+  coverage for dry-run/import rows that already have action/status/reason
+  evidence.
+- `ReviewRisk` and `ReviewRequest` remain intentionally blocked. Current risk
+  records are still only dashboard-governance shaped (`GovernanceRiskSpec` and
+  `GovernanceRiskRow`). Current request-like structs represent different
+  layers: dashboard source/review context, sync mutation intent, datasource HTTP
+  request planning, and direct access request closures.
 
 Validation:
 
