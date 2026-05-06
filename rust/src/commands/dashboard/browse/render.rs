@@ -40,10 +40,11 @@ pub(crate) fn render_dashboard_browser_frame(frame: &mut ratatui::Frame, state: 
     let header = tui_shell::build_header("Dashboard Browser", render_summary_lines(state));
     frame.render_widget(header, outer[0]);
 
+    let selected_targets = state.selected_targets();
     let tree_items = if state.local_mode {
-        build_local_export_tree_items(&state.document.nodes)
+        build_local_export_tree_items(&state.document.nodes, &selected_targets)
     } else {
-        build_live_tree_items(&state.document.nodes)
+        build_live_tree_items(&state.document.nodes, &selected_targets)
     };
     let list = List::new(tree_items)
         .block(
@@ -83,11 +84,15 @@ pub(crate) fn render_dashboard_browser_frame(frame: &mut ratatui::Frame, state: 
     );
     frame.render_widget(footer, outer[2]);
 
-    if let Some(plan) = state.pending_delete.as_ref() {
+    if let Some(review) = state.pending_delete.as_ref() {
         tui_shell::render_overlay(
             frame,
-            "Delete Preview",
-            render_delete_dry_run_text(plan)
+            if review.is_batch() {
+                "Selected Delete Review"
+            } else {
+                "Delete Preview"
+            },
+            render_delete_dry_run_text(&review.plan)
                 .into_iter()
                 .map(Line::from)
                 .collect(),
@@ -199,7 +204,7 @@ fn render_summary_lines(state: &BrowserState) -> Vec<Line<'static>> {
                 tui_shell::accent("y / Esc / q", Color::Yellow),
             ])
         } else {
-            Line::from(vec![
+            let mut spans = vec![
                 tui_shell::label("Mode "),
                 tui_shell::accent(
                     if state.local_mode {
@@ -218,7 +223,16 @@ fn render_summary_lines(state: &BrowserState) -> Vec<Line<'static>> {
                     },
                     Color::Blue,
                 ),
-            ])
+            ];
+            let selected_count = state.selected_targets().len();
+            if selected_count > 0 {
+                spans.extend([
+                    Span::raw("  "),
+                    tui_shell::label("Selected "),
+                    tui_shell::accent(selected_count.to_string(), Color::Yellow),
+                ]);
+            }
+            Line::from(spans)
         },
     ]
 }

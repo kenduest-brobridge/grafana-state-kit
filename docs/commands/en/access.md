@@ -7,6 +7,7 @@ Run the access-management command surface for users, orgs, teams, and service ac
 ## When to use
 
 - List live or local access inventory.
+- Browse live access inventory across resource families.
 - Create, modify, export, import, diff, or delete access resources.
 - Manage service-account tokens.
 
@@ -18,6 +19,7 @@ This page is for administrators who first need to choose the right access surfac
 ## Workflow lanes
 
 - **Inspect**: user, org, team, and service-account inventory reads from live Grafana or local bundles.
+- **Browse**: interactive live review across users, teams, orgs, and service accounts.
 - **Move**: export, import, diff, and snapshot paths for moving or comparing access state.
 - **Plan**: review user, org, team, or service-account bundles against live Grafana before import or prune.
 - **Review Before Mutate**: lifecycle changes, membership edits, and service-account token rotation.
@@ -56,6 +58,11 @@ Choose this page when you need to decide whether the next access task is invento
 ## Examples
 
 ```bash
+# Browse live access inventory before choosing a narrower command.
+grafana-util access browse --profile prod --query ops
+```
+
+```bash
 # Inspect access inventory before choosing a lane.
 grafana-util access user list --profile prod --json
 ```
@@ -82,6 +89,7 @@ grafana-util access service-account token add --url http://localhost:3000 --basi
 ### Inspect
 
 - [access user](./access-user.md)
+- [access browse](./access-browse.md)
 - [access org](./access-org.md)
 - [access team](./access-team.md)
 - [access service-account](./access-service-account.md)

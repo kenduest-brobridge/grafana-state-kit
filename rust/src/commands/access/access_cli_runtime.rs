@@ -62,6 +62,7 @@ fn apply_dry_run_output_format(
 
 pub fn normalize_access_cli_args(mut args: AccessCliArgs) -> AccessCliArgs {
     match &mut args.command {
+        AccessCommand::Browse(_) => {}
         AccessCommand::User { command } => match command {
             super::UserCommand::List(list_args) => {
                 if list_args.all_orgs {

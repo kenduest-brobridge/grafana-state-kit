@@ -10,7 +10,7 @@ use serde_json::{json, Value};
 use std::cell::RefCell;
 
 #[test]
-fn execute_alert_plan_with_request_applies_create_update_and_delete_rows() {
+fn execute_alert_plan_with_request_rejects_broad_create_update_and_delete_rows() {
     let plan = build_alert_plan_document(
         &[
             json!({
@@ -101,7 +101,7 @@ fn execute_alert_plan_with_request_applies_create_update_and_delete_rows() {
     );
     let calls = RefCell::new(Vec::new());
 
-    let result = execute_alert_plan_with_request(
+    let error = execute_alert_plan_with_request(
         |method, path, _params, payload| {
             calls
                 .borrow_mut()
@@ -120,21 +120,158 @@ fn execute_alert_plan_with_request_applies_create_update_and_delete_rows() {
         &plan,
         false,
     )
-    .unwrap();
+    .unwrap_err()
+    .to_string();
 
-    assert_eq!(result["appliedCount"], json!(3));
+    assert!(error.contains("controlled alert live apply"));
     let calls = calls.borrow();
-    assert_eq!(calls.len(), 3);
-    assert_eq!(calls[0].0, Method::POST);
-    assert_eq!(calls[0].1, "/api/v1/provisioning/alert-rules");
-    assert_eq!(calls[1].0, Method::PUT);
-    assert_eq!(calls[1].1, "/api/v1/provisioning/contact-points/cp-update");
-    assert_eq!(calls[2].0, Method::DELETE);
-    assert_eq!(calls[2].1, "/api/v1/provisioning/templates/template-delete");
+    assert!(calls.is_empty());
 }
 
 #[test]
-fn execute_alert_plan_with_request_rejects_policy_delete_without_guard() {
+fn execute_alert_plan_with_request_allows_narrow_rule_live_update() {
+    let plan = build_alert_plan_document(
+        &[json!({
+            "kind": RULE_KIND,
+            "identity": "rule-update",
+            "action": "update",
+            "actionId": "grafana-alert-rule::rule-update::update",
+            "status": "ready",
+            "blockedReason": null,
+            "reviewHints": [],
+            "changedFields": ["condition", "data", "for"],
+            "changes": [],
+            "desired": {
+                "uid": "rule-update",
+                "title": "Rule Update",
+                "folderUID": "general",
+                "ruleGroup": "default",
+                "condition": "B",
+                "for": "10m",
+                "data": [{"refId": "B"}]
+            },
+            "live": {
+                "uid": "rule-update",
+                "title": "Rule Update",
+                "folderUID": "general",
+                "ruleGroup": "default",
+                "condition": "A",
+                "for": "5m",
+                "data": [{"refId": "A"}]
+            }
+        })],
+        false,
+    );
+    let calls = RefCell::new(Vec::new());
+
+    let result = execute_alert_plan_with_request(
+        |method, path, _params, payload| {
+            calls
+                .borrow_mut()
+                .push((method.clone(), path.to_string(), payload.cloned()));
+            match (method.clone(), path) {
+                (Method::PUT, "/api/v1/provisioning/alert-rules/rule-update") => {
+                    Ok(Some(json!({"uid": "rule-update"})))
+                }
+                _ => panic!("unexpected request {method:?} {path}"),
+            }
+        },
+        &plan,
+        false,
+    )
+    .unwrap();
+
+    assert_eq!(result["appliedCount"], json!(1));
+    let calls = calls.borrow();
+    assert_eq!(calls.len(), 1);
+    assert_eq!(calls[0].0, Method::PUT);
+    assert_eq!(calls[0].1, "/api/v1/provisioning/alert-rules/rule-update");
+}
+
+#[test]
+fn execute_alert_plan_with_request_rejects_non_rule_live_mutations() {
+    let plan = build_alert_plan_document(
+        &[json!({
+            "kind": CONTACT_POINT_KIND,
+            "identity": "cp-update",
+            "action": "update",
+            "actionId": "grafana-alert-contact-point::cp-update::update",
+            "status": "ready",
+            "blockedReason": null,
+            "reviewHints": [],
+            "changedFields": ["settings"],
+            "changes": [],
+            "desired": {
+                "uid": "cp-update",
+                "name": "Update Me",
+                "type": "webhook",
+                "settings": {"url": "http://127.0.0.1/new"}
+            },
+            "live": {
+                "uid": "cp-update",
+                "name": "Update Me",
+                "type": "webhook",
+                "settings": {"url": "http://127.0.0.1/old"}
+            }
+        })],
+        false,
+    );
+
+    let error =
+        execute_alert_plan_with_request(|_method, _path, _params, _payload| Ok(None), &plan, false)
+            .unwrap_err()
+            .to_string();
+
+    assert!(error.contains("controlled alert live apply"));
+    assert!(error.contains(CONTACT_POINT_KIND));
+}
+
+#[test]
+fn execute_alert_plan_with_request_rejects_ambiguous_rule_fields() {
+    let plan = build_alert_plan_document(
+        &[json!({
+            "kind": RULE_KIND,
+            "identity": "rule-update",
+            "action": "update",
+            "actionId": "grafana-alert-rule::rule-update::update",
+            "status": "ready",
+            "blockedReason": null,
+            "reviewHints": [],
+            "changedFields": ["labels"],
+            "changes": [],
+            "desired": {
+                "uid": "rule-update",
+                "title": "Rule Update",
+                "folderUID": "general",
+                "ruleGroup": "default",
+                "condition": "A",
+                "data": [],
+                "labels": {"route": "new"}
+            },
+            "live": {
+                "uid": "rule-update",
+                "title": "Rule Update",
+                "folderUID": "general",
+                "ruleGroup": "default",
+                "condition": "A",
+                "data": [],
+                "labels": {"route": "old"}
+            }
+        })],
+        false,
+    );
+
+    let error =
+        execute_alert_plan_with_request(|_method, _path, _params, _payload| Ok(None), &plan, false)
+            .unwrap_err()
+            .to_string();
+
+    assert!(error.contains("unsupported rule fields"));
+    assert!(error.contains("labels"));
+}
+
+#[test]
+fn execute_alert_plan_with_request_rejects_policy_delete_as_live_apply_ambiguity() {
     let plan = build_alert_plan_document(
         &[json!({
             "kind": POLICIES_KIND,
@@ -150,7 +287,8 @@ fn execute_alert_plan_with_request_rejects_policy_delete_without_guard() {
             .unwrap_err()
             .to_string();
 
-    assert!(error.contains("--allow-policy-reset"));
+    assert!(error.contains("controlled alert live apply"));
+    assert!(error.contains(POLICIES_KIND));
 }
 
 #[test]

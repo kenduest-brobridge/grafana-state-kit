@@ -190,6 +190,7 @@
         "title_zh_tw": "選擇操作面",
         "links": [
           { "command": "grafana-util access", "target": "access.html" },
+          { "command": "grafana-util access browse", "target": "access-browse.html" },
           { "command": "grafana-util access user", "target": "access-user.html" },
           { "command": "grafana-util access plan", "target": "access-plan.html" },
           { "command": "grafana-util access org", "target": "access-org.html" },

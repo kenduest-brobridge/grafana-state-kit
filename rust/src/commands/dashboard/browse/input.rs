@@ -170,6 +170,23 @@ where
             repeat_search(request_json, args, state)?;
             Ok(BrowserLoopAction::Continue)
         }
+        KeyCode::Char(' ') if state.pending_delete.is_none() => {
+            if state.toggle_selected_node() {
+                let count = state.selected_targets().len();
+                state.status = format!("Selected dashboard for batch actions ({count} selected).");
+            } else if state
+                .selected_node()
+                .map(|node| node.kind == DashboardBrowseNodeKind::Dashboard)
+                .unwrap_or(false)
+            {
+                let count = state.selected_targets().len();
+                state.status =
+                    format!("Removed dashboard from batch selection ({count} selected).");
+            } else {
+                state.status = "Only dashboard rows can be selected for batch actions.".to_string();
+            }
+            Ok(BrowserLoopAction::Continue)
+        }
         KeyCode::Char('v') if state.pending_delete.is_none() => {
             if state.local_mode {
                 state.status = "Local browse shows tree facts from export files. Live dashboard details are unavailable.".to_string();
@@ -341,9 +358,41 @@ where
 
 #[cfg(test)]
 mod tests {
+    use crate::common::{message, CliColorChoice};
+    use crate::dashboard::{CommonCliArgs, DashboardImportInputFormat};
+
     use super::super::browse_support::DashboardBrowseDocument;
+    use super::super::browse_support::DashboardBrowseNode;
+    use super::super::browse_support::DashboardBrowseNodeKind;
     use super::super::browse_support::DashboardBrowseSummary;
     use super::*;
+
+    fn make_browse_args() -> BrowseArgs {
+        BrowseArgs {
+            common: CommonCliArgs {
+                color: CliColorChoice::Auto,
+                profile: None,
+                url: "https://grafana.example.com".to_string(),
+                api_token: Some("secret".to_string()),
+                username: None,
+                password: None,
+                prompt_password: false,
+                prompt_token: false,
+                timeout: 30,
+                verify_ssl: false,
+            },
+            workspace: None,
+            input_dir: None,
+            local: false,
+            run: None,
+            run_id: None,
+            input_format: DashboardImportInputFormat::Raw,
+            page_size: 500,
+            org_id: None,
+            all_orgs: false,
+            path: None,
+        }
+    }
 
     fn empty_document() -> DashboardBrowseDocument {
         DashboardBrowseDocument {
@@ -355,6 +404,35 @@ mod tests {
                 scope_label: "current-org".to_string(),
             },
             nodes: Vec::new(),
+        }
+    }
+
+    fn dashboard_node(uid: &str, title: &str) -> DashboardBrowseNode {
+        DashboardBrowseNode {
+            kind: DashboardBrowseNodeKind::Dashboard,
+            title: title.to_string(),
+            path: "Platform".to_string(),
+            uid: Some(uid.to_string()),
+            depth: 1,
+            meta: format!("uid={uid}"),
+            details: Vec::new(),
+            url: None,
+            org_name: "Acme".to_string(),
+            org_id: "42".to_string(),
+            child_count: 0,
+        }
+    }
+
+    fn document(nodes: Vec<DashboardBrowseNode>) -> DashboardBrowseDocument {
+        DashboardBrowseDocument {
+            summary: DashboardBrowseSummary {
+                root_path: None,
+                dashboard_count: nodes.len(),
+                folder_count: 0,
+                org_count: 1,
+                scope_label: "current-org".to_string(),
+            },
+            nodes,
         }
     }
 
@@ -400,5 +478,46 @@ mod tests {
         assert!(joined.contains("Action: update"));
         assert!(joined.contains("Folder: General"));
         assert!(!joined.contains("dashboard.json"));
+    }
+
+    #[test]
+    fn batch_delete_preview_uses_selected_dashboards_without_live_preview_request() {
+        let mut state = BrowserState::new(document(vec![
+            dashboard_node("cpu-main", "CPU Main"),
+            dashboard_node("memory-main", "Memory Main"),
+        ]));
+        state.toggle_selected_node();
+        state.select_index(1);
+        state.toggle_selected_node();
+        let args = make_browse_args();
+        let mut request_json = |_method: Method,
+                                _path: &str,
+                                _params: &[(String, String)],
+                                _payload: Option<&Value>|
+         -> Result<Option<Value>> {
+            Err(message(
+                "batch selected delete should not build a live preview",
+            ))
+        };
+
+        super::browse_input_delete::preview_selected_delete(
+            &mut request_json,
+            &args,
+            &mut state,
+            false,
+        )
+        .expect("selected delete preview should be pure");
+
+        let review = state
+            .pending_delete
+            .as_ref()
+            .expect("batch delete preview should be pending");
+        assert!(review.is_batch());
+        assert_eq!(review.targets.len(), 2);
+        assert_eq!(review.plan.dashboards.len(), 2);
+        assert_eq!(review.plan.dashboards[0].uid, "cpu-main");
+        assert_eq!(review.plan.dashboards[1].uid, "memory-main");
+        assert!(state.status.contains("Reviewing selected dashboard delete"));
+        assert!(state.status.contains("2 dashboard(s)"));
     }
 }

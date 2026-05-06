@@ -15,14 +15,14 @@
 
 | 工作流 | 常用子命令 |
 | --- | --- |
-| 盤點使用者 / org / team / service account | `user`、`org`、`team`、`service-account`、`service-account token` |
+| 盤點使用者 / org / team / service account | `browse`、`user`、`org`、`team`、`service-account`、`service-account token` |
 | 規劃 access 變更 | `plan` |
 | 管理成員與權限 | `user`、`org`、`team` |
 | 管理 service account 與 token | `service-account`、`service-account token` |
 
 ## 從這裡開始
 
-- 先看現況：`access user list`、`access org list`、`access team list`、`access service-account list`
+- 先看現況：`access browse` 可跨類型互動檢視；`access user list`、`access org list`、`access team list`、`access service-account list` 可讀取特定類型
 - 想看本機套件：把 `--input-dir ./access-*` 加到對應的 `list`
 - 想先做 access bundle vs live review：使用 `access plan --resource user`、`org`、`team` 或 `service-account`
 - 要處理 service account：直接進 `access service-account`
@@ -73,6 +73,11 @@
 ## 範例
 
 ```bash
+# 先用互動式畫面瀏覽 live access inventory。
+grafana-util access browse --profile prod --query ops
+```
+
+```bash
 # 先盤點目前有哪些 user。
 grafana-util access user list --profile prod --json
 ```
@@ -114,6 +119,7 @@ grafana-util access service-account list --url http://localhost:3000 --token "$G
 ### 盤點
 
 - [access plan](./access-plan.md)
+- [access browse](./access-browse.md)
 - [access user](./access-user.md)
 - [access org](./access-org.md)
 - [access team](./access-team.md)

@@ -6,6 +6,8 @@ use crate::common::Result;
 
 // Internal modules stay split by resource kind so user/org/team/service-account
 // workflows can evolve independently while this file keeps only domain routing.
+#[path = "access_browse.rs"]
+mod access_browse;
 #[path = "access_plan.rs"]
 mod access_plan;
 #[path = "access_plan_org.rs"]
@@ -57,18 +59,19 @@ mod user_browse;
 
 pub use cli_defs::{
     build_auth_context, build_http_client, build_http_client_no_org_id, normalize_access_cli_args,
-    parse_cli_from, root_command, AccessAuthContext, AccessCliArgs, AccessCommand, AccessPlanArgs,
-    CommonCliArgs, CommonCliArgsNoOrgId, DryRunOutputFormat, OrgAddArgs, OrgCommand, OrgDeleteArgs,
-    OrgDiffArgs, OrgExportArgs, OrgImportArgs, OrgListArgs, OrgModifyArgs, Scope,
-    ServiceAccountAddArgs, ServiceAccountCommand, ServiceAccountDiffArgs, ServiceAccountExportArgs,
-    ServiceAccountImportArgs, ServiceAccountListArgs, ServiceAccountTokenAddArgs,
-    ServiceAccountTokenCommand, TeamAddArgs, TeamBrowseArgs, TeamCommand, TeamDiffArgs,
-    TeamExportArgs, TeamImportArgs, TeamListArgs, TeamModifyArgs, UserAddArgs, UserBrowseArgs,
-    UserCommand, UserDeleteArgs, UserDiffArgs, UserExportArgs, UserImportArgs, UserListArgs,
-    UserModifyArgs, ACCESS_EXPORT_KIND_ORGS, ACCESS_EXPORT_KIND_SERVICE_ACCOUNTS,
-    ACCESS_EXPORT_KIND_TEAMS, ACCESS_EXPORT_KIND_USERS, ACCESS_EXPORT_METADATA_FILENAME,
-    ACCESS_EXPORT_VERSION, ACCESS_ORG_EXPORT_FILENAME, ACCESS_SERVICE_ACCOUNT_EXPORT_FILENAME,
-    ACCESS_TEAM_EXPORT_FILENAME, ACCESS_USER_EXPORT_FILENAME, DEFAULT_ACCESS_ORG_EXPORT_DIR,
+    parse_cli_from, root_command, AccessAuthContext, AccessBrowseArgs, AccessCliArgs,
+    AccessCommand, AccessPlanArgs, CommonCliArgs, CommonCliArgsNoOrgId, DryRunOutputFormat,
+    OrgAddArgs, OrgCommand, OrgDeleteArgs, OrgDiffArgs, OrgExportArgs, OrgImportArgs, OrgListArgs,
+    OrgModifyArgs, Scope, ServiceAccountAddArgs, ServiceAccountCommand, ServiceAccountDiffArgs,
+    ServiceAccountExportArgs, ServiceAccountImportArgs, ServiceAccountListArgs,
+    ServiceAccountTokenAddArgs, ServiceAccountTokenCommand, TeamAddArgs, TeamBrowseArgs,
+    TeamCommand, TeamDiffArgs, TeamExportArgs, TeamImportArgs, TeamListArgs, TeamModifyArgs,
+    UserAddArgs, UserBrowseArgs, UserCommand, UserDeleteArgs, UserDiffArgs, UserExportArgs,
+    UserImportArgs, UserListArgs, UserModifyArgs, ACCESS_EXPORT_KIND_ORGS,
+    ACCESS_EXPORT_KIND_SERVICE_ACCOUNTS, ACCESS_EXPORT_KIND_TEAMS, ACCESS_EXPORT_KIND_USERS,
+    ACCESS_EXPORT_METADATA_FILENAME, ACCESS_EXPORT_VERSION, ACCESS_ORG_EXPORT_FILENAME,
+    ACCESS_SERVICE_ACCOUNT_EXPORT_FILENAME, ACCESS_TEAM_EXPORT_FILENAME,
+    ACCESS_USER_EXPORT_FILENAME, DEFAULT_ACCESS_ORG_EXPORT_DIR,
     DEFAULT_ACCESS_SERVICE_ACCOUNT_EXPORT_DIR, DEFAULT_ACCESS_TEAM_EXPORT_DIR,
     DEFAULT_ACCESS_USER_EXPORT_DIR, DEFAULT_PAGE_SIZE, DEFAULT_TIMEOUT, DEFAULT_URL,
 };

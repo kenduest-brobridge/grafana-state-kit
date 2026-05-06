@@ -54,13 +54,75 @@ pub(crate) struct CompletionNotice {
     pub(crate) body: String,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct BrowseSelectionTarget {
+    pub(crate) kind: DashboardBrowseNodeKind,
+    pub(crate) uid: Option<String>,
+    pub(crate) title: String,
+    pub(crate) path: String,
+    pub(crate) org_id: String,
+    pub(crate) org_name: String,
+}
+
+impl BrowseSelectionTarget {
+    pub(crate) fn from_node(node: &DashboardBrowseNode) -> Option<Self> {
+        if node.kind != DashboardBrowseNodeKind::Dashboard {
+            return None;
+        }
+        node.uid.as_ref()?;
+        Some(Self {
+            kind: node.kind.clone(),
+            uid: node.uid.clone(),
+            title: node.title.clone(),
+            path: node.path.clone(),
+            org_id: node.org_id.clone(),
+            org_name: node.org_name.clone(),
+        })
+    }
+
+    pub(crate) fn key(&self) -> String {
+        selection_key(
+            self.kind.clone(),
+            self.uid.as_deref(),
+            &self.path,
+            &self.org_id,
+        )
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct DeleteReview {
+    pub(crate) plan: DeletePlan,
+    pub(crate) scope_node: Option<DashboardBrowseNode>,
+    pub(crate) targets: Vec<BrowseSelectionTarget>,
+}
+
+impl DeleteReview {
+    pub(crate) fn single(
+        plan: DeletePlan,
+        scope_node: Option<DashboardBrowseNode>,
+        targets: Vec<BrowseSelectionTarget>,
+    ) -> Self {
+        Self {
+            plan,
+            scope_node,
+            targets,
+        }
+    }
+
+    pub(crate) fn is_batch(&self) -> bool {
+        self.targets.len() > 1
+    }
+}
+
 pub(crate) struct BrowserState {
     pub(crate) document: DashboardBrowseDocument,
     pub(crate) local_mode: bool,
     pub(crate) list_state: ListState,
     pub(crate) detail_scroll: u16,
     pub(crate) live_view_cache: BTreeMap<String, Vec<String>>,
-    pub(crate) pending_delete: Option<DeletePlan>,
+    pub(crate) pending_delete: Option<DeleteReview>,
+    selected_targets: BTreeMap<String, BrowseSelectionTarget>,
     pub(crate) pending_edit: Option<EditDialogState>,
     pub(crate) pending_external_edit: Option<ExternalEditDialogState>,
     pub(crate) pending_external_edit_error: Option<ExternalEditErrorState>,
@@ -95,6 +157,7 @@ impl BrowserState {
             detail_scroll: 0,
             live_view_cache: BTreeMap::new(),
             pending_delete: None,
+            selected_targets: BTreeMap::new(),
             pending_edit: None,
             pending_external_edit: None,
             pending_external_edit_error: None,
@@ -120,6 +183,46 @@ impl BrowserState {
         }
     }
 
+    pub(crate) fn selected_targets(&self) -> Vec<BrowseSelectionTarget> {
+        self.selected_targets.values().cloned().collect()
+    }
+
+    pub(crate) fn selected_dashboard_targets(&self) -> Vec<BrowseSelectionTarget> {
+        self.selected_targets
+            .values()
+            .filter(|target| target.kind == DashboardBrowseNodeKind::Dashboard)
+            .cloned()
+            .collect()
+    }
+
+    pub(crate) fn has_selected_targets(&self) -> bool {
+        !self.selected_targets.is_empty()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn is_node_selected(&self, node: &DashboardBrowseNode) -> bool {
+        selection_key_for_node(node)
+            .map(|key| self.selected_targets.contains_key(&key))
+            .unwrap_or(false)
+    }
+
+    pub(crate) fn toggle_selected_node(&mut self) -> bool {
+        let Some(node) = self.selected_node() else {
+            return false;
+        };
+        let Some(target) = BrowseSelectionTarget::from_node(node) else {
+            return false;
+        };
+        let key = target.key();
+        self.pending_delete = None;
+        if self.selected_targets.remove(&key).is_some() {
+            false
+        } else {
+            self.selected_targets.insert(key, target);
+            true
+        }
+    }
+
     pub(crate) fn replace_document(&mut self, document: DashboardBrowseDocument) {
         let anchor = self.selection_anchor();
         self.document = document;
@@ -131,9 +234,21 @@ impl BrowserState {
         self.pending_external_edit_error = None;
         self.pending_search = None;
         self.completion_notice = None;
+        self.prune_selected_targets();
         // Restore the operator's position by identity first, then degrade to the containing folder.
         self.restore_selection(anchor.as_ref());
         self.detail_scroll = 0;
+    }
+
+    fn prune_selected_targets(&mut self) {
+        let valid_keys = self
+            .document
+            .nodes
+            .iter()
+            .filter_map(selection_key_for_node)
+            .collect::<std::collections::BTreeSet<_>>();
+        self.selected_targets
+            .retain(|key, _target| valid_keys.contains(key));
     }
 
     pub(crate) fn move_selection(&mut self, delta: isize) {
@@ -287,6 +402,31 @@ impl BrowserState {
     }
 }
 
+fn selection_key_for_node(node: &DashboardBrowseNode) -> Option<String> {
+    Some(selection_key(
+        node.kind.clone(),
+        node.uid.as_deref(),
+        &node.path,
+        &node.org_id,
+    ))
+    .filter(|_| BrowseSelectionTarget::from_node(node).is_some())
+}
+
+fn selection_key(
+    kind: DashboardBrowseNodeKind,
+    uid: Option<&str>,
+    path: &str,
+    org_id: &str,
+) -> String {
+    match kind {
+        DashboardBrowseNodeKind::Dashboard => {
+            format!("dashboard:{org_id}:{}", uid.unwrap_or_default())
+        }
+        DashboardBrowseNodeKind::Folder => format!("folder:{org_id}:{path}"),
+        DashboardBrowseNodeKind::Org => format!("org:{org_id}:{path}"),
+    }
+}
+
 fn node_matches(node: &DashboardBrowseNode, needle: &str) -> bool {
     // Search intentionally stays on stable identity/location fields so refreshed live metadata
     // does not change basic match semantics.
@@ -298,4 +438,101 @@ fn node_matches(node: &DashboardBrowseNode, needle: &str) -> bool {
     ]
     .iter()
     .any(|value| value.to_ascii_lowercase().contains(needle))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::browse_support::DashboardBrowseSummary;
+    use super::*;
+
+    fn dashboard_node(uid: &str, title: &str, org_id: &str) -> DashboardBrowseNode {
+        DashboardBrowseNode {
+            kind: DashboardBrowseNodeKind::Dashboard,
+            title: title.to_string(),
+            path: "Platform".to_string(),
+            uid: Some(uid.to_string()),
+            depth: 1,
+            meta: format!("uid={uid}"),
+            details: Vec::new(),
+            url: None,
+            org_name: format!("Org {org_id}"),
+            org_id: org_id.to_string(),
+            child_count: 0,
+        }
+    }
+
+    fn folder_node() -> DashboardBrowseNode {
+        DashboardBrowseNode {
+            kind: DashboardBrowseNodeKind::Folder,
+            title: "Platform".to_string(),
+            path: "Platform".to_string(),
+            uid: Some("platform".to_string()),
+            depth: 0,
+            meta: "0 folder(s) | 1 dashboard(s)".to_string(),
+            details: Vec::new(),
+            url: None,
+            org_name: "Org 1".to_string(),
+            org_id: "1".to_string(),
+            child_count: 1,
+        }
+    }
+
+    fn document(nodes: Vec<DashboardBrowseNode>) -> DashboardBrowseDocument {
+        DashboardBrowseDocument {
+            summary: DashboardBrowseSummary {
+                root_path: None,
+                dashboard_count: nodes
+                    .iter()
+                    .filter(|node| node.kind == DashboardBrowseNodeKind::Dashboard)
+                    .count(),
+                folder_count: nodes
+                    .iter()
+                    .filter(|node| node.kind == DashboardBrowseNodeKind::Folder)
+                    .count(),
+                org_count: 1,
+                scope_label: "current-org".to_string(),
+            },
+            nodes,
+        }
+    }
+
+    #[test]
+    fn toggled_dashboard_selection_tracks_stable_target_identity() {
+        let mut state = BrowserState::new(document(vec![
+            folder_node(),
+            dashboard_node("cpu-main", "CPU Main", "1"),
+        ]));
+        state.select_index(1);
+
+        assert!(state.toggle_selected_node());
+
+        let selected = state.selected_targets();
+        assert_eq!(selected.len(), 1);
+        assert_eq!(selected[0].uid.as_deref(), Some("cpu-main"));
+        assert_eq!(selected[0].title, "CPU Main");
+        assert_eq!(selected[0].path, "Platform");
+        assert_eq!(selected[0].org_id, "1");
+        assert!(state.is_node_selected(&state.document.nodes[1]));
+
+        assert!(!state.toggle_selected_node());
+        assert!(state.selected_targets().is_empty());
+    }
+
+    #[test]
+    fn replace_document_prunes_selected_targets_missing_from_new_tree() {
+        let mut state = BrowserState::new(document(vec![
+            dashboard_node("cpu-main", "CPU Main", "1"),
+            dashboard_node("memory-main", "Memory Main", "1"),
+        ]));
+        state.select_index(0);
+        state.toggle_selected_node();
+        state.select_index(1);
+        state.toggle_selected_node();
+
+        state.replace_document(document(vec![dashboard_node("cpu-main", "CPU Main", "1")]));
+
+        let selected = state.selected_targets();
+        assert_eq!(selected.len(), 1);
+        assert_eq!(selected[0].uid.as_deref(), Some("cpu-main"));
+    }
 }

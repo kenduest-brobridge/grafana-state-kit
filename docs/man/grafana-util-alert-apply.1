@@ -7,9 +7,11 @@ grafana\-util\-alert\-apply \- Apply a reviewed alert management plan.
 .SH DESCRIPTION
 Apply a reviewed alert management plan.
 .IP \(bu 2
-Execute a plan that was reviewed outside the live Grafana connection.
+Execute a reviewed plan that contains narrow alert\-rule update rows.
 .IP \(bu 2
 Require explicit acknowledgement before touching Grafana.
+.IP \(bu 2
+Keep broader alerting changes staged until their mutation semantics are explicit.
 .SH BEFORE / AFTER
 .IP \(bu 2
 Before: a reviewed alert plan still leaves one risky question open: what actually happens when someone presses go against live Grafana?
@@ -24,7 +26,7 @@ After: alert apply turns that final step into an explicit command with approval,
 \-\-output\-format renders apply output as text or json.
 .SH SUCCESS CRITERIA
 .IP \(bu 2
-a reviewed alert plan can be applied without hand\-editing YAML or replaying a sequence of UI clicks
+narrow reviewed alert\-rule updates can be applied without hand\-editing YAML or replaying a sequence of UI clicks
 .IP \(bu 2
 the live apply step keeps approval explicit instead of hiding it in shell history
 .IP \(bu 2

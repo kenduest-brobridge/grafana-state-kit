@@ -94,6 +94,7 @@ The public first-run CLI is organized around a small task-first surface:
 - [alert export](./alert-export.md)
 - [alert import](./alert-import.md)
 - [access](./access.md)
+- [access browse](./access-browse.md)
 - [access user](./access-user.md)
 - [access org](./access-org.md)
 - [access team](./access-team.md)

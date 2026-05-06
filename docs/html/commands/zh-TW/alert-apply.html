@@ -941,7 +941,7 @@ code[class*="language-"],pre[class*="language-"]{color:#ccc;background:none;font
 </div>
 <div class="command-intro-block">
   <p class="command-intro-label">什麼時候看這頁</p>
-  <ul class="command-intro-list"><li>執行已在離線環境審閱完成的計畫。</li><li>在碰觸 Grafana 之前要求明確確認。</li></ul>
+  <ul class="command-intro-list"><li>執行已審閱、且只包含窄範圍 alert-rule update row 的計畫。</li><li>在碰觸 Grafana 之前要求明確確認。</li><li>讓較廣的 alerting 變更先停在 staged/review 狀態，直到 mutation 語意足夠明確。</li></ul>
 </div>
 <div class="command-intro-block">
   <p class="command-intro-label">適合誰</p>
@@ -952,7 +952,10 @@ code[class*="language-"],pre[class*="language-"]{color:#ccc;background:none;font
 <h2 id="目的">目的</h2>
 <p>套用一份已審閱過的 alert 管理計畫。</p>
 <h2 id="使用時機">使用時機</h2>
-<ul><li>執行已在離線環境審閱完成的計畫。</li><li>在碰觸 Grafana 之前要求明確確認。</li></ul>
+<ul><li>執行已審閱、且只包含窄範圍 alert-rule update row 的計畫。</li><li>在碰觸 Grafana 之前要求明確確認。</li><li>讓較廣的 alerting 變更先停在 staged/review 狀態，直到 mutation 語意足夠明確。</li></ul>
+<h2 id="安全邊界">安全邊界</h2>
+<p><code>alert apply</code> 是 controlled live-apply 路徑。目前只允許 <code>ready</code> 的 alert-rule <code>update</code> row，且 changed fields 僅限 <code>condition</code>、<code>data</code>、<code>for</code>、<code>noDataState</code> 或 <code>execErrState</code>。</p>
+<p>Create、delete、contact-point、mute-timing、policy、template，以及語意較不明確的 rule field 變更都會 fail closed。請用 <code>alert plan</code> 和 review output 保留這些較廣變更的可見性，不要直接 apply。</p>
 <h2 id="採用前後對照">採用前後對照</h2>
 <ul><li><strong>採用前</strong>：即使 alert plan 已審閱完成，真正碰到 live Grafana 的最後一步仍然很容易變成不透明的人工操作。</li><li><strong>採用後</strong>：<code>alert apply</code> 會把最後一步變成明確命令，保留核准、可重現驗證與可機器判讀的輸出。</li></ul>
 <h2 id="主要旗標">主要旗標</h2>
@@ -965,7 +968,7 @@ grafana-util alert apply --url http://localhost:3000 --basic-user admin --basic-
 <pre><code># 套用一份已審閱過的 alert 管理計畫。
 grafana-util alert apply --url http://localhost:3000 --token &quot;$GRAFANA_API_TOKEN&quot; --plan-file ./alert-plan-reviewed.json --approve</code></pre>
 <h2 id="成功判準">成功判準</h2>
-<ul><li>已審閱的 alert plan 能直接套用，不必再手改 YAML 或重做一串 UI 操作</li><li>live apply 步驟會保留明確的核准，不會只藏在 shell history 裡</li><li>JSON 輸出穩定到足以交給 CI、變更紀錄或套用後驗證流程</li></ul>
+<ul><li>窄範圍且已審閱的 alert-rule update 能直接套用，不必再手改 YAML 或重做一串 UI 操作</li><li>live apply 步驟會保留明確的核准，不會只藏在 shell history 裡</li><li>JSON 輸出穩定到足以交給 CI、變更紀錄或套用後驗證流程</li></ul>
 <h2 id="失敗時先檢查">失敗時先檢查</h2>
 <ul><li>如果 apply 不肯執行，先確認你給的是 reviewed plan，而且有帶 <code>--approve</code></li><li>如果 live 結果和預期 plan 差很多，先核對認證、org scope，以及 reviewed plan 是否仍對應目前目標 Grafana</li><li>如果自動化要吃輸出，建議用 <code>--output-format json</code>，並先驗證結果 shape 再判定成功</li></ul>
 <h2 id="相關命令">相關命令</h2>
@@ -975,7 +978,7 @@ grafana-util alert apply --url http://localhost:3000 --token &quot;$GRAFANA_API_
 <aside class="sidebar">
   <button class="sidebar-toggle sidebar-toggle-right" type="button" aria-expanded="true" aria-label="Toggle page sidebar">▶</button>
   <div class="sidebar-content">
-    <section class="sidebar-section"><h2>本頁內容</h2><ul class="toc-list"><li class="toc-level-2"><a href="#目的"><span class="toc-label">目的</span></a></li><li class="toc-level-2"><a href="#使用時機"><span class="toc-label">使用時機</span></a></li><li class="toc-level-2"><a href="#採用前後對照"><span class="toc-label">採用前後對照</span></a></li><li class="toc-level-2"><a href="#主要旗標"><span class="toc-label">主要旗標</span></a></li><li class="toc-level-2"><a href="#範例"><span class="toc-label">範例</span></a></li><li class="toc-level-2"><a href="#成功判準"><span class="toc-label">成功判準</span></a></li><li class="toc-level-2"><a href="#失敗時先檢查"><span class="toc-label">失敗時先檢查</span></a></li><li class="toc-level-2"><a href="#相關命令"><span class="toc-label">相關命令</span></a></li></ul></section><section class="sidebar-section"><h2>相關頁面</h2><ul class="sidebar-meta-list"><li><a href="alert.html" class="sidebar-meta-link">上層命令: alert</a></li><li><a href="../../handbook/zh-TW/alert.html" class="sidebar-meta-link">對應手冊章節</a></li></ul></section><section class="sidebar-section"><h2>版本</h2><p class="sidebar-meta-text">Current checkout</p></section><section class="sidebar-section"><h2>語言</h2><ul class="sidebar-meta-list"><li><a href="#" class="sidebar-meta-link sidebar-meta-current">Current: 繁體中文</a></li><li><a href="../en/alert-apply.html" class="sidebar-meta-link">Switch to English</a></li></ul></section>
+    <section class="sidebar-section"><h2>本頁內容</h2><ul class="toc-list"><li class="toc-level-2"><a href="#目的"><span class="toc-label">目的</span></a></li><li class="toc-level-2"><a href="#使用時機"><span class="toc-label">使用時機</span></a></li><li class="toc-level-2"><a href="#安全邊界"><span class="toc-label">安全邊界</span></a></li><li class="toc-level-2"><a href="#採用前後對照"><span class="toc-label">採用前後對照</span></a></li><li class="toc-level-2"><a href="#主要旗標"><span class="toc-label">主要旗標</span></a></li><li class="toc-level-2"><a href="#範例"><span class="toc-label">範例</span></a></li><li class="toc-level-2"><a href="#成功判準"><span class="toc-label">成功判準</span></a></li><li class="toc-level-2"><a href="#失敗時先檢查"><span class="toc-label">失敗時先檢查</span></a></li><li class="toc-level-2"><a href="#相關命令"><span class="toc-label">相關命令</span></a></li></ul></section><section class="sidebar-section"><h2>相關頁面</h2><ul class="sidebar-meta-list"><li><a href="alert.html" class="sidebar-meta-link">上層命令: alert</a></li><li><a href="../../handbook/zh-TW/alert.html" class="sidebar-meta-link">對應手冊章節</a></li></ul></section><section class="sidebar-section"><h2>版本</h2><p class="sidebar-meta-text">Current checkout</p></section><section class="sidebar-section"><h2>語言</h2><ul class="sidebar-meta-list"><li><a href="#" class="sidebar-meta-link sidebar-meta-current">Current: 繁體中文</a></li><li><a href="../en/alert-apply.html" class="sidebar-meta-link">Switch to English</a></li></ul></section>
   </div>
 </aside>
 

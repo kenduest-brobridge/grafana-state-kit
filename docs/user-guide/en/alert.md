@@ -206,7 +206,7 @@ grafana-util alert apply \
   --output-format json
 ```
 
-Do not apply a just-generated plan that nobody has reviewed. In practice, save the plan as a PR artifact, change-ticket attachment, or traceable file.
+Do not apply a just-generated plan that nobody has reviewed. In practice, save the plan as a PR artifact, change-ticket attachment, or traceable file. The live apply lane is intentionally narrow: it applies only ready alert-rule updates for controlled rule fields. Creates, deletes, contact points, mute timings, policies, templates, and ambiguous rule-field changes stay staged and fail closed.
 
 ## When To Use Command Reference
 

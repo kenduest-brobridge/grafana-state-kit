@@ -165,6 +165,12 @@ pub mod resource;
 /// Shared review/action vocabulary used by plan, preview, apply, and TUI layers.
 #[path = "commands/review_contract.rs"]
 pub(crate) mod review_contract;
+/// Shared internal side-by-side review diff model for compatible staged documents.
+#[path = "commands/review_diff.rs"]
+pub(crate) mod review_diff;
+#[cfg(test)]
+#[path = "commands/review_diff_rust_tests.rs"]
+mod review_diff_rust_tests;
 /// Snapshot export/review wrappers for staged dashboard and datasource bundles.
 #[path = "commands/snapshot/mod.rs"]
 pub mod snapshot;

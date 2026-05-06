@@ -8,6 +8,9 @@ use super::{
 
 pub(crate) fn materialize_access_command_auth(mut args: AccessCliArgs) -> Result<AccessCliArgs> {
     match &mut args.command {
+        AccessCommand::Browse(inner) => {
+            inner.common = materialize_access_common_auth(inner.common.clone())?
+        }
         AccessCommand::User { command } => match command {
             UserCommand::List(inner) => {
                 inner.common = materialize_access_common_auth(inner.common.clone())?

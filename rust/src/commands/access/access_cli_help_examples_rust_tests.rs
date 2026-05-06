@@ -40,6 +40,22 @@ fn access_user_browse_help_hides_deprecated_with_teams_flag() {
 }
 
 #[test]
+fn access_wide_browse_help_mentions_consolidated_inventory() {
+    let help = render_access_subcommand_help(&["browse"]);
+    assert_contains_all(
+        &help,
+        &[
+            "Browse users, teams, orgs, and service accounts interactively",
+            "--include-users",
+            "--include-teams",
+            "--include-orgs",
+            "--include-service-accounts",
+            "token metadata only",
+        ],
+    );
+}
+
+#[test]
 fn access_root_help_includes_examples() {
     let mut command = AccessCliRoot::command();
     let mut output = Vec::new();

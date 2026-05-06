@@ -3,9 +3,13 @@ use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::ListItem;
 
+use super::super::browse_state::BrowseSelectionTarget;
 use super::super::browse_support::{DashboardBrowseNode, DashboardBrowseNodeKind};
 
-pub(super) fn build_live_tree_items(nodes: &[DashboardBrowseNode]) -> Vec<ListItem<'_>> {
+pub(super) fn build_live_tree_items(
+    nodes: &[DashboardBrowseNode],
+    selected_targets: &[BrowseSelectionTarget],
+) -> Vec<ListItem<'static>> {
     let mut rendered = Vec::new();
     for (index, node) in nodes.iter().enumerate() {
         if node.kind == DashboardBrowseNodeKind::Org {
@@ -13,20 +17,26 @@ pub(super) fn build_live_tree_items(nodes: &[DashboardBrowseNode]) -> Vec<ListIt
             continue;
         }
 
-        rendered.push(render_tree_row(node));
+        rendered.push(render_tree_row(
+            node,
+            node_is_selected(node, selected_targets),
+        ));
     }
     rendered
 }
 
-pub(super) fn build_local_export_tree_items(nodes: &[DashboardBrowseNode]) -> Vec<ListItem<'_>> {
+pub(super) fn build_local_export_tree_items(
+    nodes: &[DashboardBrowseNode],
+    selected_targets: &[BrowseSelectionTarget],
+) -> Vec<ListItem<'static>> {
     nodes
         .iter()
         .enumerate()
-        .map(|(index, node)| render_local_export_row(node, index))
+        .map(|(index, node)| render_local_export_row(node, index, selected_targets))
         .collect()
 }
 
-fn render_live_org_row(node: &DashboardBrowseNode, index: usize) -> ListItem<'_> {
+fn render_live_org_row(node: &DashboardBrowseNode, index: usize) -> ListItem<'static> {
     let divider = Line::from(vec![
         Span::styled("──── ", Style::default().fg(Color::DarkGray)),
         Span::styled(
@@ -67,23 +77,33 @@ fn render_live_org_row(node: &DashboardBrowseNode, index: usize) -> ListItem<'_>
     }
 }
 
-fn render_local_export_row(node: &DashboardBrowseNode, index: usize) -> ListItem<'_> {
+fn render_local_export_row(
+    node: &DashboardBrowseNode,
+    index: usize,
+    selected_targets: &[BrowseSelectionTarget],
+) -> ListItem<'static> {
     match node.kind {
         DashboardBrowseNodeKind::Org => render_live_org_row(node, index),
         DashboardBrowseNodeKind::Folder | DashboardBrowseNodeKind::Dashboard => {
-            render_tree_row(node)
+            render_tree_row(node, node_is_selected(node, selected_targets))
         }
     }
 }
 
-fn render_tree_row(node: &DashboardBrowseNode) -> ListItem<'_> {
+fn render_tree_row(node: &DashboardBrowseNode, selected: bool) -> ListItem<'static> {
     let prefix = match node.kind {
         DashboardBrowseNodeKind::Folder => "+",
         DashboardBrowseNodeKind::Dashboard => "-",
         DashboardBrowseNodeKind::Org => "",
     };
+    let marker = match node.kind {
+        DashboardBrowseNodeKind::Dashboard if selected => "[x] ",
+        DashboardBrowseNodeKind::Dashboard => "[ ] ",
+        _ => "    ",
+    };
     let line = Line::from(vec![
-        Span::styled("     ", Style::default().fg(Color::DarkGray)),
+        Span::styled(marker, Style::default().fg(Color::Gray)),
+        Span::styled(" ", Style::default().fg(Color::DarkGray)),
         Span::raw(format!("{}{} ", "  ".repeat(node.depth), prefix)),
         Span::styled(
             node.title.clone(),
@@ -97,6 +117,18 @@ fn render_tree_row(node: &DashboardBrowseNode) -> ListItem<'_> {
         ),
     ]);
     ListItem::new(line)
+}
+
+fn node_is_selected(
+    node: &DashboardBrowseNode,
+    selected_targets: &[BrowseSelectionTarget],
+) -> bool {
+    selected_targets.iter().any(|target| {
+        target.kind == node.kind
+            && target.org_id == node.org_id
+            && target.uid == node.uid
+            && target.path == node.path
+    })
 }
 
 fn node_color(node: &DashboardBrowseNode) -> Color {

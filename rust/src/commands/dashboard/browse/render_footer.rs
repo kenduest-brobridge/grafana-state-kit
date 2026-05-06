@@ -71,6 +71,7 @@ pub(crate) fn control_lines(
             ],
             vec![
                 ("Shift+Tab", Color::Rgb(164, 116, 19), "previous pane"),
+                ("Space", Color::Rgb(164, 116, 19), "select"),
                 ("/ ?", Color::Rgb(164, 116, 19), "search"),
                 ("n", Color::Rgb(164, 116, 19), "next match"),
                 ("r", Color::Rgb(24, 106, 59), "rename"),

@@ -49,7 +49,7 @@ Compare local alerting export files against live Grafana resources. Use when: Ch
 Build a staged alert management plan from desired alert resources. Use when: Review the changes needed to align Grafana with a desired\-state alert tree.; Prune live\-only alert resources from the plan when needed.; Repair linked rules with dashboard or panel remapping during planning.
 .TP
 .B apply
-Apply a reviewed alert management plan. Use when: Execute a plan that was reviewed outside the live Grafana connection.; Require explicit acknowledgement before touching Grafana.
+Apply a reviewed alert management plan. Use when: Execute a reviewed plan that contains narrow alert\-rule update rows.; Require explicit acknowledgement before touching Grafana.; Keep broader alerting changes staged until their mutation semantics are explicit.
 .TP
 .B delete
 Delete one explicit alert resource identity. Use when: Remove a single rule, contact point, mute timing, policy tree, or template by identity.; Reset the managed notification policy tree only when you intend to allow it.

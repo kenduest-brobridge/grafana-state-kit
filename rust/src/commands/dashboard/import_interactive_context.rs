@@ -41,8 +41,12 @@ fn build_summary_context_lines(state: &InteractiveImportState) -> Vec<Line<'stat
                 }
                 InteractiveImportReviewState::Resolved(review) => {
                     lines.push(Line::from(format!(
-                        "Action={}   Destination={}   Diff={}",
+                        "Preview action={}   destination={}   remote={}",
                         review.action_label, review.destination, review.diff_status
+                    )));
+                    lines.push(Line::from(format!(
+                        "Diff availability: {}",
+                        format_diff_availability(review)
                     )));
                     if !review.reason.is_empty() {
                         lines.push(Line::from(format!("Reason={}", review.reason)));
@@ -99,10 +103,27 @@ fn build_destination_context_lines(state: &InteractiveImportState) -> Vec<Line<'
                         review.destination, review.action_label
                     )));
                     lines.push(Line::from(format!("Target Folder={}", review.folder_path)));
+                    if !review.source_folder_path.is_empty()
+                        || !review.destination_folder_path.is_empty()
+                    {
+                        lines.push(Line::from(format!(
+                            "Folder guard={}   source={}   existing={}",
+                            folder_guard_status(review),
+                            display_context_value(&review.source_folder_path),
+                            display_context_value(&review.destination_folder_path)
+                        )));
+                    }
                     if !review.destination_folder_path.is_empty() {
                         lines.push(Line::from(format!(
                             "Existing Folder={}",
                             review.destination_folder_path
+                        )));
+                    }
+                    if review.diff_status == "new dashboard" {
+                        lines.push(Line::from(format!(
+                            "Missing remote: live lookup did not find {}; import action is {}.",
+                            item.uid,
+                            missing_remote_action_status(review)
                         )));
                     }
                     lines.push(Line::from(format!("Live Diff={}", review.diff_status)));
@@ -148,7 +169,11 @@ fn build_diff_context_lines(state: &InteractiveImportState) -> Vec<Line<'static>
             lines.push(Line::from(error.clone()));
         }
         InteractiveImportReviewState::Resolved(review) => {
-            lines.push(Line::from(format!("Diff status={}", review.diff_status)));
+            lines.push(Line::from(format!(
+                "Remote status={}   {}",
+                review.diff_status,
+                format_diff_availability(review)
+            )));
             let selected_lines = match state.diff_depth {
                 InteractiveImportDiffDepth::Summary => &review.diff_summary_lines,
                 InteractiveImportDiffDepth::Structural => &review.diff_structural_lines,
@@ -252,4 +277,140 @@ fn destination_counts_for_scope(
         }
     }
     counts
+}
+
+fn format_diff_availability(review: &super::import_interactive::InteractiveImportReview) -> String {
+    format!(
+        "summary={} structural={} raw={}",
+        yes_no(!review.diff_summary_lines.is_empty()),
+        yes_no(!review.diff_structural_lines.is_empty()),
+        yes_no(!review.diff_raw_lines.is_empty())
+    )
+}
+
+fn yes_no(value: bool) -> &'static str {
+    if value {
+        "yes"
+    } else {
+        "no"
+    }
+}
+
+fn folder_guard_status(
+    review: &super::import_interactive::InteractiveImportReview,
+) -> &'static str {
+    if review.action_label == "skip-folder-mismatch" {
+        "blocked"
+    } else if review.destination_folder_path.is_empty() {
+        "not-checked"
+    } else if review.source_folder_path == review.destination_folder_path {
+        "matched"
+    } else {
+        "mismatch"
+    }
+}
+
+fn display_context_value(value: &str) -> &str {
+    if value.is_empty() {
+        "-"
+    } else {
+        value
+    }
+}
+
+fn missing_remote_action_status(
+    review: &super::import_interactive::InteractiveImportReview,
+) -> &'static str {
+    if review.action_label == "skip-folder-mismatch" {
+        "blocked by folder guard"
+    } else if review.action_label == "skip-missing" {
+        "skipped by update-only mode"
+    } else {
+        "ready to create"
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use super::*;
+    use crate::dashboard::import_interactive::{
+        InteractiveImportItem, InteractiveImportReview, InteractiveImportReviewState,
+    };
+
+    fn line_texts(lines: Vec<Line<'static>>) -> Vec<String> {
+        lines
+            .into_iter()
+            .map(|line| {
+                line.spans
+                    .into_iter()
+                    .map(|span| span.content.into_owned())
+                    .collect::<String>()
+            })
+            .collect()
+    }
+
+    fn reviewed_state() -> InteractiveImportState {
+        let path = PathBuf::from("dashboards/service.json");
+        let item = InteractiveImportItem {
+            path: path.clone(),
+            uid: "service-overview".to_string(),
+            title: "Service Overview".to_string(),
+            folder_path: "Team / Service".to_string(),
+            file_label: "service.json".to_string(),
+            review: InteractiveImportReviewState::Resolved(Box::new(InteractiveImportReview {
+                action: "would-skip-folder-mismatch".to_string(),
+                destination: "exists".to_string(),
+                action_label: "skip-folder-mismatch".to_string(),
+                folder_path: "Team / Service".to_string(),
+                source_folder_path: "Team / Service".to_string(),
+                destination_folder_path: "Team / Other".to_string(),
+                reason: "folder path mismatch: source=Team / Service destination=Team / Other"
+                    .to_string(),
+                diff_status: "new dashboard".to_string(),
+                diff_summary_lines: vec![
+                    "No live dashboard exists yet; import would create a new item.".to_string(),
+                ],
+                diff_structural_lines: vec!["No live dashboard exists yet.".to_string()],
+                diff_raw_lines: vec![
+                    "REMOTE <missing>".to_string(),
+                    "LOCAL <new dashboard payload>".to_string(),
+                ],
+            })),
+        };
+        let mut state = InteractiveImportState::new(vec![item], "create-only".to_string(), true);
+        state.selected_paths.insert(path);
+        state
+    }
+
+    #[test]
+    fn focused_preview_context_explains_action_guard_remote_status_and_diff_availability() {
+        let mut state = reviewed_state();
+
+        let summary = line_texts(build_context_lines(&state));
+        assert!(summary.contains(
+            &"Preview action=skip-folder-mismatch   destination=exists   remote=new dashboard"
+                .to_string()
+        ));
+        assert!(
+            summary.contains(&"Diff availability: summary=yes structural=yes raw=yes".to_string())
+        );
+
+        state.context_view = InteractiveImportContextView::Destination;
+        let destination = line_texts(build_context_lines(&state));
+        assert!(destination.contains(
+            &"Folder guard=blocked   source=Team / Service   existing=Team / Other".to_string()
+        ));
+        assert!(destination.contains(
+            &"Missing remote: live lookup did not find service-overview; import action is blocked by folder guard."
+                .to_string()
+        ));
+
+        state.context_view = InteractiveImportContextView::Diff;
+        let diff = line_texts(build_context_lines(&state));
+        assert!(diff.contains(
+            &"Remote status=new dashboard   summary=yes structural=yes raw=yes".to_string()
+        ));
+    }
 }

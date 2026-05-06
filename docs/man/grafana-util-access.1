@@ -9,12 +9,16 @@ Run the access\-management command surface for users, orgs, teams, and service a
 .IP \(bu 2
 List live or local access inventory.
 .IP \(bu 2
+Browse live access inventory across resource families.
+.IP \(bu 2
 Create, modify, export, import, diff, or delete access resources.
 .IP \(bu 2
 Manage service\-account tokens.
 .SH WORKFLOW LANES
 .PP
 \- Inspect: user, org, team, and service\-account inventory reads from live Grafana or local bundles.
+.PP
+\- Browse: interactive live review across users, teams, orgs, and service accounts.
 .PP
 \- Move: export, import, diff, and snapshot paths for moving or comparing access state.
 .PP
@@ -67,9 +71,9 @@ if a token or membership operation fails, verify that you are on the right org a
 if the output is going into automation, check the selected \-\-output\-format first so the parser knows what shape to expect
 .SH EXAMPLES
 .PP
-user: List or browse live and local Grafana users, create, modify, export, import, diff, or delete Grafana users.
+Run the access\-management command surface for users, orgs, teams, and service accounts.
 .EX
-grafana-util access user list --profile prod --json
+grafana-util access browse --profile prod --query ops
 .EE
 .PP
 user: List or browse live and local Grafana users, create, modify, export, import, diff, or delete Grafana users.

@@ -206,7 +206,7 @@ grafana-util alert apply \
   --output-format json
 ```
 
-`apply` 不應該直接吃剛產生但沒 review 的臨時輸出。實務上，plan file 應該進 PR、變更單或至少被保存成一個可追溯 artifact。
+`apply` 不應該直接吃剛產生但沒 review 的臨時輸出。實務上，plan file 應該進 PR、變更單或至少被保存成一個可追溯 artifact。live apply 路徑刻意保持窄範圍：只套用 `ready` 的 alert-rule update，且只限受控的 rule fields。Create、delete、contact point、mute timing、policy、template，以及語意較不明確的 rule field 變更會留在 staged/review 狀態並 fail closed。
 
 ## 什麼時候切到指令參考
 

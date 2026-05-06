@@ -531,11 +531,15 @@ fn variable_count(document: &Value) -> usize {
 }
 
 fn build_raw_diff_lines(remote_payload: &Value, payload: &Value) -> Result<Vec<String>> {
-    let remote = serde_json::to_string_pretty(remote_payload)?;
-    let local = serde_json::to_string_pretty(payload)?;
-    let mut lines = vec!["REMOTE".to_string()];
-    lines.extend(remote.lines().take(12).map(|line| format!("- {line}")));
-    lines.push("LOCAL".to_string());
-    lines.extend(local.lines().take(12).map(|line| format!("+ {line}")));
-    Ok(lines)
+    Ok(super::import::compare::build_compare_diff_text_with_labels(
+        remote_payload,
+        payload,
+        "REMOTE",
+        "LOCAL",
+        3,
+    )?
+    .lines()
+    .take(24)
+    .map(str::to_string)
+    .collect())
 }

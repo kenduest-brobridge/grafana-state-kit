@@ -134,6 +134,14 @@ fn diff_help_mentions_structured_json() {
 }
 
 #[test]
+fn apply_help_mentions_controlled_live_apply_boundary() {
+    let help = render_alert_subcommand_help(&["apply"]);
+    assert!(help.contains("Controlled live apply"));
+    assert!(help.contains("condition, data, for, noDataState, or execErrState"));
+    assert!(help.contains("fail closed"));
+}
+
+#[test]
 fn parse_cli_supports_list_rules_subcommand() {
     let args: AlertCliArgs = parse_cli_from(["grafana-util alert", "list-rules", "--json"]);
     assert_eq!(args.list_kind, Some(AlertListKind::Rules));

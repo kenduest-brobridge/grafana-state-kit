@@ -15,6 +15,22 @@ fn empty_document() -> super::super::browse_support::DashboardBrowseDocument {
     }
 }
 
+fn dashboard_node(uid: &str, title: &str) -> super::super::browse_support::DashboardBrowseNode {
+    super::super::browse_support::DashboardBrowseNode {
+        kind: super::super::browse_support::DashboardBrowseNodeKind::Dashboard,
+        title: title.to_string(),
+        path: "Platform".to_string(),
+        uid: Some(uid.to_string()),
+        depth: 1,
+        meta: format!("uid={uid}"),
+        details: Vec::new(),
+        url: None,
+        org_name: "Acme".to_string(),
+        org_id: "42".to_string(),
+        child_count: 0,
+    }
+}
+
 #[test]
 fn tree_rows_render_org_header_and_dashboard_metadata() {
     let nodes = vec![
@@ -45,7 +61,7 @@ fn tree_rows_render_org_header_and_dashboard_metadata() {
             child_count: 0,
         },
     ];
-    let items = super::browse_render_rows::build_live_tree_items(&nodes);
+    let items = super::browse_render_rows::build_live_tree_items(&nodes, &[]);
     let debug = items
         .iter()
         .map(|item| format!("{item:?}"))
@@ -57,6 +73,43 @@ fn tree_rows_render_org_header_and_dashboard_metadata() {
     assert!(debug[0].contains("id=42"));
     assert!(debug[1].contains("CPU Main"));
     assert!(debug[1].contains("uid=cpu-main"));
+}
+
+#[test]
+fn tree_rows_and_summary_surface_selected_dashboard_count() {
+    let document = super::super::browse_support::DashboardBrowseDocument {
+        summary: super::super::browse_support::DashboardBrowseSummary {
+            root_path: None,
+            dashboard_count: 2,
+            folder_count: 0,
+            org_count: 1,
+            scope_label: "current-org".to_string(),
+        },
+        nodes: vec![
+            dashboard_node("cpu-main", "CPU Main"),
+            dashboard_node("memory-main", "Memory Main"),
+        ],
+    };
+    let mut state = BrowserState::new(document);
+    state.toggle_selected_node();
+
+    let summary_lines = render_summary_lines(&state)
+        .into_iter()
+        .map(|line| line.to_string())
+        .collect::<Vec<_>>();
+    assert!(summary_lines[1].contains("Selected"));
+    assert!(summary_lines[1].contains('1'));
+
+    let items = super::browse_render_rows::build_live_tree_items(
+        &state.document.nodes,
+        &state.selected_targets(),
+    );
+    let debug = items
+        .iter()
+        .map(|item| format!("{item:?}"))
+        .collect::<Vec<_>>();
+    assert!(debug[0].contains("[x]"));
+    assert!(debug[1].contains("[ ]"));
 }
 
 #[test]
@@ -89,7 +142,7 @@ fn local_export_tree_rows_render_file_tree_without_live_org_requirement() {
             child_count: 0,
         },
     ];
-    let items = super::browse_render_rows::build_local_export_tree_items(&nodes);
+    let items = super::browse_render_rows::build_local_export_tree_items(&nodes, &[]);
     let debug = items
         .iter()
         .map(|item| format!("{item:?}"))
@@ -126,13 +179,17 @@ fn summary_lines_move_status_out_of_the_header() {
 #[test]
 fn summary_lines_surface_pending_delete_mode() {
     let mut state = BrowserState::new(empty_document());
-    state.pending_delete = Some(DeletePlan {
-        selector_uid: None,
-        selector_path: None,
-        delete_folders: false,
-        dashboards: Vec::new(),
-        folders: Vec::new(),
-    });
+    state.pending_delete = Some(super::super::browse_state::DeleteReview::single(
+        DeletePlan {
+            selector_uid: None,
+            selector_path: None,
+            delete_folders: false,
+            dashboards: Vec::new(),
+            folders: Vec::new(),
+        },
+        None,
+        Vec::new(),
+    ));
     let lines = render_summary_lines(&state)
         .into_iter()
         .map(|line| line.to_string())

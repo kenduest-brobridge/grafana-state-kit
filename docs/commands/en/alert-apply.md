@@ -6,8 +6,15 @@ Apply a reviewed alert management plan.
 
 ## When to use
 
-- Execute a plan that was reviewed outside the live Grafana connection.
+- Execute a reviewed plan that contains narrow alert-rule update rows.
 - Require explicit acknowledgement before touching Grafana.
+- Keep broader alerting changes staged until their mutation semantics are explicit.
+
+## Safety boundary
+
+`alert apply` is a controlled live-apply lane. It currently permits only ready alert-rule `update` rows whose changed fields are limited to `condition`, `data`, `for`, `noDataState`, or `execErrState`.
+
+Create, delete, contact-point, mute-timing, policy, template, and ambiguous rule-field changes fail closed. Use `alert plan` and review output to keep those broader changes visible without applying them directly.
 
 ## Before / After
 
@@ -34,7 +41,7 @@ grafana-util alert apply --url http://localhost:3000 --basic-user admin --basic-
 
 ## What success looks like
 
-- a reviewed alert plan can be applied without hand-editing YAML or replaying a sequence of UI clicks
+- narrow reviewed alert-rule updates can be applied without hand-editing YAML or replaying a sequence of UI clicks
 - the live apply step keeps approval explicit instead of hiding it in shell history
 - JSON output is stable enough to feed into CI, workspace records, or a post-apply verification step
 

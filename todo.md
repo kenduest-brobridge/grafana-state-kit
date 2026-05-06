@@ -463,6 +463,26 @@ Backlog:
   shared internal consumer for access import dry-run, datasource import
   dry-run, datasource live mutation, and alert plan review adapters, with tests
   proving no public JSON drift.
+- [x] Prioritize the next Rust product-surface pass by proven gaps rather than
+  directory shape. Current ordering:
+  1. Mature alert live sync / controlled live apply. Alert already has export,
+     import, diff, list, plan, apply, delete, and authoring surfaces; the gap is
+     live sync wiring and safe mutation semantics, not basic CRUD.
+  2. Lift the existing sync review TUI side-by-side diff model into a shared
+     diff/review visualization path for dashboard, alert, datasource, access,
+     and workspace where the underlying review document shape is already
+     compatible.
+  3. Bring datasource browse closer to dashboard browse for safe operational
+     review. Show secret placeholder availability, blocker status, and
+     review-required evidence only; do not expose resolved credential values.
+  4. Add an access-wide browse/review TUI that unifies existing user/team/org
+     and service-account surfaces. Existing user/team browse and plan TUI
+     surfaces mean this is consolidation, not a brand-new access TUI.
+  5. Add dashboard browse multi-select batch operations only after the
+     selection/review model is explicit enough for export/import/delete safety.
+  6. Polish dashboard import preview UX by reusing the existing interactive
+     review, dry-run, remote/local compare, and raw diff paths rather than
+     adding a parallel `preview --from grafana` mode.
 
 Validation:
 

@@ -16,7 +16,7 @@ mod dispatch_team;
 mod dispatch_user;
 
 use super::cli_defs::build_http_client;
-use super::{access_plan, AccessCliArgs, AccessCommand};
+use super::{access_browse, access_plan, AccessCliArgs, AccessCommand};
 
 pub fn run_access_cli_with_client(client: &JsonHttpClient, args: &AccessCliArgs) -> Result<()> {
     run_access_cli_with_request(
@@ -27,6 +27,9 @@ pub fn run_access_cli_with_client(client: &JsonHttpClient, args: &AccessCliArgs)
 
 pub(crate) fn run_access_cli_with_materialized_args(args: &AccessCliArgs) -> Result<()> {
     match &args.command {
+        AccessCommand::Browse(inner) => {
+            dispatch_artifacts::run_access_cli_with_common(&inner.common, args, build_http_client)
+        }
         AccessCommand::User { command } => dispatch_user::run_user_access_cli(command, args),
         AccessCommand::Org { command } => dispatch_org::run_org_access_cli(command, args),
         AccessCommand::Team { command } => dispatch_team::run_team_access_cli(command, args),
@@ -59,6 +62,9 @@ where
     F: FnMut(Method, &str, &[(String, String)], Option<&Value>) -> Result<Option<Value>>,
 {
     match &args.command {
+        AccessCommand::Browse(args) => {
+            access_browse::browse_access_with_request(&mut request_json, args)?
+        }
         AccessCommand::User { command } => {
             dispatch_user::run_user_access_cli_with_request(command, &mut request_json, args)?
         }

@@ -40,8 +40,8 @@ pub use access_cli_shared::{
     DEFAULT_ACCESS_USER_EXPORT_DIR, DEFAULT_PAGE_SIZE, DEFAULT_TIMEOUT, DEFAULT_URL,
 };
 use access_cli_shared::{
-    ACCESS_ORG_HELP_TEXT, ACCESS_PLAN_HELP_TEXT, ACCESS_ROOT_HELP_TEXT, ACCESS_TEAM_HELP_TEXT,
-    ACCESS_USER_HELP_TEXT,
+    ACCESS_BROWSE_HELP_TEXT, ACCESS_ORG_HELP_TEXT, ACCESS_PLAN_HELP_TEXT, ACCESS_ROOT_HELP_TEXT,
+    ACCESS_TEAM_HELP_TEXT, ACCESS_USER_HELP_TEXT,
 };
 pub use access_org_cli::{
     OrgAddArgs, OrgCommand, OrgDeleteArgs, OrgDiffArgs, OrgExportArgs, OrgImportArgs, OrgListArgs,
@@ -74,9 +74,52 @@ pub enum AccessArtifactRunMode {
     Timestamp,
 }
 
+/// Arguments for the consolidated access browse TUI.
+#[derive(Debug, Clone, Args)]
+pub struct AccessBrowseArgs {
+    #[command(flatten)]
+    pub common: CommonCliArgs,
+    #[arg(
+        long,
+        help = "Filter access inventory rows by user, team, org, or service-account text."
+    )]
+    pub query: Option<String>,
+    #[arg(
+        long,
+        default_value_t = false,
+        help = "Include user inventory rows. If no include flags are set, all access inventory families are included."
+    )]
+    pub include_users: bool,
+    #[arg(
+        long,
+        default_value_t = false,
+        help = "Include team inventory rows. If no include flags are set, all access inventory families are included."
+    )]
+    pub include_teams: bool,
+    #[arg(
+        long,
+        default_value_t = false,
+        help = "Include organization inventory rows. If no include flags are set, all access inventory families are included."
+    )]
+    pub include_orgs: bool,
+    #[arg(
+        long,
+        default_value_t = false,
+        help = "Include service-account inventory rows with token metadata only, never token secrets."
+    )]
+    pub include_service_accounts: bool,
+    #[arg(long, default_value_t = DEFAULT_PAGE_SIZE, help = "Number of users to request per page when loading global user inventory.")]
+    pub per_page: usize,
+}
+
 /// User, organization, team, and service-account workflows.
 #[derive(Debug, Clone, Subcommand)]
 pub enum AccessCommand {
+    #[command(
+        about = "Browse users, teams, orgs, and service accounts interactively.",
+        after_help = ACCESS_BROWSE_HELP_TEXT
+    )]
+    Browse(AccessBrowseArgs),
     #[command(after_help = ACCESS_USER_HELP_TEXT)]
     User {
         #[command(subcommand)]

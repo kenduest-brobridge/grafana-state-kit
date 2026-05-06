@@ -6,8 +6,15 @@
 
 ## 使用時機
 
-- 執行已在離線環境審閱完成的計畫。
+- 執行已審閱、且只包含窄範圍 alert-rule update row 的計畫。
 - 在碰觸 Grafana 之前要求明確確認。
+- 讓較廣的 alerting 變更先停在 staged/review 狀態，直到 mutation 語意足夠明確。
+
+## 安全邊界
+
+`alert apply` 是 controlled live-apply 路徑。目前只允許 `ready` 的 alert-rule `update` row，且 changed fields 僅限 `condition`、`data`、`for`、`noDataState` 或 `execErrState`。
+
+Create、delete、contact-point、mute-timing、policy、template，以及語意較不明確的 rule field 變更都會 fail closed。請用 `alert plan` 和 review output 保留這些較廣變更的可見性，不要直接 apply。
 
 ## 採用前後對照
 
@@ -39,7 +46,7 @@ grafana-util alert apply --url http://localhost:3000 --token "$GRAFANA_API_TOKEN
 
 ## 成功判準
 
-- 已審閱的 alert plan 能直接套用，不必再手改 YAML 或重做一串 UI 操作
+- 窄範圍且已審閱的 alert-rule update 能直接套用，不必再手改 YAML 或重做一串 UI 操作
 - live apply 步驟會保留明確的核准，不會只藏在 shell history 裡
 - JSON 輸出穩定到足以交給 CI、變更紀錄或套用後驗證流程
 

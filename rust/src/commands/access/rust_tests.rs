@@ -93,6 +93,31 @@ fn parse_cli_supports_access_delete_prompt_flags() {
     }
 }
 
+#[test]
+fn parse_cli_supports_access_wide_browse() {
+    let args = parse_cli_from([
+        "grafana-util access",
+        "browse",
+        "--include-users",
+        "--include-teams",
+        "--include-orgs",
+        "--include-service-accounts",
+        "--query",
+        "ops",
+    ]);
+
+    match args.command {
+        AccessCommand::Browse(inner) => {
+            assert!(inner.include_users);
+            assert!(inner.include_teams);
+            assert!(inner.include_orgs);
+            assert!(inner.include_service_accounts);
+            assert_eq!(inner.query.as_deref(), Some("ops"));
+        }
+        _ => panic!("expected access-wide browse"),
+    }
+}
+
 fn make_token_common() -> CommonCliArgs {
     CommonCliArgs {
         profile: None,

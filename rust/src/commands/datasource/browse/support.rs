@@ -4,6 +4,7 @@ use serde_json::{Map, Value};
 
 use crate::common::{message, string_field, Result};
 use crate::dashboard::{build_auth_context, build_http_client_for_org, DEFAULT_ORG_ID};
+use crate::datasource_secret::{collect_secret_placeholders, iter_secret_placeholder_names};
 use crate::http::JsonHttpClient;
 
 use super::DatasourceBrowseArgs;
@@ -117,8 +118,108 @@ pub(crate) fn detail_lines(item: &DatasourceBrowseItem) -> Vec<String> {
             lines.push(format!("secureJsonFields: {keys}"));
         }
     }
+    lines.extend(secret_review_lines(&item.details));
 
     lines
+}
+
+fn secret_review_lines(details: &Map<String, Value>) -> Vec<String> {
+    let mut lines = Vec::new();
+    if let Some(placeholders) = details
+        .get("secureJsonDataPlaceholders")
+        .and_then(Value::as_object)
+    {
+        lines.extend(placeholder_review_lines(placeholders));
+    }
+    if let Some(secure_json_fields) = details.get("secureJsonFields").and_then(Value::as_object) {
+        lines.extend(live_secure_json_fields_review_lines(secure_json_fields));
+    }
+    if let Some(secure_json_data) = details.get("secureJsonData").and_then(Value::as_object) {
+        lines.extend(resolved_secure_json_data_review_lines(secure_json_data));
+    }
+    lines
+}
+
+fn placeholder_review_lines(placeholders: &Map<String, Value>) -> Vec<String> {
+    match collect_secret_placeholders(Some(placeholders)) {
+        Ok(placeholders) if placeholders.is_empty() => Vec::new(),
+        Ok(placeholders) => {
+            let field_names = placeholders
+                .iter()
+                .map(|placeholder| placeholder.field_name.clone())
+                .collect::<Vec<_>>();
+            let placeholder_names = iter_secret_placeholder_names(&placeholders)
+                .map(str::to_string)
+                .collect::<Vec<_>>();
+            vec![
+                format!(
+                    "Secret placeholders: available ({} field(s): {})",
+                    field_names.len(),
+                    field_names.join(", ")
+                ),
+                format!("Secret placeholder names: {}", placeholder_names.join(", ")),
+                "Secret blocker status: blocked until --secret-values resolves placeholders"
+                    .to_string(),
+                "Secret review required: true (placeholder-backed secureJsonData)".to_string(),
+            ]
+        }
+        Err(error) => vec![
+            format!(
+                "Secret placeholders: invalid placeholder contract ({} field(s): {})",
+                placeholders.len(),
+                sorted_object_keys(placeholders).join(", ")
+            ),
+            format!("Secret blocker status: blocked by placeholder contract error: {error}"),
+            "Secret review required: true (placeholder contract error)".to_string(),
+        ],
+    }
+}
+
+fn live_secure_json_fields_review_lines(secure_json_fields: &Map<String, Value>) -> Vec<String> {
+    let field_names = secure_json_fields
+        .iter()
+        .filter_map(|(field_name, value)| {
+            value
+                .as_bool()
+                .unwrap_or(false)
+                .then(|| field_name.to_string())
+        })
+        .collect::<Vec<_>>();
+    if field_names.is_empty() {
+        return Vec::new();
+    }
+    vec![
+        format!(
+            "Secret placeholders: unavailable from live secureJsonFields ({} field(s): {})",
+            field_names.len(),
+            field_names.join(", ")
+        ),
+        "Secret blocker status: review-required; resolved values are hidden by Grafana".to_string(),
+        "Secret review required: true (secure fields present)".to_string(),
+    ]
+}
+
+fn resolved_secure_json_data_review_lines(secure_json_data: &Map<String, Value>) -> Vec<String> {
+    let field_names = sorted_object_keys(secure_json_data);
+    if field_names.is_empty() {
+        return Vec::new();
+    }
+    vec![
+        format!(
+            "Secret material: hidden ({} secureJsonData field(s): {})",
+            field_names.len(),
+            field_names.join(", ")
+        ),
+        "Secret blocker status: review-required; resolved credential values are never displayed"
+            .to_string(),
+        "Secret review required: true (resolved secureJsonData hidden)".to_string(),
+    ]
+}
+
+fn sorted_object_keys(object: &Map<String, Value>) -> Vec<String> {
+    let mut keys = object.keys().cloned().collect::<Vec<_>>();
+    keys.sort();
+    keys
 }
 
 pub(crate) fn build_modify_updates_from_browse(
@@ -315,5 +416,114 @@ fn display_value<'a>(value: &'a str, fallback: &'a str) -> &'a str {
         fallback
     } else {
         trimmed
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    fn datasource_item(details: Map<String, Value>) -> DatasourceBrowseItem {
+        DatasourceBrowseItem {
+            kind: DatasourceBrowseItemKind::Datasource,
+            depth: 0,
+            id: 12,
+            uid: "prom-main".to_string(),
+            name: "Prometheus Main".to_string(),
+            datasource_type: "prometheus".to_string(),
+            access: "proxy".to_string(),
+            url: "http://prometheus".to_string(),
+            is_default: true,
+            org: "Main Org.".to_string(),
+            org_id: "1".to_string(),
+            details,
+            datasource_count: 0,
+        }
+    }
+
+    #[test]
+    fn detail_lines_render_live_secure_json_fields_as_review_required_placeholders() {
+        let item = datasource_item(
+            json!({
+                "secureJsonFields": {
+                    "httpHeaderValue1": true,
+                    "basicAuthPassword": true
+                }
+            })
+            .as_object()
+            .unwrap()
+            .clone(),
+        );
+
+        let lines = detail_lines(&item);
+
+        assert!(lines.contains(
+            &"Secret placeholders: unavailable from live secureJsonFields (2 field(s): basicAuthPassword, httpHeaderValue1)".to_string()
+        ));
+        assert!(lines.contains(
+            &"Secret blocker status: review-required; resolved values are hidden by Grafana"
+                .to_string()
+        ));
+        assert!(lines.contains(&"Secret review required: true (secure fields present)".to_string()));
+    }
+
+    #[test]
+    fn detail_lines_render_placeholder_backed_secret_review_without_raw_tokens() {
+        let item = datasource_item(
+            json!({
+                "secureJsonDataPlaceholders": {
+                    "httpHeaderValue1": "${secret:prom-header}",
+                    "basicAuthPassword": "${secret:prom-basic-auth}"
+                }
+            })
+            .as_object()
+            .unwrap()
+            .clone(),
+        );
+
+        let lines = detail_lines(&item);
+        let rendered = lines.join("\n");
+
+        assert!(lines.contains(
+            &"Secret placeholders: available (2 field(s): basicAuthPassword, httpHeaderValue1)"
+                .to_string()
+        ));
+        assert!(
+            lines.contains(&"Secret placeholder names: prom-basic-auth, prom-header".to_string())
+        );
+        assert!(lines.contains(
+            &"Secret blocker status: blocked until --secret-values resolves placeholders"
+                .to_string()
+        ));
+        assert!(lines.contains(
+            &"Secret review required: true (placeholder-backed secureJsonData)".to_string()
+        ));
+        assert!(!rendered.contains("${secret:"));
+    }
+
+    #[test]
+    fn detail_lines_do_not_display_resolved_secure_json_data_values() {
+        let item = datasource_item(
+            json!({
+                "secureJsonData": {
+                    "password": "super-secret-value"
+                }
+            })
+            .as_object()
+            .unwrap()
+            .clone(),
+        );
+
+        let lines = detail_lines(&item);
+        let rendered = lines.join("\n");
+
+        assert!(lines.contains(
+            &"Secret material: hidden (1 secureJsonData field(s): password)".to_string()
+        ));
+        assert!(lines.contains(
+            &"Secret review required: true (resolved secureJsonData hidden)".to_string()
+        ));
+        assert!(!rendered.contains("super-secret-value"));
     }
 }
