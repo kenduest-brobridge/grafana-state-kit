@@ -1,4 +1,5 @@
 import unittest
+from unittest import mock
 from grafana_utils import project_status_live
 from grafana_utils.project_status import (
     build_project_status,
@@ -99,6 +100,161 @@ class TestProjectStatus(unittest.TestCase):
         self.assertEqual(merged.primary_count, 5)
         self.assertEqual(merged.mode, "live-list-surfaces-all-orgs")
         self.assertEqual(merged.freshness.source_count, 2)
+
+    def test_build_live_project_status_health_request_uses_path_as_first_arg(self) -> None:
+        dashboard_client = mock.Mock()
+        datasource_client = mock.Mock()
+        alert_client = mock.Mock()
+        access_client = mock.Mock()
+
+        dashboard_client.request_json.return_value = {"database": "ok"}
+
+        with mock.patch.object(
+            project_status_live,
+            "_build_live_grafana_domains_for_scope",
+            return_value=[],
+        ):
+            status = project_status_live.build_live_project_status(
+                dashboard_client,
+                datasource_client,
+                alert_client,
+                access_client,
+            )
+
+        dashboard_client.request_json.assert_called_once_with(
+            "/api/health",
+            method="GET",
+        )
+        self.assertIsNotNone(status.discovery)
+        self.assertEqual(status.discovery["instance"]["source"], "api-health")
+        self.assertEqual(status.discovery["instance"]["status"], "available")
+
+    def test_build_live_project_status_health_request_errors_mark_discovery_unavailable(self) -> None:
+        dashboard_client = mock.Mock()
+        datasource_client = mock.Mock()
+        alert_client = mock.Mock()
+        access_client = mock.Mock()
+
+        dashboard_client.request_json.side_effect = RuntimeError("boom")
+
+        with mock.patch.object(
+            project_status_live,
+            "_build_live_grafana_domains_for_scope",
+            return_value=[],
+        ):
+            status = project_status_live.build_live_project_status(
+                dashboard_client,
+                datasource_client,
+                alert_client,
+                access_client,
+            )
+
+        self.assertIsNotNone(status.discovery)
+        self.assertEqual(status.discovery["instance"]["source"], "api-health")
+        self.assertEqual(status.discovery["instance"]["status"], "unavailable")
+        self.assertIn("error", status.discovery["instance"])
+        self.assertIn("boom", status.discovery["instance"]["error"])
+
+    def test_build_live_project_status_health_non_dict_marks_discovery_unavailable(self) -> None:
+        dashboard_client = mock.Mock()
+        datasource_client = mock.Mock()
+        alert_client = mock.Mock()
+        access_client = mock.Mock()
+
+        dashboard_client.request_json.return_value = []
+
+        with mock.patch.object(
+            project_status_live,
+            "_build_live_grafana_domains_for_scope",
+            return_value=[],
+        ):
+            status = project_status_live.build_live_project_status(
+                dashboard_client,
+                datasource_client,
+                alert_client,
+                access_client,
+            )
+
+        self.assertEqual(status.discovery["instance"]["status"], "unavailable")
+        self.assertIn("instead of an object", status.discovery["instance"]["error"])
+
+    def test_build_live_project_status_health_bool_marks_discovery_unavailable_with_boolean_message(self) -> None:
+        dashboard_client = mock.Mock()
+        datasource_client = mock.Mock()
+        alert_client = mock.Mock()
+        access_client = mock.Mock()
+
+        dashboard_client.request_json.return_value = False
+
+        with mock.patch.object(
+            project_status_live,
+            "_build_live_grafana_domains_for_scope",
+            return_value=[],
+        ):
+            status = project_status_live.build_live_project_status(
+                dashboard_client,
+                datasource_client,
+                alert_client,
+                access_client,
+            )
+
+        self.assertEqual(status.discovery["instance"]["status"], "unavailable")
+        self.assertIn(
+            "Grafana /api/health returned a boolean instead of an object.",
+            status.discovery["instance"]["error"],
+        )
+
+    def test_build_live_project_status_health_float_marks_discovery_unavailable_with_number_message(self) -> None:
+        dashboard_client = mock.Mock()
+        datasource_client = mock.Mock()
+        alert_client = mock.Mock()
+        access_client = mock.Mock()
+
+        dashboard_client.request_json.return_value = 1.2
+
+        with mock.patch.object(
+            project_status_live,
+            "_build_live_grafana_domains_for_scope",
+            return_value=[],
+        ):
+            status = project_status_live.build_live_project_status(
+                dashboard_client,
+                datasource_client,
+                alert_client,
+                access_client,
+            )
+
+        self.assertEqual(status.discovery["instance"]["status"], "unavailable")
+        self.assertIn(
+            "Grafana /api/health returned a number instead of an object.",
+            status.discovery["instance"]["error"],
+        )
+
+    def test_build_live_project_status_health_none_marks_discovery_unavailable(self) -> None:
+        dashboard_client = mock.Mock()
+        datasource_client = mock.Mock()
+        alert_client = mock.Mock()
+        access_client = mock.Mock()
+
+        dashboard_client.request_json.return_value = None
+
+        with mock.patch.object(
+            project_status_live,
+            "_build_live_grafana_domains_for_scope",
+            return_value=[],
+        ):
+            status = project_status_live.build_live_project_status(
+                dashboard_client,
+                datasource_client,
+                alert_client,
+                access_client,
+            )
+
+        self.assertEqual(status.discovery["instance"]["status"], "unavailable")
+        self.assertEqual(
+            status.discovery["instance"]["error"],
+            "Grafana /api/health returned no body."
+        )
 
 
 if __name__ == "__main__":

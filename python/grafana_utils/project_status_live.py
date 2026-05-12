@@ -399,17 +399,45 @@ def build_live_project_status(
         domains=domains,
         tool_version=tool_version,
     )
-    
+
     # Discovery summary
     try:
-        health = dashboard_client.request_json("GET", "/api/health")
-        status.discovery = {
-            "instance": {
-                "source": "api-health",
-                "status": "available" if health else "unavailable",
-                "health": health
+        health = dashboard_client.request_json("/api/health", method="GET")
+        if isinstance(health, dict):
+            status.discovery = {
+                "instance": {
+                    "source": "api-health",
+                    "status": "available",
+                    "health": health
+                }
             }
-        }
+        else:
+            if health is None:
+                status.discovery = {
+                    "instance": {
+                        "source": "api-health",
+                        "status": "unavailable",
+                        "error": "Grafana /api/health returned no body."
+                    }
+                }
+            else:
+                if isinstance(health, bool):
+                    detail = "a boolean"
+                elif isinstance(health, (int, float)):
+                    detail = "a number"
+                elif isinstance(health, str):
+                    detail = "a string"
+                elif isinstance(health, list):
+                    detail = "an array"
+                else:
+                    detail = f"{type(health).__name__}"
+                status.discovery = {
+                    "instance": {
+                        "source": "api-health",
+                        "status": "unavailable",
+                        "error": f"Grafana /api/health returned {detail} instead of an object."
+                    }
+                }
     except Exception as e:
         status.discovery = {
             "instance": {
