@@ -178,12 +178,8 @@ fn placeholder_review_lines(placeholders: &Map<String, Value>) -> Vec<String> {
 fn live_secure_json_fields_review_lines(secure_json_fields: &Map<String, Value>) -> Vec<String> {
     let field_names = secure_json_fields
         .iter()
-        .filter_map(|(field_name, value)| {
-            value
-                .as_bool()
-                .unwrap_or(false)
-                .then(|| field_name.to_string())
-        })
+        .filter(|&(_, value)| value.as_bool().unwrap_or(false))
+        .map(|(field_name, _)| field_name.to_string())
         .collect::<Vec<_>>();
     if field_names.is_empty() {
         return Vec::new();
