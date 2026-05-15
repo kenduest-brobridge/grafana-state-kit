@@ -6,6 +6,9 @@ use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, List, ListItem, Paragraph, Wrap};
 
+#[cfg(feature = "tui")]
+use crate::tui_shell;
+
 use super::{ProjectStatusPane, ProjectStatusTuiState};
 
 pub(crate) fn render_project_status_frame(
@@ -18,7 +21,7 @@ pub(crate) fn render_project_status_frame(
             Constraint::Length(6),
             Constraint::Length(7),
             Constraint::Min(1),
-            Constraint::Length(4),
+            Constraint::Length(status_footer_height()),
         ])
         .split(frame.area());
     let body = Layout::default()
@@ -273,31 +276,7 @@ pub(crate) fn render_project_status_frame(
         state.action_state_mut(),
     );
 
-    frame.render_widget(
-        Paragraph::new(vec![
-            Line::from(state.status_line()),
-            aligned_control_line(&[
-                ("Tab", Color::Blue, "next pane"),
-                ("Shift+Tab", Color::Blue, "previous pane"),
-                ("h", Color::Magenta, "home"),
-                ("Enter", Color::Magenta, "open handoff"),
-            ]),
-            aligned_control_line(&[
-                ("Up/Down", Color::Blue, "move"),
-                ("PgUp/PgDn", Color::Blue, "scroll detail"),
-                ("q", Color::Gray, "exit"),
-                ("Esc", Color::Gray, "exit"),
-            ]),
-        ])
-        .wrap(Wrap { trim: false })
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Status & Controls")
-                .border_style(Style::default().fg(Color::LightBlue)),
-        ),
-        outer[3],
-    );
+    frame.render_widget(build_status_footer(state), outer[3]);
 }
 
 fn pane_block(title: &str, focused: bool, accent: Color) -> Block<'static> {
@@ -393,34 +372,64 @@ fn summary_line(items: &[SummaryCell]) -> Line<'static> {
     Line::from(spans)
 }
 
-fn aligned_control_line(items: &[(&str, Color, &str)]) -> Line<'static> {
-    let key_width = items
-        .iter()
-        .map(|(key, _, _)| key.chars().count())
-        .max()
-        .unwrap_or(0);
-    let body_width = items
-        .iter()
-        .map(|(_, _, text)| text.chars().count())
-        .max()
-        .unwrap_or(0);
-    let cell_width = key_width + body_width + 3;
-    let mut spans = Vec::new();
-    for (index, (key, color, text)) in items.iter().enumerate() {
-        if index > 0 {
-            spans.push(Span::raw("  "));
-        }
-        let padded_key = format!("{key:<key_width$}");
-        let text_span = format!(" {:<body_width$}", text);
-        let used_width = key_width + body_width + 3;
-        let trailing_padding = cell_width.saturating_sub(used_width);
-        spans.push(key_chip(&padded_key, *color));
-        spans.push(plain(text_span));
-        if trailing_padding > 0 {
-            spans.push(Span::raw(" ".repeat(trailing_padding)));
-        }
+fn status_footer_height() -> u16 {
+    const FOOTER_LINE_COUNT: usize = 3;
+    #[cfg(feature = "tui")]
+    {
+        tui_shell::footer_height(FOOTER_LINE_COUNT)
     }
-    Line::from(spans)
+    #[cfg(not(feature = "tui"))]
+    {
+        FOOTER_LINE_COUNT.saturating_add(3) as u16
+    }
+}
+
+fn build_status_footer(state: &ProjectStatusTuiState) -> Paragraph<'static> {
+    let lines = vec![
+        Line::from(Span::styled(
+            state.status_line(),
+            Style::default().fg(Color::Gray),
+        )),
+        footer_control_line(&[
+            ("Tab", Color::Blue, "next pane"),
+            ("Shift+Tab", Color::Blue, "previous pane"),
+            ("h", Color::Magenta, "home"),
+            ("Enter", Color::Magenta, "open handoff"),
+        ]),
+        footer_control_line(&[
+            ("Up/Down", Color::Blue, "move"),
+            ("PgUp/PgDn", Color::Blue, "scroll detail"),
+            ("Esc/q", Color::Gray, "exit"),
+        ]),
+    ];
+
+    #[cfg(feature = "tui")]
+    {
+        tui_shell::build_footer_controls(lines)
+    }
+    #[cfg(not(feature = "tui"))]
+    {
+        Paragraph::new(lines)
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title("Status & Controls")
+                    .style(Style::default().bg(Color::Rgb(16, 22, 30)))
+                    .border_style(Style::default().fg(Color::LightBlue)),
+            )
+            .style(Style::default().bg(Color::Rgb(16, 22, 30)).fg(Color::White))
+    }
+}
+
+fn footer_control_line(items: &[(&str, Color, &str)]) -> Line<'static> {
+    #[cfg(feature = "tui")]
+    {
+        tui_shell::control_line(items)
+    }
+    #[cfg(not(feature = "tui"))]
+    {
+        aligned_control_line(items)
+    }
 }
 
 fn focus_label(focus: ProjectStatusPane) -> &'static str {
@@ -429,5 +438,133 @@ fn focus_label(focus: ProjectStatusPane) -> &'static str {
         ProjectStatusPane::Domains => "Domains",
         ProjectStatusPane::Details => "Details",
         ProjectStatusPane::Actions => "Actions",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::common::TOOL_VERSION;
+    use crate::project_status::{
+        ProjectDomainStatus, ProjectStatus, ProjectStatusAction, ProjectStatusFreshness,
+        ProjectStatusOverall, ProjectStatusRankedFinding, PROJECT_STATUS_BLOCKED,
+        PROJECT_STATUS_READY,
+    };
+    use ratatui::backend::TestBackend;
+    use ratatui::Terminal;
+
+    #[test]
+    fn interactive_render_uses_compact_exit_label_in_footer() {
+        let mut state = ProjectStatusTuiState::new(sample_project_status());
+        let mut terminal = Terminal::new(TestBackend::new(180, 40)).unwrap();
+
+        terminal
+            .draw(|frame| render_project_status_frame(frame, &mut state))
+            .unwrap();
+
+        let screen = format!("{}", terminal.backend());
+        assert!(screen.contains("Status & Controls"));
+        assert!(screen.contains("Esc/q"));
+        assert!(!screen.contains(" q "));
+        assert!(!screen.contains(" Esc "));
+    }
+
+    fn sample_project_status() -> ProjectStatus {
+        ProjectStatus {
+            schema_version: 1,
+            tool_version: TOOL_VERSION.to_string(),
+            discovery: None,
+            scope: "live".to_string(),
+            overall: ProjectStatusOverall {
+                status: PROJECT_STATUS_BLOCKED.to_string(),
+                domain_count: 2,
+                present_count: 2,
+                blocked_count: 1,
+                blocker_count: 3,
+                warning_count: 1,
+                freshness: ProjectStatusFreshness {
+                    status: "current".to_string(),
+                    source_count: 2,
+                    newest_age_seconds: Some(30),
+                    oldest_age_seconds: Some(120),
+                },
+            },
+            domains: vec![
+                ProjectDomainStatus {
+                    id: "dashboard".to_string(),
+                    scope: "staged".to_string(),
+                    mode: "inspect-summary".to_string(),
+                    status: PROJECT_STATUS_READY.to_string(),
+                    reason_code: PROJECT_STATUS_READY.to_string(),
+                    primary_count: 4,
+                    blocker_count: 0,
+                    warning_count: 1,
+                    source_kinds: vec!["dashboard-export".to_string()],
+                    signal_keys: vec![
+                        "summary.dashboardCount".to_string(),
+                        "summary.queryCount".to_string(),
+                    ],
+                    blockers: Vec::new(),
+                    warnings: vec![crate::project_status::status_finding(
+                        "risk-records",
+                        1,
+                        "summary.riskRecordCount",
+                    )],
+                    next_actions: vec![
+                        "review dashboard governance warnings before promotion or apply"
+                            .to_string(),
+                    ],
+                    freshness: ProjectStatusFreshness {
+                        status: "stale".to_string(),
+                        source_count: 1,
+                        newest_age_seconds: Some(86_400),
+                        oldest_age_seconds: Some(86_400),
+                    },
+                },
+                ProjectDomainStatus {
+                    id: "sync".to_string(),
+                    scope: "staged".to_string(),
+                    mode: "staged-documents".to_string(),
+                    status: PROJECT_STATUS_BLOCKED.to_string(),
+                    reason_code: "blocked-by-blockers".to_string(),
+                    primary_count: 6,
+                    blocker_count: 3,
+                    warning_count: 0,
+                    source_kinds: vec!["sync-summary".to_string(), "bundle-preflight".to_string()],
+                    signal_keys: vec![
+                        "summary.resourceCount".to_string(),
+                        "summary.syncBlockingCount".to_string(),
+                    ],
+                    blockers: vec![crate::project_status::status_finding(
+                        "sync-blocking",
+                        3,
+                        "summary.syncBlockingCount",
+                    )],
+                    warnings: Vec::new(),
+                    next_actions: vec![
+                        "resolve sync workflow blockers in the fixed order: sync, provider"
+                            .to_string(),
+                    ],
+                    freshness: ProjectStatusFreshness {
+                        status: "current".to_string(),
+                        source_count: 2,
+                        newest_age_seconds: Some(15),
+                        oldest_age_seconds: Some(45),
+                    },
+                },
+            ],
+            top_blockers: vec![ProjectStatusRankedFinding {
+                domain: "sync".to_string(),
+                kind: "sync-blocking".to_string(),
+                count: 3,
+                source: "summary.syncBlockingCount".to_string(),
+            }],
+            next_actions: vec![ProjectStatusAction {
+                domain: "sync".to_string(),
+                reason_code: "blocked-by-blockers".to_string(),
+                action: "resolve sync workflow blockers in the fixed order: sync, provider"
+                    .to_string(),
+            }],
+        }
     }
 }

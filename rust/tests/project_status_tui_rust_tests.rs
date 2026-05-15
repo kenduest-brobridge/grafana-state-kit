@@ -5,6 +5,9 @@ mod common;
 mod project_status;
 #[path = "../src/commands/status/tui/mod.rs"]
 mod project_status_tui;
+#[allow(dead_code)]
+#[path = "../src/common/tui/shell.rs"]
+mod tui_shell;
 
 use project_status::{
     build_project_status, status_finding, ProjectDomainStatus, ProjectStatusFinding,
