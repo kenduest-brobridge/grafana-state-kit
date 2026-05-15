@@ -492,7 +492,7 @@ fn control_lines(has_pending_delete: bool, has_pending_edit: bool) -> Vec<Line<'
             ("l", Color::Cyan, "refresh"),
             ("Home/End", Color::Blue, "jump"),
         ]),
-        control_line(&[("q", Color::Gray, "exit"), ("Esc", Color::Gray, "exit")]),
+        control_line(&[("Esc/q", Color::Gray, "exit")]),
     ]
 }
 
@@ -666,6 +666,6 @@ mod tests {
         assert!(lines[1].contains("previous pane"));
         assert!(lines[1].contains("search"));
         assert!(lines[2].contains("exit"));
-        assert!(lines[2].contains("Esc"));
+        assert!(lines[2].contains("Esc/q"));
     }
 }

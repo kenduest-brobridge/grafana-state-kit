@@ -20,6 +20,13 @@ Current AI change log only.
 - Older entries moved to [`ai-changes-archive-2026-04-27.md`](/Users/kendlee/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-04-27.md).
 - Older entries moved to [`ai-changes-archive-2026-04-28.md`](/Users/kendlee/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-04-28.md).
 - Older entries moved to [`ai-changes-archive-2026-05-02.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-02.md).
+- Older entries moved to [`ai-changes-archive-2026-05-14.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-14.md).
+
+## 2026-05-14 - Phase 0 TUI inventory roadmap
+- Summary: added `docs/internal/tui-architecture-roadmap.md` to inventory current TUI/interactive surfaces, maturity tiers, architecture debt, and the next approved implementation phases; added a read-only inventory report script; improved access browse filtering/selection summaries; and aligned datasource browse exit control copy.
+- Tests: targeted Rust tests cover the new access browse state behavior and datasource browse control-label rendering. Script smoke checks and AI workflow validation cover the maintainer-only inventory artifacts.
+- Impact: `docs/internal/tui-architecture-roadmap.md`, `scripts/tui_inventory_report.py`, `rust/src/commands/access/access_browse.rs`, `rust/src/commands/datasource/browse/render.rs`, and AI trace docs. Dashboard browse, shared TUI production code, public CLI behavior, generated docs, and Python package behavior are intentionally unchanged.
+- Rollback/Risk: low to moderate. Access browse filtering is additive and local to the TUI loop; datasource browse copy is render-only; the roadmap and manual report script can be removed without changing runtime behavior.
 
 ## 2026-05-02 - Split datasource import dry-run helpers
 - Summary: split datasource import dry-run responsibilities so runtime collection remains in `dry_run.rs`, output rendering lives in `dry_run_output.rs`, review projection/tests live in `dry_run_review.rs`, and secret visibility lives in `dry_run_secret_visibility.rs`.
@@ -82,10 +89,3 @@ Current AI change log only.
 - Impact: `rust/src/commands/alert/project_status/staged.rs`, `rust/src/commands/alert/project_status/live.rs`, `rust/src/commands/access/live_project_status_build.rs`, `rust/src/commands/sync/project_status.rs`, `rust/src/commands/sync/live_project_status_sync.rs`, `rust/src/commands/sync/project_status_promotion.rs`, `rust/src/commands/sync/live_project_status_promotion.rs`, `todo.md`, and AI trace docs. Public JSON, generated docs, CLI behavior, live collection transport, and Python implementation are intentionally unchanged.
 - Rollback/Risk: low structural refactor. Rollback would restore direct `StatusReading` construction in each domain builder; focused and full Rust tests cover the unchanged status output behavior.
 - Follow-up: keep direct read-failed and transport-only fallback rows out of `StatusProducer` until they gain real domain-owned evidence.
-
-## 2026-04-26 - Prove provisioning remains derived dashboard projection
-- Summary: added regression coverage that provisioning dashboard files normalize to the same classic dashboard compare payload as raw export wrappers, and that sync bundle rejects explicit dual raw/provisioning dashboard inputs instead of treating provisioning as an alternate source of truth.
-- Tests: covered raw wrapper vs provisioning compare normalization, provisioning classic payload shape, direct provisioning source loading, import dry-run provisioning roots, and sync bundle dual dashboard source rejection.
-- Test Run: `cargo test --manifest-path rust/Cargo.toml --quiet compare_local_document_`; `cargo test --manifest-path rust/Cargo.toml --quiet source_loader_contract_resolves_direct_provisioning_root`; `cargo test --manifest-path rust/Cargo.toml --quiet collect_import_dry_run_report_accepts_provisioning_root_variant_metadata`; `cargo test --manifest-path rust/Cargo.toml --quiet run_sync_cli_bundle_rejects_dual_dashboard_sources`; `cargo fmt --manifest-path rust/Cargo.toml --all --check`.
-- Impact: `rust/src/commands/dashboard/import/compare.rs`, `rust/src/commands/sync/bundle_exec_sources_rust_tests.rs`, `todo.md`, and AI trace docs. Public JSON, generated docs, Python implementation, and dashboard v2 support are intentionally unchanged.
-- Rollback/Risk: low test-only boundary hardening. Rollback would remove the regression coverage while leaving existing provisioning behavior unchanged.

@@ -46,6 +46,125 @@ impl AccessBrowseItem {
     }
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(crate) struct AccessBrowseState {
+    items: Vec<AccessBrowseItem>,
+    visible_indices: Vec<usize>,
+    selected: usize,
+    query: String,
+}
+
+impl AccessBrowseState {
+    pub(crate) fn new(items: Vec<AccessBrowseItem>) -> Self {
+        let visible_indices = (0..items.len()).collect();
+        Self {
+            items,
+            visible_indices,
+            selected: 0,
+            query: String::new(),
+        }
+    }
+
+    fn rebuild_visible_indices(&mut self) {
+        let query = self.query.trim();
+        self.visible_indices = self
+            .items
+            .iter()
+            .enumerate()
+            .filter_map(|(index, item)| {
+                if query.is_empty() || item.matches_query(query) {
+                    Some(index)
+                } else {
+                    None
+                }
+            })
+            .collect();
+        self.clamp_selection();
+    }
+
+    fn clamp_selection(&mut self) {
+        self.selected = self
+            .selected
+            .min(self.visible_indices.len().saturating_sub(1));
+    }
+
+    #[cfg(test)]
+    fn apply_query(&mut self, query: &str) {
+        self.query = query.to_string();
+        self.selected = 0;
+        self.rebuild_visible_indices();
+    }
+
+    #[cfg(feature = "tui")]
+    fn push_query_char(&mut self, value: char) {
+        self.query.push(value);
+        self.rebuild_visible_indices();
+    }
+
+    #[cfg(feature = "tui")]
+    fn pop_query_char(&mut self) {
+        self.query.pop();
+        self.rebuild_visible_indices();
+    }
+
+    pub(crate) fn move_down(&mut self) {
+        self.selected = (self.selected + 1).min(self.visible_indices.len().saturating_sub(1));
+    }
+
+    pub(crate) fn move_up(&mut self) {
+        self.selected = self.selected.saturating_sub(1);
+    }
+
+    pub(crate) fn selected_item(&self) -> Option<&AccessBrowseItem> {
+        self.visible_indices
+            .get(self.selected)
+            .and_then(|index| self.items.get(*index))
+    }
+
+    pub(crate) fn visible_items(&self) -> Vec<&AccessBrowseItem> {
+        self.visible_indices
+            .iter()
+            .filter_map(|index| self.items.get(*index))
+            .collect()
+    }
+
+    pub(crate) fn summary_line(&self) -> String {
+        let prefix = if self.query.trim().is_empty() {
+            format!(
+                "Showing {} of {} access rows.",
+                self.visible_indices.len(),
+                self.items.len()
+            )
+        } else {
+            format!(
+                "Filter \"{}\" matched {} of {} access rows.",
+                self.query.trim(),
+                self.visible_indices.len(),
+                self.items.len()
+            )
+        };
+
+        match self.selected_item() {
+            Some(item) => format!(
+                "{} Selected {}/{} {} {}.",
+                prefix,
+                self.selected + 1,
+                self.visible_indices.len(),
+                item.kind,
+                item.identity
+            ),
+            None => format!("{prefix} No row selected."),
+        }
+    }
+
+    #[cfg(feature = "tui")]
+    fn detail_text(&self) -> String {
+        self.selected_item()
+            .map(|item| format!("{}: {}\n{}", item.kind, item.identity, item.review))
+            .unwrap_or_else(|| "No access inventory rows matched.".to_string())
+    }
+}
+
 fn enabled(args: &AccessBrowseArgs, flag: bool) -> bool {
     if args.include_users
         || args.include_teams
@@ -191,20 +310,22 @@ where
     F: FnMut(Method, &str, &[(String, String)], Option<&Value>) -> Result<Option<Value>>,
 {
     let items = build_access_browse_items(request_json, args)?;
+    let mut state = AccessBrowseState::new(items);
     let mut session = TerminalSession::enter()?;
-    let mut selected = 0usize;
+    let mut editing_query = false;
     loop {
-        let mut state = ListState::default();
-        if !items.is_empty() {
-            state.select(Some(selected.min(items.len().saturating_sub(1))));
+        let mut list_state = ListState::default();
+        if !state.visible_indices.is_empty() {
+            list_state.select(Some(state.selected));
         }
         session.terminal.draw(|frame| {
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
-                .constraints([Constraint::Min(5), Constraint::Length(5)])
+                .constraints([Constraint::Min(5), Constraint::Length(7)])
                 .split(frame.area());
-            let rows = items
-                .iter()
+            let rows = state
+                .visible_items()
+                .into_iter()
                 .map(|item| {
                     ListItem::new(Line::from(vec![
                         Span::styled(
@@ -225,12 +346,21 @@ where
                         .borders(Borders::ALL),
                 )
                 .highlight_style(Style::default().add_modifier(Modifier::REVERSED));
-            frame.render_stateful_widget(list, chunks[0], &mut state);
+            frame.render_stateful_widget(list, chunks[0], &mut list_state);
 
-            let detail = items
-                .get(selected)
-                .map(|item| format!("{}: {}\n{}", item.kind, item.identity, item.review))
-                .unwrap_or_else(|| "No access inventory rows matched.".to_string());
+            let prompt = if editing_query {
+                format!("/{}_", state.query)
+            } else if state.query.is_empty() {
+                "Press / to filter, q to quit.".to_string()
+            } else {
+                format!("Filter: {}", state.query)
+            };
+            let detail = format!(
+                "{}\n{}\n{}",
+                state.summary_line(),
+                prompt,
+                state.detail_text()
+            );
             frame.render_widget(
                 Paragraph::new(detail)
                     .block(Block::default().title("Review").borders(Borders::ALL)),
@@ -246,12 +376,20 @@ where
         if key.kind != KeyEventKind::Press {
             continue;
         }
+        if editing_query {
+            match key.code {
+                KeyCode::Esc | KeyCode::Enter => editing_query = false,
+                KeyCode::Backspace => state.pop_query_char(),
+                KeyCode::Char(value) => state.push_query_char(value),
+                _ => {}
+            }
+            continue;
+        }
         match key.code {
             KeyCode::Char('q') | KeyCode::Esc => return Ok(()),
-            KeyCode::Down | KeyCode::Char('j') => {
-                selected = (selected + 1).min(items.len().saturating_sub(1));
-            }
-            KeyCode::Up | KeyCode::Char('k') => selected = selected.saturating_sub(1),
+            KeyCode::Char('/') => editing_query = true,
+            KeyCode::Down | KeyCode::Char('j') => state.move_down(),
+            KeyCode::Up | KeyCode::Char('k') => state.move_up(),
             _ => {}
         }
     }
@@ -353,5 +491,52 @@ mod tests {
             vec!["user", "team", "org", "service-account"]
         );
         assert!(calls.iter().any(|(_, path)| path == "/api/orgs"));
+    }
+
+    #[test]
+    fn access_browse_state_filters_rows_and_reports_selection_summary() {
+        let items = vec![
+            AccessBrowseItem {
+                kind: "user".to_string(),
+                identity: "alice".to_string(),
+                summary: "email=alice@example.com role=Admin".to_string(),
+                review: "review user org role and admin state".to_string(),
+            },
+            AccessBrowseItem {
+                kind: "team".to_string(),
+                identity: "ops".to_string(),
+                summary: "id=2 email=ops@example.com members=3".to_string(),
+                review: "review team contact and membership count".to_string(),
+            },
+            AccessBrowseItem {
+                kind: "service-account".to_string(),
+                identity: "deploy".to_string(),
+                summary: "login=sa-deploy role=Viewer disabled=false tokens=1 orgId=1".to_string(),
+                review: "review service-account role and token metadata only".to_string(),
+            },
+        ];
+        let mut state = AccessBrowseState::new(items);
+
+        assert_eq!(
+            state.summary_line(),
+            "Showing 3 of 3 access rows. Selected 1/3 user alice."
+        );
+        state.move_down();
+        state.apply_query("token");
+
+        assert_eq!(state.visible_items().len(), 1);
+        assert_eq!(state.selected_item().unwrap().identity, "deploy");
+        assert_eq!(
+            state.summary_line(),
+            "Filter \"token\" matched 1 of 3 access rows. Selected 1/1 service-account deploy."
+        );
+
+        state.apply_query("missing");
+
+        assert!(state.selected_item().is_none());
+        assert_eq!(
+            state.summary_line(),
+            "Filter \"missing\" matched 0 of 3 access rows. No row selected."
+        );
     }
 }
