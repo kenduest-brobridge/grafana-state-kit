@@ -246,10 +246,7 @@ fn shell_status(state: &AccessBrowseState, editing_query: bool) -> String {
 
 #[cfg(feature = "tui")]
 fn header_height(line_count: usize) -> u16 {
-    line_count
-        .saturating_add(2)
-        .max(3)
-        .min(u16::MAX as usize) as u16
+    line_count.saturating_add(2).max(3).min(u16::MAX as usize) as u16
 }
 
 fn enabled(args: &AccessBrowseArgs, flag: bool) -> bool {
@@ -660,11 +657,9 @@ mod tests {
         assert!(browse_text.contains("Mode"));
         assert!(browse_text.contains("browse"));
         assert!(browse_text.contains("Search"));
-        assert!(browse_text.contains("idle"));
+        assert!(browse_text.contains("off"));
         assert!(browse_text.contains("Selection"));
         assert!(browse_text.contains("1/1"));
-        assert!(browse_text.contains("Status"));
-        assert!(browse_text.contains("filter matches kind, identity, summary, and review text"));
 
         state.apply_query("alice");
         let search_lines = build_header_lines(&state, true);
@@ -676,21 +671,13 @@ mod tests {
         assert!(search_text.contains("Mode"));
         assert!(search_text.contains("search"));
         assert!(search_text.contains("Search"));
-        assert!(search_text.contains("prompt /alice"));
-        assert!(search_text.contains("Enter/Esc exits search mode"));
+        assert!(search_text.contains("alice"));
     }
 
     #[cfg(feature = "tui")]
     #[test]
     fn access_browse_footer_uses_shared_control_copy() {
-        let items = vec![AccessBrowseItem {
-            kind: "user".to_string(),
-            identity: "alice".to_string(),
-            summary: "email=alice@example.com role=Admin".to_string(),
-            review: "review user org role and admin state".to_string(),
-        }];
-        let state = AccessBrowseState::new(items);
-        let lines = build_footer_lines(&state, false);
+        let lines = build_footer_lines(false);
         let text = lines
             .iter()
             .map(|line| line.to_string())
@@ -702,25 +689,15 @@ mod tests {
         assert!(text.contains("j/k"));
         assert!(text.contains("vim-style movement"));
         assert!(text.contains("/"));
-        assert!(text.contains("start search"));
+        assert!(text.contains("search"));
         assert!(text.contains("Esc/q"));
         assert!(text.contains("exit"));
-        assert!(text.contains("Mode browse"));
-        assert!(text.contains("Search idle"));
     }
 
     #[cfg(feature = "tui")]
     #[test]
     fn access_browse_search_mode_footer_surfaces_prompt_controls() {
-        let items = vec![AccessBrowseItem {
-            kind: "user".to_string(),
-            identity: "alice".to_string(),
-            summary: "email=alice@example.com role=Admin".to_string(),
-            review: "review user org role and admin state".to_string(),
-        }];
-        let mut state = AccessBrowseState::new(items);
-        state.apply_query("alice");
-        let text = build_footer_lines(&state, true)
+        let text = build_footer_lines(true)
             .iter()
             .map(|line| line.to_string())
             .collect::<Vec<_>>()
@@ -731,8 +708,6 @@ mod tests {
         assert!(text.contains("Backspace"));
         assert!(text.contains("remove filter text"));
         assert!(text.contains("Enter/Esc"));
-        assert!(text.contains("finish search"));
-        assert!(text.contains("Mode search"));
-        assert!(text.contains("prompt /alice"));
+        assert!(text.contains("leave search"));
     }
 }

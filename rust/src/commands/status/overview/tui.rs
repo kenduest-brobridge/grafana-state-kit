@@ -28,6 +28,24 @@ enum OverviewPane {
     Details,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum SearchDirection {
+    Forward,
+    Backward,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct SearchPromptState {
+    direction: SearchDirection,
+    query: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct SearchState {
+    direction: SearchDirection,
+    query: String,
+}
+
 struct TerminalSession {
     terminal: Terminal<CrosstermBackend<Stdout>>,
 }
@@ -59,6 +77,9 @@ struct OverviewWorkbenchState {
     focus: OverviewPane,
     detail_scroll: u16,
     section_view_indexes: Vec<usize>,
+    pending_search: Option<SearchPromptState>,
+    last_search: Option<SearchState>,
+    search_status: String,
 }
 
 impl OverviewWorkbenchState {
@@ -76,6 +97,9 @@ impl OverviewWorkbenchState {
             item_state: ListState::default(),
             focus: OverviewPane::ProjectHome,
             detail_scroll: 0,
+            pending_search: None,
+            last_search: None,
+            search_status: "Search idle. Use / or ? within the current view items.".to_string(),
         };
         state.sync_view_selection();
         state.reset_items();
@@ -255,6 +279,26 @@ impl OverviewWorkbenchState {
             .unwrap_or(&[])
     }
 
+    fn search_summary(&self) -> String {
+        if let Some(search) = &self.pending_search {
+            let prefix = match search.direction {
+                SearchDirection::Forward => "/",
+                SearchDirection::Backward => "?",
+            };
+            return format!("prompt {prefix}{}", search.query);
+        }
+        match &self.last_search {
+            Some(search) => {
+                let prefix = match search.direction {
+                    SearchDirection::Forward => "/",
+                    SearchDirection::Backward => "?",
+                };
+                format!("last {prefix}{}", search.query)
+            }
+            None => "idle".to_string(),
+        }
+    }
+
     fn selected_item(&self) -> Option<&OverviewSectionItem> {
         self.item_state
             .selected()
@@ -431,6 +475,151 @@ impl OverviewWorkbenchState {
         }
         self.detail_scroll = self.detail_scroll.min(max_scroll);
     }
+
+    fn start_search(&mut self, direction: SearchDirection) {
+        self.pending_search = Some(SearchPromptState {
+            direction,
+            query: String::new(),
+        });
+        self.search_status = match direction {
+            SearchDirection::Forward => "Search forward within the current view items.".to_string(),
+            SearchDirection::Backward => {
+                "Search backward within the current view items.".to_string()
+            }
+        };
+    }
+
+    fn cancel_search(&mut self) {
+        self.pending_search = None;
+        self.search_status = "Cancelled status overview search.".to_string();
+    }
+
+    fn handle_search_key(&mut self, key: KeyCode) {
+        let Some(mut search) = self.pending_search.take() else {
+            return;
+        };
+        match key {
+            KeyCode::Esc => self.cancel_search(),
+            KeyCode::Enter => {
+                let query = search.query.trim().to_string();
+                if query.is_empty() {
+                    self.search_status = "Search query is empty.".to_string();
+                } else if let Some(index) = self.find_match(&query, search.direction) {
+                    self.item_state.select(Some(index));
+                    self.detail_scroll = 0;
+                    self.last_search = Some(SearchState {
+                        direction: search.direction,
+                        query: query.clone(),
+                    });
+                    self.search_status = format!(
+                        "Matched '{query}' at item {} of {} in the current view.",
+                        index + 1,
+                        self.current_items().len()
+                    );
+                } else {
+                    self.last_search = Some(SearchState {
+                        direction: search.direction,
+                        query: query.clone(),
+                    });
+                    self.search_status = format!("No current-view items matched '{query}'.");
+                }
+            }
+            KeyCode::Backspace => {
+                search.query.pop();
+                self.pending_search = Some(search);
+            }
+            KeyCode::Char(ch) => {
+                search.query.push(ch);
+                self.pending_search = Some(search);
+            }
+            _ => {
+                self.pending_search = Some(search);
+            }
+        }
+    }
+
+    fn repeat_search(&mut self) {
+        let Some(search) = self.last_search.clone() else {
+            self.search_status =
+                "No previous status overview search. Use / or ? first.".to_string();
+            return;
+        };
+        if let Some(index) = self.repeat_last_search() {
+            self.item_state.select(Some(index));
+            self.detail_scroll = 0;
+            self.search_status = format!(
+                "Next match for '{}' at item {} of {} in the current view.",
+                search.query,
+                index + 1,
+                self.current_items().len()
+            );
+        } else {
+            self.search_status = format!("No more current-view matches for '{}'.", search.query);
+        }
+    }
+
+    fn find_match(&self, query: &str, direction: SearchDirection) -> Option<usize> {
+        let anchor = match direction {
+            SearchDirection::Forward => self.item_state.selected().unwrap_or(0),
+            SearchDirection::Backward => self
+                .item_state
+                .selected()
+                .unwrap_or_else(|| self.current_items().len().saturating_sub(1)),
+        };
+        self.find_match_from(query, direction, anchor, true)
+    }
+
+    fn repeat_last_search(&self) -> Option<usize> {
+        let search = self.last_search.as_ref()?;
+        let anchor = match search.direction {
+            SearchDirection::Forward => self.item_state.selected().unwrap_or(0),
+            SearchDirection::Backward => self
+                .item_state
+                .selected()
+                .unwrap_or_else(|| self.current_items().len().saturating_sub(1)),
+        };
+        self.find_match_from(&search.query, search.direction, anchor, false)
+    }
+
+    fn find_match_from(
+        &self,
+        query: &str,
+        direction: SearchDirection,
+        anchor: usize,
+        include_anchor: bool,
+    ) -> Option<usize> {
+        let needle = query.trim().to_ascii_lowercase();
+        let item_count = self.current_items().len();
+        if needle.is_empty() || item_count == 0 {
+            return None;
+        }
+        let normalized_anchor = anchor.min(item_count.saturating_sub(1));
+        let start_offset = usize::from(!include_anchor);
+
+        (start_offset..item_count).find_map(|offset| {
+            let index = match direction {
+                SearchDirection::Forward => (normalized_anchor + offset) % item_count,
+                SearchDirection::Backward => {
+                    (normalized_anchor + item_count - (offset % item_count)) % item_count
+                }
+            };
+            item_matches(&self.current_items()[index], &needle).then_some(index)
+        })
+    }
+}
+
+fn item_matches(item: &OverviewSectionItem, needle: &str) -> bool {
+    item.kind.to_ascii_lowercase().contains(needle)
+        || item.title.to_ascii_lowercase().contains(needle)
+        || item.meta.to_ascii_lowercase().contains(needle)
+        || item.facts.iter().any(|fact| {
+            fact.label.to_ascii_lowercase().contains(needle)
+                || fact.value.to_ascii_lowercase().contains(needle)
+        })
+        || item
+            .details
+            .iter()
+            .any(|line| line.to_ascii_lowercase().contains(needle))
 }
 
 pub(crate) fn run_overview_interactive(document: OverviewDocument) -> Result<()> {
@@ -452,8 +641,16 @@ pub(crate) fn run_overview_interactive(document: OverviewDocument) -> Result<()>
             continue;
         }
 
+        if state.pending_search.is_some() {
+            state.handle_search_key(key.code);
+            continue;
+        }
+
         let detail_lines_len = state.current_detail_lines().len();
         match key.code {
+            KeyCode::Char('/') => state.start_search(SearchDirection::Forward),
+            KeyCode::Char('?') => state.start_search(SearchDirection::Backward),
+            KeyCode::Char('n') => state.repeat_search(),
             KeyCode::Tab => state.focus_next(),
             KeyCode::BackTab => state.focus_previous(),
             KeyCode::Char('h') => state.focus_project_home(),
@@ -527,6 +724,7 @@ pub(crate) fn run_overview_interactive(document: OverviewDocument) -> Result<()>
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::overview::OverviewSectionFact;
     use crate::overview::OverviewSummary;
     use crate::project_status::{ProjectDomainStatus, ProjectStatus, ProjectStatusOverall};
 
@@ -549,7 +747,93 @@ mod tests {
         }
     }
 
-    fn test_document() -> OverviewDocument {
+    fn search_document() -> OverviewDocument {
+        OverviewDocument {
+            kind: "grafana-utils-overview".to_string(),
+            schema_version: 1,
+            tool_version: crate::common::TOOL_VERSION.to_string(),
+            discovery: None,
+            summary: OverviewSummary::default(),
+            project_status: ProjectStatus {
+                schema_version: 1,
+                tool_version: crate::common::TOOL_VERSION.to_string(),
+                discovery: None,
+                scope: "staged-only".to_string(),
+                overall: ProjectStatusOverall {
+                    status: "ready".to_string(),
+                    domain_count: 1,
+                    present_count: 1,
+                    blocked_count: 0,
+                    blocker_count: 0,
+                    warning_count: 0,
+                    freshness: Default::default(),
+                },
+                domains: vec![ProjectDomainStatus {
+                    id: "dashboard".to_string(),
+                    scope: "staged".to_string(),
+                    mode: "artifact-summary".to_string(),
+                    status: "ready".to_string(),
+                    reason_code: "ready".to_string(),
+                    primary_count: 1,
+                    blocker_count: 0,
+                    warning_count: 0,
+                    source_kinds: vec!["dashboard-export".to_string()],
+                    signal_keys: vec![],
+                    blockers: vec![],
+                    warnings: vec![],
+                    next_actions: vec![],
+                    freshness: Default::default(),
+                }],
+                top_blockers: vec![],
+                next_actions: vec![],
+            },
+            artifacts: vec![],
+            selected_section_index: 0,
+            sections: vec![OverviewSection {
+                artifact_index: 0,
+                kind: "dashboard-export".to_string(),
+                label: "Dashboard export".to_string(),
+                subtitle: "dashboards=3".to_string(),
+                views: vec![OverviewSectionView {
+                    label: "Current".to_string(),
+                    items: vec![
+                        OverviewSectionItem {
+                            kind: "dashboard".to_string(),
+                            title: "Alpha blocker".to_string(),
+                            meta: "status=blocked".to_string(),
+                            facts: vec![OverviewSectionFact {
+                                label: "uid".to_string(),
+                                value: "alpha".to_string(),
+                            }],
+                            details: vec!["owner=platform".to_string()],
+                        },
+                        OverviewSectionItem {
+                            kind: "dashboard".to_string(),
+                            title: "Beta ready".to_string(),
+                            meta: "status=ready".to_string(),
+                            facts: vec![OverviewSectionFact {
+                                label: "uid".to_string(),
+                                value: "beta".to_string(),
+                            }],
+                            details: vec!["owner=ops".to_string()],
+                        },
+                        OverviewSectionItem {
+                            kind: "warning".to_string(),
+                            title: "Gamma blocker".to_string(),
+                            meta: "status=blocked".to_string(),
+                            facts: vec![OverviewSectionFact {
+                                label: "uid".to_string(),
+                                value: "gamma".to_string(),
+                            }],
+                            details: vec!["owner=platform".to_string()],
+                        },
+                    ],
+                }],
+            }],
+        }
+    }
+
+    pub(crate) fn test_document() -> OverviewDocument {
         OverviewDocument {
             kind: "grafana-utils-overview".to_string(),
             schema_version: 1,
@@ -674,5 +958,130 @@ mod tests {
         assert!(screen.contains("Status & Controls"));
         assert!(!screen.contains("Project Home [Focused]"));
         assert_eq!(state.focus, OverviewPane::ProjectHome);
+    }
+
+    #[test]
+    fn search_prompt_submit_and_cancel_update_local_search_state() {
+        let mut state = OverviewWorkbenchState::new(search_document());
+
+        state.start_search(SearchDirection::Forward);
+        assert_eq!(
+            state.pending_search,
+            Some(SearchPromptState {
+                direction: SearchDirection::Forward,
+                query: String::new(),
+            })
+        );
+        assert_eq!(
+            state.search_status,
+            "Search forward within the current view items."
+        );
+
+        for ch in ['b', 'l', 'o', 'c', 'k'] {
+            state.handle_search_key(KeyCode::Char(ch));
+        }
+        assert_eq!(
+            state
+                .pending_search
+                .as_ref()
+                .map(|search| search.query.as_str()),
+            Some("block")
+        );
+
+        state.handle_search_key(KeyCode::Enter);
+        assert_eq!(state.pending_search, None);
+        assert_eq!(state.item_state.selected(), Some(0));
+        assert_eq!(
+            state.last_search,
+            Some(SearchState {
+                direction: SearchDirection::Forward,
+                query: "block".to_string(),
+            })
+        );
+        assert_eq!(
+            state.search_status,
+            "Matched 'block' at item 1 of 3 in the current view."
+        );
+
+        state.start_search(SearchDirection::Backward);
+        state.handle_search_key(KeyCode::Esc);
+        assert_eq!(state.pending_search, None);
+        assert_eq!(state.search_status, "Cancelled status overview search.");
+    }
+
+    #[test]
+    fn search_prompt_summary_tracks_pending_and_last_search_state() {
+        let mut state = OverviewWorkbenchState::new(search_document());
+
+        assert_eq!(state.search_summary(), "idle");
+
+        state.item_state.select(Some(2));
+        state.start_search(SearchDirection::Backward);
+        assert_eq!(state.search_summary(), "prompt ?");
+
+        state.handle_search_key(KeyCode::Char('g'));
+        state.handle_search_key(KeyCode::Char('a'));
+        state.handle_search_key(KeyCode::Char('m'));
+        state.handle_search_key(KeyCode::Char('m'));
+        state.handle_search_key(KeyCode::Char('x'));
+        state.handle_search_key(KeyCode::Backspace);
+        assert_eq!(state.search_summary(), "prompt ?gamm");
+
+        state.handle_search_key(KeyCode::Enter);
+        assert_eq!(state.search_summary(), "last ?gamm");
+        assert_eq!(state.item_state.selected(), Some(2));
+    }
+
+    #[test]
+    fn repeat_search_wraps_within_current_view_items() {
+        let mut state = OverviewWorkbenchState::new(search_document());
+
+        state.start_search(SearchDirection::Forward);
+        for ch in ['b', 'l', 'o', 'c', 'k'] {
+            state.handle_search_key(KeyCode::Char(ch));
+        }
+        state.handle_search_key(KeyCode::Enter);
+        assert_eq!(state.item_state.selected(), Some(0));
+
+        state.repeat_search();
+        assert_eq!(state.item_state.selected(), Some(2));
+        assert_eq!(
+            state.search_status,
+            "Next match for 'block' at item 3 of 3 in the current view."
+        );
+
+        state.repeat_search();
+        assert_eq!(state.item_state.selected(), Some(0));
+        assert_eq!(
+            state.search_status,
+            "Next match for 'block' at item 1 of 3 in the current view."
+        );
+    }
+
+    #[test]
+    fn backward_repeat_search_wraps_within_current_view_items() {
+        let mut state = OverviewWorkbenchState::new(search_document());
+
+        state.item_state.select(Some(2));
+        state.start_search(SearchDirection::Backward);
+        for ch in ['b', 'l', 'o', 'c', 'k'] {
+            state.handle_search_key(KeyCode::Char(ch));
+        }
+        state.handle_search_key(KeyCode::Enter);
+        assert_eq!(state.item_state.selected(), Some(2));
+
+        state.repeat_search();
+        assert_eq!(state.item_state.selected(), Some(0));
+        assert_eq!(
+            state.search_status,
+            "Next match for 'block' at item 1 of 3 in the current view."
+        );
+
+        state.repeat_search();
+        assert_eq!(state.item_state.selected(), Some(2));
+        assert_eq!(
+            state.search_status,
+            "Next match for 'block' at item 3 of 3 in the current view."
+        );
     }
 }
