@@ -4,6 +4,8 @@ use reqwest::Method;
 use serde_json::{Map, Value};
 
 use crate::common::Result;
+#[cfg(feature = "tui")]
+use crate::tui_shell;
 
 use super::render::{
     map_get_text, normalize_org_role, normalize_service_account_row, normalize_team_row,
@@ -22,7 +24,7 @@ use ratatui::{
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, List, ListItem, ListState, Paragraph},
+    widgets::{List, ListItem, ListState, Paragraph},
 };
 
 #[cfg(feature = "tui")]
@@ -163,6 +165,91 @@ impl AccessBrowseState {
             .map(|item| format!("{}: {}\n{}", item.kind, item.identity, item.review))
             .unwrap_or_else(|| "No access inventory rows matched.".to_string())
     }
+}
+
+#[cfg(any(feature = "tui", test))]
+fn search_summary(state: &AccessBrowseState) -> String {
+    let query = state.query.trim();
+    if query.is_empty() {
+        "off".to_string()
+    } else {
+        query.to_string()
+    }
+}
+
+#[cfg(any(feature = "tui", test))]
+fn build_header_lines(state: &AccessBrowseState, editing_query: bool) -> Vec<Line<'static>> {
+    vec![
+        tui_shell::summary_line(&[
+            tui_shell::summary_cell(
+                "Rows",
+                state.visible_indices.len().to_string(),
+                Color::White,
+            ),
+            tui_shell::summary_cell("Total", state.items.len().to_string(), Color::White),
+            tui_shell::summary_cell(
+                "Mode",
+                if editing_query { "search" } else { "browse" },
+                if editing_query {
+                    Color::Yellow
+                } else {
+                    Color::Green
+                },
+            ),
+        ]),
+        Line::from(vec![
+            tui_shell::label("Search "),
+            tui_shell::accent(search_summary(state), Color::LightMagenta),
+            Span::raw("  "),
+            tui_shell::label("Selection "),
+            tui_shell::accent(
+                if state.visible_indices.is_empty() {
+                    "0/0".to_string()
+                } else {
+                    format!("{}/{}", state.selected + 1, state.visible_indices.len())
+                },
+                Color::White,
+            ),
+        ]),
+    ]
+}
+
+#[cfg(any(feature = "tui", test))]
+fn build_footer_lines(editing_query: bool) -> Vec<Line<'static>> {
+    if editing_query {
+        tui_shell::control_grid(&[vec![
+            ("Type", Color::LightBlue, "add filter text"),
+            ("Backspace", Color::Yellow, "remove filter text"),
+            ("Enter/Esc", Color::Green, "leave search"),
+        ]])
+    } else {
+        tui_shell::control_grid(&[vec![
+            ("Up/Down", Color::Blue, "move"),
+            ("j/k", Color::Blue, "vim-style movement"),
+            ("/", Color::Yellow, "search"),
+            ("Esc/q", Color::DarkGray, "exit"),
+        ]])
+    }
+}
+
+#[cfg(any(feature = "tui", test))]
+fn shell_status(state: &AccessBrowseState, editing_query: bool) -> String {
+    let search = search_summary(state);
+    if editing_query {
+        format!("Mode=search   Search={search}   Type to filter. Enter/Esc returns to browse.")
+    } else if search == "off" {
+        "Mode=browse   Search=off   Press / to filter. Esc/q exits.".to_string()
+    } else {
+        format!("Mode=browse   Search={search}   Press / to refine. Esc/q exits.")
+    }
+}
+
+#[cfg(feature = "tui")]
+fn header_height(line_count: usize) -> u16 {
+    line_count
+        .saturating_add(2)
+        .max(3)
+        .min(u16::MAX as usize) as u16
 }
 
 fn enabled(args: &AccessBrowseArgs, flag: bool) -> bool {
@@ -319,10 +406,20 @@ where
             list_state.select(Some(state.selected));
         }
         session.terminal.draw(|frame| {
-            let chunks = Layout::default()
+            let header_lines = build_header_lines(&state, editing_query);
+            let footer_lines = build_footer_lines(editing_query);
+            let outer = Layout::default()
                 .direction(Direction::Vertical)
-                .constraints([Constraint::Min(5), Constraint::Length(7)])
+                .constraints([
+                    Constraint::Length(header_height(header_lines.len())),
+                    Constraint::Min(5),
+                    Constraint::Length(tui_shell::footer_height(footer_lines.len())),
+                ])
                 .split(frame.area());
+            let panes = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([Constraint::Percentage(42), Constraint::Percentage(58)])
+                .split(outer[1]);
             let rows = state
                 .visible_items()
                 .into_iter()
@@ -339,32 +436,35 @@ where
                     ]))
                 })
                 .collect::<Vec<_>>();
-            let list = List::new(rows)
-                .block(
-                    Block::default()
-                        .title("Access Browse")
-                        .borders(Borders::ALL),
-                )
-                .highlight_style(Style::default().add_modifier(Modifier::REVERSED));
-            frame.render_stateful_widget(list, chunks[0], &mut list_state);
-
-            let prompt = if editing_query {
-                format!("/{}_", state.query)
-            } else if state.query.is_empty() {
-                "Press / to filter, q to quit.".to_string()
-            } else {
-                format!("Filter: {}", state.query)
-            };
-            let detail = format!(
-                "{}\n{}\n{}",
-                state.summary_line(),
-                prompt,
-                state.detail_text()
-            );
             frame.render_widget(
-                Paragraph::new(detail)
-                    .block(Block::default().title("Review").borders(Borders::ALL)),
-                chunks[1],
+                tui_shell::build_header("Access Browser", header_lines),
+                outer[0],
+            );
+
+            let list = List::new(rows)
+                .block(tui_shell::pane_block(
+                    "Inventory",
+                    true,
+                    Color::LightBlue,
+                    Color::Rgb(16, 20, 27),
+                ))
+                .highlight_style(Style::default().add_modifier(Modifier::REVERSED));
+            frame.render_stateful_widget(list, panes[0], &mut list_state);
+
+            let detail = format!("{}\n{}", state.summary_line(), state.detail_text());
+            frame.render_widget(
+                Paragraph::new(detail).block(tui_shell::pane_block(
+                    "Facts",
+                    false,
+                    Color::LightCyan,
+                    Color::Rgb(16, 20, 27),
+                )),
+                panes[1],
+            );
+
+            frame.render_widget(
+                tui_shell::build_footer(footer_lines, shell_status(&state, editing_query)),
+                outer[2],
             );
         })?;
         if !event::poll(Duration::from_millis(250))? {
@@ -538,5 +638,101 @@ mod tests {
             state.summary_line(),
             "Filter \"missing\" matched 0 of 3 access rows. No row selected."
         );
+    }
+
+    #[cfg(feature = "tui")]
+    #[test]
+    fn access_browse_header_surfaces_mode_and_search_summary() {
+        let items = vec![AccessBrowseItem {
+            kind: "user".to_string(),
+            identity: "alice".to_string(),
+            summary: "email=alice@example.com role=Admin".to_string(),
+            review: "review user org role and admin state".to_string(),
+        }];
+        let mut state = AccessBrowseState::new(items);
+
+        let browse_lines = build_header_lines(&state, false);
+        let browse_text = browse_lines
+            .iter()
+            .map(|line| line.to_string())
+            .collect::<Vec<_>>()
+            .join("\n");
+        assert!(browse_text.contains("Mode"));
+        assert!(browse_text.contains("browse"));
+        assert!(browse_text.contains("Search"));
+        assert!(browse_text.contains("idle"));
+        assert!(browse_text.contains("Selection"));
+        assert!(browse_text.contains("1/1"));
+        assert!(browse_text.contains("Status"));
+        assert!(browse_text.contains("filter matches kind, identity, summary, and review text"));
+
+        state.apply_query("alice");
+        let search_lines = build_header_lines(&state, true);
+        let search_text = search_lines
+            .iter()
+            .map(|line| line.to_string())
+            .collect::<Vec<_>>()
+            .join("\n");
+        assert!(search_text.contains("Mode"));
+        assert!(search_text.contains("search"));
+        assert!(search_text.contains("Search"));
+        assert!(search_text.contains("prompt /alice"));
+        assert!(search_text.contains("Enter/Esc exits search mode"));
+    }
+
+    #[cfg(feature = "tui")]
+    #[test]
+    fn access_browse_footer_uses_shared_control_copy() {
+        let items = vec![AccessBrowseItem {
+            kind: "user".to_string(),
+            identity: "alice".to_string(),
+            summary: "email=alice@example.com role=Admin".to_string(),
+            review: "review user org role and admin state".to_string(),
+        }];
+        let state = AccessBrowseState::new(items);
+        let lines = build_footer_lines(&state, false);
+        let text = lines
+            .iter()
+            .map(|line| line.to_string())
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        assert!(text.contains("Up/Down"));
+        assert!(text.contains("move"));
+        assert!(text.contains("j/k"));
+        assert!(text.contains("vim-style movement"));
+        assert!(text.contains("/"));
+        assert!(text.contains("start search"));
+        assert!(text.contains("Esc/q"));
+        assert!(text.contains("exit"));
+        assert!(text.contains("Mode browse"));
+        assert!(text.contains("Search idle"));
+    }
+
+    #[cfg(feature = "tui")]
+    #[test]
+    fn access_browse_search_mode_footer_surfaces_prompt_controls() {
+        let items = vec![AccessBrowseItem {
+            kind: "user".to_string(),
+            identity: "alice".to_string(),
+            summary: "email=alice@example.com role=Admin".to_string(),
+            review: "review user org role and admin state".to_string(),
+        }];
+        let mut state = AccessBrowseState::new(items);
+        state.apply_query("alice");
+        let text = build_footer_lines(&state, true)
+            .iter()
+            .map(|line| line.to_string())
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        assert!(text.contains("Type"));
+        assert!(text.contains("add filter text"));
+        assert!(text.contains("Backspace"));
+        assert!(text.contains("remove filter text"));
+        assert!(text.contains("Enter/Esc"));
+        assert!(text.contains("finish search"));
+        assert!(text.contains("Mode search"));
+        assert!(text.contains("prompt /alice"));
     }
 }
