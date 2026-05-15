@@ -490,8 +490,8 @@ pub(crate) fn run_sync_audit_interactive(audit: &Value) -> Result<()> {
 
 #[cfg(not(feature = "tui"))]
 pub(crate) fn run_sync_audit_interactive(_audit: &Value) -> Result<()> {
-    Err(tui(
-        "Sync audit interactive TUI requires the `tui` feature.",
+    Err(crate::common::tui_feature_required(
+        "Sync audit interactive TUI",
     ))
 }
 

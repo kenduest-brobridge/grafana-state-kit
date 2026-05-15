@@ -57,6 +57,11 @@ pub fn tui(text: impl Into<String>) -> GrafanaCliError {
     GrafanaCliError::Tui(text.into())
 }
 
+/// Build a canonical feature-disabled error for interactive TUI surfaces.
+pub fn tui_feature_required(surface: &str) -> GrafanaCliError {
+    tui(format!("{surface} requires the `tui` feature."))
+}
+
 /// Build a structured external-editor failure.
 pub fn editor(text: impl Into<String>) -> GrafanaCliError {
     GrafanaCliError::Editor(text.into())

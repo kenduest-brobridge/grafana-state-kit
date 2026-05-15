@@ -83,8 +83,8 @@ pub(crate) fn run_local_datasource_list(args: &DatasourceListArgs) -> Result<()>
         }
         #[cfg(not(feature = "tui"))]
         {
-            return Err(crate::common::tui(
-                "Datasource list --interactive requires the `tui` feature.",
+            return Err(crate::common::tui_feature_required(
+                "Datasource list --interactive",
             ));
         }
     }

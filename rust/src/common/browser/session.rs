@@ -438,8 +438,8 @@ pub(crate) fn run_interactive_browser(
     _summary_lines: &[String],
     _items: &[BrowserItem],
 ) -> Result<()> {
-    Err(tui(
-        "Shared interactive browser requires the `tui` feature.",
+    Err(crate::common::tui_feature_required(
+        "Shared interactive browser",
     ))
 }
 
