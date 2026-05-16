@@ -1,23 +1,24 @@
 # TUI Architecture Roadmap
 
 Phase 0 owns the inventory and planning layer plus low-risk, focused browse
-maturity cleanup where the behavior is already covered by narrow tests. Shared
-TUI production modules and dashboard browse remain out of scope for this pass.
+maturity cleanup where the behavior is already covered by narrow tests. The
+follow-on consistency pass aligned shared search/status/control language across
+several existing Rust TUI surfaces without changing public CLI paths.
 
 ## Current Inventory
 
 | Surface | Entrypoint | Current tier | Notes |
 | --- | --- | --- | --- |
 | Dashboard browse | `grafana-util dashboard browse` | Mature | Dedicated live/local tree browser under `rust/src/commands/dashboard/browse/`; keep current ownership disjoint. |
-| Access browse | `grafana-util access browse`, `access user browse`, `access team browse` | Active implementation | Consolidated access browse now has in-session filtering and selection summaries; user/team specialized browsers remain separate richer flows. |
-| Datasource browse | `grafana-util datasource browse`, local `datasource list --interactive` | Active implementation | Live/local datasource browser under `rust/src/commands/datasource/browse/`; this pass only aligned exit-control copy. |
-| Status overview | `grafana-util status overview live --output-format interactive` and staged/live status interactive output | Mature document browser | Uses the overview/status document model, then projects into TUI. This is the preferred ownership shape. |
+| Access browse | `grafana-util access browse`, `access user browse`, `access team browse` | Active implementation | Consolidated access browse now has in-session filtering, selection summaries, and shared-shell header/footer language. User/team specialized browsers remain separate richer flows; repeat-search wrap consistency is the next narrow follow-up. |
+| Datasource browse | `grafana-util datasource browse`, local `datasource list --interactive` | Active implementation | Live/local datasource browser under `rust/src/commands/datasource/browse/`; it now surfaces row, kind, and search context in the header. |
+| Status overview | `grafana-util status overview live --output-format interactive` and staged/live status interactive output | Mature document browser | Uses the overview/status document model, then projects into TUI. It now supports current-view `/`, `?`, and `n` item search with explicit search status in the shell. |
 | Dashboard summary / inspect workbench | `grafana-util dashboard summary --interactive` | Mature review workbench | Query, dashboard, and governance rows share the inspect workbench. |
 | Dashboard import review | `grafana-util dashboard import --interactive` | Mature but specialized | Client-backed selector and focused review flow are import-specific. Keep changes evidence-led. |
 | Dashboard policy / dependencies / impact / topology | `--interactive` review modes | Mixed maturity | Useful precedent for shared review navigation, but several surfaces still have domain-specific runners. |
 | Snapshot review | `grafana-util snapshot review --interactive` | Document-backed review | Browser-style review over snapshot artifacts. |
 | Sync audit/review | `grafana-util sync ... --interactive` internal flows | Internal review surface | Keeps shared review ideas, but public docs should continue steering users through `workspace` where applicable. |
-| Shared TUI shell | `rust/src/common/tui/` and `rust/src/common/browser/session.rs` | Shared primitive | Owns visual shell/session primitives. It is not yet a complete domain-neutral workbench framework. |
+| Shared TUI shell | `rust/src/common/tui/` and `rust/src/common/browser/session.rs` | Shared primitive | Owns visual shell/session primitives and read-only browser search. It is not yet a complete domain-neutral workbench framework. |
 
 ## Maturity Tiers
 
@@ -35,8 +36,9 @@ the command is explicitly experimental.
 
 - Public flag language is still mixed: `--interactive` is used for full-screen
   TUI, while some older human-operated flows were migrated to `--prompt`.
-- Shared visual shell helpers exist, but many workbenches still own local state,
-  footer controls, filtering, and focus models.
+- Shared visual shell helpers and shared read-only browser search exist, but many
+  workbenches still own local state, footer controls, filtering, and focus
+  models.
 - Feature gating is still coarse. Default builds include `tui`; `--no-default-features`
   must keep clear errors for interactive paths, but TUI modules are not fully
   isolated behind a separate artifact lane.
@@ -73,3 +75,11 @@ python3 scripts/tui_inventory_report.py
 The script is intentionally non-blocking and is not wired into CI. It scans
 `rust/src`, English command docs, English user guide docs, and `docs/internal`
 while skipping generated HTML and Cargo build output.
+
+## Current Follow-Up
+
+- Bring `access user browse` and `access team browse` repeat-search behavior in
+  line with datasource browse and status overview so `n` wraps within the current
+  result set instead of stopping at the first boundary.
+- Keep this follow-up in state/tests first. Public CLI/docs and generated docs
+  should remain unchanged unless the user-facing command surface changes.
