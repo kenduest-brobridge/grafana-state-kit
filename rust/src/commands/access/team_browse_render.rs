@@ -518,8 +518,7 @@ fn control_lines(args: &TeamBrowseArgs) -> Vec<Line<'static>> {
                 },
             ),
             ("i", Color::Magenta, "numbers"),
-            ("q", Color::Gray, "exit"),
-            ("Esc", Color::Gray, "exit"),
+            ("Esc/q", Color::Gray, "exit"),
         ],
     ])
 }
@@ -654,5 +653,18 @@ mod tests {
         assert!(screen.contains("Remove membership"));
         assert!(screen.contains("Remove member alice from team platform-ops"));
         assert!(screen.contains("Press y to confirm removal."));
+    }
+
+    #[test]
+    fn team_footer_uses_combined_exit_label() {
+        let controls = control_lines(&args());
+        let footer = controls
+            .iter()
+            .map(Line::to_string)
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        assert!(footer.contains("Esc/q"));
+        assert!(!footer.contains("q exit"));
     }
 }

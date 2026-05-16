@@ -623,7 +623,7 @@ pub(crate) fn run_interactive_browser(
                             ("Home/End", Color::Blue, "jump"),
                             ("/ ?", Color::LightGreen, "search"),
                             ("n", Color::LightGreen, "repeat"),
-                            ("q/Esc", Color::Gray, "exit"),
+                            ("Esc/q", Color::Gray, "exit"),
                         ])
                     },
                 ]),
