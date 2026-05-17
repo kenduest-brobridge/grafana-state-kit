@@ -29,9 +29,10 @@ Usage:
   curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/main/scripts/install.sh | sh
   curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/main/scripts/install.sh | INSTALL_COMPLETION=auto sh
   curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/main/scripts/install.sh | sh -s -- --interactive
+  curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/v0.13.1/scripts/install.sh | sh
 
 Environment overrides:
-  VERSION=0.13.1          Install one specific release tag instead of latest.
+  VERSION=0.13.1          Install one specific GitHub release tag instead of latest.
   BIN_DIR=/custom/bin     Install the binary into one writable directory.
   REPO=owner/repo         Override the GitHub repository source.
   ASSET_URL=file:///...   Install from one explicit archive URL.
@@ -61,6 +62,12 @@ Completion:
   and Zsh completion to ~/.zfunc/_grafana-util unless COMPLETION_DIR is set.
   In interactive Zsh installs, the installer can also add the required fpath
   setup to ~/.zshrc with a managed marker block.
+
+Version resolution:
+  VERSION=latest resolves through the repository's latest published GitHub
+  release, not through the newest tag or the main branch tip. If you want one
+  fixed installer + release pair, fetch scripts/install.sh from that release
+  tag path under raw.githubusercontent.com and keep VERSION on the same tag.
 
 Interactive mode:
   Use sh -s -- --interactive when piping through curl. Values provided through

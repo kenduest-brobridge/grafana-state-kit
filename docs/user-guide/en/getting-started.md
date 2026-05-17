@@ -91,10 +91,12 @@ If you want one fixed release or one explicit install directory, the same script
 
 ```bash
 # Install one pinned release into one explicit binary directory.
-curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/main/scripts/install.sh | VERSION=0.13.1 BIN_DIR="$HOME/.local/bin" sh
+curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/v0.13.1/scripts/install.sh | VERSION=0.13.1 BIN_DIR="$HOME/.local/bin" sh
 ```
 
 The installer uses `BIN_DIR` when you set it. Otherwise it tries `/usr/local/bin` when that directory is writable, then falls back to `$HOME/.local/bin`.
+
+`VERSION=latest` resolves through the repository's latest published GitHub release, not just the newest tag. If you want the installer copy and the downloaded asset to stay on one exact release, fetch `scripts/install.sh` from that same `vX.Y.Z` tag path and keep `VERSION` on that tag.
 
 If the chosen install directory is not already on `PATH`, the installer prints the exact shell snippet to add it for `zsh` or `bash`. `INSTALL_COMPLETION=auto` detects `bash` or `zsh` from `SHELL`; use `INSTALL_COMPLETION=bash` or `INSTALL_COMPLETION=zsh` when you want to choose explicitly. In interactive mode, any value you already pass through `BIN_DIR`, `INSTALL_COMPLETION`, or `COMPLETION_DIR` is treated as already chosen and is not asked again. You can also inspect the contract first with:
 

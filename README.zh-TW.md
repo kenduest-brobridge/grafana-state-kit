@@ -84,7 +84,7 @@ curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit
 
 ```bash
 # 執行這個範例指令。
-curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/main/scripts/install.sh | VERSION=0.13.1 sh
+curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/v0.13.1/scripts/install.sh | VERSION=0.13.1 sh
 ```
 
 安裝到自訂目錄：
@@ -108,6 +108,7 @@ make install-local-interactive
 ```
 
 - **Releases**：[GitHub releases](https://github.com/kenduest-brobridge/grafana-state-kit/releases)
+- **最新與固定版本**：`VERSION=latest` 會跟著 repository 當下最新 published 的 GitHub release；若需要固定 installer 與固定 asset 版本，請直接抓同一個 release tag 路徑下的 `scripts/install.sh`
 - **執行檔**：標準版提供 `linux-amd64` 與 `macos-arm64`；需要截圖功能請選 `*-browser-*`
 - **預設路徑**：優先 `/usr/local/bin`，否則改用 `$HOME/.local/bin`
 - **Completion**：設定 `INSTALL_COMPLETION=auto`、`INSTALL_COMPLETION=bash` 或 `INSTALL_COMPLETION=zsh`，即可用下載後的 binary 產生並安裝 completion

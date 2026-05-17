@@ -82,7 +82,7 @@ Install a specific version:
 
 ```bash
 # Run this example command.
-curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/main/scripts/install.sh | VERSION=0.13.1 sh
+curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/v0.13.1/scripts/install.sh | VERSION=0.13.1 sh
 ```
 
 Install into a custom directory:
@@ -106,6 +106,7 @@ make install-local-interactive
 ```
 
 - **Releases**: [GitHub releases](https://github.com/kenduest-brobridge/grafana-state-kit/releases)
+- **Latest vs pinned installs**: `VERSION=latest` follows the repository's latest published GitHub release; if you need one fixed installer and one fixed asset version, fetch `scripts/install.sh` from the same release tag path
 - **Binaries**: standard `linux-amd64` and `macos-arm64`; screenshot-enabled builds use `*-browser-*`
 - **Default path**: `/usr/local/bin` if writable, otherwise `$HOME/.local/bin`
 - **Completion**: set `INSTALL_COMPLETION=auto`, `INSTALL_COMPLETION=bash`, or `INSTALL_COMPLETION=zsh` to install completion from the downloaded binary

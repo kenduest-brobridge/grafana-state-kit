@@ -191,3 +191,55 @@ jobs:
               --title "${GITHUB_REF_NAME}" \
               --generate-notes
           fi
+
+  installer-release-smoke:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs:
+      - github-release
+    permissions:
+      contents: read
+    steps:
+      - name: Install pinned release from tag-pinned installer
+        env:
+          EXPECTED_VERSION: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          install_dir="${RUNNER_TEMP}/pinned-bin"
+          mkdir -p "${install_dir}"
+          installer_url="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${GITHUB_REF_NAME}/scripts/install.sh"
+          for attempt in 1 2 3 4 5; do
+            if curl -fsSL "${installer_url}" | BIN_DIR="${install_dir}" VERSION="${EXPECTED_VERSION}" sh; then
+              break
+            fi
+            if [ "${attempt}" -eq 5 ]; then
+              echo "Pinned release installer smoke failed after ${attempt} attempts." >&2
+              exit 1
+            fi
+            sleep 10
+          done
+          expected_text="grafana-util ${EXPECTED_VERSION#v}"
+          "${install_dir}/grafana-util" --version | tee "${RUNNER_TEMP}/pinned-version.txt"
+          grep -F "${expected_text}" "${RUNNER_TEMP}/pinned-version.txt"
+
+      - name: Install latest published release from main installer
+        env:
+          EXPECTED_VERSION: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          install_dir="${RUNNER_TEMP}/latest-bin"
+          mkdir -p "${install_dir}"
+          installer_url="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/main/scripts/install.sh"
+          for attempt in 1 2 3 4 5; do
+            if curl -fsSL "${installer_url}" | BIN_DIR="${install_dir}" sh; then
+              break
+            fi
+            if [ "${attempt}" -eq 5 ]; then
+              echo "Latest release installer smoke failed after ${attempt} attempts." >&2
+              exit 1
+            fi
+            sleep 10
+          done
+          expected_text="grafana-util ${EXPECTED_VERSION#v}"
+          "${install_dir}/grafana-util" --version | tee "${RUNNER_TEMP}/latest-version.txt"
+          grep -F "${expected_text}" "${RUNNER_TEMP}/latest-version.txt"

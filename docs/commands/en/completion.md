@@ -42,6 +42,13 @@ curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit
 
 `auto` detects `bash` or `zsh` from `SHELL`. Use `INSTALL_COMPLETION=bash` or `INSTALL_COMPLETION=zsh` when you want to choose the shell explicitly. Set `COMPLETION_DIR=/path/to/dir` if your shell reads completion files from a different directory.
 
+For one fixed release, prefer the tag-pinned installer URL so the installer copy and the downloaded asset stay on the same release line:
+
+```bash
+# Run this example command.
+curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/v0.13.1/scripts/install.sh | VERSION=0.13.1 INSTALL_COMPLETION=auto sh
+```
+
 For an interactive install, pass `--interactive` to the `sh` process after the pipe:
 
 ```bash

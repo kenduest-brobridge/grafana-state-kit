@@ -91,10 +91,12 @@ curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit
 
 ```bash
 # 把固定版本安裝到指定的 binary 目錄。
-curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/main/scripts/install.sh | VERSION=0.13.1 BIN_DIR="$HOME/.local/bin" sh
+curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/v0.13.1/scripts/install.sh | VERSION=0.13.1 BIN_DIR="$HOME/.local/bin" sh
 ```
 
 安裝腳本會優先使用您指定的 `BIN_DIR`。若沒有設定，會先嘗試可寫入的 `/usr/local/bin`，再退回 `$HOME/.local/bin`。
+
+`VERSION=latest` 會跟著 repository 當下最新 published 的 GitHub release，不是只看最新 tag。如果您希望 installer 本身和下載下來的 asset 固定在同一個版本，請直接抓對應 `vX.Y.Z` tag 路徑下的 `scripts/install.sh`，並讓 `VERSION` 也維持同一個 tag。
 
 如果最後選到的安裝目錄尚未加入 `PATH`，安裝腳本會直接印出對應 `zsh` 或 `bash` 可貼上的設定方式。`INSTALL_COMPLETION=auto` 會從 `SHELL` 偵測 `bash` 或 `zsh`；若想明確指定，請用 `INSTALL_COMPLETION=bash` 或 `INSTALL_COMPLETION=zsh`。互動模式下，若您已經用 `BIN_DIR`、`INSTALL_COMPLETION` 或 `COMPLETION_DIR` 傳入值，installer 會視為已選好，不再重複詢問。若想先看完整安裝說明，也可以先執行：
 

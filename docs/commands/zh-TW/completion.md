@@ -42,6 +42,13 @@ curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit
 
 `auto` 會從 `SHELL` 偵測 `bash` 或 `zsh`。若想明確指定 shell，請用 `INSTALL_COMPLETION=bash` 或 `INSTALL_COMPLETION=zsh`。如果你的 shell 會從其他目錄讀取 completion file，可以設定 `COMPLETION_DIR=/path/to/dir`。
 
+如果要固定在某一個 release，請優先使用 tag-pinned installer URL，讓 installer 本身與下載下來的 asset 維持同一條 release：
+
+```bash
+# 執行這個範例指令。
+curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/v0.13.1/scripts/install.sh | VERSION=0.13.1 INSTALL_COMPLETION=auto sh
+```
+
 若要互動安裝，請把 `--interactive` 傳給 pipe 後面的 `sh`：
 
 ```bash
