@@ -81,9 +81,9 @@ Use the command reference for command pages, subcommand routing, options, and ex
 
 Use the repository for change history, release notes, and issue tracking.
 
-- [GitHub repository](https://github.com/kenduest-brobridge/grafana-util)
-- [GitHub releases](https://github.com/kenduest-brobridge/grafana-util/releases)
-- [Issue tracker](https://github.com/kenduest-brobridge/grafana-util/issues)
+- [GitHub repository](https://github.com/kenduest-brobridge/grafana-state-kit)
+- [GitHub releases](https://github.com/kenduest-brobridge/grafana-state-kit/releases)
+- [Issue tracker](https://github.com/kenduest-brobridge/grafana-state-kit/issues)
 
 ## Maintainer
 

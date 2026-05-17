@@ -37,7 +37,7 @@ The GitHub install script can install the binary and immediately generate comple
 
 ```bash
 # Run this example command.
-curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-util/main/scripts/install.sh | INSTALL_COMPLETION=auto sh
+curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/main/scripts/install.sh | INSTALL_COMPLETION=auto sh
 ```
 
 `auto` detects `bash` or `zsh` from `SHELL`. Use `INSTALL_COMPLETION=bash` or `INSTALL_COMPLETION=zsh` when you want to choose the shell explicitly. Set `COMPLETION_DIR=/path/to/dir` if your shell reads completion files from a different directory.
@@ -46,7 +46,7 @@ For an interactive install, pass `--interactive` to the `sh` process after the p
 
 ```bash
 # Run this example command.
-curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-util/main/scripts/install.sh | sh -s -- --interactive
+curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/main/scripts/install.sh | sh -s -- --interactive
 ```
 
 Interactive mode asks for the binary install directory, whether to install shell completion, and the completion output directory. For Zsh, it can also update `~/.zshrc` with the required `fpath` setup so the completion file is loaded before `compinit`. It reads answers from the terminal, so it still works when the install script itself is coming from `curl`.

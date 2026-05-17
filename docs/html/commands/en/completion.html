@@ -962,11 +962,11 @@ grafana-util completion zsh</code></pre>
 <h2 id="install-from-github-with-completion">Install from GitHub with completion</h2>
 <p>The GitHub install script can install the binary and immediately generate completion from that same binary:</p>
 <pre><code># Run this example command.
-curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-util/main/scripts/install.sh | INSTALL_COMPLETION=auto sh</code></pre>
+curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/main/scripts/install.sh | INSTALL_COMPLETION=auto sh</code></pre>
 <p><code>auto</code> detects <code>bash</code> or <code>zsh</code> from <code>SHELL</code>. Use <code>INSTALL_COMPLETION=bash</code> or <code>INSTALL_COMPLETION=zsh</code> when you want to choose the shell explicitly. Set <code>COMPLETION_DIR=/path/to/dir</code> if your shell reads completion files from a different directory.</p>
 <p>For an interactive install, pass <code>--interactive</code> to the <code>sh</code> process after the pipe:</p>
 <pre><code># Run this example command.
-curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-util/main/scripts/install.sh | sh -s -- --interactive</code></pre>
+curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/main/scripts/install.sh | sh -s -- --interactive</code></pre>
 <p>Interactive mode asks for the binary install directory, whether to install shell completion, and the completion output directory. For Zsh, it can also update <code>~/.zshrc</code> with the required <code>fpath</code> setup so the completion file is loaded before <code>compinit</code>. It reads answers from the terminal, so it still works when the install script itself is coming from <code>curl</code>.</p>
 <p>For local checkout validation, use the Makefile wrapper instead of waiting for a release artifact:</p>
 <pre><code># Run this example command.

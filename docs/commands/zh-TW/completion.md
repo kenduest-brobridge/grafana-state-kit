@@ -37,7 +37,7 @@ GitHub install script 可以安裝 binary 後，立刻用同一個 binary 產生
 
 ```bash
 # 執行這個範例指令。
-curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-util/main/scripts/install.sh | INSTALL_COMPLETION=auto sh
+curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/main/scripts/install.sh | INSTALL_COMPLETION=auto sh
 ```
 
 `auto` 會從 `SHELL` 偵測 `bash` 或 `zsh`。若想明確指定 shell，請用 `INSTALL_COMPLETION=bash` 或 `INSTALL_COMPLETION=zsh`。如果你的 shell 會從其他目錄讀取 completion file，可以設定 `COMPLETION_DIR=/path/to/dir`。
@@ -46,7 +46,7 @@ curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-util/main
 
 ```bash
 # 執行這個範例指令。
-curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-util/main/scripts/install.sh | sh -s -- --interactive
+curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/main/scripts/install.sh | sh -s -- --interactive
 ```
 
 互動模式會詢問 binary 安裝目錄、是否安裝 shell completion，以及 completion output directory。若安裝 Zsh completion，它也可以更新 `~/.zshrc`，把必要的 `fpath` 設定放在 `compinit` 前面。它會從終端機讀取回答，所以即使 install script 本身來自 `curl` pipe，也不會把 script 內容誤當成回答。

@@ -2,7 +2,7 @@
 
 set -eu
 
-REPO="${REPO:-kenduest-brobridge/grafana-util}"
+REPO="${REPO:-kenduest-brobridge/grafana-state-kit}"
 BINARY_NAME="${BINARY_NAME:-grafana-util}"
 VERSION="${VERSION:-latest}"
 BIN_DIR="${BIN_DIR:-}"
@@ -26,9 +26,9 @@ fail() {
 print_help() {
   cat <<'EOF'
 Usage:
-  curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-util/main/scripts/install.sh | sh
-  curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-util/main/scripts/install.sh | INSTALL_COMPLETION=auto sh
-  curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-util/main/scripts/install.sh | sh -s -- --interactive
+  curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/main/scripts/install.sh | sh
+  curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/main/scripts/install.sh | INSTALL_COMPLETION=auto sh
+  curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/main/scripts/install.sh | sh -s -- --interactive
 
 Environment overrides:
   VERSION=0.10.0          Install one specific release tag instead of latest.

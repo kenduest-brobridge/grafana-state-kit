@@ -70,28 +70,28 @@ profile 的重點是讓日常操作少重打重複參數，不是代表一開始
 ### 下載並安裝
 ```bash
 # 安裝最新 release。
-curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-util/main/scripts/install.sh | sh
+curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/main/scripts/install.sh | sh
 ```
 
 若要從 GitHub 安裝 binary 時順手更新 shell completion，請明確 opt in：
 
 ```bash
 # 安裝最新 release，並替目前 shell 寫入 completion。
-curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-util/main/scripts/install.sh | INSTALL_COMPLETION=auto sh
+curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/main/scripts/install.sh | INSTALL_COMPLETION=auto sh
 ```
 
 若想由 installer 逐步詢問，請使用互動安裝。它會問安裝目錄、是否安裝 shell completion，以及 completion file 要寫到哪裡：
 
 ```bash
 # 先詢問，再決定 binary 與 completion 的安裝位置。
-curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-util/main/scripts/install.sh | sh -s -- --interactive
+curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/main/scripts/install.sh | sh -s -- --interactive
 ```
 
 若您想固定版本，或想指定安裝到哪個 binary 目錄，也可以直接這樣裝：
 
 ```bash
 # 把固定版本安裝到指定的 binary 目錄。
-curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-util/main/scripts/install.sh | VERSION=0.10.2 BIN_DIR="$HOME/.local/bin" sh
+curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/main/scripts/install.sh | VERSION=0.10.2 BIN_DIR="$HOME/.local/bin" sh
 ```
 
 安裝腳本會優先使用您指定的 `BIN_DIR`。若沒有設定，會先嘗試可寫入的 `/usr/local/bin`，再退回 `$HOME/.local/bin`。

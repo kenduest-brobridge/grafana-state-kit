@@ -70,28 +70,28 @@ For the exact flags behind this chapter, keep [config](../../commands/en/config.
 ### Download and Install
 ```bash
 # Install the latest release.
-curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-util/main/scripts/install.sh | sh
+curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/main/scripts/install.sh | sh
 ```
 
 To install the binary and refresh shell completion in one GitHub install step, opt in explicitly:
 
 ```bash
 # Install the latest release and write completion for the current shell.
-curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-util/main/scripts/install.sh | INSTALL_COMPLETION=auto sh
+curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/main/scripts/install.sh | INSTALL_COMPLETION=auto sh
 ```
 
 If you prefer prompts, run the installer interactively. This asks for the install directory, whether to install shell completion, and where to write the completion file:
 
 ```bash
 # Ask before choosing install and completion locations.
-curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-util/main/scripts/install.sh | sh -s -- --interactive
+curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/main/scripts/install.sh | sh -s -- --interactive
 ```
 
 If you want one fixed release or one explicit install directory, the same script also supports:
 
 ```bash
 # Install one pinned release into one explicit binary directory.
-curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-util/main/scripts/install.sh | VERSION=0.10.2 BIN_DIR="$HOME/.local/bin" sh
+curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/main/scripts/install.sh | VERSION=0.10.2 BIN_DIR="$HOME/.local/bin" sh
 ```
 
 The installer uses `BIN_DIR` when you set it. Otherwise it tries `/usr/local/bin` when that directory is writable, then falls back to `$HOME/.local/bin`.

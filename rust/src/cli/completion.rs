@@ -64,10 +64,34 @@ mod tests {
     }
 
     #[test]
+    fn bash_completion_renders_shell_script_output() {
+        let script = render_completion_script(CompletionShell::Bash);
+
+        assert!(!script.trim().is_empty(), "bash completion should not be empty");
+        assert!(
+            script.contains("_grafana-util")
+                || script.contains("complete -F")
+                || script.contains("COMPREPLY"),
+            "bash completion should look like a Bash completion script\n{script}"
+        );
+    }
+
+    #[test]
     fn zsh_completion_uses_unified_clap_command_tree() {
         let script = render_completion_script(CompletionShell::Zsh);
 
         assert!(script.contains("#compdef grafana-util"));
         assert_common_root_commands(&script);
+    }
+
+    #[test]
+    fn zsh_completion_renders_shell_script_output() {
+        let script = render_completion_script(CompletionShell::Zsh);
+
+        assert!(!script.trim().is_empty(), "zsh completion should not be empty");
+        assert!(
+            script.contains("#compdef grafana-util") || script.contains("compdef _grafana-util"),
+            "zsh completion should look like a Zsh completion script\n{script}"
+        );
     }
 }

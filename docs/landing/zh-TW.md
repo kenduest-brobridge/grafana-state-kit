@@ -81,9 +81,9 @@
 
 需要變更歷史、release notes 或 issue 狀態時，改看 repository。
 
-- [GitHub repository](https://github.com/kenduest-brobridge/grafana-util)
-- [GitHub releases](https://github.com/kenduest-brobridge/grafana-util/releases)
-- [Issue tracker](https://github.com/kenduest-brobridge/grafana-util/issues)
+- [GitHub repository](https://github.com/kenduest-brobridge/grafana-state-kit)
+- [GitHub releases](https://github.com/kenduest-brobridge/grafana-state-kit/releases)
+- [Issue tracker](https://github.com/kenduest-brobridge/grafana-state-kit/issues)
 
 ## 維護者
 
