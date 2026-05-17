@@ -14,6 +14,41 @@ Format rule going forward:
 - keep older tagged releases below
 - use commit/tag history as the source of truth
 
+## [0.13.0] - 2026-05-17
+
+### Highlights
+
+- Interactive Rust review surfaces are more consistent: shared browser-style search now reaches more TUI workflows, status and browse shells surface clearer mode/search context, and exit controls are aligned around one `Esc/q` pattern.
+- Read-only overview and inventory workflows are easier to inspect from the terminal, especially for `status overview`, `access browse`, and datasource-oriented review surfaces.
+- Build, CI, and parity support were tightened again so local packaging, Linux cross-builds, Pages workflow behavior, live alert sync reads, and secondary Python request handling stay closer to the current Rust-first product line.
+
+### Added
+
+- Current-view `/`, `?`, and `n` search support in the interactive `status overview` workbench.
+- Shared read-only browser search and repeat-search behavior across more Rust TUI review surfaces.
+- Clearer search, row, kind, selection, and mode summaries in interactive browse/status shells.
+- Additional Python parity coverage for request-backed resource and live project-status flows.
+
+### Changed
+
+- `access browse` now uses the shared TUI shell language more consistently, including explicit browse/search state and a clearer review footer.
+- Datasource browse and related local interactive inventory views now surface more immediate search and selection context while staying read-only.
+- Interactive status, sync, dashboard review, and access review screens now use more consistent terminal control wording and fallback error text.
+- Maintainer build and Pages workflow behavior were narrowed to better fit the current release process without changing public command roots.
+
+### Fixed
+
+- Local and CI Rust quality/build lanes, including current clippy expectations and the Linux amd64 zig build path.
+- Live alert sync reads now keep managed ownership fields required by later sync/status flows.
+- Live smoke expectations for guarded alert apply behavior now match the intended review-first contract.
+- HTTP error body handling and several small Rust TUI/test regressions found during the consistency pass.
+
+### Migration Notes
+
+- `grafana-util` remains the shipped CLI name; this release line does not intentionally rename public command roots.
+- This release line changes interactive terminal behavior and review ergonomics, not the documented command topology.
+- Python remains secondary, but request/transport behavior for a few review/status paths is closer to the Rust-first implementation in this line.
+
 ## [0.12.0] - 2026-05-06
 
 ### Highlights
