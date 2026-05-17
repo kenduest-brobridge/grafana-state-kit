@@ -82,7 +82,7 @@ Install a specific version:
 
 ```bash
 # Run this example command.
-curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/main/scripts/install.sh | VERSION=0.10.2 sh
+curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/main/scripts/install.sh | VERSION=0.13.1 sh
 ```
 
 Install into a custom directory:

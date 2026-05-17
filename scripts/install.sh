@@ -31,7 +31,7 @@ Usage:
   curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/main/scripts/install.sh | sh -s -- --interactive
 
 Environment overrides:
-  VERSION=0.10.0          Install one specific release tag instead of latest.
+  VERSION=0.13.1          Install one specific release tag instead of latest.
   BIN_DIR=/custom/bin     Install the binary into one writable directory.
   REPO=owner/repo         Override the GitHub repository source.
   ASSET_URL=file:///...   Install from one explicit archive URL.

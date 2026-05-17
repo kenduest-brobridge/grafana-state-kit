@@ -14,6 +14,22 @@ Format rule going forward:
 - keep older tagged releases below
 - use commit/tag history as the source of truth
 
+## [0.13.1] - 2026-05-17
+
+### Highlights
+
+- This patch release focuses on release-surface correctness rather than new command behavior: shell completion coverage is tighter, installer/docs links now point at the correct repository, and public install examples match the current shipped version.
+
+### Fixed
+
+- Wrong public repository and install-script links in landing pages, completion docs, getting-started guides, troubleshooting references, and installer help text.
+- Missing shell-completion smoke coverage for generated Bash and Zsh script output from the unified Rust CLI tree.
+- Release-facing version examples that still showed older `0.10.x` or `0.13.0` install snippets after the current patch line moved forward.
+
+### Migration Notes
+
+- `grafana-util` remains the shipped CLI name; this patch line only corrects release/docs/install metadata and completion verification.
+
 ## [0.13.0] - 2026-05-17
 
 ### Highlights
