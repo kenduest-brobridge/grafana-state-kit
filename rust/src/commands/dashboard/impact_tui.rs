@@ -330,7 +330,7 @@ pub(crate) fn run_impact_interactive(document: &ImpactDocument) -> Result<()> {
                     ]),
                     tui_shell::control_line(&[
                         ("Enter", Color::Blue, "reset detail"),
-                        ("q/Esc", Color::Gray, "exit"),
+                        ("Esc/q", Color::Gray, "exit"),
                     ]),
                 ]),
                 outer[2],

@@ -367,7 +367,7 @@ pub(crate) fn run_topology_interactive(document: &TopologyDocument) -> Result<()
                     ]),
                     tui_shell::control_line(&[
                         ("Enter", Color::Blue, "reset detail"),
-                        ("q/Esc", Color::Gray, "exit"),
+                        ("Esc/q", Color::Gray, "exit"),
                     ]),
                 ]),
                 outer[2],

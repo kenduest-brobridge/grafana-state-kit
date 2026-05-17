@@ -442,5 +442,7 @@ pub(crate) fn run_access_plan_interactive(document: &AccessPlanDocument) -> Resu
 
 #[cfg(not(feature = "tui"))]
 pub(crate) fn run_access_plan_interactive(_document: &AccessPlanDocument) -> Result<()> {
-    Err(tui("Access plan --interactive requires the `tui` feature."))
+    Err(crate::common::tui_feature_required(
+        "Access plan --interactive",
+    ))
 }

@@ -3,6 +3,7 @@
 
 import json
 import ssl
+from abc import ABC, abstractmethod
 from typing import Any, Optional
 from urllib import parse
 
@@ -30,9 +31,10 @@ class HttpTransportApiError(HttpTransportError):
         super().__init__(f"HTTP error {status_code} for {url}: {body}")
 
 
-class JsonHttpTransport:
+class JsonHttpTransport(ABC):
     """Interface for sending one JSON request and decoding the JSON response."""
 
+    @abstractmethod
     def request_json(
         self,
         path: str,
@@ -40,10 +42,6 @@ class JsonHttpTransport:
         method: str = "GET",
         payload: Optional[dict[str, Any]] = None,
     ) -> Any:
-        # Purpose: send one JSON request and decode response.
-        # Args: path, params, method, payload
-        # Returns: Any decoded JSON payload.
-
         raise NotImplementedError
 
 

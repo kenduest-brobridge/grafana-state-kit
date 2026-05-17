@@ -20,6 +20,20 @@ Current AI-maintained status only.
 - Older entries moved to [`ai-status-archive-2026-04-27.md`](/Users/kendlee/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-04-27.md).
 - Older entries moved to [`ai-status-archive-2026-04-28.md`](/Users/kendlee/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-04-28.md).
 - Older entries moved to [`ai-status-archive-2026-05-02.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-02.md).
+- Older entries moved to [`ai-status-archive-2026-05-14.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-14.md).
+- Older entries moved to [`ai-status-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-16.md).
+
+## 2026-05-16 - TUI search and shell consistency pass
+- State: Done
+- Scope: Rust TUI behavior and maintainer trace for shared browser search, status overview search, access browse shell alignment, feature-disabled fallback wording, and unified `Esc/q` exit labels. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
+- Current Update: Added `/`, `?`, and `n` search support to the shared read-only browser and status overview workbench; aligned access browse with shared header/footer shell language; surfaced datasource browse row/kind/search context; normalized remaining TUI exit labels to `Esc/q`; and kept the next access user/team repeat-search wrap task as the remaining follow-up.
+- Result: The TUI surfaces now have a more consistent search/status/control vocabulary, and the latest `dev` CI and Docs Pages runs succeeded after the pushed cleanup commits.
+
+## 2026-05-14 - Phase 0 TUI inventory roadmap
+- State: Done
+- Scope: Maintainer-only TUI architecture inventory plus focused access/datasource browse maturity cleanup. Dashboard browse, shared TUI modules, public CLI behavior, generated docs, and Python package behavior are intentionally unchanged.
+- Current Update: Added a concise TUI architecture roadmap and a read-only inventory report script, added in-session filtering and selection summaries to consolidated access browse, and aligned datasource browse exit control copy with the dashboard-style combined `Esc/q` label.
+- Result: The TUI roadmap now has a planning artifact and manual inventory helper, while two low-risk browse surfaces have focused maturity improvements covered by targeted Rust tests.
 
 ## 2026-05-02 - Split datasource import dry-run helpers
 - State: Done
@@ -44,16 +58,3 @@ Current AI-maintained status only.
 - Scope: maintainer-only TODO cleanup and AI trace refresh after the mutation adapter pass. Rust behavior, public JSON, CLI behavior, generated docs, and Python implementation are out of scope.
 - Current Update: Recorded the latest mutation-adapter maintenance result in the active AI trace files and kept the backlog/history split intact.
 - Result: The current trace now reflects the completed TODO cleanup checkpoint; validation for this doc-only update is `make quality-ai-workflow` and `git diff --check`.
-
-## 2026-05-02 - Close remaining P3 TODO guardrail
-- State: Done
-- Scope: maintainer-only AI trace cleanup for the remaining P3 TODO guardrail and the next review-adapter consumption backlog item. Rust behavior is unchanged.
-- Current Update: Captured the closed P3 guardrail in the active trace and recorded a concrete backlog note to consume the review-adapter output in the next pass.
-- Result: The active trace stays current for docs/TODO cleanup only; validation for this doc-only update is `make quality-ai-workflow` and `git diff --check`.
-
-## 2026-05-02 - Extend mutation action adapters
-- State: Done
-- Scope: Rust internal review projections/envelopes for access import dry-run, datasource import dry-run, datasource live mutation preview, and alert plan rows; focused domain tests; full Rust validation; TODO trace. Public JSON, CLI behavior, `ReviewRisk`, `ReviewRequest`, legacy dashboard import dry-run, generated docs, and Python implementation are out of scope.
-- Baseline: Dashboard plan, datasource plan, access plan, and workspace preview already projected into `ReviewMutationAction`, but selected dry-run/import rows still only had domain-local review evidence.
-- Current Update: Added internal-only adapters that normalize proven action/status/blocked-reason fields into `ReviewMutationAction` while preserving original domain rows as `raw`.
-- Result: Focused access/datasource/alert tests and full Rust validation pass.

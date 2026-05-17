@@ -86,6 +86,43 @@ impl BrowserState {
         }
     }
 
+    pub(crate) fn selected_position_summary(&self) -> String {
+        match self
+            .list_state
+            .selected()
+            .zip((!self.document.items.is_empty()).then_some(self.document.items.len()))
+        {
+            Some((index, total)) => format!("{}/{}", index + 1, total),
+            None => "-".to_string(),
+        }
+    }
+
+    pub(crate) fn selected_kind_summary(&self) -> &'static str {
+        match self.selected_item().map(|item| item.kind) {
+            Some(DatasourceBrowseItemKind::Org) => "org",
+            Some(DatasourceBrowseItemKind::Datasource) => "datasource",
+            None => "none",
+        }
+    }
+
+    pub(crate) fn search_summary(&self) -> String {
+        if let Some(search) = self.pending_search.as_ref() {
+            let prefix = match search.direction {
+                SearchDirection::Forward => "/",
+                SearchDirection::Backward => "?",
+            };
+            return format!("{prefix}{}_", search.query);
+        }
+        if let Some(search) = self.last_search.as_ref() {
+            let prefix = match search.direction {
+                SearchDirection::Forward => "/",
+                SearchDirection::Backward => "?",
+            };
+            return format!("{prefix}{}", search.query);
+        }
+        "-".to_string()
+    }
+
     pub(crate) fn replace_document(&mut self, document: DatasourceBrowseDocument) {
         let selected_anchor = self.selected_item().map(selection_anchor);
         self.document = document;
@@ -319,5 +356,28 @@ mod tests {
         });
         state.select_index(3);
         assert_eq!(state.repeat_last_search(), Some(4));
+    }
+
+    #[test]
+    fn browser_state_surfaces_selection_and_search_summaries() {
+        let mut state = state();
+        assert_eq!(state.selected_position_summary(), "1/5");
+        assert_eq!(state.selected_kind_summary(), "org");
+        assert_eq!(state.search_summary(), "-");
+
+        state.select_index(4);
+        state.last_search = Some(SearchState {
+            direction: SearchDirection::Backward,
+            query: "smoke".to_string(),
+        });
+        assert_eq!(state.selected_position_summary(), "5/5");
+        assert_eq!(state.selected_kind_summary(), "datasource");
+        assert_eq!(state.search_summary(), "?smoke");
+
+        state.pending_search = Some(SearchPromptState {
+            direction: SearchDirection::Forward,
+            query: "prom".to_string(),
+        });
+        assert_eq!(state.search_summary(), "/prom_");
     }
 }

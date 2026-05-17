@@ -7,7 +7,7 @@ use crate::common::Result;
 use crate::tui_shell;
 
 #[cfg(feature = "tui")]
-use crossterm::event::{self, Event, KeyCode, KeyEventKind};
+use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
 #[cfg(feature = "tui")]
 use crossterm::execute;
 #[cfg(feature = "tui")]
@@ -38,6 +38,30 @@ enum BrowserPane {
     Detail,
 }
 
+#[cfg(any(feature = "tui", test))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum SearchDirection {
+    Forward,
+    Backward,
+}
+
+#[cfg(any(feature = "tui", test))]
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct SearchPromptState {
+    direction: SearchDirection,
+    query: String,
+}
+
+#[cfg(any(feature = "tui", test))]
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct SearchState {
+    direction: SearchDirection,
+    query: String,
+    filter_kind: String,
+    match_ordinal: Option<usize>,
+    match_count: usize,
+}
+
 #[cfg_attr(not(feature = "tui"), allow(dead_code))]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct BrowserItem {
@@ -45,6 +69,283 @@ pub(crate) struct BrowserItem {
     pub(crate) title: String,
     pub(crate) meta: String,
     pub(crate) details: Vec<String>,
+}
+
+#[cfg(any(feature = "tui", test))]
+impl BrowserItem {
+    fn matches_query(&self, query: &str) -> bool {
+        let needle = query.trim().to_ascii_lowercase();
+        if needle.is_empty() {
+            return false;
+        }
+        self.kind.to_ascii_lowercase().contains(&needle)
+            || self.title.to_ascii_lowercase().contains(&needle)
+            || self.meta.to_ascii_lowercase().contains(&needle)
+            || self
+                .details
+                .iter()
+                .any(|line| line.to_ascii_lowercase().contains(&needle))
+    }
+}
+
+#[cfg(any(feature = "tui", test))]
+#[derive(Default)]
+struct BrowserSearchController {
+    pending: Option<SearchPromptState>,
+    last: Option<SearchState>,
+}
+
+#[cfg(any(feature = "tui", test))]
+impl BrowserSearchController {
+    fn start(&mut self, direction: SearchDirection) {
+        self.pending = Some(SearchPromptState {
+            direction,
+            query: String::new(),
+        });
+    }
+
+    fn has_pending(&self) -> bool {
+        self.pending.is_some()
+    }
+
+    fn push_char(&mut self, value: char) {
+        if let Some(prompt) = self.pending.as_mut() {
+            prompt.query.push(value);
+        }
+    }
+
+    fn pop_char(&mut self) {
+        if let Some(prompt) = self.pending.as_mut() {
+            prompt.query.pop();
+        }
+    }
+
+    fn cancel(&mut self) {
+        self.pending = None;
+    }
+
+    fn apply(
+        &mut self,
+        items: &[BrowserItem],
+        visible_indexes: &[usize],
+        selected_visible: Option<usize>,
+        filter_kind: &str,
+    ) -> Option<usize> {
+        let prompt = self.pending.take()?;
+        let query = prompt.query.trim().to_string();
+        if query.is_empty() {
+            return None;
+        }
+
+        let matches = matching_visible_indexes(items, visible_indexes, &query);
+        let selected = find_match_in_visible(
+            items,
+            visible_indexes,
+            &query,
+            prompt.direction,
+            selected_visible,
+        );
+        self.last = Some(build_search_state(
+            prompt.direction,
+            query,
+            filter_kind,
+            &matches,
+            selected,
+        ));
+        selected
+    }
+
+    fn repeat(
+        &mut self,
+        items: &[BrowserItem],
+        visible_indexes: &[usize],
+        selected_visible: Option<usize>,
+        filter_kind: &str,
+    ) -> Option<usize> {
+        let last = self.last.as_ref()?.clone();
+        let matches = matching_visible_indexes(items, visible_indexes, &last.query);
+        let selected = repeat_match_in_visible(
+            items,
+            visible_indexes,
+            &last.query,
+            last.direction,
+            selected_visible,
+        );
+        self.last = Some(build_search_state(
+            last.direction,
+            last.query,
+            filter_kind,
+            &matches,
+            selected,
+        ));
+        selected
+    }
+
+    fn footer_label(&self) -> String {
+        if let Some(prompt) = self.pending.as_ref() {
+            format!(
+                "Search {}{}",
+                search_direction_symbol(prompt.direction),
+                prompt.query
+            )
+        } else if let Some(last) = self.last.as_ref() {
+            format!(
+                "Last {}{}",
+                search_direction_symbol(last.direction),
+                last.query
+            )
+        } else {
+            "Search idle".to_string()
+        }
+    }
+
+    fn summary_line(&self, active_filter: &str) -> String {
+        if let Some(prompt) = self.pending.as_ref() {
+            return format!(
+                "Search prompt {} in filter {}: \"{}\" (Enter apply, Esc cancel).",
+                search_direction_symbol(prompt.direction),
+                active_filter,
+                prompt.query
+            );
+        }
+        if let Some(last) = self.last.as_ref() {
+            return match last.match_ordinal {
+                Some(ordinal) => format!(
+                    "Last search {}\"{}\" in filter {} matched {}/{} results. Press n for next match.",
+                    search_direction_symbol(last.direction),
+                    last.query,
+                    last.filter_kind,
+                    ordinal,
+                    last.match_count
+                ),
+                None => format!(
+                    "Last search {}\"{}\" in filter {} matched 0 results. Press / or ? to try again.",
+                    search_direction_symbol(last.direction),
+                    last.query,
+                    last.filter_kind
+                ),
+            };
+        }
+        "Search: / forward, ? backward, n repeat within the active filter.".to_string()
+    }
+}
+
+#[cfg(any(feature = "tui", test))]
+fn repeat_match_in_visible(
+    items: &[BrowserItem],
+    visible_indexes: &[usize],
+    query: &str,
+    direction: SearchDirection,
+    selected_visible: Option<usize>,
+) -> Option<usize> {
+    if visible_indexes.is_empty() || query.trim().is_empty() {
+        return None;
+    }
+
+    match direction {
+        SearchDirection::Forward => {
+            let start = selected_visible.map(|index| index + 1).unwrap_or(0);
+            (start..visible_indexes.len()).find(|visible_index| {
+                items
+                    .get(visible_indexes[*visible_index])
+                    .is_some_and(|item| item.matches_query(query))
+            })
+        }
+        SearchDirection::Backward => {
+            let start = selected_visible
+                .and_then(|index| index.checked_sub(1))
+                .or_else(|| visible_indexes.len().checked_sub(1))?;
+            (0..=start).rev().find(|visible_index| {
+                items
+                    .get(visible_indexes[*visible_index])
+                    .is_some_and(|item| item.matches_query(query))
+            })
+        }
+    }
+}
+
+#[cfg(any(feature = "tui", test))]
+fn search_direction_symbol(direction: SearchDirection) -> &'static str {
+    match direction {
+        SearchDirection::Forward => "/",
+        SearchDirection::Backward => "?",
+    }
+}
+
+#[cfg(any(feature = "tui", test))]
+fn matching_visible_indexes(
+    items: &[BrowserItem],
+    visible_indexes: &[usize],
+    query: &str,
+) -> Vec<usize> {
+    visible_indexes
+        .iter()
+        .enumerate()
+        .filter_map(|(visible_index, item_index)| {
+            items
+                .get(*item_index)
+                .filter(|item| item.matches_query(query))
+                .map(|_| visible_index)
+        })
+        .collect()
+}
+
+#[cfg(any(feature = "tui", test))]
+fn build_search_state(
+    direction: SearchDirection,
+    query: String,
+    filter_kind: &str,
+    matches: &[usize],
+    selected: Option<usize>,
+) -> SearchState {
+    SearchState {
+        direction,
+        query,
+        filter_kind: filter_kind.to_string(),
+        match_ordinal: selected.and_then(|visible_index| {
+            matches
+                .iter()
+                .position(|candidate| *candidate == visible_index)
+                .map(|index| index + 1)
+        }),
+        match_count: matches.len(),
+    }
+}
+
+#[cfg(any(feature = "tui", test))]
+fn find_match_in_visible(
+    items: &[BrowserItem],
+    visible_indexes: &[usize],
+    query: &str,
+    direction: SearchDirection,
+    start: Option<usize>,
+) -> Option<usize> {
+    if visible_indexes.is_empty() || query.trim().is_empty() {
+        return None;
+    }
+
+    match direction {
+        SearchDirection::Forward => {
+            let start = start
+                .unwrap_or(0)
+                .min(visible_indexes.len().saturating_sub(1));
+            (start..visible_indexes.len()).find(|visible_index| {
+                items
+                    .get(visible_indexes[*visible_index])
+                    .is_some_and(|item| item.matches_query(query))
+            })
+        }
+        SearchDirection::Backward => {
+            let start = start.unwrap_or(visible_indexes.len().saturating_sub(1));
+            (0..=start.min(visible_indexes.len().saturating_sub(1)))
+                .rev()
+                .find(|visible_index| {
+                    items
+                        .get(visible_indexes[*visible_index])
+                        .is_some_and(|item| item.matches_query(query))
+                })
+        }
+    }
 }
 
 #[cfg(feature = "tui")]
@@ -135,13 +436,16 @@ pub(crate) fn run_interactive_browser(
     state.select((!visible_indexes.is_empty()).then_some(0));
     let mut detail_scroll = 0u16;
     let mut pane_focus = BrowserPane::Items;
+    let mut search = BrowserSearchController::default();
 
     loop {
         session.terminal.draw(|frame| {
+            let mut runtime_summary_lines = summary_lines.to_vec();
+            runtime_summary_lines.push(search.summary_line(&kind_filters[active_filter]));
             let outer = Layout::default()
                 .direction(Direction::Vertical)
                 .constraints([
-                    Constraint::Length((summary_lines.len().max(1) + 2) as u16),
+                    Constraint::Length((runtime_summary_lines.len().max(1) + 2) as u16),
                     Constraint::Min(1),
                     Constraint::Length(4),
                 ])
@@ -167,7 +471,7 @@ pub(crate) fn run_interactive_browser(
             let detail_selected =
                 (detail_scroll as usize).min(detail_lines.len().saturating_sub(1));
 
-            let summary = Paragraph::new(summary_lines.join("\n"))
+            let summary = Paragraph::new(runtime_summary_lines.join("\n"))
                 .wrap(Wrap { trim: false })
                 .block(Block::default().borders(Borders::ALL).title(title));
             frame.render_widget(summary, outer[0]);
@@ -296,6 +600,9 @@ pub(crate) fn run_interactive_browser(
                             },
                             Color::Blue,
                         ),
+                        Span::raw("  "),
+                        tui_shell::label("Search "),
+                        tui_shell::accent(search.footer_label(), Color::LightGreen),
                     ]),
                     tui_shell::control_line(&[
                         ("Tab", Color::Blue, "next pane"),
@@ -303,12 +610,22 @@ pub(crate) fn run_interactive_browser(
                         ("Up/Down", Color::Blue, "move"),
                         ("PgUp/PgDn", Color::Blue, "scroll detail"),
                     ]),
-                    tui_shell::control_line(&[
-                        ("f/F", Color::Yellow, "change filter"),
-                        ("Home/End", Color::Blue, "jump"),
-                        ("Enter", Color::Blue, "reset detail"),
-                        ("q/Esc", Color::Gray, "exit"),
-                    ]),
+                    if search.has_pending() {
+                        tui_shell::control_line(&[
+                            ("Backspace", Color::Blue, "edit"),
+                            ("Enter", Color::LightGreen, "apply search"),
+                            ("Esc", Color::Yellow, "cancel prompt"),
+                            ("q", Color::LightGreen, "search text"),
+                        ])
+                    } else {
+                        tui_shell::control_line(&[
+                            ("f/F", Color::Yellow, "change filter"),
+                            ("Home/End", Color::Blue, "jump"),
+                            ("/ ?", Color::LightGreen, "search"),
+                            ("n", Color::LightGreen, "repeat"),
+                            ("Esc/q", Color::Gray, "exit"),
+                        ])
+                    },
                 ]),
                 outer[2],
             );
@@ -319,6 +636,28 @@ pub(crate) fn run_interactive_browser(
         }
         if let Event::Key(key) = event::read()? {
             if key.kind != KeyEventKind::Press {
+                continue;
+            }
+            if search.has_pending() {
+                match key.code {
+                    KeyCode::Esc => search.cancel(),
+                    KeyCode::Enter => {
+                        let next_selection = search.apply(
+                            items,
+                            &visible_indexes,
+                            state.selected(),
+                            &kind_filters[active_filter],
+                        );
+                        if let Some(next_selection) = next_selection {
+                            state.select(Some(next_selection));
+                            detail_scroll = 0;
+                        }
+                    }
+                    KeyCode::Backspace => search.pop_char(),
+                    KeyCode::Char(_ch) if key.modifiers.contains(KeyModifiers::CONTROL) => {}
+                    KeyCode::Char(ch) => search.push_char(ch),
+                    _ => {}
+                }
                 continue;
             }
             let selected_visible = state.selected().unwrap_or(0);
@@ -404,6 +743,20 @@ pub(crate) fn run_interactive_browser(
                     state.select((!visible_indexes.is_empty()).then_some(0));
                     detail_scroll = 0;
                 }
+                KeyCode::Char('/') => search.start(SearchDirection::Forward),
+                KeyCode::Char('?') => search.start(SearchDirection::Backward),
+                KeyCode::Char('n') => {
+                    let next_selection = search.repeat(
+                        items,
+                        &visible_indexes,
+                        state.selected(),
+                        &kind_filters[active_filter],
+                    );
+                    if next_selection.is_some() {
+                        state.select(next_selection);
+                        detail_scroll = 0;
+                    }
+                }
                 KeyCode::Esc | KeyCode::Char('q') => return Ok(()),
                 _ => {}
             }
@@ -438,8 +791,8 @@ pub(crate) fn run_interactive_browser(
     _summary_lines: &[String],
     _items: &[BrowserItem],
 ) -> Result<()> {
-    Err(tui(
-        "Shared interactive browser requires the `tui` feature.",
+    Err(crate::common::tui_feature_required(
+        "Shared interactive browser",
     ))
 }
 
@@ -462,4 +815,130 @@ fn run_interactive_browser_returns_tui_error_when_feature_disabled() {
         error.to_string(),
         "Shared interactive browser requires the `tui` feature."
     );
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        build_search_state, find_match_in_visible, matching_visible_indexes, BrowserItem,
+        BrowserSearchController, SearchDirection,
+    };
+
+    fn sample_items() -> Vec<BrowserItem> {
+        vec![
+            BrowserItem {
+                kind: "dashboard".to_string(),
+                title: "CPU Overview".to_string(),
+                meta: "folder=ops".to_string(),
+                details: vec!["Prometheus datasource".to_string()],
+            },
+            BrowserItem {
+                kind: "alert".to_string(),
+                title: "Disk alert".to_string(),
+                meta: "sev=high".to_string(),
+                details: vec!["filesystem saturation".to_string()],
+            },
+            BrowserItem {
+                kind: "dashboard".to_string(),
+                title: "Memory Board".to_string(),
+                meta: "folder=infra".to_string(),
+                details: vec!["CPU and memory detail".to_string()],
+            },
+        ]
+    }
+
+    #[test]
+    fn browser_item_search_matches_kind_title_meta_and_details() {
+        let item = BrowserItem {
+            kind: "dashboard".to_string(),
+            title: "CPU Overview".to_string(),
+            meta: "folder=ops".to_string(),
+            details: vec!["prometheus datasource".to_string()],
+        };
+
+        assert!(item.matches_query("dash"));
+        assert!(item.matches_query("cpu"));
+        assert!(item.matches_query("ops"));
+        assert!(item.matches_query("datasource"));
+        assert!(!item.matches_query("loki"));
+    }
+
+    #[test]
+    fn search_uses_only_active_filter_visible_indexes() {
+        let items = sample_items();
+        let visible_indexes = vec![0, 2];
+
+        let matches = matching_visible_indexes(&items, &visible_indexes, "disk");
+        let selected = find_match_in_visible(
+            &items,
+            &visible_indexes,
+            "cpu",
+            SearchDirection::Forward,
+            Some(0),
+        );
+
+        assert!(matches.is_empty());
+        assert_eq!(selected, Some(0));
+    }
+
+    #[test]
+    fn repeat_search_advances_from_current_selection() {
+        let items = sample_items();
+        let visible_indexes = vec![0, 2];
+        let mut search = BrowserSearchController::default();
+
+        search.start(SearchDirection::Forward);
+        search.push_char('c');
+        search.push_char('p');
+        search.push_char('u');
+
+        let first = search.apply(&items, &visible_indexes, Some(0), "dashboard");
+        let repeated = search.repeat(&items, &visible_indexes, first, "dashboard");
+
+        assert_eq!(first, Some(0));
+        assert_eq!(repeated, Some(1));
+    }
+
+    #[test]
+    fn cancel_search_prompt_preserves_last_search_state() {
+        let items = sample_items();
+        let visible_indexes = vec![0, 2];
+        let mut search = BrowserSearchController::default();
+
+        search.start(SearchDirection::Forward);
+        search.push_char('c');
+        search.push_char('p');
+        search.push_char('u');
+        let applied = search.apply(&items, &visible_indexes, Some(0), "dashboard");
+        assert_eq!(applied, Some(0));
+
+        search.start(SearchDirection::Backward);
+        search.push_char('d');
+        search.cancel();
+
+        assert_eq!(
+            search.summary_line("dashboard"),
+            "Last search /\"cpu\" in filter dashboard matched 1/2 results. Press n for next match."
+        );
+    }
+
+    #[test]
+    fn search_summary_reports_no_matches() {
+        let state = build_search_state(
+            SearchDirection::Backward,
+            "missing".to_string(),
+            "alert",
+            &[],
+            None,
+        );
+        let search = BrowserSearchController {
+            pending: None,
+            last: Some(state),
+        };
+
+        assert_eq!(
+            search.summary_line("dashboard"),
+            "Last search ?\"missing\" in filter alert matched 0 results. Press / or ? to try again."
+        );
+    }
 }

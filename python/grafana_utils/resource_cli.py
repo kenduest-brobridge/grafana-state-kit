@@ -121,13 +121,13 @@ def list_command(args: argparse.Namespace) -> int:
     if args.kind == ResourceKind.DASHBOARDS:
         items = alert_client.search_dashboards("")
     elif args.kind == ResourceKind.FOLDERS:
-        items = dashboard_client.request_json("GET", "/api/folders")
+        items = dashboard_client.request_json("/api/folders", method="GET")
     elif args.kind == ResourceKind.DATASOURCES:
         items = datasource_client.list_datasources()
     elif args.kind == ResourceKind.ALERT_RULES:
         items = alert_client.list_alert_rules()
     elif args.kind == ResourceKind.ORGS:
-        items = access_client.request_json("GET", "/api/orgs")
+        items = access_client.request_json("/api/orgs", method="GET")
     
     document = {
         "kind": args.kind,
@@ -202,13 +202,16 @@ def get_command(args: argparse.Namespace) -> int:
     if kind == ResourceKind.DASHBOARDS:
         item = dashboard_client.get_dashboard(identity)
     elif kind == ResourceKind.FOLDERS:
-        item = dashboard_client.request_json("GET", f"/api/folders/{identity}")
+        item = dashboard_client.request_json(f"/api/folders/{identity}", method="GET")
     elif kind == ResourceKind.DATASOURCES:
-        item = datasource_client.request_json("GET", f"/api/datasources/uid/{identity}")
+        item = datasource_client.request_json(
+            f"/api/datasources/uid/{identity}",
+            method="GET",
+        )
     elif kind == ResourceKind.ALERT_RULES:
         item = alert_client.get_alert_rule(identity)
     elif kind == ResourceKind.ORGS:
-        item = access_client.request_json("GET", f"/api/orgs/{identity}")
+        item = access_client.request_json(f"/api/orgs/{identity}", method="GET")
     
     dump_document(item, args.output_format)
     return 0

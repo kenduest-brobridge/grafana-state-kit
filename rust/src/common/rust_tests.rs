@@ -5,7 +5,7 @@ use super::auth::resolve_auth_headers_with_prompt;
 use super::{
     editor, emit_plain_output, invalid_header_name, invalid_header_value, invalid_url, parse_error,
     resolve_auth_headers, sanitize_path_component, should_print_stdout, strip_ansi_codes, tui,
-    validation, write_plain_output_file, GrafanaCliError,
+    tui_feature_required, validation, write_plain_output_file, GrafanaCliError,
 };
 use std::fs;
 use std::path::Path;
@@ -27,6 +27,13 @@ fn typed_error_helpers_keep_expected_categories_and_messages() {
     let tui_error = tui("Interactive review cancelled.");
     assert!(matches!(tui_error, GrafanaCliError::Tui(_)));
     assert_eq!(tui_error.kind(), "tui");
+
+    let feature_error = tui_feature_required("Datasource browse");
+    assert!(matches!(feature_error, GrafanaCliError::Tui(_)));
+    assert_eq!(
+        feature_error.to_string(),
+        "Datasource browse requires the `tui` feature."
+    );
 
     let editor_error = editor("External editor exited.");
     assert!(matches!(editor_error, GrafanaCliError::Editor(_)));

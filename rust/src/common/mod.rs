@@ -19,7 +19,7 @@ pub use diff_document::{build_shared_diff_document, DiffOutputFormat, SharedDiff
 #[allow(unused_imports)]
 pub use error::{
     api_response, editor, invalid_header_name, invalid_header_value, invalid_url, message,
-    parse_error, tui, validation, GrafanaCliError, Result,
+    parse_error, tui, tui_feature_required, validation, GrafanaCliError, Result,
 };
 #[allow(unused_imports)]
 pub use io::{

@@ -60,8 +60,8 @@ fn run_project_status_interactive(status: ProjectStatus) -> CommonResult<()> {
 #[allow(dead_code)]
 // Non-TUI fallback keeps all entrypoints compile-time complete.
 fn run_project_status_interactive(_status: ProjectStatus) -> CommonResult<()> {
-    Err(crate::common::tui(
-        "Project-status interactive mode requires the `tui` feature.",
+    Err(crate::common::tui_feature_required(
+        "Project-status interactive mode",
     ))
 }
 

@@ -728,7 +728,7 @@ fn control_lines(state: &BrowserState, args: &UserBrowseArgs) -> Vec<Line<'stati
             ),
             ("i", Color::Magenta, "numbers"),
         ],
-        vec![("q", Color::Gray, "exit"), ("Esc", Color::Gray, "exit")],
+        vec![("Esc/q", Color::Gray, "exit")],
     ])
 }
 

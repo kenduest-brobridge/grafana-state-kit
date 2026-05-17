@@ -131,6 +131,15 @@ fn summary_lines(state: &BrowserState) -> Vec<Line<'static>> {
             Span::raw("  "),
             tui_shell::focus_label("Focus "),
             tui_shell::key_chip(state.focus_label(), Color::Blue),
+            Span::raw("  "),
+            tui_shell::label("Row "),
+            tui_shell::accent(state.selected_position_summary(), Color::White),
+            Span::raw("  "),
+            tui_shell::label("Kind "),
+            tui_shell::accent(state.selected_kind_summary(), Color::Yellow),
+            Span::raw("  "),
+            tui_shell::label("Search "),
+            tui_shell::accent(state.search_summary(), Color::LightMagenta),
         ]),
     ]
 }
@@ -492,7 +501,7 @@ fn control_lines(has_pending_delete: bool, has_pending_edit: bool) -> Vec<Line<'
             ("l", Color::Cyan, "refresh"),
             ("Home/End", Color::Blue, "jump"),
         ]),
-        control_line(&[("q", Color::Gray, "exit"), ("Esc", Color::Gray, "exit")]),
+        control_line(&[("Esc/q", Color::Gray, "exit")]),
     ]
 }
 
@@ -634,6 +643,11 @@ mod tests {
         assert!(lines[1].contains("browse"));
         assert!(lines[1].contains("Focus"));
         assert!(lines[1].contains("list"));
+        assert!(lines[1].contains("Row"));
+        assert!(lines[1].contains("-"));
+        assert!(lines[1].contains("Kind"));
+        assert!(lines[1].contains("none"));
+        assert!(lines[1].contains("Search"));
         assert!(!lines.iter().any(|line| line.contains("default datasource")));
     }
 
@@ -657,6 +671,64 @@ mod tests {
     }
 
     #[test]
+    fn summary_lines_surface_selection_and_search_context() {
+        let mut state = BrowserState::new(DatasourceBrowseDocument {
+            org: "All visible orgs".to_string(),
+            org_id: "-".to_string(),
+            org_count: 2,
+            datasource_count: 1,
+            scope_label: "all-orgs".to_string(),
+            items: vec![
+                DatasourceBrowseItem {
+                    kind: super::super::datasource_browse_support::DatasourceBrowseItemKind::Org,
+                    depth: 0,
+                    id: 0,
+                    uid: String::new(),
+                    name: "Main Org.".to_string(),
+                    datasource_type: "org".to_string(),
+                    access: String::new(),
+                    url: String::new(),
+                    is_default: false,
+                    org: "Main Org.".to_string(),
+                    org_id: "1".to_string(),
+                    details: serde_json::Map::new(),
+                    datasource_count: 1,
+                },
+                DatasourceBrowseItem {
+                    kind: super::super::datasource_browse_support::DatasourceBrowseItemKind::Datasource,
+                    depth: 1,
+                    id: 9,
+                    uid: "smoke-prom".to_string(),
+                    name: "Smoke Prometheus".to_string(),
+                    datasource_type: "prometheus".to_string(),
+                    access: "proxy".to_string(),
+                    url: "http://prom".to_string(),
+                    is_default: false,
+                    org: "Main Org.".to_string(),
+                    org_id: "1".to_string(),
+                    details: serde_json::Map::new(),
+                    datasource_count: 0,
+                },
+            ],
+        });
+        state.select_last();
+        state.last_search = Some(super::super::datasource_browse_state::SearchState {
+            direction: super::super::datasource_browse_state::SearchDirection::Forward,
+            query: "smoke".to_string(),
+        });
+        let lines = summary_lines(&state)
+            .into_iter()
+            .map(|line| line.to_string())
+            .collect::<Vec<_>>();
+        assert!(lines[1].contains("Row"));
+        assert!(lines[1].contains("2/2"));
+        assert!(lines[1].contains("Kind"));
+        assert!(lines[1].contains("datasource"));
+        assert!(lines[1].contains("Search"));
+        assert!(lines[1].contains("/smoke"));
+    }
+
+    #[test]
     fn control_lines_surface_consistent_focus_cycle_and_exit_labels() {
         let lines = control_lines(false, false)
             .into_iter()
@@ -666,6 +738,6 @@ mod tests {
         assert!(lines[1].contains("previous pane"));
         assert!(lines[1].contains("search"));
         assert!(lines[2].contains("exit"));
-        assert!(lines[2].contains("Esc"));
+        assert!(lines[2].contains("Esc/q"));
     }
 }

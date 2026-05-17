@@ -1,7 +1,5 @@
 //! Interactive browse workflows and terminal-driven state flow for Core entities.
 
-#[cfg(not(feature = "tui"))]
-use crate::common::message;
 use crate::common::Result;
 
 use super::{resolve_target_client, DatasourceBrowseArgs};
@@ -27,7 +25,5 @@ pub(crate) fn browse_datasources_with_client(
     _client: &crate::http::JsonHttpClient,
     _args: &DatasourceBrowseArgs,
 ) -> Result<usize> {
-    Err(message(
-        "Datasource browse requires TUI support, but it was not built in.",
-    ))
+    Err(crate::common::tui_feature_required("Datasource browse"))
 }

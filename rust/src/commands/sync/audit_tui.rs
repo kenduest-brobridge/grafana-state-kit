@@ -386,7 +386,7 @@ pub(crate) fn run_sync_audit_interactive(audit: &Value) -> Result<()> {
                     ]),
                     tui_shell::control_line(&[
                         ("Enter", Color::Blue, "reset detail"),
-                        ("q/Esc", Color::Gray, "exit"),
+                        ("Esc/q", Color::Gray, "exit"),
                     ]),
                 ]),
                 outer[2],
@@ -490,8 +490,8 @@ pub(crate) fn run_sync_audit_interactive(audit: &Value) -> Result<()> {
 
 #[cfg(not(feature = "tui"))]
 pub(crate) fn run_sync_audit_interactive(_audit: &Value) -> Result<()> {
-    Err(tui(
-        "Sync audit interactive TUI requires the `tui` feature.",
+    Err(crate::common::tui_feature_required(
+        "Sync audit interactive TUI",
     ))
 }
 

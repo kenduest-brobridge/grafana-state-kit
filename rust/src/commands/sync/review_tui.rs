@@ -545,8 +545,8 @@ pub(crate) fn run_sync_review_tui(plan: &Value) -> Result<Value> {
 #[cfg(not(feature = "tui"))]
 pub(crate) fn run_sync_review_tui(plan: &Value) -> Result<Value> {
     let _ = plan;
-    Err(tui(
-        "Sync review interactive TUI requires the `tui` feature.",
+    Err(crate::common::tui_feature_required(
+        "Sync review interactive TUI",
     ))
 }
 

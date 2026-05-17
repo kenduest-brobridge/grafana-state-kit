@@ -444,8 +444,8 @@ pub(crate) fn run_overview_interactive(document: OverviewDocument) -> Result<()>
 #[cfg(not(feature = "tui"))]
 #[allow(dead_code)]
 pub(crate) fn run_overview_interactive(_document: OverviewDocument) -> Result<()> {
-    Err(crate::common::tui(
-        "Overview interactive mode requires the `tui` feature.",
+    Err(crate::common::tui_feature_required(
+        "Overview interactive mode",
     ))
 }
 
