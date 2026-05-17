@@ -46,7 +46,7 @@ curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit
 
 ```bash
 # 執行這個範例指令。
-curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/v0.13.1/scripts/install.sh | VERSION=0.13.1 INSTALL_COMPLETION=auto sh
+curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/v0.13.2/scripts/install.sh | VERSION=0.13.2 INSTALL_COMPLETION=auto sh
 ```
 
 若要互動安裝，請把 `--interactive` 傳給 pipe 後面的 `sh`：

@@ -14,6 +14,22 @@ Format rule going forward:
 - keep older tagged releases below
 - use commit/tag history as the source of truth
 
+## [0.13.2] - 2026-05-17
+
+### Highlights
+
+- This patch release hardens the published installer path so release docs, pinned install examples, and tag-driven CI all agree on what "latest" and "one fixed version" mean.
+
+### Fixed
+
+- Public install guidance now distinguishes `latest GitHub release` from `latest tag`, so operators do not confuse the `main` installer URL with a pinned release installer.
+- Pinned install examples now use tag-pinned `raw.githubusercontent.com/.../vX.Y.Z/scripts/install.sh` URLs to keep the installer copy aligned with the release asset being requested.
+- Tag-triggered release CI now smoke-tests both the pinned installer path and the `latest` installer path after publishing the GitHub release assets.
+
+### Migration Notes
+
+- `grafana-util` remains the shipped CLI name; this patch line changes release/install guarantees, not command behavior.
+
 ## [0.13.1] - 2026-05-17
 
 ### Highlights

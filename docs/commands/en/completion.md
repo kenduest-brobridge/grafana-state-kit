@@ -46,7 +46,7 @@ For one fixed release, prefer the tag-pinned installer URL so the installer copy
 
 ```bash
 # Run this example command.
-curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/v0.13.1/scripts/install.sh | VERSION=0.13.1 INSTALL_COMPLETION=auto sh
+curl -sSL https://raw.githubusercontent.com/kenduest-brobridge/grafana-state-kit/v0.13.2/scripts/install.sh | VERSION=0.13.2 INSTALL_COMPLETION=auto sh
 ```
 
 For an interactive install, pass `--interactive` to the `sh` process after the pipe:
