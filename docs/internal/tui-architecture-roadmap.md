@@ -11,7 +11,7 @@ several existing Rust TUI surfaces without changing public CLI paths.
 | --- | --- | --- | --- |
 | Dashboard browse | `grafana-util dashboard browse` | Mature | Dedicated live/local tree browser under `rust/src/commands/dashboard/browse/`; keep current ownership disjoint. |
 | Access browse | `grafana-util access browse`, `access user browse`, `access team browse` | Active implementation | Consolidated access browse now has in-session filtering, selection summaries, and shared-shell header/footer language. User/team specialized browsers remain separate richer flows; repeat-search now skips the selected row and wraps across matching rows. |
-| Datasource browse | `grafana-util datasource browse`, local `datasource list --interactive` | Active implementation | Live/local datasource browser under `rust/src/commands/datasource/browse/`; it surfaces row, kind, search context, repeat-search wrap, and a first-class Review pane for secret/provider/read-only evidence. |
+| Datasource browse | `grafana-util datasource browse`, local `datasource list --interactive` | Active implementation | Live/local datasource browser under `rust/src/commands/datasource/browse/`; it surfaces row, kind, search context, repeat-search wrap, and a first-class Review pane for secret/provider/read-only plus compatible local plan/diff/import evidence carried in datasource details. |
 | Status overview | `grafana-util status overview live --output-format interactive` and staged/live status interactive output | Mature document browser | Uses the overview/status document model, then projects into TUI. It now supports current-view `/`, `?`, and `n` item search with explicit search status in the shell. |
 | Dashboard summary / inspect workbench | `grafana-util dashboard summary --interactive` | Mature review workbench | Query, dashboard, and governance rows share the inspect workbench. |
 | Dashboard import review | `grafana-util dashboard import --interactive` | Mature but specialized | Client-backed selector and focused review flow are import-specific. Keep changes evidence-led. |
@@ -87,11 +87,17 @@ while skipping generated HTML and Cargo build output.
 - `datasource browse` now separates secret placeholder, blocker, and
   review-required evidence into a dedicated Review pane, leaving general
   datasource metadata in Facts and keeping resolved credential values hidden.
+- `datasource browse` Review lines now also recognize compatible review
+  evidence fields already carried in datasource details, including action,
+  status, match basis, destination, source file, target UID/version/read-only,
+  blocked reason, changed fields, review hints, and secret-value requirements.
+  Secret-like changed-field paths such as `secureJsonData.*` stay hidden.
 - The change stayed in state/tests. Public CLI/docs and generated docs remain
   unchanged because the user-facing command surface did not change.
 
 ## Next Follow-Up
 
-- Continue datasource browse operational review maturity by connecting Review
-  pane evidence to plan/diff documents where the underlying review model is
-  already compatible.
+- Reuse the datasource Review pane renderer from a local plan/diff/import
+  workbench only after that surface already owns local artifact loading; do not
+  add local input flags to the live-only `datasource browse` command just to
+  feed review evidence.

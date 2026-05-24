@@ -152,6 +152,7 @@ fn secret_review_lines(details: &Map<String, Value>) -> Vec<String> {
     {
         lines.extend(read_only_review_lines());
     }
+    lines.extend(local_review_evidence_lines(details));
     lines
 }
 
@@ -268,6 +269,121 @@ fn read_only_review_lines() -> Vec<String> {
             .to_string(),
         "Datasource review required: true (read-only datasource)".to_string(),
     ]
+}
+
+fn local_review_evidence_lines(details: &Map<String, Value>) -> Vec<String> {
+    let mut lines = Vec::new();
+    let action = text_field(details, &["action"]);
+    let status = text_field(details, &["status"]);
+    if let Some(action) = action {
+        if let Some(status) = status {
+            lines.push(format!("Review action: {action} (status={status})"));
+        } else {
+            lines.push(format!("Review action: {action}"));
+        }
+    } else if let Some(status) = status {
+        lines.push(format!("Review status: {status}"));
+    }
+    if let Some(blocked_reason) = text_field(details, &["blockedReason", "blocked_reason"]) {
+        lines.push(format!(
+            "Review blocker status: blocked by {blocked_reason}"
+        ));
+    }
+    if let Some(match_basis) = text_field(details, &["matchBasis", "match_basis"]) {
+        lines.push(format!("Review match: {match_basis}"));
+    }
+    if let Some(destination) = text_field(details, &["destination"]) {
+        lines.push(format!("Review destination: {destination}"));
+    }
+    if let Some(file) = text_field(details, &["file", "sourceFile", "source_file"]) {
+        lines.push(format!("Review source: {file}"));
+    }
+    if let Some(target_uid) = text_field(details, &["targetUid", "target_uid"]) {
+        lines.push(format!("Review target UID: {target_uid}"));
+    }
+    if let Some(target_version) = i64_field(details, &["targetVersion", "target_version"]) {
+        lines.push(format!("Review target version: {target_version}"));
+    }
+    if let Some(target_read_only) = bool_field(details, &["targetReadOnly", "target_read_only"]) {
+        lines.push(format!("Review target: read-only={target_read_only}"));
+    }
+    if let Some(changed_fields) = text_list_field(details, &["changedFields", "changed_fields"]) {
+        let changed_fields = changed_fields
+            .into_iter()
+            .filter(|field| is_safe_changed_field(field))
+            .collect::<Vec<_>>();
+        if !changed_fields.is_empty() {
+            lines.push(format!(
+                "Review changed fields: {}",
+                changed_fields.join(", ")
+            ));
+        }
+    }
+    if bool_field(details, &["reviewRequired", "review_required"]) == Some(true) {
+        lines.push("Review required: true".to_string());
+    }
+    if bool_field(details, &["requiresSecretValues", "requires_secret_values"]) == Some(true) {
+        lines.push("Review requires secret values: true".to_string());
+    }
+    if let Some(review_hints) = text_list_field(details, &["reviewHints", "review_hints"]) {
+        lines.push(format!("Review hints: {}", review_hints.join(", ")));
+    }
+    lines
+}
+
+fn text_field(details: &Map<String, Value>, names: &[&str]) -> Option<String> {
+    names.iter().find_map(|name| {
+        details
+            .get(*name)
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(str::to_string)
+    })
+}
+
+fn bool_field(details: &Map<String, Value>, names: &[&str]) -> Option<bool> {
+    names
+        .iter()
+        .find_map(|name| details.get(*name).and_then(Value::as_bool))
+}
+
+fn i64_field(details: &Map<String, Value>, names: &[&str]) -> Option<i64> {
+    names
+        .iter()
+        .find_map(|name| details.get(*name).and_then(Value::as_i64))
+}
+
+fn text_list_field(details: &Map<String, Value>, names: &[&str]) -> Option<Vec<String>> {
+    let mut values = names.iter().find_map(|name| {
+        let value = details.get(*name)?;
+        if let Some(items) = value.as_array() {
+            let items = items
+                .iter()
+                .filter_map(Value::as_str)
+                .map(str::trim)
+                .filter(|item| !item.is_empty())
+                .map(str::to_string)
+                .collect::<Vec<_>>();
+            return (!items.is_empty()).then_some(items);
+        }
+        value
+            .as_str()
+            .map(|text| {
+                text.split(',')
+                    .map(str::trim)
+                    .filter(|item| !item.is_empty())
+                    .map(str::to_string)
+                    .collect::<Vec<_>>()
+            })
+            .filter(|items| !items.is_empty())
+    })?;
+    values.sort();
+    Some(values)
+}
+
+fn is_safe_changed_field(field: &str) -> bool {
+    !field.to_ascii_lowercase().contains("securejsondata")
 }
 
 fn sorted_object_keys(object: &Map<String, Value>) -> Vec<String> {
@@ -668,5 +784,82 @@ mod tests {
         assert!(
             lines.contains(&"Datasource review required: true (read-only datasource)".to_string())
         );
+    }
+
+    #[test]
+    fn review_lines_surface_plan_action_evidence_from_details() {
+        let item = datasource_item(
+            json!({
+                "action": "blocked-read-only",
+                "status": "blocked",
+                "matchBasis": "uid",
+                "destination": "exists-uid",
+                "blockedReason": "target-read-only",
+                "file": "datasources.json#0",
+                "targetUid": "prom-live",
+                "targetVersion": 12,
+                "targetReadOnly": true,
+                "changedFields": ["url", "jsonData"],
+                "reviewHints": ["requires-secret-values"]
+            })
+            .as_object()
+            .unwrap()
+            .clone(),
+        );
+
+        let lines = review_lines(&item);
+
+        assert!(lines.contains(&"Review action: blocked-read-only (status=blocked)".to_string()));
+        assert!(lines.contains(&"Review blocker status: blocked by target-read-only".to_string()));
+        assert!(lines.contains(&"Review match: uid".to_string()));
+        assert!(lines.contains(&"Review destination: exists-uid".to_string()));
+        assert!(lines.contains(&"Review source: datasources.json#0".to_string()));
+        assert!(lines.contains(&"Review target UID: prom-live".to_string()));
+        assert!(lines.contains(&"Review target version: 12".to_string()));
+        assert!(lines.contains(&"Review target: read-only=true".to_string()));
+        assert!(lines.contains(&"Review changed fields: jsonData, url".to_string()));
+        assert!(lines.contains(&"Review hints: requires-secret-values".to_string()));
+    }
+
+    #[test]
+    fn review_lines_surface_import_dry_run_review_required_flag() {
+        let item = datasource_item(
+            json!({
+                "action": "resolve-provider-secrets",
+                "reviewRequired": true,
+                "requiresSecretValues": true
+            })
+            .as_object()
+            .unwrap()
+            .clone(),
+        );
+
+        let lines = review_lines(&item);
+
+        assert!(lines.contains(&"Review action: resolve-provider-secrets".to_string()));
+        assert!(lines.contains(&"Review required: true".to_string()));
+        assert!(lines.contains(&"Review requires secret values: true".to_string()));
+    }
+
+    #[test]
+    fn review_lines_surface_diff_status_without_secret_change_paths() {
+        let item = datasource_item(
+            json!({
+                "status": "different",
+                "matchBasis": "uid",
+                "changedFields": ["url", "secureJsonData.password"]
+            })
+            .as_object()
+            .unwrap()
+            .clone(),
+        );
+
+        let lines = review_lines(&item);
+        let rendered = lines.join("\n");
+
+        assert!(lines.contains(&"Review status: different".to_string()));
+        assert!(lines.contains(&"Review match: uid".to_string()));
+        assert!(lines.contains(&"Review changed fields: url".to_string()));
+        assert!(!rendered.contains("secureJsonData.password"));
     }
 }

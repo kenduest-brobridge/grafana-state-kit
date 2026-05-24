@@ -832,4 +832,51 @@ mod tests {
         assert!(rendered.contains("resolved credential values are never displayed"));
         assert!(!rendered.contains("super-secret-value"));
     }
+
+    #[test]
+    fn review_pane_formats_local_review_evidence_without_secret_values() {
+        let item = DatasourceBrowseItem {
+            kind: super::super::datasource_browse_support::DatasourceBrowseItemKind::Datasource,
+            depth: 1,
+            id: 9,
+            uid: "secure-prom".to_string(),
+            name: "Secure Prometheus".to_string(),
+            datasource_type: "prometheus".to_string(),
+            access: "proxy".to_string(),
+            url: "http://prom".to_string(),
+            is_default: false,
+            org: "Main Org.".to_string(),
+            org_id: "1".to_string(),
+            details: serde_json::json!({
+                "action": "would-update",
+                "status": "ready",
+                "matchBasis": "uid",
+                "targetReadOnly": false,
+                "changedFields": ["url", "jsonData"],
+                "requiresSecretValues": true,
+                "secureJsonData": {
+                    "password": "super-secret-value"
+                }
+            })
+            .as_object()
+            .unwrap()
+            .clone(),
+            datasource_count: 0,
+        };
+
+        let rendered = build_review_lines(&item)
+            .into_iter()
+            .map(|line| line.to_string())
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        assert!(rendered.contains("Review action"));
+        assert!(rendered.contains("would-update"));
+        assert!(rendered.contains("Review match"));
+        assert!(rendered.contains("uid"));
+        assert!(rendered.contains("Review changed fields"));
+        assert!(rendered.contains("jsonData, url"));
+        assert!(rendered.contains("Review requires secret values"));
+        assert!(!rendered.contains("super-secret-value"));
+    }
 }
