@@ -1,15 +1,15 @@
 #![cfg(any(feature = "tui", test))]
 #![cfg_attr(test, allow(dead_code))]
 
-use ratatui::layout::{Constraint, Direction, Layout};
+use ratatui::layout::{Constraint, Direction, Layout, Position, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, Borders, List, ListItem, Paragraph, Wrap};
+use ratatui::widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Wrap};
 
 #[cfg(feature = "tui")]
 use crate::tui_shell;
 
-use super::{ProjectStatusPane, ProjectStatusTuiState};
+use super::{ProjectStatusPane, ProjectStatusTuiState, SearchDirection, SearchPromptState};
 
 pub(crate) fn render_project_status_frame(
     frame: &mut ratatui::Frame,
@@ -277,6 +277,10 @@ pub(crate) fn render_project_status_frame(
     );
 
     frame.render_widget(build_status_footer(state), outer[3]);
+
+    if let Some(search) = state.pending_search() {
+        render_search_prompt(frame, search);
+    }
 }
 
 fn pane_block(title: &str, focused: bool, accent: Color) -> Block<'static> {
@@ -373,7 +377,7 @@ fn summary_line(items: &[SummaryCell]) -> Line<'static> {
 }
 
 fn status_footer_height() -> u16 {
-    const FOOTER_LINE_COUNT: usize = 3;
+    const FOOTER_LINE_COUNT: usize = 4;
     #[cfg(feature = "tui")]
     {
         tui_shell::footer_height(FOOTER_LINE_COUNT)
@@ -390,6 +394,10 @@ fn build_status_footer(state: &ProjectStatusTuiState) -> Paragraph<'static> {
             state.status_line(),
             Style::default().fg(Color::Gray),
         )),
+        Line::from(Span::styled(
+            state.search_status().to_string(),
+            Style::default().fg(Color::Gray),
+        )),
         footer_control_line(&[
             ("Tab", Color::Blue, "next pane"),
             ("Shift+Tab", Color::Blue, "previous pane"),
@@ -400,6 +408,8 @@ fn build_status_footer(state: &ProjectStatusTuiState) -> Paragraph<'static> {
             ("Up/Down", Color::Blue, "move"),
             ("Home/End", Color::Blue, "jump"),
             ("PgUp/PgDn", Color::Blue, "scroll detail"),
+            ("/ ?", Color::Yellow, "search"),
+            ("n", Color::Yellow, "repeat"),
             ("Esc/q", Color::Gray, "exit"),
         ]),
     ];
@@ -420,6 +430,49 @@ fn build_status_footer(state: &ProjectStatusTuiState) -> Paragraph<'static> {
             )
             .style(Style::default().bg(Color::Rgb(16, 22, 30)).fg(Color::White))
     }
+}
+
+fn render_search_prompt(frame: &mut ratatui::Frame, search: &SearchPromptState) {
+    let area = Rect {
+        x: frame.area().x + 6,
+        y: frame.area().y + frame.area().height.saturating_sub(6),
+        width: frame.area().width.saturating_sub(12).min(70),
+        height: 4,
+    };
+    frame.render_widget(Clear, area);
+    let prefix = match search.direction {
+        SearchDirection::Forward => "/",
+        SearchDirection::Backward => "?",
+    };
+    let prompt = Paragraph::new(vec![
+        Line::from(vec![
+            Span::styled(
+                format!(" {prefix} "),
+                Style::default()
+                    .fg(Color::White)
+                    .bg(Color::Rgb(164, 116, 19))
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::raw(" "),
+            Span::styled(search.query.clone(), Style::default().fg(Color::White)),
+        ]),
+        Line::from(Span::styled(
+            "Enter search   Esc cancel   n repeat",
+            Style::default().fg(Color::Gray),
+        )),
+    ])
+    .block(
+        Block::default()
+            .borders(Borders::ALL)
+            .title(format!("Search {prefix}"))
+            .style(Style::default().bg(Color::Rgb(18, 20, 26)))
+            .border_style(Style::default().fg(Color::Yellow)),
+    )
+    .style(Style::default().bg(Color::Rgb(18, 20, 26)));
+    frame.render_widget(prompt, area);
+    let max_offset = area.width.saturating_sub(6) as usize;
+    let offset = search.query.chars().count().min(max_offset) as u16;
+    frame.set_cursor_position(Position::new(area.x + 5 + offset, area.y + 1));
 }
 
 fn footer_control_line(items: &[(&str, Color, &str)]) -> Line<'static> {
@@ -465,10 +518,33 @@ mod tests {
 
         let screen = format!("{}", terminal.backend());
         assert!(screen.contains("Status & Controls"));
+        assert!(screen.contains("/ ?"));
+        assert!(screen.contains("n"));
+        assert!(screen.contains("Search idle"));
         assert!(screen.contains("Home/End"));
         assert!(screen.contains("Esc/q"));
         assert!(!screen.contains(" q "));
         assert!(!screen.contains(" Esc "));
+    }
+
+    #[test]
+    fn interactive_render_surfaces_search_prompt() {
+        let mut state = ProjectStatusTuiState::new(sample_project_status());
+        state.start_search(SearchDirection::Forward);
+        state.handle_search_key(crossterm::event::KeyCode::Char('s'));
+        state.handle_search_key(crossterm::event::KeyCode::Char('y'));
+        let mut terminal = Terminal::new(TestBackend::new(180, 40)).unwrap();
+
+        terminal
+            .draw(|frame| render_project_status_frame(frame, &mut state))
+            .unwrap();
+
+        let screen = format!("{}", terminal.backend());
+        assert!(screen.contains("Search /"));
+        assert!(screen.contains("sy"));
+        assert!(screen.contains("Enter search"));
+        assert!(screen.contains("Esc cancel"));
+        assert!(screen.contains("n repeat"));
     }
 
     fn sample_project_status() -> ProjectStatus {

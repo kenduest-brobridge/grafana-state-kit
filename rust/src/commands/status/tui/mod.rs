@@ -8,7 +8,7 @@ use crate::project_status::{
     ProjectDomainStatus, ProjectStatus, ProjectStatusAction, ProjectStatusFinding,
     PROJECT_STATUS_BLOCKED,
 };
-#[cfg(feature = "tui")]
+#[cfg(any(feature = "tui", test))]
 use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 #[cfg(feature = "tui")]
 use crossterm::execute;
@@ -39,12 +39,66 @@ pub(crate) enum ProjectStatusPane {
     Actions,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum SearchDirection {
+    Forward,
+    Backward,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum SearchTarget {
+    Domains,
+    Actions,
+}
+
+impl SearchDirection {
+    fn label(self) -> &'static str {
+        match self {
+            SearchDirection::Forward => "forward",
+            SearchDirection::Backward => "backward",
+        }
+    }
+}
+
+impl SearchTarget {
+    fn label(self) -> &'static str {
+        match self {
+            SearchTarget::Domains => "domains",
+            SearchTarget::Actions => "actions",
+        }
+    }
+
+    fn singular_label(self) -> &'static str {
+        match self {
+            SearchTarget::Domains => "domain",
+            SearchTarget::Actions => "action",
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct SearchPromptState {
+    pub(crate) direction: SearchDirection,
+    pub(crate) target: SearchTarget,
+    pub(crate) query: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct SearchState {
+    pub(crate) direction: SearchDirection,
+    pub(crate) target: SearchTarget,
+    pub(crate) query: String,
+}
+
 pub(crate) struct ProjectStatusTuiState {
     document: ProjectStatus,
     domain_state: ListState,
     action_state: ListState,
     focus: ProjectStatusPane,
     detail_scroll: u16,
+    pending_search: Option<SearchPromptState>,
+    last_search: Option<SearchState>,
+    search_status: String,
 }
 
 #[cfg(feature = "tui")]
@@ -85,6 +139,9 @@ impl ProjectStatusTuiState {
             action_state,
             focus: ProjectStatusPane::Home,
             detail_scroll: 0,
+            pending_search: None,
+            last_search: None,
+            search_status: "Search idle. Use / or ? in Domains or Actions.".to_string(),
         };
         state.sync_action_selection();
         state
@@ -100,6 +157,14 @@ impl ProjectStatusTuiState {
 
     pub(crate) fn detail_scroll(&self) -> u16 {
         self.detail_scroll
+    }
+
+    pub(crate) fn pending_search(&self) -> Option<&SearchPromptState> {
+        self.pending_search.as_ref()
+    }
+
+    pub(crate) fn search_status(&self) -> &str {
+        &self.search_status
     }
 
     pub(crate) fn domain_state_mut(&mut self) -> &mut ListState {
@@ -126,6 +191,15 @@ impl ProjectStatusTuiState {
     pub(crate) fn current_action(&self) -> Option<&ProjectStatusAction> {
         self.current_action_index()
             .and_then(|index| self.document.next_actions.get(index))
+    }
+
+    fn search_target(&self) -> SearchTarget {
+        match self.focus {
+            ProjectStatusPane::Actions => SearchTarget::Actions,
+            ProjectStatusPane::Home | ProjectStatusPane::Domains | ProjectStatusPane::Details => {
+                SearchTarget::Domains
+            }
+        }
     }
 
     pub(crate) fn project_home_target_domain_index(&self) -> Option<usize> {
@@ -305,7 +379,7 @@ impl ProjectStatusTuiState {
             .map(|label| format!("   Home handoff: {label} | Home -> Domains -> Actions"))
             .unwrap_or_default();
         format!(
-            "Focus {focus}{handoff}   Domain {}/{}: {}   Action {}/{}: {}",
+            "Focus {focus}{handoff}   Domain {}/{}: {}   Action {}/{}: {}   Search: {}",
             self.domain_state
                 .selected()
                 .map(|index| index + 1)
@@ -317,8 +391,228 @@ impl ProjectStatusTuiState {
                 .map(|index| index + 1)
                 .unwrap_or(0),
             self.document.next_actions.len(),
-            action
+            action,
+            self.search_summary()
         )
+    }
+
+    pub(crate) fn search_summary(&self) -> String {
+        if let Some(search) = self.pending_search.as_ref() {
+            let prefix = match search.direction {
+                SearchDirection::Forward => "/",
+                SearchDirection::Backward => "?",
+            };
+            format!("prompt {prefix}{} {}", search.query, search.target.label())
+        } else if let Some(search) = self.last_search.as_ref() {
+            let prefix = match search.direction {
+                SearchDirection::Forward => "/",
+                SearchDirection::Backward => "?",
+            };
+            format!("last {prefix}{} {}", search.query, search.target.label())
+        } else {
+            "idle".to_string()
+        }
+    }
+
+    pub(crate) fn start_search(&mut self, direction: SearchDirection) {
+        let target = self.search_target();
+        self.pending_search = Some(SearchPromptState {
+            direction,
+            target,
+            query: String::new(),
+        });
+        self.search_status = format!("Search {} in {}.", direction.label(), target.label());
+    }
+
+    pub(crate) fn cancel_search(&mut self) {
+        self.pending_search = None;
+        self.search_status = "Cancelled status search.".to_string();
+    }
+
+    pub(crate) fn handle_search_key(&mut self, key: KeyCode) {
+        let Some(mut search) = self.pending_search.take() else {
+            return;
+        };
+        match key {
+            KeyCode::Esc => self.cancel_search(),
+            KeyCode::Enter => {
+                let query = search.query.trim().to_string();
+                if query.is_empty() {
+                    self.search_status = "Search query is empty.".to_string();
+                } else if let Some(index) = self.find_match(&query, search.direction, search.target)
+                {
+                    self.select_search_match(search.target, index);
+                    self.last_search = Some(SearchState {
+                        direction: search.direction,
+                        target: search.target,
+                        query: query.clone(),
+                    });
+                    self.search_status = format!(
+                        "Matched '{query}' at {} {} of {}.",
+                        search.target.singular_label(),
+                        index + 1,
+                        self.search_target_len(search.target)
+                    );
+                } else {
+                    self.last_search = Some(SearchState {
+                        direction: search.direction,
+                        target: search.target,
+                        query: query.clone(),
+                    });
+                    self.search_status = format!("No {} matched '{query}'.", search.target.label());
+                }
+            }
+            KeyCode::Backspace => {
+                search.query.pop();
+                self.pending_search = Some(search);
+            }
+            KeyCode::Char(ch) => {
+                search.query.push(ch);
+                self.pending_search = Some(search);
+            }
+            _ => {
+                self.pending_search = Some(search);
+            }
+        }
+    }
+
+    pub(crate) fn repeat_search(&mut self) {
+        let Some(search) = self.last_search.clone() else {
+            self.search_status = "No previous status search. Use / or ? first.".to_string();
+            return;
+        };
+        if let Some(index) = self.repeat_last_search() {
+            self.select_search_match(search.target, index);
+            self.search_status = format!(
+                "Next match for '{}' at {} {} of {}.",
+                search.query,
+                search.target.singular_label(),
+                index + 1,
+                self.search_target_len(search.target)
+            );
+        } else {
+            self.search_status = format!(
+                "No more {} matches for '{}'.",
+                search.target.label(),
+                search.query
+            );
+        }
+    }
+
+    fn find_match(
+        &self,
+        query: &str,
+        direction: SearchDirection,
+        target: SearchTarget,
+    ) -> Option<usize> {
+        let anchor = match (target, direction) {
+            (SearchTarget::Domains, SearchDirection::Forward) => {
+                self.domain_state.selected().unwrap_or(0)
+            }
+            (SearchTarget::Domains, SearchDirection::Backward) => self
+                .domain_state
+                .selected()
+                .unwrap_or_else(|| self.document.domains.len().saturating_sub(1)),
+            (SearchTarget::Actions, SearchDirection::Forward) => {
+                self.action_state.selected().unwrap_or(0)
+            }
+            (SearchTarget::Actions, SearchDirection::Backward) => self
+                .action_state
+                .selected()
+                .unwrap_or_else(|| self.document.next_actions.len().saturating_sub(1)),
+        };
+        self.find_match_from(query, direction, target, anchor, true)
+    }
+
+    fn repeat_last_search(&self) -> Option<usize> {
+        let search = self.last_search.as_ref()?;
+        let anchor = match search.target {
+            SearchTarget::Domains => self.domain_state.selected().unwrap_or(0),
+            SearchTarget::Actions => self.action_state.selected().unwrap_or(0),
+        };
+        self.find_match_from(
+            &search.query,
+            search.direction,
+            search.target,
+            anchor,
+            false,
+        )
+    }
+
+    fn find_match_from(
+        &self,
+        query: &str,
+        direction: SearchDirection,
+        target: SearchTarget,
+        anchor: usize,
+        include_anchor: bool,
+    ) -> Option<usize> {
+        let len = self.search_target_len(target);
+        if len == 0 {
+            return None;
+        }
+        let normalized = query.to_ascii_lowercase();
+        if normalized.trim().is_empty() {
+            return None;
+        }
+        for offset in 0..len {
+            if offset == 0 && !include_anchor {
+                continue;
+            }
+            let index = match direction {
+                SearchDirection::Forward => (anchor + offset) % len,
+                SearchDirection::Backward => (anchor + len - offset) % len,
+            };
+            if self.search_text(target, index).contains(&normalized) {
+                return Some(index);
+            }
+        }
+        None
+    }
+
+    fn select_search_match(&mut self, target: SearchTarget, index: usize) {
+        match target {
+            SearchTarget::Domains => self.select_domain(index),
+            SearchTarget::Actions => {
+                self.action_state.select(Some(index));
+                self.detail_scroll = 0;
+                if let Some(domain_index) = self.action_domain_index(index) {
+                    self.domain_state.select(Some(domain_index));
+                }
+            }
+        }
+    }
+
+    fn action_domain_index(&self, action_index: usize) -> Option<usize> {
+        let domain_id = &self.document.next_actions.get(action_index)?.domain;
+        self.document
+            .domains
+            .iter()
+            .position(|domain| &domain.id == domain_id)
+    }
+
+    fn search_target_len(&self, target: SearchTarget) -> usize {
+        match target {
+            SearchTarget::Domains => self.document.domains.len(),
+            SearchTarget::Actions => self.document.next_actions.len(),
+        }
+    }
+
+    fn search_text(&self, target: SearchTarget, index: usize) -> String {
+        match target {
+            SearchTarget::Domains => self
+                .document
+                .domains
+                .get(index)
+                .map(domain_search_text)
+                .unwrap_or_default(),
+            SearchTarget::Actions => self
+                .document
+                .next_actions
+                .get(index)
+                .map(action_search_text)
+                .unwrap_or_default(),
+        }
     }
 
     pub(crate) fn focus_next(&mut self) {
@@ -438,6 +732,44 @@ fn render_finding_block(label: &str, findings: &[ProjectStatusFinding]) -> Strin
     }
 }
 
+fn domain_search_text(domain: &ProjectDomainStatus) -> String {
+    let blockers = domain
+        .blockers
+        .iter()
+        .map(finding_search_text)
+        .collect::<Vec<_>>()
+        .join(" ");
+    let warnings = domain
+        .warnings
+        .iter()
+        .map(finding_search_text)
+        .collect::<Vec<_>>()
+        .join(" ");
+    format!(
+        "{} {} {} {} {} {} {} {} {} {} {}",
+        domain.id,
+        domain.scope,
+        domain.mode,
+        domain.status,
+        domain.reason_code,
+        domain.source_kinds.join(" "),
+        domain.signal_keys.join(" "),
+        domain.next_actions.join(" "),
+        blockers,
+        warnings,
+        domain.freshness.status
+    )
+    .to_ascii_lowercase()
+}
+
+fn action_search_text(action: &ProjectStatusAction) -> String {
+    format!("{} {} {}", action.domain, action.reason_code, action.action).to_ascii_lowercase()
+}
+
+fn finding_search_text(finding: &ProjectStatusFinding) -> String {
+    format!("{} {} {}", finding.kind, finding.count, finding.source)
+}
+
 #[cfg(feature = "tui")]
 pub(crate) fn run_project_status_interactive(document: ProjectStatus) -> Result<()> {
     let mut session = TerminalSession::enter()?;
@@ -457,6 +789,10 @@ pub(crate) fn run_project_status_interactive(document: ProjectStatus) -> Result<
         if key.kind != KeyEventKind::Press {
             continue;
         }
+        if state.pending_search().is_some() {
+            state.handle_search_key(key.code);
+            continue;
+        }
 
         let detail_lines_len = state.current_domain_lines().len();
         match key.code {
@@ -464,6 +800,9 @@ pub(crate) fn run_project_status_interactive(document: ProjectStatus) -> Result<
             KeyCode::Tab => state.focus_next(),
             KeyCode::BackTab => state.focus_previous(),
             KeyCode::Char('h') => state.focus_home(),
+            KeyCode::Char('/') => state.start_search(SearchDirection::Forward),
+            KeyCode::Char('?') => state.start_search(SearchDirection::Backward),
+            KeyCode::Char('n') => state.repeat_search(),
             KeyCode::Enter if state.focus() == ProjectStatusPane::Home => {
                 state.handoff_from_home();
             }
@@ -542,6 +881,76 @@ mod tests {
         assert_eq!(state.detail_scroll(), 0);
     }
 
+    #[test]
+    fn domain_search_submit_and_repeat_wrap_selection() {
+        let mut state = ProjectStatusTuiState::new(sample_project_status());
+
+        state.start_search(SearchDirection::Forward);
+        for ch in ['s', 't', 'a', 'g', 'e', 'd'] {
+            state.handle_search_key(KeyCode::Char(ch));
+        }
+        state.handle_search_key(KeyCode::Enter);
+
+        assert_eq!(state.pending_search(), None);
+        assert_eq!(state.current_domain_index(), Some(0));
+        assert_eq!(state.search_status(), "Matched 'staged' at domain 1 of 2.");
+
+        state.repeat_search();
+        assert_eq!(state.current_domain_index(), Some(1));
+        assert_eq!(
+            state.search_status(),
+            "Next match for 'staged' at domain 2 of 2."
+        );
+
+        state.repeat_search();
+        assert_eq!(state.current_domain_index(), Some(0));
+        assert_eq!(
+            state.search_status(),
+            "Next match for 'staged' at domain 1 of 2."
+        );
+    }
+
+    #[test]
+    fn action_search_uses_action_focus_and_cancel_keeps_selection() {
+        let mut state = ProjectStatusTuiState::new(sample_project_status());
+        state.focus = ProjectStatusPane::Actions;
+
+        state.start_search(SearchDirection::Backward);
+        assert_eq!(
+            state.pending_search(),
+            Some(&SearchPromptState {
+                direction: SearchDirection::Backward,
+                target: SearchTarget::Actions,
+                query: String::new(),
+            })
+        );
+
+        for ch in ['s', 'y', 'n', 'c'] {
+            state.handle_search_key(KeyCode::Char(ch));
+        }
+        state.handle_search_key(KeyCode::Esc);
+
+        assert_eq!(state.pending_search(), None);
+        assert_eq!(state.current_action_index(), Some(0));
+        assert_eq!(state.search_status(), "Cancelled status search.");
+    }
+
+    #[test]
+    fn action_search_submit_selects_matching_action_and_domain() {
+        let mut state = ProjectStatusTuiState::new(sample_project_status());
+        state.focus = ProjectStatusPane::Actions;
+
+        state.start_search(SearchDirection::Forward);
+        for ch in ['s', 'y', 'n', 'c'] {
+            state.handle_search_key(KeyCode::Char(ch));
+        }
+        state.handle_search_key(KeyCode::Enter);
+
+        assert_eq!(state.current_action_index(), Some(0));
+        assert_eq!(state.current_domain_index(), Some(1));
+        assert_eq!(state.search_status(), "Matched 'sync' at action 1 of 1.");
+    }
+
     fn sample_project_status() -> ProjectStatus {
         ProjectStatus {
             schema_version: 1,
@@ -550,10 +959,10 @@ mod tests {
             scope: "live".to_string(),
             overall: ProjectStatusOverall {
                 status: PROJECT_STATUS_READY.to_string(),
-                domain_count: 1,
-                present_count: 1,
-                blocked_count: 0,
-                blocker_count: 0,
+                domain_count: 2,
+                present_count: 2,
+                blocked_count: 1,
+                blocker_count: 3,
                 warning_count: 0,
                 freshness: ProjectStatusFreshness {
                     status: "current".to_string(),
@@ -562,32 +971,59 @@ mod tests {
                     oldest_age_seconds: Some(30),
                 },
             },
-            domains: vec![ProjectDomainStatus {
-                id: "dashboard".to_string(),
-                scope: "staged".to_string(),
-                mode: "inspect-summary".to_string(),
-                status: PROJECT_STATUS_READY.to_string(),
-                reason_code: PROJECT_STATUS_READY.to_string(),
-                primary_count: 4,
-                blocker_count: 0,
-                warning_count: 0,
-                source_kinds: vec!["dashboard-export".to_string()],
-                signal_keys: vec!["summary.dashboardCount".to_string()],
-                blockers: Vec::new(),
-                warnings: Vec::new(),
-                next_actions: vec!["review dashboard governance warnings".to_string()],
-                freshness: ProjectStatusFreshness {
-                    status: "current".to_string(),
-                    source_count: 1,
-                    newest_age_seconds: Some(30),
-                    oldest_age_seconds: Some(30),
+            domains: vec![
+                ProjectDomainStatus {
+                    id: "dashboard".to_string(),
+                    scope: "staged".to_string(),
+                    mode: "inspect-summary".to_string(),
+                    status: PROJECT_STATUS_READY.to_string(),
+                    reason_code: PROJECT_STATUS_READY.to_string(),
+                    primary_count: 4,
+                    blocker_count: 0,
+                    warning_count: 0,
+                    source_kinds: vec!["dashboard-export".to_string()],
+                    signal_keys: vec!["summary.dashboardCount".to_string()],
+                    blockers: Vec::new(),
+                    warnings: Vec::new(),
+                    next_actions: vec!["review dashboard governance warnings".to_string()],
+                    freshness: ProjectStatusFreshness {
+                        status: "current".to_string(),
+                        source_count: 1,
+                        newest_age_seconds: Some(30),
+                        oldest_age_seconds: Some(30),
+                    },
                 },
-            }],
+                ProjectDomainStatus {
+                    id: "sync".to_string(),
+                    scope: "staged".to_string(),
+                    mode: "staged-documents".to_string(),
+                    status: PROJECT_STATUS_BLOCKED.to_string(),
+                    reason_code: "blocked-by-blockers".to_string(),
+                    primary_count: 6,
+                    blocker_count: 3,
+                    warning_count: 0,
+                    source_kinds: vec!["sync-summary".to_string()],
+                    signal_keys: vec!["summary.syncBlockingCount".to_string()],
+                    blockers: vec![crate::project_status::status_finding(
+                        "sync-blocking",
+                        3,
+                        "summary.syncBlockingCount",
+                    )],
+                    warnings: Vec::new(),
+                    next_actions: vec!["resolve sync workflow blockers".to_string()],
+                    freshness: ProjectStatusFreshness {
+                        status: "current".to_string(),
+                        source_count: 1,
+                        newest_age_seconds: Some(10),
+                        oldest_age_seconds: Some(10),
+                    },
+                },
+            ],
             top_blockers: Vec::new(),
             next_actions: vec![ProjectStatusAction {
-                domain: "dashboard".to_string(),
-                reason_code: PROJECT_STATUS_READY.to_string(),
-                action: "review dashboard governance warnings".to_string(),
+                domain: "sync".to_string(),
+                reason_code: "blocked-by-blockers".to_string(),
+                action: "resolve sync workflow blockers".to_string(),
             }],
         }
     }

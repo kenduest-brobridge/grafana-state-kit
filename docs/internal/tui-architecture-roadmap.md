@@ -121,6 +121,8 @@ while skipping generated HTML and Cargo build output.
   repeated scroll keys cannot move the detail pane beyond its rendered lines.
 - Status TUI footer copy now advertises the existing `Home/End` jump behavior
   alongside movement, detail scroll, and `Esc/q` exit controls.
+- Status TUI now supports `/`, `?`, and `n` search over domain and action lists
+  with the same compact search prompt hint language used by the browse surfaces.
 - The change stayed in state/tests. Public CLI/docs and generated docs remain
   unchanged because the user-facing command surface did not change.
 
