@@ -200,8 +200,11 @@ fn render_summary_lines(state: &BrowserState) -> Vec<Line<'static>> {
                     Color::Blue,
                 ),
                 Span::raw("  "),
-                tui_shell::label("Confirm "),
-                tui_shell::accent("y / Esc / q", Color::Yellow),
+                tui_shell::label("Confirm: "),
+                tui_shell::accent("y", Color::Yellow),
+                Span::raw("  "),
+                tui_shell::label("Cancel: "),
+                tui_shell::accent("n/Esc/q", Color::Gray),
             ])
         } else {
             let mut spans = vec![

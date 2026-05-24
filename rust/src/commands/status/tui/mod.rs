@@ -378,6 +378,7 @@ impl ProjectStatusTuiState {
     }
 
     pub(crate) fn move_detail_scroll(&mut self, delta: isize) {
+        let max_scroll = self.current_domain_lines().len().saturating_sub(1) as u16;
         if delta.is_negative() {
             self.detail_scroll = self
                 .detail_scroll
@@ -385,6 +386,7 @@ impl ProjectStatusTuiState {
         } else {
             self.detail_scroll = self.detail_scroll.saturating_add(delta as u16);
         }
+        self.detail_scroll = self.detail_scroll.min(max_scroll);
     }
 
     fn select_domain(&mut self, index: usize) {
@@ -516,6 +518,77 @@ pub(crate) fn run_project_status_interactive(document: ProjectStatus) -> Result<
                 }
             },
             _ => {}
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::common::TOOL_VERSION;
+    use crate::project_status::{
+        ProjectStatusFreshness, ProjectStatusOverall, PROJECT_STATUS_READY,
+    };
+
+    #[test]
+    fn detail_scroll_clamps_to_current_domain_lines() {
+        let mut state = ProjectStatusTuiState::new(sample_project_status());
+        let max_scroll = state.current_domain_lines().len().saturating_sub(1) as u16;
+
+        state.move_detail_scroll(999);
+        assert_eq!(state.detail_scroll(), max_scroll);
+
+        state.move_detail_scroll(-999);
+        assert_eq!(state.detail_scroll(), 0);
+    }
+
+    fn sample_project_status() -> ProjectStatus {
+        ProjectStatus {
+            schema_version: 1,
+            tool_version: TOOL_VERSION.to_string(),
+            discovery: None,
+            scope: "live".to_string(),
+            overall: ProjectStatusOverall {
+                status: PROJECT_STATUS_READY.to_string(),
+                domain_count: 1,
+                present_count: 1,
+                blocked_count: 0,
+                blocker_count: 0,
+                warning_count: 0,
+                freshness: ProjectStatusFreshness {
+                    status: "current".to_string(),
+                    source_count: 1,
+                    newest_age_seconds: Some(30),
+                    oldest_age_seconds: Some(30),
+                },
+            },
+            domains: vec![ProjectDomainStatus {
+                id: "dashboard".to_string(),
+                scope: "staged".to_string(),
+                mode: "inspect-summary".to_string(),
+                status: PROJECT_STATUS_READY.to_string(),
+                reason_code: PROJECT_STATUS_READY.to_string(),
+                primary_count: 4,
+                blocker_count: 0,
+                warning_count: 0,
+                source_kinds: vec!["dashboard-export".to_string()],
+                signal_keys: vec!["summary.dashboardCount".to_string()],
+                blockers: Vec::new(),
+                warnings: Vec::new(),
+                next_actions: vec!["review dashboard governance warnings".to_string()],
+                freshness: ProjectStatusFreshness {
+                    status: "current".to_string(),
+                    source_count: 1,
+                    newest_age_seconds: Some(30),
+                    oldest_age_seconds: Some(30),
+                },
+            }],
+            top_blockers: Vec::new(),
+            next_actions: vec![ProjectStatusAction {
+                domain: "dashboard".to_string(),
+                reason_code: PROJECT_STATUS_READY.to_string(),
+                action: "review dashboard governance warnings".to_string(),
+            }],
         }
     }
 }

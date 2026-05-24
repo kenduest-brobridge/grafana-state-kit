@@ -200,6 +200,9 @@ fn summary_lines_surface_pending_delete_mode() {
     assert!(lines[1].contains("confirm-delete"));
     assert!(lines[1].contains("Focus"));
     assert!(lines[1].contains("Tree"));
+    assert!(lines[1].contains("Confirm: y"));
+    assert!(lines[1].contains("Cancel: n/Esc/q"));
+    assert!(!lines[1].contains("y / Esc / q"));
 }
 
 #[test]

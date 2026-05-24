@@ -114,6 +114,11 @@ while skipping generated HTML and Cargo build output.
 - Access user/team, dashboard browse, datasource browse, dashboard inspect
   workbench, and status overview search prompts now share the compact
   `Enter search`, `Esc cancel`, and `n repeat` hint language.
+- Dashboard browse delete review summary now splits `Confirm: y` from
+  `Cancel: n/Esc/q`, matching the footer/input behavior used by the other
+  destructive TUI confirmations.
+- Status TUI detail scrolling now clamps to the selected detail content so
+  repeated scroll keys cannot move the detail pane beyond its rendered lines.
 - The change stayed in state/tests. Public CLI/docs and generated docs remain
   unchanged because the user-facing command surface did not change.
 
