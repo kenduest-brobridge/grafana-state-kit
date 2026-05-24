@@ -202,7 +202,7 @@ impl BrowserSearchController {
     fn summary_line(&self, active_filter: &str) -> String {
         if let Some(prompt) = self.pending.as_ref() {
             return format!(
-                "Search prompt {} in filter {}: \"{}\" (Enter apply, Esc cancel).",
+                "Search prompt {} in filter {}: \"{}\" (Enter search, Esc cancel).",
                 search_direction_symbol(prompt.direction),
                 active_filter,
                 prompt.query
@@ -622,8 +622,8 @@ pub(crate) fn run_interactive_browser(
                     if search.has_pending() {
                         tui_shell::control_line(&[
                             ("Backspace", Color::Blue, "edit"),
-                            ("Enter", Color::LightGreen, "apply search"),
-                            ("Esc", Color::Yellow, "cancel prompt"),
+                            ("Enter", Color::LightGreen, "search"),
+                            ("Esc", Color::Yellow, "cancel"),
                             ("q", Color::LightGreen, "search text"),
                         ])
                     } else {
@@ -991,5 +991,23 @@ mod tests {
             search.summary_line("dashboard"),
             "Last search ?\"missing\" in filter alert matched 0 results. Press / or ? to try again."
         );
+    }
+
+    #[test]
+    fn pending_search_summary_uses_compact_prompt_hints_without_repeat_key() {
+        let mut search = BrowserSearchController::default();
+
+        search.start(SearchDirection::Backward);
+        search.push_char('c');
+        search.push_char('p');
+        search.push_char('u');
+
+        let summary = search.summary_line("dashboard");
+
+        assert!(summary.contains("Search prompt ? in filter dashboard"));
+        assert!(summary.contains("Enter search"));
+        assert!(summary.contains("Esc cancel"));
+        assert!(!summary.contains("Enter apply"));
+        assert!(!summary.contains("n repeat"));
     }
 }

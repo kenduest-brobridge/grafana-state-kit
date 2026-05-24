@@ -114,6 +114,9 @@ while skipping generated HTML and Cargo build output.
 - Access user/team, dashboard browse, datasource browse, dashboard inspect
   workbench, and status overview search prompts now share the compact
   `Enter search`, `Esc cancel`, and `n repeat` hint language.
+- The shared read-only browser now also uses the compact pending search summary
+  and footer copy, so downstream artifact browsers do not regress to
+  `Enter apply` wording or advertise repeat while the prompt is accepting text.
 - Dashboard browse delete review summary now splits `Confirm: y` from
   `Cancel: n/Esc/q`, matching the footer/input behavior used by the other
   destructive TUI confirmations.
