@@ -2,8 +2,9 @@
 
 use super::test_support::{
     build_governance_gate_tui_groups, build_governance_gate_tui_items,
-    build_impact_footer_control_lines, build_impact_tui_groups, filter_impact_tui_items,
-    filter_impact_tui_items_by_query, parse_cli_from, DashboardCliArgs, DashboardCommand,
+    build_impact_footer_control_lines, build_impact_tui_groups, build_topology_document,
+    build_topology_footer_control_lines, filter_impact_tui_items, filter_impact_tui_items_by_query,
+    filter_topology_tui_items_by_query, parse_cli_from, DashboardCliArgs, DashboardCommand,
     DashboardGovernanceGateFinding, DashboardGovernanceGateResult, DashboardGovernanceGateSummary,
     GovernanceGateOutputFormat, ImpactAlertResource, ImpactDashboard, ImpactDocument,
     ImpactOutputFormat, ImpactSummary, TopologyOutputFormat,
@@ -651,6 +652,95 @@ fn impact_footer_controls_advertise_item_search_and_prompt_state() {
 
     assert!(idle.contains("/?"));
     assert!(idle.contains("search items"));
+    assert!(idle.contains("Search idle"));
+    assert!(active.contains("Search filter cpu"));
+    assert!(pending.contains("Search prompt cpu"));
+    assert!(pending.contains("Enter"));
+    assert!(pending.contains("Esc"));
+    assert!(pending.contains("Backspace"));
+}
+
+#[test]
+fn filter_topology_tui_items_by_query_searches_within_selected_group() {
+    let governance = json!({
+        "dashboardGovernance": [
+            {
+                "dashboardUid": "cpu-main",
+                "dashboardTitle": "CPU Main"
+            }
+        ],
+        "dashboardDatasourceEdges": [
+            {
+                "dashboardUid": "cpu-main",
+                "dashboardTitle": "CPU Main",
+                "datasourceUid": "prom-main",
+                "datasource": "Prometheus Main",
+                "panelCount": 1,
+                "queryCount": 1,
+                "queryFields": ["expr"],
+                "queryVariables": ["cluster"],
+                "metrics": ["up"],
+                "functions": [],
+                "measurements": [],
+                "buckets": []
+            }
+        ],
+        "dashboardDependencies": [
+            {
+                "dashboardUid": "cpu-main",
+                "panelIds": ["7"],
+                "panelVariables": ["cluster"],
+                "queryVariables": ["cluster"]
+            }
+        ]
+    });
+    let alert_contract = json!({
+        "kind": "grafana-utils-sync-alert-contract",
+        "resources": [
+            {
+                "kind": "grafana-alert-rule",
+                "identity": "cpu-high",
+                "title": "CPU High",
+                "references": ["prom-main", "cpu-main"]
+            }
+        ]
+    });
+    let document = build_topology_document(&governance, Some(&alert_contract)).unwrap();
+
+    let datasource_prom = filter_topology_tui_items_by_query(&document, "datasource", "prom");
+    let dashboard_missing =
+        filter_topology_tui_items_by_query(&document, "dashboard", "does-not-exist");
+    let blank = filter_topology_tui_items_by_query(&document, "all", "   ");
+
+    assert_eq!(datasource_prom.len(), 1);
+    assert_eq!(datasource_prom[0].kind, "datasource");
+    assert_eq!(datasource_prom[0].title, "Prometheus Main");
+    assert!(dashboard_missing.is_empty());
+    assert_eq!(blank.len(), document.nodes.len());
+}
+
+#[test]
+fn topology_footer_controls_advertise_item_search_and_prompt_state() {
+    let idle = build_topology_footer_control_lines("Nodes", "group 1/11  node 1/5", None, None)
+        .into_iter()
+        .map(|line| line.to_string())
+        .collect::<Vec<_>>()
+        .join("\n");
+    let active =
+        build_topology_footer_control_lines("Nodes", "group 1/11  node 1/5", Some("cpu"), None)
+            .into_iter()
+            .map(|line| line.to_string())
+            .collect::<Vec<_>>()
+            .join("\n");
+    let pending =
+        build_topology_footer_control_lines("Nodes", "group 1/11  node 1/5", None, Some("cpu"))
+            .into_iter()
+            .map(|line| line.to_string())
+            .collect::<Vec<_>>()
+            .join("\n");
+
+    assert!(idle.contains("/?"));
+    assert!(idle.contains("search nodes"));
     assert!(idle.contains("Search idle"));
     assert!(active.contains("Search filter cpu"));
     assert!(pending.contains("Search prompt cpu"));

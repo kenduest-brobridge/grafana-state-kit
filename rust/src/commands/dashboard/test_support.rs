@@ -142,7 +142,8 @@ pub(super) use crate::dashboard::topology::{
     ImpactDocument, ImpactSummary, TopologyDocument,
 };
 pub(super) use crate::dashboard::topology_tui::{
-    build_topology_tui_groups, filter_topology_tui_items,
+    build_topology_footer_control_lines, build_topology_tui_groups, filter_topology_tui_items,
+    filter_topology_tui_items_by_query,
 };
 pub(super) use crate::dashboard::validate::{
     render_validation_result_json, validate_dashboard_export_dir,
