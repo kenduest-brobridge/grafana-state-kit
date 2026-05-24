@@ -128,7 +128,10 @@ pub(crate) use staged_documents::{
 };
 
 #[cfg(test)]
-pub(crate) use audit_tui::{build_sync_audit_tui_groups, build_sync_audit_tui_rows};
+pub(crate) use audit_tui::{
+    build_sync_audit_footer_control_lines, build_sync_audit_tui_groups, build_sync_audit_tui_rows,
+    build_sync_audit_tui_rows_by_query,
+};
 
 #[cfg(test)]
 #[path = "cli_render_rust_tests.rs"]

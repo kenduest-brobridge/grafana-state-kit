@@ -197,6 +197,91 @@ pub(crate) fn build_sync_audit_tui_rows(audit: &Value, status: &str) -> Result<V
         .collect())
 }
 
+#[cfg(any(feature = "tui", test))]
+pub(crate) fn build_sync_audit_tui_rows_by_query(
+    audit: &Value,
+    status: &str,
+    query: &str,
+) -> Result<Vec<BrowserItem>> {
+    let rows = build_sync_audit_tui_rows(audit, status)?;
+    let needle = query.trim().to_ascii_lowercase();
+    if needle.is_empty() {
+        return Ok(rows);
+    }
+    Ok(rows
+        .into_iter()
+        .filter(|row| sync_audit_row_matches_query(row, &needle))
+        .collect())
+}
+
+#[cfg(any(feature = "tui", test))]
+fn sync_audit_row_matches_query(row: &BrowserItem, needle: &str) -> bool {
+    row.kind.to_ascii_lowercase().contains(needle)
+        || row.title.to_ascii_lowercase().contains(needle)
+        || row.meta.to_ascii_lowercase().contains(needle)
+        || row
+            .details
+            .iter()
+            .any(|line| line.to_ascii_lowercase().contains(needle))
+}
+
+#[cfg(feature = "tui")]
+pub(crate) fn build_sync_audit_footer_control_lines(
+    focus: &str,
+    selection: &str,
+    active_search: Option<&str>,
+    pending_search: Option<&str>,
+) -> Vec<Line<'static>> {
+    let search_summary = if let Some(query) = pending_search {
+        format!("Search prompt {query}")
+    } else if let Some(query) = active_search {
+        format!("Search filter {query}")
+    } else {
+        "Search idle".to_string()
+    };
+    let mut lines = vec![Line::from(vec![
+        tui_shell::focus_label("Focus "),
+        tui_shell::key_chip(focus, Color::Blue),
+        Span::raw("  "),
+        tui_shell::label("Selection "),
+        tui_shell::accent(selection.to_string(), Color::White),
+        Span::raw("  "),
+        tui_shell::label("Search "),
+        tui_shell::accent(search_summary, Color::LightMagenta),
+    ])];
+    if pending_search.is_some() {
+        lines.push(tui_shell::control_line(&[
+            ("Backspace", Color::Blue, "edit"),
+            ("Enter", Color::LightGreen, "search rows"),
+            ("Esc", Color::Yellow, "cancel"),
+        ]));
+    } else {
+        lines.push(tui_shell::control_line(&[
+            ("Tab", Color::Blue, "next pane"),
+            ("Up/Down", Color::Blue, "move"),
+            ("PgUp/PgDn", Color::Blue, "scroll detail"),
+            ("Home/End", Color::Blue, "jump"),
+        ]));
+        lines.push(tui_shell::control_line(&[
+            ("/?", Color::LightGreen, "search rows"),
+            ("Enter", Color::Blue, "reset detail"),
+            ("Esc/q", Color::Gray, "exit"),
+        ]));
+    }
+    lines
+}
+
+#[cfg(feature = "tui")]
+fn filtered_sync_audit_rows(
+    audit: &Value,
+    status: &str,
+    search_query: Option<&str>,
+) -> Result<Vec<BrowserItem>> {
+    search_query
+        .map(|query| build_sync_audit_tui_rows_by_query(audit, status, query))
+        .unwrap_or_else(|| build_sync_audit_tui_rows(audit, status))
+}
+
 #[cfg(feature = "tui")]
 pub(crate) fn run_sync_audit_interactive(audit: &Value) -> Result<()> {
     let summary = audit
@@ -207,7 +292,9 @@ pub(crate) fn run_sync_audit_interactive(audit: &Value) -> Result<()> {
     let mut group_state = ListState::default();
     group_state.select(Some(0));
     let mut row_state = ListState::default();
-    let mut rows = build_sync_audit_tui_rows(audit, &groups[0].status)?;
+    let mut search_query: Option<String> = None;
+    let mut pending_search: Option<String> = None;
+    let mut rows = filtered_sync_audit_rows(audit, &groups[0].status, search_query.as_deref())?;
     row_state.select((!rows.is_empty()).then_some(0));
     let mut detail_scroll = 0u16;
     let mut active_pane = AuditPane::Groups;
@@ -353,42 +440,25 @@ pub(crate) fn run_sync_audit_interactive(audit: &Value) -> Result<()> {
                 .block(pane_block(&detail_title, active_pane == AuditPane::Detail));
             frame.render_widget(detail_widget, panes[2]);
 
+            let focus_label = match active_pane {
+                AuditPane::Groups => "Groups",
+                AuditPane::Rows => "Rows",
+                AuditPane::Detail => "Detail",
+            };
+            let selection_label = format!(
+                "group {}/{}  row {}/{}",
+                group_state.selected().map(|index| index + 1).unwrap_or(0),
+                groups.len(),
+                row_state.selected().map(|index| index + 1).unwrap_or(0),
+                rows.len()
+            );
             frame.render_widget(
-                tui_shell::build_footer_controls(vec![
-                    Line::from(vec![
-                        tui_shell::focus_label("Focus "),
-                        tui_shell::key_chip(
-                            match active_pane {
-                                AuditPane::Groups => "Groups",
-                                AuditPane::Rows => "Rows",
-                                AuditPane::Detail => "Detail",
-                            },
-                            Color::Blue,
-                        ),
-                        Span::raw("  "),
-                        tui_shell::label("Selection "),
-                        tui_shell::accent(
-                            format!(
-                                "group {}/{}  row {}/{}",
-                                group_state.selected().map(|index| index + 1).unwrap_or(0),
-                                groups.len(),
-                                row_state.selected().map(|index| index + 1).unwrap_or(0),
-                                rows.len()
-                            ),
-                            Color::White,
-                        ),
-                    ]),
-                    tui_shell::control_line(&[
-                        ("Tab", Color::Blue, "next pane"),
-                        ("Up/Down", Color::Blue, "move"),
-                        ("PgUp/PgDn", Color::Blue, "scroll detail"),
-                        ("Home/End", Color::Blue, "jump"),
-                    ]),
-                    tui_shell::control_line(&[
-                        ("Enter", Color::Blue, "reset detail"),
-                        ("Esc/q", Color::Gray, "exit"),
-                    ]),
-                ]),
+                tui_shell::build_footer_controls(build_sync_audit_footer_control_lines(
+                    focus_label,
+                    &selection_label,
+                    search_query.as_deref(),
+                    pending_search.as_deref(),
+                )),
                 outer[2],
             );
         })?;
@@ -400,7 +470,34 @@ pub(crate) fn run_sync_audit_interactive(audit: &Value) -> Result<()> {
             if key.kind != KeyEventKind::Press {
                 continue;
             }
+            if let Some(query) = pending_search.as_mut() {
+                match key.code {
+                    KeyCode::Esc => pending_search = None,
+                    KeyCode::Enter => {
+                        let query = query.trim().to_string();
+                        pending_search = None;
+                        search_query = (!query.is_empty()).then_some(query);
+                        let selected_group = group_state.selected().unwrap_or(0);
+                        rows = filtered_sync_audit_rows(
+                            audit,
+                            &groups[selected_group].status,
+                            search_query.as_deref(),
+                        )?;
+                        row_state.select((!rows.is_empty()).then_some(0));
+                        detail_scroll = 0;
+                    }
+                    KeyCode::Backspace => {
+                        query.pop();
+                    }
+                    KeyCode::Char(ch) => {
+                        query.push(ch);
+                    }
+                    _ => {}
+                }
+                continue;
+            }
             match key.code {
+                KeyCode::Char('/') | KeyCode::Char('?') => pending_search = Some(String::new()),
                 KeyCode::Tab => {
                     active_pane = match active_pane {
                         AuditPane::Groups => AuditPane::Rows,
@@ -412,7 +509,11 @@ pub(crate) fn run_sync_audit_interactive(audit: &Value) -> Result<()> {
                     AuditPane::Groups => {
                         let selected = group_state.selected().unwrap_or(0).saturating_sub(1);
                         group_state.select(Some(selected));
-                        rows = build_sync_audit_tui_rows(audit, &groups[selected].status)?;
+                        rows = filtered_sync_audit_rows(
+                            audit,
+                            &groups[selected].status,
+                            search_query.as_deref(),
+                        )?;
                         row_state.select((!rows.is_empty()).then_some(0));
                         detail_scroll = 0;
                     }
@@ -428,7 +529,11 @@ pub(crate) fn run_sync_audit_interactive(audit: &Value) -> Result<()> {
                         let selected = (group_state.selected().unwrap_or(0) + 1)
                             .min(groups.len().saturating_sub(1));
                         group_state.select(Some(selected));
-                        rows = build_sync_audit_tui_rows(audit, &groups[selected].status)?;
+                        rows = filtered_sync_audit_rows(
+                            audit,
+                            &groups[selected].status,
+                            search_query.as_deref(),
+                        )?;
                         row_state.select((!rows.is_empty()).then_some(0));
                         detail_scroll = 0;
                     }
@@ -449,7 +554,11 @@ pub(crate) fn run_sync_audit_interactive(audit: &Value) -> Result<()> {
                 KeyCode::Home => match active_pane {
                     AuditPane::Groups => {
                         group_state.select(Some(0));
-                        rows = build_sync_audit_tui_rows(audit, &groups[0].status)?;
+                        rows = filtered_sync_audit_rows(
+                            audit,
+                            &groups[0].status,
+                            search_query.as_deref(),
+                        )?;
                         row_state.select((!rows.is_empty()).then_some(0));
                         detail_scroll = 0;
                     }
@@ -463,7 +572,11 @@ pub(crate) fn run_sync_audit_interactive(audit: &Value) -> Result<()> {
                     AuditPane::Groups => {
                         let selected = groups.len().saturating_sub(1);
                         group_state.select(Some(selected));
-                        rows = build_sync_audit_tui_rows(audit, &groups[selected].status)?;
+                        rows = filtered_sync_audit_rows(
+                            audit,
+                            &groups[selected].status,
+                            search_query.as_deref(),
+                        )?;
                         row_state.select((!rows.is_empty()).then_some(0));
                         detail_scroll = 0;
                     }

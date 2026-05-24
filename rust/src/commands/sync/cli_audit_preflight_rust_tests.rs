@@ -2,9 +2,9 @@
 //! Verifies audit rendering/TUI contracts and staged preflight validation.
 use super::audit::{build_sync_audit_document, render_sync_audit_text};
 use super::{
-    build_sync_audit_tui_groups, build_sync_audit_tui_rows, run_sync_cli, SyncAdvancedCliArgs,
-    SyncAdvancedCommand, SyncApplyArgs, SyncAuditArgs, SyncGroupCommand, SyncOutputFormat,
-    SyncPreflightArgs,
+    build_sync_audit_footer_control_lines, build_sync_audit_tui_groups, build_sync_audit_tui_rows,
+    build_sync_audit_tui_rows_by_query, run_sync_cli, SyncAdvancedCliArgs, SyncAdvancedCommand,
+    SyncApplyArgs, SyncAuditArgs, SyncGroupCommand, SyncOutputFormat, SyncPreflightArgs,
 };
 use crate::dashboard::CommonCliArgs;
 use serde_json::json;
@@ -132,6 +132,93 @@ fn build_sync_audit_tui_rows_filters_by_status() {
     assert_eq!(missing_live_rows.len(), 1);
     assert_eq!(missing_live_rows[0].kind, "missing-live");
     assert_eq!(all_rows.len(), 3);
+}
+
+#[test]
+fn build_sync_audit_tui_rows_by_query_searches_within_selected_group() {
+    let audit = json!({
+        "summary": {
+            "managedCount": 4,
+            "baselineCount": 4,
+            "currentPresentCount": 3,
+            "currentMissingCount": 1,
+            "driftCount": 1,
+            "inSyncCount": 1,
+            "missingLockCount": 1,
+            "missingLiveCount": 1
+        },
+        "drifts": [
+            {
+                "status":"drift-detected",
+                "kind":"dashboard",
+                "identity":"cpu-main",
+                "baselineStatus":"present",
+                "currentStatus":"present",
+                "driftedFields":["title","refresh"]
+            },
+            {
+                "status":"missing-live",
+                "kind":"datasource",
+                "identity":"prom-main",
+                "baselineStatus":"present",
+                "currentStatus":"missing",
+                "driftedFields":[]
+            },
+            {
+                "status":"missing-lock",
+                "kind":"contact-point",
+                "identity":"ops-email",
+                "baselineStatus":"missing",
+                "currentStatus":"present",
+                "driftedFields":[]
+            }
+        ]
+    });
+
+    let all_prom = build_sync_audit_tui_rows_by_query(&audit, "all", "prom").expect("all rows");
+    let drift_prom =
+        build_sync_audit_tui_rows_by_query(&audit, "drift-detected", "prom").expect("drift rows");
+    let missing_lock_contact =
+        build_sync_audit_tui_rows_by_query(&audit, "missing-lock", "contact")
+            .expect("missing-lock rows");
+    let blank = build_sync_audit_tui_rows_by_query(&audit, "all", "   ").expect("blank query");
+
+    assert_eq!(all_prom.len(), 1);
+    assert_eq!(all_prom[0].kind, "missing-live");
+    assert!(drift_prom.is_empty());
+    assert_eq!(missing_lock_contact.len(), 1);
+    assert_eq!(missing_lock_contact[0].kind, "missing-lock");
+    assert_eq!(blank.len(), 3);
+}
+
+#[test]
+fn sync_audit_footer_controls_advertise_row_search_and_prompt_state() {
+    let idle = build_sync_audit_footer_control_lines("Rows", "group 1/4  row 1/3", None, None)
+        .into_iter()
+        .map(|line| line.to_string())
+        .collect::<Vec<_>>()
+        .join("\n");
+    let active =
+        build_sync_audit_footer_control_lines("Rows", "group 1/4  row 1/3", Some("prom"), None)
+            .into_iter()
+            .map(|line| line.to_string())
+            .collect::<Vec<_>>()
+            .join("\n");
+    let pending =
+        build_sync_audit_footer_control_lines("Rows", "group 1/4  row 1/3", None, Some("prom"))
+            .into_iter()
+            .map(|line| line.to_string())
+            .collect::<Vec<_>>()
+            .join("\n");
+
+    assert!(idle.contains("/?"));
+    assert!(idle.contains("search rows"));
+    assert!(idle.contains("Search idle"));
+    assert!(active.contains("Search filter prom"));
+    assert!(pending.contains("Search prompt prom"));
+    assert!(pending.contains("Enter"));
+    assert!(pending.contains("Esc"));
+    assert!(pending.contains("Backspace"));
 }
 
 #[test]

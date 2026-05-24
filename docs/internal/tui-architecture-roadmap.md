@@ -128,6 +128,8 @@ while skipping generated HTML and Cargo build output.
   surfaces idle, active, and prompt search state in the footer.
 - Dashboard topology/dependencies TUI now supports the same current-group node
   search/filtering pattern and footer search state copy.
+- Sync audit TUI now supports current-group drift row search/filtering and the
+  same idle, active, and prompt search state footer copy.
 - Dashboard import review footer copy now advertises the existing page jump,
   bounds jump, and `Esc/q`/`Ctrl-C` cancel controls instead of only `q`.
 - Dashboard browse delete review summary now splits `Confirm: y` from
