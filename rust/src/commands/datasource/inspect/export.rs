@@ -10,6 +10,10 @@ use std::path::{Path, PathBuf};
 use crate::common::string_field;
 use crate::common::{load_json_object_file, message, render_json_value, Result};
 #[cfg(any(feature = "tui", test))]
+use crate::datasource::datasource_browse_support::{
+    review_lines, DatasourceBrowseItem, DatasourceBrowseItemKind,
+};
+#[cfg(any(feature = "tui", test))]
 use crate::interactive_browser::BrowserItem;
 use crate::tabular_output::render_yaml;
 #[cfg(feature = "tui")]
@@ -136,6 +140,21 @@ pub(crate) fn build_datasource_inspect_export_browser_items(
             let org = string_field(record, "org", "");
             let org_id = string_field(record, "orgId", "");
             let is_default = string_field(record, "isDefault", "");
+            let mut details = vec![
+                format!("Name: {name}"),
+                format!("Type: {datasource_type}"),
+                format!("UID: {uid}"),
+                format!("URL: {url}"),
+                format!("Default: {is_default}"),
+                format!("Org: {org} ({org_id})"),
+                format!("Input mode: {}", source.input_mode),
+                format!("Input path: {}", source.input_path),
+            ];
+            let review = datasource_inspect_export_review_lines(record, source);
+            if !review.is_empty() {
+                details.push("Review evidence:".to_string());
+                details.extend(review);
+            }
             BrowserItem {
                 kind: "datasource".to_string(),
                 title: name.clone(),
@@ -143,19 +162,36 @@ pub(crate) fn build_datasource_inspect_export_browser_items(
                     "type={} uid={} org={} ({}) default={}",
                     datasource_type, uid, org, org_id, is_default
                 ),
-                details: vec![
-                    format!("Name: {name}"),
-                    format!("Type: {datasource_type}"),
-                    format!("UID: {uid}"),
-                    format!("URL: {url}"),
-                    format!("Default: {is_default}"),
-                    format!("Org: {org} ({org_id})"),
-                    format!("Input mode: {}", source.input_mode),
-                    format!("Input path: {}", source.input_path),
-                ],
+                details,
             }
         })
         .collect()
+}
+
+#[cfg(any(feature = "tui", test))]
+fn datasource_inspect_export_review_lines(
+    record: &Map<String, Value>,
+    source: &DatasourceInspectExportSource,
+) -> Vec<String> {
+    let item = DatasourceBrowseItem {
+        kind: DatasourceBrowseItemKind::Datasource,
+        depth: 0,
+        id: record.get("id").and_then(Value::as_i64).unwrap_or_default(),
+        uid: string_field(record, "uid", ""),
+        name: string_field(record, "name", ""),
+        datasource_type: string_field(record, "type", ""),
+        access: string_field(record, "access", ""),
+        url: string_field(record, "url", ""),
+        is_default: record
+            .get("isDefault")
+            .and_then(Value::as_bool)
+            .unwrap_or(false),
+        org: string_field(record, "org", ""),
+        org_id: string_field(record, "orgId", ""),
+        details: record.clone(),
+        datasource_count: source.records.len(),
+    };
+    review_lines(&item)
 }
 
 fn datasource_inspect_export_record(record: &DatasourceImportRecord) -> Map<String, Value> {

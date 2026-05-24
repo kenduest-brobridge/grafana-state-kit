@@ -1,12 +1,13 @@
 //! Datasource inspect-export, local source help, and export-root loader tests.
 
 use crate::datasource::{
-    classify_datasource_export_root_scope_kind, load_datasource_export_root_manifest,
-    load_datasource_inspect_export_source, load_datasource_inventory_records_from_export_root,
+    build_datasource_inspect_export_browser_items, classify_datasource_export_root_scope_kind,
+    load_datasource_export_root_manifest, load_datasource_inspect_export_source,
+    load_datasource_inventory_records_from_export_root,
     prompt_datasource_inspect_export_input_format, render_datasource_inspect_export_output,
     resolve_datasource_inspect_export_input_format, DatasourceCliArgs,
     DatasourceExportRootScopeKind, DatasourceImportInputFormat,
-    DatasourceInspectExportRenderFormat,
+    DatasourceInspectExportRenderFormat, DatasourceInspectExportSource,
 };
 use std::fs;
 use tempfile::tempdir;
@@ -78,6 +79,46 @@ fn datasource_inspect_export_renders_inventory_root_in_multiple_output_modes() {
     assert!(yaml_output.contains("datasourceCount: 1"));
 
     fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn datasource_inspect_export_browser_items_include_review_evidence() {
+    let source = DatasourceInspectExportSource {
+        input_mode: "inventory",
+        input_path: "/tmp/datasources".to_string(),
+        metadata: None,
+        records: vec![json!({
+            "uid": "prom-main",
+            "name": "Prometheus Main",
+            "type": "prometheus",
+            "access": "proxy",
+            "url": "http://prometheus:9090",
+            "isDefault": true,
+            "org": "Main Org",
+            "orgId": "1",
+            "action": "blocked-read-only",
+            "status": "blocked",
+            "blockedReason": "target-read-only",
+            "targetReadOnly": true,
+            "changedFields": ["url", "secureJsonData.password"],
+            "secureJsonData": {
+                "password": "super-secret-value"
+            }
+        })
+        .as_object()
+        .unwrap()
+        .clone()],
+    };
+
+    let items = build_datasource_inspect_export_browser_items(&source);
+    let details = items[0].details.join("\n");
+
+    assert!(details.contains("Review action: blocked-read-only (status=blocked)"));
+    assert!(details.contains("Review blocker status: blocked by target-read-only"));
+    assert!(details.contains("Review target: read-only=true"));
+    assert!(details.contains("Review changed fields: url"));
+    assert!(!details.contains("super-secret-value"));
+    assert!(!details.contains("secureJsonData.password"));
 }
 
 #[test]
