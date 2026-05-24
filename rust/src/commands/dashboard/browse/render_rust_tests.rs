@@ -253,6 +253,23 @@ fn summary_lines_surface_selection_kind_and_search_context() {
 }
 
 #[test]
+fn summary_lines_surface_pending_search_mode() {
+    let mut state = BrowserState::new(empty_document());
+    state.start_search(SearchDirection::Backward);
+
+    let lines = render_summary_lines(&state)
+        .into_iter()
+        .map(|line| line.to_string())
+        .collect::<Vec<_>>();
+
+    assert!(lines[1].contains("Mode"));
+    assert!(lines[1].contains("search"));
+    assert!(lines[1].contains("Search"));
+    assert!(lines[1].contains("prompt ?"));
+    assert!(!lines[1].contains("browse"));
+}
+
+#[test]
 fn control_lines_use_consistent_pane_and_exit_labels() {
     let lines = control_lines(false, false, false, false)
         .into_iter()

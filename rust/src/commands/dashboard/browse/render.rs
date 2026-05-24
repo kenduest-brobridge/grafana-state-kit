@@ -210,12 +210,17 @@ fn render_summary_lines(state: &BrowserState) -> Vec<Line<'static>> {
             let mut spans = vec![
                 tui_shell::label("Mode "),
                 tui_shell::accent(
-                    if state.local_mode {
-                        "local-browse"
+                    state.mode_summary(),
+                    if state.pending_search.is_some()
+                        || state.pending_edit.is_some()
+                        || state.pending_external_edit.is_some()
+                        || state.pending_external_edit_error.is_some()
+                        || state.pending_history.is_some()
+                    {
+                        Color::Yellow
                     } else {
-                        "browse"
+                        Color::Green
                     },
-                    Color::Green,
                 ),
                 Span::raw("  "),
                 tui_shell::focus_label("Focus "),

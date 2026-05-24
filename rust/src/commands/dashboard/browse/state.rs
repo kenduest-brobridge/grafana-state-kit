@@ -330,6 +330,26 @@ impl BrowserState {
         }
     }
 
+    pub(crate) fn mode_summary(&self) -> &'static str {
+        if self.pending_delete.is_some() {
+            "confirm-delete"
+        } else if self.pending_edit.is_some() {
+            "edit"
+        } else if self.pending_external_edit.is_some() {
+            "raw-edit"
+        } else if self.pending_external_edit_error.is_some() {
+            "raw-edit-error"
+        } else if self.pending_history.is_some() {
+            "history"
+        } else if self.pending_search.is_some() {
+            "search"
+        } else if self.local_mode {
+            "local-browse"
+        } else {
+            "browse"
+        }
+    }
+
     pub(crate) fn start_search(&mut self, direction: SearchDirection) {
         // Search is a transient modal layered over the current tree selection.
         self.pending_search = Some(SearchPromptState {
@@ -632,5 +652,15 @@ mod tests {
 
         assert_eq!(state.selected_position_summary(), "0/0");
         assert_eq!(state.selected_kind_summary(), "none");
+    }
+
+    #[test]
+    fn mode_summary_reports_search_and_local_browse_context() {
+        let mut state = BrowserState::new_with_mode(document(vec![folder_node()]), true);
+
+        assert_eq!(state.mode_summary(), "local-browse");
+
+        state.start_search(SearchDirection::Forward);
+        assert_eq!(state.mode_summary(), "search");
     }
 }
