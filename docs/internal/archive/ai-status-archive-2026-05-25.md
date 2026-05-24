@@ -11,3 +11,9 @@
 - Scope: Rust internal shared review-adapter consumption for access import dry-run, datasource import dry-run, datasource live mutation, and alert plan rows; focused tests; TODO trace. Public JSON, CLI behavior, generated docs, and Python implementation are out of scope.
 - Current Update: Added `build_review_mutation_summary_rows(&ReviewMutationEnvelope)` as the shared internal consumer for the proven review adapters.
 - Result: Adapter consumption is now covered by tests without public JSON or CLI drift.
+
+## 2026-05-02 - Split alert runtime support helpers
+- State: Done
+- Scope: Rust alert runtime architecture trace for splitting plan/delete/import/diff document construction and alert plan review projections out of `runtime_support.rs`. Public CLI/JSON behavior, generated docs, and Python implementation are out of scope.
+- Current Update: Recorded the new focused alert runtime modules in the maintainer trace while main owns focused Rust validation.
+- Result: The active trace reflects the behavior-preserving alert runtime support re-layering.

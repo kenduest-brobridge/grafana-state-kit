@@ -24,6 +24,12 @@ Current AI-maintained status only.
 - Older entries moved to [`ai-status-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-16.md).
 - Older entries moved to [`ai-status-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-25.md).
 
+## 2026-05-25 - Shared review diff visualization helpers
+- State: Done
+- Scope: Rust internal TUI review diff helper ownership. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
+- Current Update: Moved the sync review TUI's domain-neutral side-by-side diff focus, title, scroll, wrap, clip, TUI list-item, and footer control helpers into `review_diff.rs`, leaving sync review to re-export and consume the shared helpers.
+- Result: Sync review remains behavior-compatible while future compatible review surfaces can reuse the same shared diff visualization path.
+
 ## 2026-05-25 - TUI no-default feature boundary cleanup
 - State: Done
 - Scope: Rust TUI cfg boundaries for access/dashboard/datasource/status, sync audit, and snapshot review test helpers. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
@@ -53,9 +59,3 @@ Current AI-maintained status only.
 - Scope: Maintainer trace for the Rust datasource import dry-run module split. Runtime collection remains in `dry_run.rs`; output rendering, review projection, and secret visibility moved to focused modules. Public CLI/JSON behavior, generated docs, Python implementation, and Rust edits are out of scope for this trace pass.
 - Current Update: Recorded the behavior-preserving datasource import dry-run re-layering and narrowed the architecture guardrail candidate note for remaining datasource import/export helpers.
 - Result: The active trace reflects the reduced `dry_run.rs` ownership surface while main owns focused Rust validation.
-
-## 2026-05-02 - Split alert runtime support helpers
-- State: Done
-- Scope: Rust alert runtime architecture trace for splitting plan/delete/import/diff document construction and alert plan review projections out of `runtime_support.rs`. Public CLI/JSON behavior, generated docs, and Python implementation are out of scope.
-- Current Update: Recorded the new focused alert runtime modules in the maintainer trace while main owns focused Rust validation.
-- Result: The active trace reflects the behavior-preserving alert runtime support re-layering.

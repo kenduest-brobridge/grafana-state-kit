@@ -160,6 +160,10 @@ while skipping generated HTML and Cargo build output.
 - Rust TUI no-default isolation now keeps access/dashboard/datasource/status,
   sync-audit, and snapshot interactive helpers behind the `tui` feature during
   test builds, while preserving the shared feature-disabled fallback test.
+- The sync review side-by-side diff rendering helpers now live with the shared
+  review diff model, so future compatible dashboard, alert, datasource, access,
+  or workspace review surfaces can reuse the same title, scroll, wrap, clip,
+  and TUI list-item projection instead of copying sync-local helpers.
 - The change stayed in state/tests. Public CLI/docs and generated docs remain
   unchanged because the user-facing command surface did not change.
 
@@ -170,6 +174,10 @@ while skipping generated HTML and Cargo build output.
   changing public CLI flags; datasource local and snapshot datasource rows
   already reuse the datasource Review projection, and access plan generic action
   evidence now reuses the shared review-contract projection.
+- Continue migrating compatible review surfaces onto the shared review diff
+  visualization helpers when they already expose `live`, `desired`, and
+  `changedFields` evidence; sync review is now the first consumer of the shared
+  view helper path.
 - Continue tightening `--no-default-features` TUI isolation opportunistically
   by reducing the remaining no-default unused-code/import warnings. The focused
   `tui_not_built_returns_shared_tui_feature_error` no-default regression now

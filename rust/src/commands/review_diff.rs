@@ -4,6 +4,14 @@
 //! review rows can share visualization without changing public contracts.
 
 use crate::common::{message, Result};
+#[cfg(feature = "tui")]
+use crate::tui_shell;
+#[cfg(feature = "tui")]
+use ratatui::style::{Color, Modifier, Style};
+#[cfg(feature = "tui")]
+use ratatui::text::{Line, Span};
+#[cfg(feature = "tui")]
+use ratatui::widgets::ListItem;
 use serde_json::{Map, Value};
 use std::collections::BTreeSet;
 
@@ -21,6 +29,24 @@ pub(crate) struct ReviewDiffModel {
     pub action: String,
     pub live_lines: Vec<ReviewDiffLine>,
     pub desired_lines: Vec<ReviewDiffLine>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum ReviewDiffPaneFocus {
+    Live,
+    Desired,
+}
+
+pub(crate) struct ReviewDiffControlsState {
+    pub selected: usize,
+    pub total: usize,
+    pub diff_focus: ReviewDiffPaneFocus,
+    pub live_wrap_lines: bool,
+    pub desired_wrap_lines: bool,
+    pub live_diff_cursor: usize,
+    pub live_horizontal_offset: usize,
+    pub desired_diff_cursor: usize,
+    pub desired_horizontal_offset: usize,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -200,4 +226,210 @@ pub(crate) fn build_review_diff_model(input: ReviewDiffInput<'_>) -> Result<Revi
         live_lines,
         desired_lines,
     })
+}
+
+pub(crate) fn wrap_text_chunks(text: &str, width: usize) -> Vec<String> {
+    if width == 0 {
+        return vec![String::new()];
+    }
+    if text.is_empty() {
+        return vec![String::new()];
+    }
+    let chars = text.chars().collect::<Vec<_>>();
+    chars
+        .chunks(width)
+        .map(|chunk| chunk.iter().collect::<String>())
+        .collect()
+}
+
+pub(crate) fn clip_text_window(text: &str, offset: usize, width: usize) -> String {
+    if width == 0 {
+        return String::new();
+    }
+    text.chars().skip(offset).take(width).collect::<String>()
+}
+
+#[cfg(feature = "tui")]
+pub(crate) fn render_review_diff_items(
+    lines: &[ReviewDiffLine],
+    color: Color,
+    content_width: usize,
+    wrap_lines: bool,
+    horizontal_offset: usize,
+) -> Vec<ListItem<'static>> {
+    lines
+        .iter()
+        .map(|line| {
+            let marker_style = if line.changed {
+                Style::default().fg(color).add_modifier(Modifier::BOLD)
+            } else {
+                Style::default().fg(Color::DarkGray)
+            };
+            let content_style = if line.changed {
+                Style::default().fg(color).add_modifier(Modifier::BOLD)
+            } else {
+                Style::default()
+            };
+            let wrapped = if wrap_lines {
+                wrap_text_chunks(&line.content, content_width.max(1))
+            } else {
+                vec![clip_text_window(
+                    &line.content,
+                    horizontal_offset,
+                    content_width.max(1),
+                )]
+            };
+            let body = wrapped
+                .into_iter()
+                .enumerate()
+                .map(|(index, chunk)| {
+                    let marker = if index == 0 {
+                        format!("{} ", line.marker)
+                    } else {
+                        "  ".to_string()
+                    };
+                    let marker_span = Span::styled(marker, marker_style);
+                    let visible_highlight = if wrap_lines || index > 0 {
+                        None
+                    } else {
+                        line.highlight_range.and_then(|(start, end)| {
+                            let visible_start = start.max(horizontal_offset);
+                            let visible_end = end.min(horizontal_offset + content_width.max(1));
+                            if visible_start < visible_end {
+                                Some((
+                                    visible_start.saturating_sub(horizontal_offset),
+                                    visible_end.saturating_sub(horizontal_offset),
+                                ))
+                            } else {
+                                None
+                            }
+                        })
+                    };
+                    let content_span = match visible_highlight {
+                        Some((start, end)) if start < end && end <= chunk.len() => {
+                            let prefix = chunk[..start].to_string();
+                            let middle = chunk[start..end].to_string();
+                            let suffix = chunk[end..].to_string();
+                            let mut spans = vec![marker_span, Span::raw(prefix)];
+                            spans.push(Span::styled(
+                                middle,
+                                Style::default()
+                                    .fg(color)
+                                    .bg(Color::Black)
+                                    .add_modifier(Modifier::BOLD | Modifier::UNDERLINED),
+                            ));
+                            spans.push(Span::raw(suffix));
+                            return Line::from(spans);
+                        }
+                        Some(_) if line.changed && index == 0 => Span::styled(
+                            chunk,
+                            Style::default()
+                                .fg(color)
+                                .bg(Color::Black)
+                                .add_modifier(Modifier::BOLD | Modifier::UNDERLINED),
+                        ),
+                        _ if line.changed => Span::styled(chunk, content_style),
+                        _ => Span::raw(chunk),
+                    };
+                    Line::from(vec![marker_span, content_span])
+                })
+                .collect::<Vec<_>>();
+            ListItem::new(body)
+        })
+        .collect()
+}
+
+pub(crate) fn review_diff_pane_title(
+    pane: &str,
+    action: &str,
+    title: &str,
+    position: usize,
+    total: usize,
+) -> String {
+    format!("{pane} {}/{} [{}] {title}", position + 1, total, action)
+}
+
+pub(crate) fn review_diff_scroll_max(model: &ReviewDiffModel, focus: ReviewDiffPaneFocus) -> usize {
+    match focus {
+        ReviewDiffPaneFocus::Live => model.live_lines.len().saturating_sub(1),
+        ReviewDiffPaneFocus::Desired => model.desired_lines.len().saturating_sub(1),
+    }
+}
+
+#[cfg(feature = "tui")]
+pub(crate) fn build_review_diff_controls_lines(
+    state: &ReviewDiffControlsState,
+) -> Vec<Line<'static>> {
+    let focus = match state.diff_focus {
+        ReviewDiffPaneFocus::Live => "LIVE",
+        ReviewDiffPaneFocus::Desired => "DESIRED",
+    };
+    vec![
+        Line::from(vec![
+            tui_shell::label("Item "),
+            tui_shell::accent(
+                format!("{}/{}", state.selected + 1, state.total),
+                Color::White,
+            ),
+            Span::raw("  "),
+            tui_shell::focus_label("Focus "),
+            tui_shell::key_chip(focus, Color::Blue),
+            Span::raw("  "),
+            Span::styled(
+                format!(
+                    "Live wrap {}",
+                    if state.live_wrap_lines { "ON" } else { "OFF" }
+                ),
+                Style::default().fg(Color::Red),
+            ),
+            Span::raw("  "),
+            Span::styled(
+                format!(
+                    "Desired wrap {}",
+                    if state.desired_wrap_lines {
+                        "ON"
+                    } else {
+                        "OFF"
+                    }
+                ),
+                Style::default().fg(Color::Green),
+            ),
+            Span::raw("  "),
+            Span::styled(
+                "w active  W both".to_string(),
+                Style::default().fg(Color::Yellow),
+            ),
+            Span::raw("  "),
+            Span::styled("Left/Right pan", Style::default().fg(Color::Yellow)),
+            Span::styled(
+                format!(
+                    "Live {} @{}",
+                    state.live_diff_cursor + 1,
+                    state.live_horizontal_offset
+                ),
+                Style::default().fg(Color::Red),
+            ),
+            Span::raw("  "),
+            Span::styled(
+                format!(
+                    "Desired {} @{}",
+                    state.desired_diff_cursor + 1,
+                    state.desired_horizontal_offset
+                ),
+                Style::default().fg(Color::Green),
+            ),
+        ]),
+        tui_shell::control_line(&[
+            ("Tab", Color::Blue, "switch pane"),
+            ("Up/Down", Color::Blue, "scroll"),
+            ("[/]", Color::Blue, "item"),
+            ("PgUp/PgDn", Color::Blue, "jump"),
+        ]),
+        tui_shell::control_line(&[
+            ("Home/End", Color::Blue, "bounds"),
+            ("Space", Color::Yellow, "keep/drop"),
+            ("c", Color::Green, "confirm staged"),
+            ("Esc/q", Color::Gray, "return"),
+        ]),
+    ]
 }
