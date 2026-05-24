@@ -1,4 +1,5 @@
 //! Access-wide interactive browse model and TUI shell.
+#![cfg_attr(not(feature = "tui"), allow(dead_code))]
 
 use reqwest::Method;
 use serde_json::{Map, Value};

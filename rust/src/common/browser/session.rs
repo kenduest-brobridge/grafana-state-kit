@@ -1,7 +1,5 @@
 //! Shared read-only TUI browser for list/detail artifact inspection.
-#![cfg_attr(not(test), allow(dead_code))]
-#[cfg(not(feature = "tui"))]
-use crate::common::tui;
+#![cfg_attr(not(feature = "tui"), allow(dead_code))]
 use crate::common::Result;
 #[cfg(feature = "tui")]
 use crate::tui_shell;

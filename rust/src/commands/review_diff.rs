@@ -2,6 +2,7 @@
 //!
 //! This stays document-shape based so sync/workspace and compatible domain
 //! review rows can share visualization without changing public contracts.
+#![cfg_attr(not(feature = "tui"), allow(dead_code))]
 
 use crate::common::{message, Result};
 #[cfg(feature = "tui")]

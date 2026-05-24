@@ -1,3 +1,5 @@
+#![cfg_attr(not(feature = "tui"), allow(dead_code))]
+
 use std::cmp::Reverse;
 
 use super::DashboardGovernanceGateFinding;

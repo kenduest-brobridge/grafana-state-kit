@@ -1,14 +1,19 @@
 //! Snapshot review browser shaping and interactive launcher helpers.
 
+#[cfg(any(feature = "tui", test))]
 use serde_json::Value;
 
+#[cfg(any(feature = "tui", test))]
 use crate::common::Result;
 
 #[cfg(any(feature = "tui", test))]
 use crate::datasource::{review_lines, DatasourceBrowseItem, DatasourceBrowseItemKind};
+#[cfg(feature = "tui")]
+use crate::interactive_browser::run_interactive_browser;
 #[cfg(any(feature = "tui", test))]
-use crate::interactive_browser::{run_interactive_browser, BrowserItem};
+use crate::interactive_browser::BrowserItem;
 
+#[cfg(any(feature = "tui", test))]
 use super::common::{review_summary, review_warnings};
 #[cfg(feature = "tui")]
 use super::render::build_snapshot_review_summary_lines;

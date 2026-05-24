@@ -1,4 +1,4 @@
-#![cfg_attr(not(any(feature = "tui", test)), allow(dead_code))]
+#![cfg_attr(not(feature = "tui"), allow(dead_code))]
 
 use serde_json::{Map, Value};
 

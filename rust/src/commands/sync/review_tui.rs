@@ -2,8 +2,6 @@
 //! Allows operators to keep or drop actionable sync operations before the plan is marked reviewed.
 #[cfg(feature = "tui")]
 use crate::common::message;
-#[cfg(not(feature = "tui"))]
-use crate::common::tui;
 use crate::common::Result;
 
 #[cfg(feature = "tui")]
@@ -29,7 +27,7 @@ use ratatui::widgets::{Block, Borders, List, ListItem, ListState, Paragraph};
 #[cfg(feature = "tui")]
 use ratatui::Terminal;
 use serde_json::Value;
-#[cfg(any(feature = "tui", test))]
+#[cfg(feature = "tui")]
 use std::collections::BTreeSet;
 #[cfg(feature = "tui")]
 use std::io::{self, Stdout};

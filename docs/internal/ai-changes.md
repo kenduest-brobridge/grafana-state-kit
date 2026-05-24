@@ -24,6 +24,12 @@ Current AI change log only.
 - Older entries moved to [`ai-changes-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-16.md).
 - Older entries moved to [`ai-changes-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-25.md).
 
+## 2026-05-25 - No-default TUI warning cleanup
+- Summary: reduced `--no-default-features` TUI warning noise by removing unused fallback imports and allowing dead code only on TUI-heavy helper modules that are intentionally compiled for tests or feature-enabled interactive paths.
+- Tests: `cargo fmt --check`; `cargo test --quiet --no-default-features tui_not_built_returns_shared_tui_feature_error`; `cargo test --quiet access_plan`; `cargo test --quiet snapshot_review`; `cargo test --quiet datasource_inspect_export_browser_items`; `cargo test --quiet build_governance_gate_tui_groups_summarizes_findings`.
+- Impact: `rust/src/commands/access/access_browse.rs`, `rust/src/commands/access/access_plan_tui.rs`, `rust/src/common/browser/session.rs`, `rust/src/commands/review_diff.rs`, `rust/src/commands/sync/review_tui.rs`, `rust/src/commands/snapshot/review/browser.rs`, `rust/src/commands/dashboard/governance_gate.rs`, `rust/src/commands/dashboard/governance_gate/items.rs`, `rust/src/commands/datasource/browse/support.rs`, and maintainer trace docs. Public CLI paths, help output, command contracts, generated docs, Python behavior, and package metadata are intentionally unchanged.
+- Rollback/Risk: low. Rollback would restore broader no-default warning output without changing normal default-feature interactive behavior.
+
 ## 2026-05-25 - Shared review diff visualization helpers
 - Summary: moved the sync review TUI's generic side-by-side diff view helpers into `review_diff.rs`, including pane focus/control state, scroll limits, pane titles, text wrapping/clipping, and TUI list-item/control rendering, while keeping sync review's operation collection and safe changed-field preview logic local.
 - Tests: `cargo fmt --check`; `cargo test --quiet review_diff`; `cargo test --quiet review_operation`; `cargo test --quiet review_diff_scroll_max_uses_longer_side`; `cargo test --quiet wrap_text_chunks_splits_long_diff_lines_for_pane_width`; `cargo test --quiet clip_text_window_slices_nowrap_diff_content`; `cargo test --quiet --no-default-features tui_not_built_returns_shared_tui_feature_error`; escalated `cargo test --quiet sync` because the sandbox denied local TCP mock-server binding.
@@ -77,9 +83,3 @@ Current AI change log only.
 - Tests: no Rust tests were needed for this documentation-only update. Validation should be `make quality-ai-workflow` and `git diff --check`.
 - Impact: `docs/internal/ai-status.md`, `docs/internal/ai-changes.md`, and the current AI trace only. Rust behavior, public JSON, CLI behavior, generated docs, and Python implementation are intentionally unchanged.
 - Rollback/Risk: low documentation-only change. Rollback would remove the refreshed TODO trace note and restore the previous active trace state.
-
-## 2026-05-02 - Close remaining P3 TODO guardrail
-- Summary: closed the remaining P3 TODO guardrail in the active AI trace and added a concrete backlog item to consume the review-adapter output on the next pass.
-- Tests: no Rust tests were needed because this is docs/TODO cleanup only. Validation should be `make quality-ai-workflow` and `git diff --check`.
-- Impact: `docs/internal/ai-status.md`, `docs/internal/ai-changes.md`, and the current AI trace only. Rust behavior, public JSON, CLI behavior, generated docs, and Python implementation are intentionally unchanged.
-- Rollback/Risk: low documentation-only change. Rollback would remove the guardrail closure note and the new review-adapter consumption backlog entry.

@@ -24,6 +24,12 @@ Current AI-maintained status only.
 - Older entries moved to [`ai-status-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-16.md).
 - Older entries moved to [`ai-status-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-25.md).
 
+## 2026-05-25 - No-default TUI warning cleanup
+- State: Done
+- Scope: Rust no-default TUI boundary hygiene for access browse/plan, shared browser, snapshot review browser shaping, shared review diff helpers, dashboard governance item shaping, and datasource browse support. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
+- Current Update: Removed unused no-default fallback imports and narrowed no-default dead-code noise on TUI-only helper modules while keeping default-feature tests and the shared feature-disabled fallback regression intact.
+- Result: The focused no-default fallback test still passes and its warning output is now limited to smaller remaining ownership/fallback cleanup items instead of broad TUI helper modules.
+
 ## 2026-05-25 - Shared review diff visualization helpers
 - State: Done
 - Scope: Rust internal TUI review diff helper ownership. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
@@ -53,9 +59,3 @@ Current AI-maintained status only.
 - Scope: Maintainer-only TUI architecture inventory plus focused access/datasource browse maturity cleanup. Dashboard browse, shared TUI modules, public CLI behavior, generated docs, and Python package behavior are intentionally unchanged.
 - Current Update: Added a concise TUI architecture roadmap and a read-only inventory report script, added in-session filtering and selection summaries to consolidated access browse, and aligned datasource browse exit control copy with the dashboard-style combined `Esc/q` label.
 - Result: The TUI roadmap now has a planning artifact and manual inventory helper, while two low-risk browse surfaces have focused maturity improvements covered by targeted Rust tests.
-
-## 2026-05-02 - Split datasource import dry-run helpers
-- State: Done
-- Scope: Maintainer trace for the Rust datasource import dry-run module split. Runtime collection remains in `dry_run.rs`; output rendering, review projection, and secret visibility moved to focused modules. Public CLI/JSON behavior, generated docs, Python implementation, and Rust edits are out of scope for this trace pass.
-- Current Update: Recorded the behavior-preserving datasource import dry-run re-layering and narrowed the architecture guardrail candidate note for remaining datasource import/export helpers.
-- Result: The active trace reflects the reduced `dry_run.rs` ownership surface while main owns focused Rust validation.

@@ -12,6 +12,7 @@ use super::governance_gate_rules as rules;
 #[cfg(any(feature = "tui", test))]
 mod items;
 #[cfg(any(feature = "tui", test))]
+#[allow(unused_imports)]
 pub(crate) use items::{build_browser_item, finding_sort_key};
 
 mod runner;

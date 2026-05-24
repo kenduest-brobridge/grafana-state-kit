@@ -94,6 +94,7 @@ pub(crate) use browse::{browse_edit_dialog, browse_history_dialog, browse_state}
 pub(crate) use browse::{browse_support, browse_terminal};
 pub(crate) use facade_exports::crate_exports::*;
 pub use facade_exports::pub_exports::*;
+#[allow(unused_imports)]
 pub(crate) use import::{
     compare as import_compare, lookup as import_lookup, render as import_render,
     target as import_target, validation as import_validation,

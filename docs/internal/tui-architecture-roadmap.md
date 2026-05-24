@@ -164,6 +164,12 @@ while skipping generated HTML and Cargo build output.
   review diff model, so future compatible dashboard, alert, datasource, access,
   or workspace review surfaces can reuse the same title, scroll, wrap, clip,
   and TUI list-item projection instead of copying sync-local helpers.
+- No-default TUI warning noise is narrower: feature-disabled builds no longer
+  compile unused imports or large dead-code surfaces for access browse, access
+  plan summary lines, shared read-only browser internals, snapshot browser
+  shaping imports, review diff helpers, governance finding item shaping, or
+  datasource browse support. Remaining warnings are smaller ownership/fallback
+  cleanups.
 - The change stayed in state/tests. Public CLI/docs and generated docs remain
   unchanged because the user-facing command surface did not change.
 
@@ -179,6 +185,8 @@ while skipping generated HTML and Cargo build output.
   `changedFields` evidence; sync review is now the first consumer of the shared
   view helper path.
 - Continue tightening `--no-default-features` TUI isolation opportunistically
-  by reducing the remaining no-default unused-code/import warnings. The focused
-  `tui_not_built_returns_shared_tui_feature_error` no-default regression now
-  compiles and passes.
+  by reducing the remaining no-default unused-code/import warnings around
+  dashboard import/inspect re-exports, topology fallback branches, and
+  non-TUI helper aliases. The focused
+  `tui_not_built_returns_shared_tui_feature_error` no-default regression
+  compiles and passes with the broader TUI-helper warning noise removed.

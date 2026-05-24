@@ -9,8 +9,6 @@ use crate::review_contract::{
     REVIEW_STATUS_BLOCKED, REVIEW_STATUS_WARNING,
 };
 
-#[cfg(not(feature = "tui"))]
-use crate::common::tui;
 #[cfg(feature = "tui")]
 use crate::interactive_browser::run_interactive_browser;
 #[cfg(any(feature = "tui", test))]
@@ -20,7 +18,7 @@ use serde_json::{Map, Value};
 
 use super::AccessPlanDocument;
 
-#[cfg(any(feature = "tui", test))]
+#[cfg(feature = "tui")]
 fn build_access_plan_summary_lines(document: &AccessPlanDocument) -> Vec<String> {
     let review = document.build_review_envelope();
     let mut lines = vec![

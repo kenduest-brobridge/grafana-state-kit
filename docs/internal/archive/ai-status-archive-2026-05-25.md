@@ -17,3 +17,9 @@
 - Scope: Rust alert runtime architecture trace for splitting plan/delete/import/diff document construction and alert plan review projections out of `runtime_support.rs`. Public CLI/JSON behavior, generated docs, and Python implementation are out of scope.
 - Current Update: Recorded the new focused alert runtime modules in the maintainer trace while main owns focused Rust validation.
 - Result: The active trace reflects the behavior-preserving alert runtime support re-layering.
+
+## 2026-05-02 - Split datasource import dry-run helpers
+- State: Done
+- Scope: Maintainer trace for the Rust datasource import dry-run module split. Runtime collection remains in `dry_run.rs`; output rendering, review projection, and secret visibility moved to focused modules. Public CLI/JSON behavior, generated docs, Python implementation, and Rust edits are out of scope for this trace pass.
+- Current Update: Recorded the behavior-preserving datasource import dry-run re-layering and narrowed the architecture guardrail candidate note for remaining datasource import/export helpers.
+- Result: The active trace reflects the reduced `dry_run.rs` ownership surface while main owns focused Rust validation.
