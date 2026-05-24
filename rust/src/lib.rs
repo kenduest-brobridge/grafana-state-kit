@@ -153,7 +153,7 @@ pub(crate) mod project_status_staged;
 #[path = "commands/status/support.rs"]
 pub(crate) mod project_status_support;
 /// Shared status interactive workbench for project-home and handoff flows.
-#[cfg(any(feature = "tui", test))]
+#[cfg(feature = "tui")]
 #[path = "commands/status/tui/mod.rs"]
 pub(crate) mod project_status_tui;
 /// Internal resource reference graph shared by preview/status/impact style consumers.

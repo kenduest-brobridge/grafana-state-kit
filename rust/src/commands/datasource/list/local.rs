@@ -2,14 +2,15 @@ use serde_json::{Map, Value};
 
 use crate::common::{message, print_supported_columns, Result};
 
+#[cfg(feature = "tui")]
+use super::build_datasource_inspect_export_browser_items;
 use super::{
-    build_datasource_inspect_export_browser_items, datasource_list_column_ids,
-    load_datasource_inspect_export_source, render_datasource_inspect_export_output,
-    resolve_datasource_inspect_export_input_format, DatasourceInspectExportRenderFormat,
-    DatasourceListArgs,
+    datasource_list_column_ids, load_datasource_inspect_export_source,
+    render_datasource_inspect_export_output, resolve_datasource_inspect_export_input_format,
+    DatasourceInspectExportRenderFormat, DatasourceListArgs,
 };
 
-#[cfg(any(feature = "tui", test))]
+#[cfg(feature = "tui")]
 use crate::interactive_browser::run_interactive_browser;
 
 pub(crate) fn render_datasource_text(

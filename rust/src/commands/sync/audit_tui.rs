@@ -1,15 +1,13 @@
 //! Specialized interactive TUI for sync audit drift triage.
-#![cfg_attr(not(any(feature = "tui", test)), allow(dead_code))]
-#[cfg(any(feature = "tui", test))]
+#![cfg_attr(not(feature = "tui"), allow(dead_code))]
+#[cfg(feature = "tui")]
 use super::{
     sync_audit_drift_cmp, sync_audit_drift_details, sync_audit_drift_meta, sync_audit_drift_title,
 };
-#[cfg(any(feature = "tui", test))]
+#[cfg(feature = "tui")]
 use crate::common::message;
-#[cfg(not(feature = "tui"))]
-use crate::common::tui;
 use crate::common::Result;
-#[cfg(any(feature = "tui", test))]
+#[cfg(feature = "tui")]
 use crate::interactive_browser::BrowserItem;
 #[cfg(feature = "tui")]
 use crate::tui_shell;
@@ -47,7 +45,7 @@ enum AuditPane {
     Detail,
 }
 
-#[cfg(any(feature = "tui", test))]
+#[cfg(feature = "tui")]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct AuditGroup {
     pub(crate) label: String,
@@ -119,7 +117,7 @@ fn triage_color(status: &str) -> Color {
     }
 }
 
-#[cfg(any(feature = "tui", test))]
+#[cfg(feature = "tui")]
 pub(crate) fn build_sync_audit_tui_groups(audit: &Value) -> Result<Vec<AuditGroup>> {
     let summary = audit
         .get("summary")
@@ -173,7 +171,7 @@ pub(crate) fn build_sync_audit_tui_groups(audit: &Value) -> Result<Vec<AuditGrou
     ])
 }
 
-#[cfg(any(feature = "tui", test))]
+#[cfg(feature = "tui")]
 pub(crate) fn build_sync_audit_tui_rows(audit: &Value, status: &str) -> Result<Vec<BrowserItem>> {
     let drifts = audit
         .get("drifts")
@@ -197,7 +195,7 @@ pub(crate) fn build_sync_audit_tui_rows(audit: &Value, status: &str) -> Result<V
         .collect())
 }
 
-#[cfg(any(feature = "tui", test))]
+#[cfg(feature = "tui")]
 pub(crate) fn build_sync_audit_tui_rows_by_query(
     audit: &Value,
     status: &str,
@@ -214,7 +212,7 @@ pub(crate) fn build_sync_audit_tui_rows_by_query(
         .collect())
 }
 
-#[cfg(any(feature = "tui", test))]
+#[cfg(feature = "tui")]
 fn sync_audit_row_matches_query(row: &BrowserItem, needle: &str) -> bool {
     row.kind.to_ascii_lowercase().contains(needle)
         || row.title.to_ascii_lowercase().contains(needle)

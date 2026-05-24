@@ -167,7 +167,7 @@ impl AccessBrowseState {
     }
 }
 
-#[cfg(any(feature = "tui", test))]
+#[cfg(feature = "tui")]
 fn search_summary(state: &AccessBrowseState) -> String {
     let query = state.query.trim();
     if query.is_empty() {
@@ -177,7 +177,7 @@ fn search_summary(state: &AccessBrowseState) -> String {
     }
 }
 
-#[cfg(any(feature = "tui", test))]
+#[cfg(feature = "tui")]
 fn build_header_lines(state: &AccessBrowseState, editing_query: bool) -> Vec<Line<'static>> {
     vec![
         tui_shell::summary_line(&[
@@ -214,7 +214,7 @@ fn build_header_lines(state: &AccessBrowseState, editing_query: bool) -> Vec<Lin
     ]
 }
 
-#[cfg(any(feature = "tui", test))]
+#[cfg(feature = "tui")]
 fn build_footer_lines(editing_query: bool) -> Vec<Line<'static>> {
     if editing_query {
         tui_shell::control_grid(&[vec![
@@ -232,7 +232,7 @@ fn build_footer_lines(editing_query: bool) -> Vec<Line<'static>> {
     }
 }
 
-#[cfg(any(feature = "tui", test))]
+#[cfg(feature = "tui")]
 fn shell_status(state: &AccessBrowseState, editing_query: bool) -> String {
     let search = search_summary(state);
     if editing_query {

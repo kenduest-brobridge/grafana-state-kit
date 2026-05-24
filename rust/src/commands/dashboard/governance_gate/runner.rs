@@ -1,7 +1,7 @@
 //! Dashboard governance gate command runner.
 use crate::common::{message, render_json_value, Result};
 
-#[cfg(test)]
+#[cfg(all(feature = "tui", test))]
 use super::build_governance_gate_tui_items;
 #[cfg(all(feature = "tui", not(test)))]
 use super::tui::run_governance_gate_interactive;
@@ -12,7 +12,7 @@ use crate::dashboard::review_source::{
 use crate::dashboard::{
     load_governance_policy, write_json_document, GovernanceGateArgs, GovernanceGateOutputFormat,
 };
-#[cfg(test)]
+#[cfg(all(feature = "tui", test))]
 use crate::interactive_browser::run_interactive_browser;
 
 pub(crate) fn run_dashboard_governance_gate(args: &GovernanceGateArgs) -> Result<()> {
@@ -41,7 +41,7 @@ pub(crate) fn run_dashboard_governance_gate(args: &GovernanceGateArgs) -> Result
             run_governance_gate_interactive(&result)?;
             return governance_gate_exit_result(result.ok);
         }
-        #[cfg(test)]
+        #[cfg(all(feature = "tui", test))]
         {
             let summary_lines = render_dashboard_governance_gate_result(&result)
                 .lines()

@@ -1,4 +1,4 @@
-#![cfg(any(feature = "tui", test))]
+#![cfg(feature = "tui")]
 #![cfg_attr(test, allow(dead_code))]
 
 use ratatui::layout::{Constraint, Direction, Layout, Position, Rect};

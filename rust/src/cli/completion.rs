@@ -67,7 +67,10 @@ mod tests {
     fn bash_completion_renders_shell_script_output() {
         let script = render_completion_script(CompletionShell::Bash);
 
-        assert!(!script.trim().is_empty(), "bash completion should not be empty");
+        assert!(
+            !script.trim().is_empty(),
+            "bash completion should not be empty"
+        );
         assert!(
             script.contains("_grafana-util")
                 || script.contains("complete -F")
@@ -88,7 +91,10 @@ mod tests {
     fn zsh_completion_renders_shell_script_output() {
         let script = render_completion_script(CompletionShell::Zsh);
 
-        assert!(!script.trim().is_empty(), "zsh completion should not be empty");
+        assert!(
+            !script.trim().is_empty(),
+            "zsh completion should not be empty"
+        );
         assert!(
             script.contains("#compdef grafana-util") || script.contains("compdef _grafana-util"),
             "zsh completion should look like a Zsh completion script\n{script}"

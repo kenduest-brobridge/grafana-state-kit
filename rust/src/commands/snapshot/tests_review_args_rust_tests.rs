@@ -1,9 +1,11 @@
 use crate::overview::OverviewOutputFormat;
 use crate::snapshot::{build_snapshot_overview_args, SnapshotCliArgs, SnapshotReviewArgs};
 use clap::Parser;
+#[cfg(feature = "tui")]
 use serde_json::json;
 
 #[test]
+#[cfg(feature = "tui")]
 fn snapshot_review_builds_overview_args_for_interactive_output() {
     let review_args = SnapshotReviewArgs {
         input_dir: std::path::PathBuf::from("./snapshot"),

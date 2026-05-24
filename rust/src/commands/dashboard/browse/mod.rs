@@ -8,27 +8,48 @@ use crate::common::message;
 use crate::common::Result;
 use crate::http::JsonHttpClient;
 
+#[cfg(feature = "tui")]
 pub(crate) mod actions;
+#[cfg(feature = "tui")]
 pub(crate) mod edit_dialog;
+#[cfg(feature = "tui")]
 pub(crate) mod external_edit_dialog;
+#[cfg(feature = "tui")]
 pub(crate) mod history_dialog;
+#[cfg(feature = "tui")]
 pub(crate) mod input;
+#[cfg(feature = "tui")]
 pub(crate) mod live_detail;
+#[cfg(feature = "tui")]
 pub(crate) mod load;
+#[cfg(feature = "tui")]
 pub(crate) mod render;
+#[cfg(feature = "tui")]
 pub(crate) mod state;
+#[cfg(feature = "tui")]
 pub(crate) mod support;
+#[cfg(feature = "tui")]
 pub(crate) mod terminal;
+#[cfg(feature = "tui")]
 pub(crate) mod tui;
 
+#[cfg(feature = "tui")]
 pub(crate) use actions as browse_actions;
+#[cfg(feature = "tui")]
 pub(crate) use edit_dialog as browse_edit_dialog;
+#[cfg(feature = "tui")]
 pub(crate) use external_edit_dialog as browse_external_edit_dialog;
+#[cfg(feature = "tui")]
 pub(crate) use history_dialog as browse_history_dialog;
+#[cfg(feature = "tui")]
 pub(crate) use input as browse_input;
+#[cfg(feature = "tui")]
 pub(crate) use render as browse_render;
+#[cfg(feature = "tui")]
 pub(crate) use state as browse_state;
+#[cfg(feature = "tui")]
 pub(crate) use support as browse_support;
+#[cfg(feature = "tui")]
 pub(crate) use terminal as browse_terminal;
 
 #[cfg(feature = "tui")]

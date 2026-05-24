@@ -157,6 +157,9 @@ while skipping generated HTML and Cargo build output.
   modes instead of continuing to read as plain browse/local-browse.
 - Datasource browse edit dialog now wraps Tab/Shift+Tab field navigation and
   advertises both next and previous field controls in the dialog header.
+- Rust TUI no-default isolation now keeps access/dashboard/datasource/status,
+  sync-audit, and snapshot interactive helpers behind the `tui` feature during
+  test builds, while preserving the shared feature-disabled fallback test.
 - The change stayed in state/tests. Public CLI/docs and generated docs remain
   unchanged because the user-facing command surface did not change.
 
@@ -167,7 +170,7 @@ while skipping generated HTML and Cargo build output.
   changing public CLI flags; datasource local and snapshot datasource rows
   already reuse the datasource Review projection, and access plan generic action
   evidence now reuses the shared review-contract projection.
-- Continue tightening `--no-default-features` TUI isolation. A focused dashboard
-  fallback test can run under the default feature set, but the current
-  no-default Rust test build still fails earlier on unrelated TUI-gated module
-  imports.
+- Continue tightening `--no-default-features` TUI isolation opportunistically
+  by reducing the remaining no-default unused-code/import warnings. The focused
+  `tui_not_built_returns_shared_tui_feature_error` no-default regression now
+  compiles and passes.

@@ -1,3 +1,5 @@
+#![cfg(feature = "tui")]
+
 #[allow(dead_code)]
 #[path = "../src/common/mod.rs"]
 mod common;

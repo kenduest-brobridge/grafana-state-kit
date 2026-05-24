@@ -1,4 +1,4 @@
-#![cfg(any(feature = "tui", test))]
+#![cfg(feature = "tui")]
 #![cfg_attr(test, allow(dead_code))]
 
 #[path = "render.rs"]

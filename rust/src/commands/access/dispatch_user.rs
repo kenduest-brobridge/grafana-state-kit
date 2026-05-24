@@ -4,10 +4,14 @@ use serde_json::Value;
 use crate::artifact_workspace::ArtifactLane;
 use crate::common::{message, Result};
 
+#[cfg(feature = "tui")]
 use super::super::browse_support::BrowseSwitch;
+#[cfg(feature = "tui")]
 use super::super::browse_terminal::TerminalSession;
 use super::super::cli_defs::build_http_client;
-use super::super::{team_browse, user, user_browse};
+#[cfg(feature = "tui")]
+use super::super::team_browse;
+use super::super::{user, user_browse};
 use super::super::{AccessCliArgs, AccessCommand, UserCommand};
 use super::dispatch_artifacts::{
     export_access_lane_path, local_access_lane_path, resolve_required_access_diff_dir,

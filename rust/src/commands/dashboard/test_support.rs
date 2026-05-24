@@ -1,6 +1,7 @@
 #![allow(unused_imports)]
 
 pub(super) use crate::common::message;
+#[cfg(feature = "tui")]
 pub(super) use crate::dashboard::browse_support::build_dashboard_browse_document;
 pub(super) use crate::dashboard::cli_defs::{
     build_auth_context, build_http_client, build_http_client_for_org, normalize_dashboard_cli_args,
@@ -25,9 +26,12 @@ pub(super) use crate::dashboard::files::{
     load_datasource_inventory, load_export_metadata, load_folder_inventory, load_json_file,
     resolve_dashboard_export_root, write_dashboard, write_json_document,
 };
+#[cfg(feature = "tui")]
 pub(super) use crate::dashboard::governance_gate::{
     build_governance_gate_footer_control_lines, build_governance_gate_tui_groups,
     build_governance_gate_tui_items, build_governance_gate_tui_items_by_query,
+};
+pub(super) use crate::dashboard::governance_gate::{
     evaluate_dashboard_governance_gate, render_dashboard_governance_gate_result,
     run_dashboard_governance_gate, DashboardGovernanceGateFinding, DashboardGovernanceGateResult,
     DashboardGovernanceGateSummary,
@@ -50,6 +54,7 @@ pub(super) use crate::dashboard::history::{
     DASHBOARD_HISTORY_DIFF_KIND, DASHBOARD_HISTORY_EXPORT_KIND, DASHBOARD_HISTORY_LIST_KIND,
     DASHBOARD_HISTORY_RESTORE_KIND,
 };
+#[cfg(feature = "tui")]
 pub(super) use crate::dashboard::impact_tui::{
     build_impact_footer_control_lines, build_impact_tui_groups, filter_impact_tui_items,
     filter_impact_tui_items_by_query,
@@ -85,6 +90,7 @@ pub(super) use crate::dashboard::inspect_live::{
     inspect_live_dashboards_with_client, inspect_live_dashboards_with_request,
     snapshot_live_dashboard_export_with_fetcher,
 };
+#[cfg(feature = "tui")]
 pub(super) use crate::dashboard::inspect_live_tui::{
     build_inspect_live_tui_groups, filter_inspect_live_tui_items,
 };
@@ -111,6 +117,7 @@ pub(super) use crate::dashboard::inspect_summary::{
     DatasourceInventorySummary, ExportInspectionSummary, ExportInspectionSummaryDocument,
     ExportInspectionSummaryJsonSummary, MixedDashboardSummary,
 };
+#[cfg(feature = "tui")]
 pub(super) use crate::dashboard::inspect_workbench_support::build_inspect_workbench_document;
 pub(super) use crate::dashboard::list::{
     attach_dashboard_folder_paths_with_request, collect_dashboard_ownership_provenance,
@@ -142,6 +149,7 @@ pub(super) use crate::dashboard::topology::{
     render_topology_dot, render_topology_mermaid, ImpactAlertResource, ImpactDashboard,
     ImpactDocument, ImpactSummary, TopologyDocument,
 };
+#[cfg(feature = "tui")]
 pub(super) use crate::dashboard::topology_tui::{
     build_topology_footer_control_lines, build_topology_tui_groups, filter_topology_tui_items,
     filter_topology_tui_items_by_query,

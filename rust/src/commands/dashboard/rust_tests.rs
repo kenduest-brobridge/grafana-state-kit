@@ -42,13 +42,13 @@ pub(super) use dashboard_rust_tests_support::{
 #[cfg(test)]
 #[path = "dashboard_authoring_rust_tests.rs"]
 mod dashboard_authoring_rust_tests;
-#[cfg(test)]
+#[cfg(all(test, feature = "tui"))]
 #[path = "export_diff_rust_tests.rs"]
 mod export_diff_rust_tests;
 #[cfg(test)]
 #[path = "export_diff_tail_rust_tests.rs"]
 mod export_diff_tail_rust_tests;
-#[cfg(test)]
+#[cfg(all(test, feature = "tui"))]
 #[path = "export_focus_report_rust_tests.rs"]
 mod export_focus_report_rust_tests;
 #[cfg(test)]
@@ -63,7 +63,7 @@ mod inspect_live_export_all_orgs_rust_tests;
 #[cfg(test)]
 #[path = "inspect_live_export_parity_rust_tests.rs"]
 mod inspect_live_export_parity_rust_tests;
-#[cfg(test)]
+#[cfg(all(test, feature = "tui"))]
 #[path = "inspect_live_tui_rust_tests.rs"]
 mod inspect_live_tui_rust_tests;
 #[cfg(test)]
@@ -73,7 +73,7 @@ mod inspect_query_rust_tests;
 #[cfg(test)]
 #[path = "dashboard_export_import_inventory_rust_tests.rs"]
 mod dashboard_export_import_inventory_rust_tests;
-#[cfg(test)]
+#[cfg(all(test, feature = "tui"))]
 #[path = "dashboard_export_import_topology_import_format_rust_tests.rs"]
 mod dashboard_export_import_topology_import_format_rust_tests;
 

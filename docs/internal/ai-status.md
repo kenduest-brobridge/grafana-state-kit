@@ -24,6 +24,12 @@ Current AI-maintained status only.
 - Older entries moved to [`ai-status-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-16.md).
 - Older entries moved to [`ai-status-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-25.md).
 
+## 2026-05-25 - TUI no-default feature boundary cleanup
+- State: Done
+- Scope: Rust TUI cfg boundaries for access/dashboard/datasource/status, sync audit, and snapshot review test helpers. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
+- Current Update: Kept TUI-only helpers, test re-exports, and interactive test modules behind `feature = "tui"` during no-default test builds while preserving default-feature TUI tests and the shared feature-disabled fallback regression.
+- Result: The focused no-default fallback test now compiles and passes instead of failing earlier on ratatui/crossterm or TUI-only helper imports.
+
 ## 2026-05-25 - Browse search and review pane consistency
 - State: Done
 - Scope: Rust TUI state/render behavior and maintainer trace for access user/team repeat-search and datasource browse search/review context. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
@@ -53,9 +59,3 @@ Current AI-maintained status only.
 - Scope: Rust alert runtime architecture trace for splitting plan/delete/import/diff document construction and alert plan review projections out of `runtime_support.rs`. Public CLI/JSON behavior, generated docs, and Python implementation are out of scope.
 - Current Update: Recorded the new focused alert runtime modules in the maintainer trace while main owns focused Rust validation.
 - Result: The active trace reflects the behavior-preserving alert runtime support re-layering.
-
-## 2026-05-02 - Consume mutation review adapters
-- State: Done
-- Scope: Rust internal shared review-adapter consumption for access import dry-run, datasource import dry-run, datasource live mutation, and alert plan rows; focused tests; TODO trace. Public JSON, CLI behavior, generated docs, and Python implementation are out of scope.
-- Current Update: Added `build_review_mutation_summary_rows(&ReviewMutationEnvelope)` as the shared internal consumer for the proven review adapters.
-- Result: Adapter consumption is now covered by tests without public JSON or CLI drift.

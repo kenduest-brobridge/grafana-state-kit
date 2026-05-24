@@ -88,7 +88,9 @@ mod vars;
 
 #[cfg(test)]
 #[allow(unused_imports)]
+#[cfg(feature = "tui")]
 pub(crate) use browse::{browse_edit_dialog, browse_history_dialog, browse_state};
+#[cfg(feature = "tui")]
 pub(crate) use browse::{browse_support, browse_terminal};
 pub(crate) use facade_exports::crate_exports::*;
 pub use facade_exports::pub_exports::*;
@@ -235,6 +237,6 @@ mod test_support;
 #[cfg(test)]
 #[path = "topology_impact_document_rust_tests.rs"]
 mod topology_impact_document_rust_tests;
-#[cfg(test)]
+#[cfg(all(test, feature = "tui"))]
 #[path = "topology_impact_rust_tests.rs"]
 mod topology_impact_rust_tests;

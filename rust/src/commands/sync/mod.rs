@@ -127,7 +127,7 @@ pub(crate) use staged_documents::{
     sync_audit_drift_cmp, sync_audit_drift_details, sync_audit_drift_meta, sync_audit_drift_title,
 };
 
-#[cfg(test)]
+#[cfg(all(test, feature = "tui"))]
 pub(crate) use audit_tui::{
     build_sync_audit_footer_control_lines, build_sync_audit_tui_groups, build_sync_audit_tui_rows,
     build_sync_audit_tui_rows_by_query,
