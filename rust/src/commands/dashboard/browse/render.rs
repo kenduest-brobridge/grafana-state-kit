@@ -235,6 +235,17 @@ fn render_summary_lines(state: &BrowserState) -> Vec<Line<'static>> {
                     tui_shell::accent(selected_count.to_string(), Color::Yellow),
                 ]);
             }
+            spans.extend([
+                Span::raw("  "),
+                tui_shell::label("Row "),
+                tui_shell::accent(state.selected_position_summary(), Color::White),
+                Span::raw("  "),
+                tui_shell::label("Kind "),
+                tui_shell::accent(state.selected_kind_summary(), Color::Yellow),
+                Span::raw("  "),
+                tui_shell::label("Search "),
+                tui_shell::accent(state.search_summary(), Color::LightMagenta),
+            ]);
             Line::from(spans)
         },
     ]

@@ -123,6 +123,8 @@ while skipping generated HTML and Cargo build output.
   alongside movement, detail scroll, and `Esc/q` exit controls.
 - Status TUI now supports `/`, `?`, and `n` search over domain and action lists
   with the same compact search prompt hint language used by the browse surfaces.
+- Dashboard browse header context now matches datasource browse by surfacing the
+  selected row position, selected node kind, and current search state.
 - The change stayed in state/tests. Public CLI/docs and generated docs remain
   unchanged because the user-facing command surface did not change.
 

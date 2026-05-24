@@ -1,4 +1,5 @@
 #![cfg(test)]
+use super::super::browse_state::SearchState;
 use super::*;
 use crate::dashboard::delete_support::DeletePlan;
 use ratatui::backend::TestBackend;
@@ -203,6 +204,52 @@ fn summary_lines_surface_pending_delete_mode() {
     assert!(lines[1].contains("Confirm: y"));
     assert!(lines[1].contains("Cancel: n/Esc/q"));
     assert!(!lines[1].contains("y / Esc / q"));
+}
+
+#[test]
+fn summary_lines_surface_selection_kind_and_search_context() {
+    let document = super::super::browse_support::DashboardBrowseDocument {
+        summary: super::super::browse_support::DashboardBrowseSummary {
+            root_path: None,
+            dashboard_count: 1,
+            folder_count: 1,
+            org_count: 1,
+            scope_label: "current-org".to_string(),
+        },
+        nodes: vec![
+            super::super::browse_support::DashboardBrowseNode {
+                kind: super::super::browse_support::DashboardBrowseNodeKind::Folder,
+                title: "Platform".to_string(),
+                path: "Platform".to_string(),
+                uid: Some("platform".to_string()),
+                depth: 0,
+                meta: "0 folder(s) | 1 dashboard(s)".to_string(),
+                details: Vec::new(),
+                url: None,
+                org_name: "Acme".to_string(),
+                org_id: "42".to_string(),
+                child_count: 1,
+            },
+            dashboard_node("cpu-main", "CPU Main"),
+        ],
+    };
+    let mut state = BrowserState::new(document);
+    state.select_last();
+    state.last_search = Some(SearchState {
+        direction: SearchDirection::Forward,
+        query: "cpu".to_string(),
+    });
+
+    let lines = render_summary_lines(&state)
+        .into_iter()
+        .map(|line| line.to_string())
+        .collect::<Vec<_>>();
+    assert!(lines[1].contains("Row"));
+    assert!(lines[1].contains("2/2"));
+    assert!(lines[1].contains("Kind"));
+    assert!(lines[1].contains("dashboard"));
+    assert!(lines[1].contains("Search"));
+    assert!(lines[1].contains("/cpu"));
 }
 
 #[test]

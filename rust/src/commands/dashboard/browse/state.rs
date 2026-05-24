@@ -293,6 +293,43 @@ impl BrowserState {
         }
     }
 
+    pub(crate) fn selected_position_summary(&self) -> String {
+        match (self.list_state.selected(), self.document.nodes.len()) {
+            (Some(index), total) if total > 0 => {
+                format!("{}/{}", index.saturating_add(1).min(total), total)
+            }
+            _ => "0/0".to_string(),
+        }
+    }
+
+    pub(crate) fn selected_kind_summary(&self) -> &'static str {
+        self.selected_node()
+            .map(|node| match node.kind {
+                DashboardBrowseNodeKind::Org => "org",
+                DashboardBrowseNodeKind::Folder => "folder",
+                DashboardBrowseNodeKind::Dashboard => "dashboard",
+            })
+            .unwrap_or("none")
+    }
+
+    pub(crate) fn search_summary(&self) -> String {
+        if let Some(search) = self.pending_search.as_ref() {
+            let prefix = match search.direction {
+                SearchDirection::Forward => "/",
+                SearchDirection::Backward => "?",
+            };
+            format!("prompt {prefix}{}", search.query)
+        } else if let Some(search) = self.last_search.as_ref() {
+            let prefix = match search.direction {
+                SearchDirection::Forward => "/",
+                SearchDirection::Backward => "?",
+            };
+            format!("last {prefix}{}", search.query)
+        } else {
+            "idle".to_string()
+        }
+    }
+
     pub(crate) fn start_search(&mut self, direction: SearchDirection) {
         // Search is a transient modal layered over the current tree selection.
         self.pending_search = Some(SearchPromptState {
@@ -562,5 +599,38 @@ mod tests {
         });
 
         assert_eq!(state.repeat_last_search(), Some(2));
+    }
+
+    #[test]
+    fn selection_and_search_summaries_describe_current_tree_context() {
+        let mut state = BrowserState::new(document(vec![
+            folder_node(),
+            dashboard_node("cpu-main", "CPU Main", "1"),
+        ]));
+
+        assert_eq!(state.selected_position_summary(), "1/2");
+        assert_eq!(state.selected_kind_summary(), "folder");
+        assert_eq!(state.search_summary(), "idle");
+
+        state.select_last();
+        state.last_search = Some(SearchState {
+            direction: SearchDirection::Backward,
+            query: "cpu".to_string(),
+        });
+        assert_eq!(state.selected_position_summary(), "2/2");
+        assert_eq!(state.selected_kind_summary(), "dashboard");
+        assert_eq!(state.search_summary(), "last ?cpu");
+
+        state.start_search(SearchDirection::Forward);
+        state.pending_search.as_mut().unwrap().query = "mem".to_string();
+        assert_eq!(state.search_summary(), "prompt /mem");
+    }
+
+    #[test]
+    fn selection_summaries_handle_empty_tree() {
+        let state = BrowserState::new(document(Vec::new()));
+
+        assert_eq!(state.selected_position_summary(), "0/0");
+        assert_eq!(state.selected_kind_summary(), "none");
     }
 }
