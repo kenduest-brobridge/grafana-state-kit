@@ -320,21 +320,33 @@ impl BrowserState {
 
     pub(crate) fn repeat_last_search(&self) -> Option<usize> {
         let search = self.last_search.as_ref()?;
-        let next_start = self
-            .list_state
-            .selected()
-            .map(|index| match search.direction {
-                SearchDirection::Forward => index.saturating_add(1),
-                SearchDirection::Backward => index.saturating_sub(1),
-            });
-        self.find_match_from(&search.query, search.direction, next_start)
-            .or_else(|| {
-                let wrapped_start = match search.direction {
-                    SearchDirection::Forward => Some(0),
-                    SearchDirection::Backward => self.document.nodes.len().checked_sub(1),
-                };
-                self.find_match_from(&search.query, search.direction, wrapped_start)
-            })
+        match search.direction {
+            SearchDirection::Forward => {
+                let next_start = self
+                    .list_state
+                    .selected()
+                    .map(|index| index.saturating_add(1));
+                self.find_match_from(&search.query, search.direction, next_start)
+                    .or_else(|| self.find_match_from(&search.query, search.direction, Some(0)))
+            }
+            SearchDirection::Backward => {
+                if self.document.nodes.is_empty() {
+                    return None;
+                }
+                let next_start = self
+                    .list_state
+                    .selected()
+                    .and_then(|index| index.checked_sub(1))
+                    .or_else(|| self.document.nodes.len().checked_sub(1));
+                if let Some(index) =
+                    self.find_match_from(&search.query, search.direction, next_start)
+                {
+                    return Some(index);
+                }
+                let wrapped_start = self.document.nodes.len().checked_sub(1)?;
+                self.find_match_from(&search.query, search.direction, Some(wrapped_start))
+            }
+        }
     }
 
     fn selection_anchor(&self) -> Option<SelectionAnchor> {
@@ -534,5 +546,21 @@ mod tests {
         let selected = state.selected_targets();
         assert_eq!(selected.len(), 1);
         assert_eq!(selected[0].uid.as_deref(), Some("cpu-main"));
+    }
+
+    #[test]
+    fn repeat_last_search_wraps_backward_without_reselecting_boundary_match() {
+        let mut state = BrowserState::new(document(vec![
+            dashboard_node("cpu-main", "CPU Main", "1"),
+            dashboard_node("disk-main", "Disk Main", "1"),
+            dashboard_node("cpu-detail", "CPU Detail", "1"),
+        ]));
+        state.select_index(0);
+        state.last_search = Some(SearchState {
+            direction: SearchDirection::Backward,
+            query: "cpu".to_string(),
+        });
+
+        assert_eq!(state.repeat_last_search(), Some(2));
     }
 }

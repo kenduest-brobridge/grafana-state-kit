@@ -103,6 +103,8 @@ while skipping generated HTML and Cargo build output.
   exit label as the other Rust TUI browse/review surfaces.
 - Dashboard inspect workbench repeat-search now also skips the selected row
   before wrapping backward at the first matching row.
+- Dashboard browse repeat-search now follows the same backward boundary rule,
+  so it does not reselect the first matching tree node before wrapping.
 - The change stayed in state/tests. Public CLI/docs and generated docs remain
   unchanged because the user-facing command surface did not change.
 
