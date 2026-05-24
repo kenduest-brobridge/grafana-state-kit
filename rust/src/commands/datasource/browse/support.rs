@@ -382,7 +382,7 @@ fn text_list_field(details: &Map<String, Value>, names: &[&str]) -> Option<Vec<S
     Some(values)
 }
 
-fn is_safe_changed_field(field: &str) -> bool {
+pub(crate) fn is_safe_changed_field(field: &str) -> bool {
     !field.to_ascii_lowercase().contains("securejsondata")
 }
 

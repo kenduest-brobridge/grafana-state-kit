@@ -107,11 +107,13 @@ while skipping generated HTML and Cargo build output.
   before wrapping backward at the first matching row.
 - Dashboard browse repeat-search now follows the same backward boundary rule,
   so it does not reselect the first matching tree node before wrapping.
+- Snapshot review datasource rows now preserve safe local review evidence and
+  reuse the same datasource Review projection in browser details.
 - The change stayed in state/tests. Public CLI/docs and generated docs remain
   unchanged because the user-facing command surface did not change.
 
 ## Next Follow-Up
 
-- Continue reducing duplicated TUI review/detail projection where existing
-  local artifact browsers already own loading and can consume the same safe
-  review lines without changing public CLI flags.
+- Continue reducing duplicated TUI review/detail projection on the remaining
+  local artifact browsers that can consume shared safe review lines without
+  changing public CLI flags.

@@ -5,6 +5,8 @@ use serde_json::Value;
 use crate::common::Result;
 
 #[cfg(any(feature = "tui", test))]
+use crate::datasource::{review_lines, DatasourceBrowseItem, DatasourceBrowseItemKind};
+#[cfg(any(feature = "tui", test))]
 use crate::interactive_browser::{run_interactive_browser, BrowserItem};
 
 use super::common::{review_summary, review_warnings};
@@ -468,93 +470,69 @@ pub(crate) fn build_snapshot_review_browser_items(document: &Value) -> Result<Ve
         let datasource = datasource.as_object().ok_or_else(|| {
             crate::common::message("Snapshot review datasource entry must be an object.")
         })?;
+        let name = datasource
+            .get("name")
+            .and_then(Value::as_str)
+            .unwrap_or("unknown")
+            .to_string();
+        let datasource_type = datasource
+            .get("type")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string();
+        let org = datasource
+            .get("org")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string();
+        let org_id = datasource
+            .get("orgId")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string();
+        let uid = datasource
+            .get("uid")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string();
+        let url = datasource
+            .get("url")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string();
+        let access = datasource
+            .get("access")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string();
+        let is_default = datasource
+            .get("isDefault")
+            .and_then(Value::as_bool)
+            .unwrap_or(false);
+        let mut details = vec![
+            format!("Name: {name}"),
+            format!("UID: {uid}"),
+            format!("Type: {datasource_type}"),
+            format!("Org: {org} ({org_id})"),
+            format!("URL: {url}"),
+            format!("Access: {access}"),
+            format!("Default: {}", if is_default { "true" } else { "false" }),
+        ];
+        let review = snapshot_datasource_review_lines(datasource);
+        if !review.is_empty() {
+            details.push("Review evidence:".to_string());
+            details.extend(review);
+        }
         items.push(BrowserItem {
             kind: "datasource".to_string(),
-            title: datasource
-                .get("name")
-                .and_then(Value::as_str)
-                .unwrap_or("unknown")
-                .to_string(),
+            title: name,
             meta: format!(
                 "{}  org={}  default={}",
-                datasource
-                    .get("type")
-                    .and_then(Value::as_str)
-                    .unwrap_or_default(),
-                datasource
-                    .get("org")
-                    .and_then(Value::as_str)
-                    .unwrap_or_default(),
-                if datasource
-                    .get("isDefault")
-                    .and_then(Value::as_bool)
-                    .unwrap_or(false)
-                {
-                    "true"
-                } else {
-                    "false"
-                }
+                datasource_type,
+                org,
+                if is_default { "true" } else { "false" }
             ),
-            details: vec![
-                format!(
-                    "Name: {}",
-                    datasource
-                        .get("name")
-                        .and_then(Value::as_str)
-                        .unwrap_or_default()
-                ),
-                format!(
-                    "UID: {}",
-                    datasource
-                        .get("uid")
-                        .and_then(Value::as_str)
-                        .unwrap_or_default()
-                ),
-                format!(
-                    "Type: {}",
-                    datasource
-                        .get("type")
-                        .and_then(Value::as_str)
-                        .unwrap_or_default()
-                ),
-                format!(
-                    "Org: {} ({})",
-                    datasource
-                        .get("org")
-                        .and_then(Value::as_str)
-                        .unwrap_or_default(),
-                    datasource
-                        .get("orgId")
-                        .and_then(Value::as_str)
-                        .unwrap_or_default()
-                ),
-                format!(
-                    "URL: {}",
-                    datasource
-                        .get("url")
-                        .and_then(Value::as_str)
-                        .unwrap_or_default()
-                ),
-                format!(
-                    "Access: {}",
-                    datasource
-                        .get("access")
-                        .and_then(Value::as_str)
-                        .unwrap_or_default()
-                ),
-                format!(
-                    "Default: {}",
-                    if datasource
-                        .get("isDefault")
-                        .and_then(Value::as_bool)
-                        .unwrap_or(false)
-                    {
-                        "true"
-                    } else {
-                        "false"
-                    }
-                ),
-            ],
+            details,
         });
     }
 
@@ -604,6 +582,60 @@ pub(crate) fn build_snapshot_review_browser_items(document: &Value) -> Result<Ve
     }
 
     Ok(items)
+}
+
+#[cfg(any(feature = "tui", test))]
+fn snapshot_datasource_review_lines(datasource: &serde_json::Map<String, Value>) -> Vec<String> {
+    let item = DatasourceBrowseItem {
+        kind: DatasourceBrowseItemKind::Datasource,
+        depth: 0,
+        id: datasource
+            .get("id")
+            .and_then(Value::as_i64)
+            .unwrap_or_default(),
+        uid: datasource
+            .get("uid")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string(),
+        name: datasource
+            .get("name")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string(),
+        datasource_type: datasource
+            .get("type")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string(),
+        access: datasource
+            .get("access")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string(),
+        url: datasource
+            .get("url")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string(),
+        is_default: datasource
+            .get("isDefault")
+            .and_then(Value::as_bool)
+            .unwrap_or(false),
+        org: datasource
+            .get("org")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string(),
+        org_id: datasource
+            .get("orgId")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string(),
+        details: datasource.clone(),
+        datasource_count: 1,
+    };
+    review_lines(&item)
 }
 
 #[cfg(feature = "tui")]

@@ -2,9 +2,10 @@ use std::collections::BTreeMap;
 use std::path::Path;
 
 use serde::Serialize;
-use serde_json::Value;
+use serde_json::{Map, Value};
 
 use crate::common::Result;
+use crate::datasource::is_safe_changed_field;
 use crate::staged_export_scopes::{
     resolve_dashboard_export_scope_dirs, resolve_datasource_export_scope_dirs,
 };
@@ -89,6 +90,8 @@ struct SnapshotReviewDatasourceDocument {
     url: String,
     access: String,
     is_default: bool,
+    #[serde(flatten)]
+    review_evidence: BTreeMap<String, Value>,
 }
 
 pub fn build_snapshot_review_document(
@@ -184,6 +187,7 @@ pub fn build_snapshot_review_document(
                 .unwrap_or_default()
                 .to_string(),
             is_default,
+            review_evidence: snapshot_datasource_review_evidence(object),
         });
     }
     let datasource_type_documents = datasource_type_totals
@@ -253,4 +257,82 @@ pub fn build_snapshot_review_document(
             "Snapshot review document serialization failed: {error}"
         ))
     })
+}
+
+fn snapshot_datasource_review_evidence(object: &Map<String, Value>) -> BTreeMap<String, Value> {
+    let mut evidence = BTreeMap::new();
+    for field in [
+        "action",
+        "status",
+        "blockedReason",
+        "matchBasis",
+        "destination",
+        "file",
+        "sourceFile",
+        "targetUid",
+    ] {
+        if let Some(value) = object
+            .get(field)
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        {
+            evidence.insert(field.to_string(), Value::String(value.to_string()));
+        }
+    }
+    for field in [
+        "targetReadOnly",
+        "reviewRequired",
+        "requiresSecretValues",
+        "readOnly",
+    ] {
+        if let Some(value) = object.get(field).and_then(Value::as_bool) {
+            evidence.insert(field.to_string(), Value::Bool(value));
+        }
+    }
+    if let Some(value) = object.get("targetVersion").and_then(Value::as_i64) {
+        evidence.insert("targetVersion".to_string(), Value::Number(value.into()));
+    }
+    if let Some(changed_fields) = snapshot_text_list_field(object, "changedFields") {
+        let changed_fields = changed_fields
+            .into_iter()
+            .filter(|field| is_safe_changed_field(field))
+            .map(Value::String)
+            .collect::<Vec<_>>();
+        if !changed_fields.is_empty() {
+            evidence.insert("changedFields".to_string(), Value::Array(changed_fields));
+        }
+    }
+    if let Some(review_hints) = snapshot_text_list_field(object, "reviewHints") {
+        evidence.insert(
+            "reviewHints".to_string(),
+            Value::Array(review_hints.into_iter().map(Value::String).collect()),
+        );
+    }
+    evidence
+}
+
+fn snapshot_text_list_field(object: &Map<String, Value>, field: &str) -> Option<Vec<String>> {
+    let value = object.get(field)?;
+    let values = if let Some(items) = value.as_array() {
+        items
+            .iter()
+            .filter_map(Value::as_str)
+            .map(str::trim)
+            .filter(|item| !item.is_empty())
+            .map(str::to_string)
+            .collect::<Vec<_>>()
+    } else {
+        value
+            .as_str()
+            .map(|text| {
+                text.split(',')
+                    .map(str::trim)
+                    .filter(|item| !item.is_empty())
+                    .map(str::to_string)
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default()
+    };
+    (!values.is_empty()).then_some(values)
 }

@@ -122,6 +122,123 @@ fn snapshot_review_browser_items_prioritize_signals_before_folders_and_split_fol
 }
 
 #[test]
+fn snapshot_review_document_preserves_datasource_review_evidence_for_browser_projection() {
+    let temp = tempdir().unwrap();
+    let snapshot_root = temp.path().join("snapshot");
+    let dashboard_root = snapshot_root.join("dashboards");
+    let datasource_root = snapshot_root.join("datasources");
+
+    write_snapshot_dashboard_metadata(&dashboard_root, &[("1", "Main Org.", 1)]);
+    write_complete_dashboard_scope(&dashboard_root.join("org_1_Main_Org"));
+    write_snapshot_dashboard_index(&dashboard_root, &[]);
+    write_snapshot_datasource_root_metadata(&datasource_root, 1, "root");
+    write_datasource_inventory_rows(
+        &datasource_root,
+        &[json!({
+            "uid": "prom-main",
+            "name": "prom-main",
+            "type": "prometheus",
+            "url": "http://prometheus:9090",
+            "isDefault": true,
+            "org": "Main Org.",
+            "orgId": "1",
+            "action": "would-update",
+            "status": "ready",
+            "blockedReason": "target-read-only",
+            "targetReadOnly": true,
+            "changedFields": ["url", "secureJsonData.password"],
+            "reviewRequired": true,
+            "secureJsonData": {
+                "password": "super-secret-value"
+            }
+        })],
+    );
+    write_datasource_provisioning_lane(&datasource_root);
+
+    let document = crate::snapshot::build_snapshot_review_document(
+        &dashboard_root,
+        &datasource_root,
+        &datasource_root,
+    )
+    .unwrap();
+    let datasource = &document["datasources"][0];
+
+    assert_eq!(datasource["action"], json!("would-update"));
+    assert_eq!(datasource["status"], json!("ready"));
+    assert_eq!(datasource["blockedReason"], json!("target-read-only"));
+    assert_eq!(datasource["targetReadOnly"], json!(true));
+    assert_eq!(datasource["changedFields"], json!(["url"]));
+    assert_eq!(datasource["reviewRequired"], json!(true));
+    assert!(datasource.get("secureJsonData").is_none());
+    assert!(!datasource.to_string().contains("super-secret-value"));
+    assert!(!datasource.to_string().contains("secureJsonData.password"));
+}
+
+#[test]
+fn snapshot_review_browser_items_reuse_datasource_review_evidence_without_secret_paths() {
+    let document = json!({
+        "kind": "grafana-utils-snapshot-review",
+        "schemaVersion": 1,
+        "summary": {
+            "orgCount": 1,
+            "dashboardOrgCount": 1,
+            "datasourceOrgCount": 1,
+            "dashboardCount": 1,
+            "folderCount": 0,
+            "datasourceCount": 1,
+            "datasourceTypeCount": 1,
+            "defaultDatasourceCount": 1
+        },
+        "warnings": [],
+        "lanes": {
+            "dashboard": {},
+            "datasource": {},
+            "access": {}
+        },
+        "orgs": [],
+        "datasourceTypes": [],
+        "datasources": [
+            {
+                "name": "Prometheus",
+                "uid": "prom-main",
+                "type": "prometheus",
+                "org": "Main Org.",
+                "orgId": "1",
+                "url": "http://prometheus:9090",
+                "access": "proxy",
+                "isDefault": true,
+                "action": "blocked-read-only",
+                "status": "blocked",
+                "blockedReason": "target-read-only",
+                "targetReadOnly": true,
+                "changedFields": ["url", "secureJsonData.password"],
+                "reviewRequired": true,
+                "secureJsonData": {
+                    "password": "super-secret-value"
+                }
+            }
+        ],
+        "folders": []
+    });
+
+    let browser_items = build_snapshot_review_browser_items(&document).unwrap();
+    let datasource = browser_items
+        .iter()
+        .find(|item| item.kind == "datasource" && item.title == "Prometheus")
+        .expect("datasource browser item");
+    let details = datasource.details.join("\n");
+
+    assert!(details.contains("Review evidence:"));
+    assert!(details.contains("Review action: blocked-read-only (status=blocked)"));
+    assert!(details.contains("Review blocker status: blocked by target-read-only"));
+    assert!(details.contains("Review target: read-only=true"));
+    assert!(details.contains("Review changed fields: url"));
+    assert!(details.contains("Review required: true"));
+    assert!(!details.contains("super-secret-value"));
+    assert!(!details.contains("secureJsonData.password"));
+}
+
+#[test]
 fn snapshot_review_document_summarizes_inventory_counts_without_actions() {
     let temp = tempdir().unwrap();
     let snapshot_root = temp.path().join("snapshot");
