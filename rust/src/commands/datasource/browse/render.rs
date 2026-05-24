@@ -8,7 +8,7 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Clear, List, ListItem, Paragraph};
 
 use super::datasource_browse_state::{BrowserState, PaneFocus};
-use super::datasource_browse_support::{detail_lines, DatasourceBrowseItem};
+use super::datasource_browse_support::{detail_lines, review_lines, DatasourceBrowseItem};
 
 pub(crate) fn render_datasource_browser_frame(
     frame: &mut ratatui::Frame,
@@ -292,7 +292,8 @@ fn render_detail_panel(
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Length(5),
-            Constraint::Min(9),
+            Constraint::Min(7),
+            Constraint::Length(5),
             Constraint::Length(4),
         ])
         .split(area);
@@ -398,6 +399,20 @@ fn render_detail_panel(
         state.detail_scroll,
     );
 
+    render_focusable_lines(
+        frame,
+        sections[2],
+        build_review_lines(item),
+        pane_block(
+            "Review",
+            state.focus == PaneFocus::Review,
+            Color::Yellow,
+            Color::Rgb(28, 24, 16),
+        ),
+        state.focus == PaneFocus::Review,
+        state.detail_scroll,
+    );
+
     let shortcut_lines = if item.is_org_row() {
         vec![
             Line::from(vec![
@@ -429,7 +444,7 @@ fn render_detail_panel(
     };
     render_focusable_lines(
         frame,
-        sections[2],
+        sections[3],
         shortcut_lines,
         pane_block(
             "Actions",
@@ -441,6 +456,46 @@ fn render_detail_panel(
         false,
         state.detail_scroll,
     );
+}
+
+fn build_review_lines(item: &DatasourceBrowseItem) -> Vec<Line<'static>> {
+    if item.is_org_row() {
+        return vec![Line::from(vec![
+            muted("REVIEW "),
+            tui_shell::plain("Select a datasource row to inspect review evidence."),
+        ])];
+    }
+    let lines = review_lines(item);
+    if lines.is_empty() {
+        return vec![Line::from(vec![
+            muted("REVIEW "),
+            tui_shell::plain("No secret placeholder or review-required evidence."),
+        ])];
+    }
+    lines
+        .iter()
+        .map(|line| {
+            if let Some((label, value)) = line.split_once(':') {
+                let color = if label.contains("blocker") || label.contains("required") {
+                    Color::Yellow
+                } else {
+                    Color::LightCyan
+                };
+                Line::from(vec![
+                    Span::styled(
+                        format!("{label:<24}: "),
+                        Style::default().fg(color).add_modifier(Modifier::BOLD),
+                    ),
+                    Span::styled(value.trim().to_string(), Style::default().fg(Color::White)),
+                ])
+            } else {
+                Line::from(Span::styled(
+                    line.clone(),
+                    Style::default().fg(Color::White),
+                ))
+            }
+        })
+        .collect()
 }
 
 fn build_info_lines(lines: &[String]) -> Vec<Line<'static>> {
@@ -739,5 +794,42 @@ mod tests {
         assert!(lines[1].contains("search"));
         assert!(lines[2].contains("exit"));
         assert!(lines[2].contains("Esc/q"));
+    }
+
+    #[test]
+    fn review_lines_surface_secret_evidence_without_resolved_values() {
+        let item = DatasourceBrowseItem {
+            kind: super::super::datasource_browse_support::DatasourceBrowseItemKind::Datasource,
+            depth: 1,
+            id: 9,
+            uid: "secure-prom".to_string(),
+            name: "Secure Prometheus".to_string(),
+            datasource_type: "prometheus".to_string(),
+            access: "proxy".to_string(),
+            url: "http://prom".to_string(),
+            is_default: false,
+            org: "Main Org.".to_string(),
+            org_id: "1".to_string(),
+            details: serde_json::json!({
+                "secureJsonData": {
+                    "password": "super-secret-value"
+                }
+            })
+            .as_object()
+            .unwrap()
+            .clone(),
+            datasource_count: 0,
+        };
+
+        let rendered = build_review_lines(&item)
+            .into_iter()
+            .map(|line| line.to_string())
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        assert!(rendered.contains("Secret material"));
+        assert!(rendered.contains("Secret review required"));
+        assert!(rendered.contains("resolved credential values are never displayed"));
+        assert!(!rendered.contains("super-secret-value"));
     }
 }

@@ -24,11 +24,11 @@ Current AI change log only.
 - Older entries moved to [`ai-changes-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-16.md).
 - Older entries moved to [`ai-changes-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-25.md).
 
-## 2026-05-25 - Browse repeat-search wrap consistency
-- Summary: aligned `access user browse`, `access team browse`, and `datasource browse` repeat-search behavior with the other Rust TUI browsers so repeated `n` searches skip the current row and wrap to the first or last matching row at result-set boundaries.
-- Tests: focused Rust state tests cover forward wrap, backward wrap, no previous search, empty query, and no-match cases for user/team access browse, plus datasource forward/backward boundary wrap cases that prove the selected boundary row is not reselected.
-- Impact: `rust/src/commands/access/user_browse_state.rs`, `rust/src/commands/access/team_browse_state.rs`, `rust/src/commands/datasource/browse/state.rs`, and maintainer trace docs. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
-- Rollback/Risk: low. Rollback would restore the older boundary behavior where access user/team or datasource repeat search could stop or reselect the boundary row while other TUI search surfaces continued to wrap.
+## 2026-05-25 - Browse search and review pane consistency
+- Summary: aligned `access user browse`, `access team browse`, and `datasource browse` repeat-search behavior with the other Rust TUI browsers so repeated `n` searches skip the current row and wrap to the first or last matching row at result-set boundaries; promoted datasource secret/blocker evidence into a dedicated Review pane.
+- Tests: focused Rust state tests cover forward wrap, backward wrap, no previous search, empty query, and no-match cases for user/team access browse, datasource forward/backward boundary wrap cases, datasource Review focus cycling, separated Facts/Review evidence, and render output that hides resolved credential values.
+- Impact: `rust/src/commands/access/user_browse_state.rs`, `rust/src/commands/access/team_browse_state.rs`, `rust/src/commands/datasource/browse/state.rs`, `rust/src/commands/datasource/browse/support.rs`, `rust/src/commands/datasource/browse/render.rs`, and maintainer trace docs. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
+- Rollback/Risk: low to moderate. Rollback would restore older boundary search behavior and move datasource review evidence back into general fact rows, while leaving non-interactive datasource outputs unchanged.
 
 ## 2026-05-16 - TUI search and shell consistency pass
 - Summary: advanced the Rust TUI consistency work after the Phase 0 roadmap by adding shared read-only browser search, status overview current-view search, access browse shared-shell header/footer language, datasource browse selection/search context, consistent TUI feature-required errors, and unified `Esc/q` exit labels across remaining Rust TUI surfaces.

@@ -24,11 +24,11 @@ Current AI-maintained status only.
 - Older entries moved to [`ai-status-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-16.md).
 - Older entries moved to [`ai-status-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-25.md).
 
-## 2026-05-25 - Browse repeat-search wrap consistency
+## 2026-05-25 - Browse search and review pane consistency
 - State: Done
-- Scope: Rust TUI state and maintainer trace for access user/team and datasource browse repeat-search behavior. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
-- Current Update: Aligned access user/team and datasource browse `n` repeat-search with dashboard and status overview behavior by skipping the current row first, then wrapping forward to the first match or backward to the last match.
-- Result: Access user/team and datasource browse now keep repeat search moving through the current result set instead of stopping or reselecting the boundary row.
+- Scope: Rust TUI state/render behavior and maintainer trace for access user/team repeat-search and datasource browse search/review context. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
+- Current Update: Aligned access user/team and datasource browse `n` repeat-search with dashboard and status overview behavior by skipping the current row first, then wrapping forward to the first match or backward to the last match; added a datasource Review pane for secret placeholder, blocker, and review-required evidence.
+- Result: Browse search now moves consistently through result sets, and datasource browse keeps general metadata in Facts while surfacing safe operational review evidence without resolved credential values.
 
 ## 2026-05-16 - TUI search and shell consistency pass
 - State: Done

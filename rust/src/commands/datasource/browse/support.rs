@@ -114,9 +114,14 @@ pub(crate) fn detail_lines(item: &DatasourceBrowseItem) -> Vec<String> {
             lines.push(format!("secureJsonFields: {keys}"));
         }
     }
-    lines.extend(secret_review_lines(&item.details));
-
     lines
+}
+
+pub(crate) fn review_lines(item: &DatasourceBrowseItem) -> Vec<String> {
+    if item.is_org_row() {
+        return Vec::new();
+    }
+    secret_review_lines(&item.details)
 }
 
 fn secret_review_lines(details: &Map<String, Value>) -> Vec<String> {
@@ -435,7 +440,7 @@ mod tests {
     }
 
     #[test]
-    fn detail_lines_render_live_secure_json_fields_as_review_required_placeholders() {
+    fn review_lines_render_live_secure_json_fields_as_review_required_placeholders() {
         let item = datasource_item(
             json!({
                 "secureJsonFields": {
@@ -448,7 +453,8 @@ mod tests {
             .clone(),
         );
 
-        let lines = detail_lines(&item);
+        let lines = review_lines(&item);
+        let facts = detail_lines(&item);
 
         assert!(lines.contains(
             &"Secret placeholders: unavailable from live secureJsonFields (2 field(s): basicAuthPassword, httpHeaderValue1)".to_string()
@@ -458,6 +464,9 @@ mod tests {
                 .to_string()
         ));
         assert!(lines.contains(&"Secret review required: true (secure fields present)".to_string()));
+        assert!(!facts
+            .iter()
+            .any(|line| line.starts_with("Secret review required:")));
     }
 
     #[test]
@@ -487,7 +496,7 @@ mod tests {
     }
 
     #[test]
-    fn detail_lines_render_placeholder_backed_secret_review_without_raw_tokens() {
+    fn review_lines_render_placeholder_backed_secret_review_without_raw_tokens() {
         let item = datasource_item(
             json!({
                 "secureJsonDataPlaceholders": {
@@ -500,7 +509,8 @@ mod tests {
             .clone(),
         );
 
-        let lines = detail_lines(&item);
+        let lines = review_lines(&item);
+        let facts = detail_lines(&item);
         let rendered = lines.join("\n");
 
         assert!(lines.contains(
@@ -518,10 +528,14 @@ mod tests {
             &"Secret review required: true (placeholder-backed secureJsonData)".to_string()
         ));
         assert!(!rendered.contains("${secret:"));
+        assert!(!facts.iter().any(|line| line.contains("${secret:")));
+        assert!(!facts
+            .iter()
+            .any(|line| line.starts_with("Secret blocker status:")));
     }
 
     #[test]
-    fn detail_lines_do_not_display_resolved_secure_json_data_values() {
+    fn review_lines_do_not_display_resolved_secure_json_data_values() {
         let item = datasource_item(
             json!({
                 "secureJsonData": {
@@ -533,7 +547,8 @@ mod tests {
             .clone(),
         );
 
-        let lines = detail_lines(&item);
+        let lines = review_lines(&item);
+        let facts = detail_lines(&item);
         let rendered = lines.join("\n");
 
         assert!(lines.contains(
@@ -543,5 +558,6 @@ mod tests {
             &"Secret review required: true (resolved secureJsonData hidden)".to_string()
         ));
         assert!(!rendered.contains("super-secret-value"));
+        assert!(!facts.iter().any(|line| line.contains("super-secret-value")));
     }
 }

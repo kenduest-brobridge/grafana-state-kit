@@ -11,6 +11,7 @@ use super::datasource_browse_support::{
 pub(crate) enum PaneFocus {
     List,
     Facts,
+    Review,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -166,14 +167,16 @@ impl BrowserState {
     pub(crate) fn focus_next_pane(&mut self) {
         self.focus = match self.focus {
             PaneFocus::List => PaneFocus::Facts,
-            PaneFocus::Facts => PaneFocus::List,
+            PaneFocus::Facts => PaneFocus::Review,
+            PaneFocus::Review => PaneFocus::List,
         };
     }
 
     pub(crate) fn focus_previous_pane(&mut self) {
         self.focus = match self.focus {
-            PaneFocus::List => PaneFocus::Facts,
+            PaneFocus::List => PaneFocus::Review,
             PaneFocus::Facts => PaneFocus::List,
+            PaneFocus::Review => PaneFocus::Facts,
         };
     }
 
@@ -181,6 +184,7 @@ impl BrowserState {
         match self.focus {
             PaneFocus::List => "list",
             PaneFocus::Facts => "facts",
+            PaneFocus::Review => "review",
         }
     }
 
@@ -403,5 +407,21 @@ mod tests {
             query: "prom".to_string(),
         });
         assert_eq!(state.search_summary(), "/prom_");
+    }
+
+    #[test]
+    fn browser_focus_cycle_includes_review_pane() {
+        let mut state = state();
+
+        assert_eq!(state.focus_label(), "list");
+        state.focus_next_pane();
+        assert_eq!(state.focus_label(), "facts");
+        state.focus_next_pane();
+        assert_eq!(state.focus_label(), "review");
+        state.focus_next_pane();
+        assert_eq!(state.focus_label(), "list");
+
+        state.focus_previous_pane();
+        assert_eq!(state.focus_label(), "review");
     }
 }
