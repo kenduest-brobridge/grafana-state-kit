@@ -101,6 +101,8 @@ while skipping generated HTML and Cargo build output.
   wraps forward or backward within the active filter.
 - Dashboard inspect workbench footer controls now use the same compact `Esc/q`
   exit label as the other Rust TUI browse/review surfaces.
+- Dashboard inspect workbench full-detail viewer status and footer controls now
+  use compact `Enter/Esc/q` close language instead of split close hints.
 - Dashboard inspect workbench repeat-search now also skips the selected row
   before wrapping backward at the first matching row.
 - Dashboard browse repeat-search now follows the same backward boundary rule,

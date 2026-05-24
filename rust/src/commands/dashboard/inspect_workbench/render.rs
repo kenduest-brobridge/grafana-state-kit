@@ -262,4 +262,20 @@ mod tests {
         assert!(screen.contains("exit"));
         assert!(!screen.contains(" q   exit"));
     }
+
+    #[test]
+    fn full_detail_viewer_footer_uses_compact_close_label() {
+        let mut state = sample_state();
+        state.open_full_detail();
+        let mut terminal = Terminal::new(TestBackend::new(180, 40)).unwrap();
+
+        terminal
+            .draw(|frame| render_frame(frame, &mut state))
+            .unwrap();
+
+        let screen = format!("{}", terminal.backend());
+        assert!(screen.contains("Enter/Esc/q"));
+        assert!(screen.contains("close"));
+        assert!(!screen.contains("Esc   close"));
+    }
 }

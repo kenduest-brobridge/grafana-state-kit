@@ -351,7 +351,7 @@ pub(crate) fn render_full_detail_viewer(
     frame.render_widget(
         Paragraph::new(Line::from(vec![
             key_chip("w", Color::Yellow),
-            plain(" toggle wrap"),
+            plain(" wrap"),
             Span::raw("   "),
             key_chip("Up/Down", Color::Blue),
             plain(" scroll"),
@@ -359,10 +359,7 @@ pub(crate) fn render_full_detail_viewer(
             key_chip("PgUp/PgDn", Color::Blue),
             plain(" jump"),
             Span::raw("   "),
-            key_chip("Esc", Color::Gray),
-            plain(" close"),
-            Span::raw("   "),
-            key_chip("Enter", Color::Gray),
+            key_chip("Enter/Esc/q", Color::Gray),
             plain(" close"),
         ]))
         .style(Style::default().bg(Color::Rgb(16, 18, 24))),

@@ -225,8 +225,7 @@ impl InspectWorkbenchState {
 
     pub(crate) fn open_full_detail(&mut self) {
         self.modal.open_full_detail();
-        self.status =
-            "Opened full detail viewer. w toggles wrap; Esc, q, or Enter closes.".to_string();
+        self.status = "Opened full detail viewer. w toggles wrap; Enter/Esc/q closes.".to_string();
     }
 
     pub(crate) fn close_full_detail(&mut self) {
@@ -489,6 +488,10 @@ mod tests {
         assert!(state.modal.full_detail.open);
         assert_eq!(state.modal.full_detail.scroll, 0);
         assert!(state.modal.full_detail.wrapped);
+        assert_eq!(
+            state.status,
+            "Opened full detail viewer. w toggles wrap; Enter/Esc/q closes."
+        );
 
         state.toggle_full_detail_wrap();
         assert!(!state.modal.full_detail.wrapped);
