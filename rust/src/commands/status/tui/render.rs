@@ -398,6 +398,7 @@ fn build_status_footer(state: &ProjectStatusTuiState) -> Paragraph<'static> {
         ]),
         footer_control_line(&[
             ("Up/Down", Color::Blue, "move"),
+            ("Home/End", Color::Blue, "jump"),
             ("PgUp/PgDn", Color::Blue, "scroll detail"),
             ("Esc/q", Color::Gray, "exit"),
         ]),
@@ -464,6 +465,7 @@ mod tests {
 
         let screen = format!("{}", terminal.backend());
         assert!(screen.contains("Status & Controls"));
+        assert!(screen.contains("Home/End"));
         assert!(screen.contains("Esc/q"));
         assert!(!screen.contains(" q "));
         assert!(!screen.contains(" Esc "));

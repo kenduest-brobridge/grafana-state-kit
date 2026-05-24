@@ -119,6 +119,8 @@ while skipping generated HTML and Cargo build output.
   destructive TUI confirmations.
 - Status TUI detail scrolling now clamps to the selected detail content so
   repeated scroll keys cannot move the detail pane beyond its rendered lines.
+- Status TUI footer copy now advertises the existing `Home/End` jump behavior
+  alongside movement, detail scroll, and `Esc/q` exit controls.
 - The change stayed in state/tests. Public CLI/docs and generated docs remain
   unchanged because the user-facing command surface did not change.
 
