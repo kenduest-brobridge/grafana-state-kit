@@ -300,6 +300,24 @@ fn matching_visible_indexes(
 }
 
 #[cfg(any(feature = "tui", test))]
+fn detail_title(
+    item: &BrowserItem,
+    selected_visible: usize,
+    visible_total: usize,
+    detail_scroll: u16,
+    total_detail_lines: usize,
+) -> String {
+    format!(
+        "Detail {}/{} [{}]  line {}/{}",
+        selected_visible + 1,
+        visible_total,
+        item.kind,
+        (detail_scroll as usize + 1).min(total_detail_lines),
+        total_detail_lines
+    )
+}
+
+#[cfg(any(feature = "tui", test))]
 fn build_search_state(
     direction: SearchDirection,
     query: String,
@@ -538,17 +556,12 @@ pub(crate) fn run_interactive_browser(
 
             let detail_title = selected_item
                 .map(|item| {
-                    let item_position = visible_indexes
-                        .get(selected_visible)
-                        .map(|index| index + 1)
-                        .unwrap_or(0);
-                    format!(
-                        "Detail {}/{} [{}]  line {}/{}",
-                        item_position,
-                        items.len(),
-                        item.kind,
-                        (detail_scroll as usize + 1).min(total_detail_lines),
-                        total_detail_lines
+                    detail_title(
+                        item,
+                        selected_visible,
+                        visible_indexes.len(),
+                        detail_scroll,
+                        total_detail_lines,
                     )
                 })
                 .unwrap_or_else(|| "Detail".to_string());
@@ -829,8 +842,8 @@ fn run_interactive_browser_returns_tui_error_when_feature_disabled() {
 #[cfg(test)]
 mod tests {
     use super::{
-        build_search_state, find_match_in_visible, matching_visible_indexes, BrowserItem,
-        BrowserSearchController, SearchDirection,
+        build_search_state, detail_title, find_match_in_visible, matching_visible_indexes,
+        BrowserItem, BrowserSearchController, SearchDirection,
     };
 
     fn sample_items() -> Vec<BrowserItem> {
@@ -888,6 +901,25 @@ mod tests {
 
         assert!(matches.is_empty());
         assert_eq!(selected, Some(0));
+    }
+
+    #[test]
+    fn detail_title_uses_filtered_visible_position_and_total() {
+        let items = sample_items();
+        let visible_indexes = [0, 2];
+        let selected_visible = 1;
+        let item = &items[visible_indexes[selected_visible]];
+
+        assert_eq!(
+            detail_title(
+                item,
+                selected_visible,
+                visible_indexes.len(),
+                0,
+                item.details.len()
+            ),
+            "Detail 2/2 [dashboard]  line 1/1"
+        );
     }
 
     #[test]
