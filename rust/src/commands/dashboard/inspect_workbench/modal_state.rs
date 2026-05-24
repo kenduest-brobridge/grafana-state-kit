@@ -150,11 +150,27 @@ impl InspectWorkbenchModalState {
         selected: Option<usize>,
     ) -> Option<usize> {
         let search = self.last_search.as_ref()?;
-        let next_start = selected.map(|index| match search.direction {
-            SearchDirection::Forward => index.saturating_add(1),
-            SearchDirection::Backward => index.saturating_sub(1),
-        });
-        self.find_match_from(items, &search.query, search.direction, next_start)
+        match search.direction {
+            SearchDirection::Forward => {
+                let next_start = selected.map(|index| index.saturating_add(1));
+                self.find_match_from(items, &search.query, search.direction, next_start)
+            }
+            SearchDirection::Backward => {
+                if items.is_empty() {
+                    return None;
+                }
+                let next_start = selected
+                    .and_then(|index| index.checked_sub(1))
+                    .or_else(|| items.len().checked_sub(1));
+                if let Some(match_index) =
+                    self.find_match_from(items, &search.query, search.direction, next_start)
+                {
+                    return Some(match_index);
+                }
+                let wrap_start = items.len().checked_sub(1)?;
+                self.find_match_from(items, &search.query, search.direction, Some(wrap_start))
+            }
+        }
     }
 
     fn find_match_from(
@@ -200,4 +216,48 @@ fn item_matches(item: &BrowserItem, query: &str) -> bool {
             .details
             .iter()
             .any(|line| line.to_ascii_lowercase().contains(query))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{InspectWorkbenchModalState, SearchDirection, SearchState};
+    use crate::interactive_browser::BrowserItem;
+
+    fn sample_items() -> Vec<BrowserItem> {
+        vec![
+            BrowserItem {
+                kind: "dashboard-summary".to_string(),
+                title: "CPU Overview".to_string(),
+                meta: "folder=ops".to_string(),
+                details: vec!["prometheus datasource".to_string()],
+            },
+            BrowserItem {
+                kind: "query-review".to_string(),
+                title: "Disk Review".to_string(),
+                meta: "sev=low".to_string(),
+                details: vec!["filesystem saturation".to_string()],
+            },
+            BrowserItem {
+                kind: "query-review".to_string(),
+                title: "CPU Detail".to_string(),
+                meta: "sev=medium".to_string(),
+                details: vec!["aggregation cost".to_string()],
+            },
+        ]
+    }
+
+    #[test]
+    fn repeat_last_search_wraps_backward_without_reselecting_boundary_match() {
+        let modal = InspectWorkbenchModalState {
+            last_search: Some(SearchState {
+                direction: SearchDirection::Backward,
+                query: "cpu".to_string(),
+            }),
+            ..InspectWorkbenchModalState::default()
+        };
+
+        let items = sample_items();
+
+        assert_eq!(modal.repeat_last_search(&items, Some(0)), Some(2));
+    }
 }
