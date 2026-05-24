@@ -29,3 +29,9 @@
 - Scope: Maintainer-only TUI architecture inventory plus focused access/datasource browse maturity cleanup. Dashboard browse, shared TUI modules, public CLI behavior, generated docs, and Python package behavior are intentionally unchanged.
 - Current Update: Added a concise TUI architecture roadmap and a read-only inventory report script, added in-session filtering and selection summaries to consolidated access browse, and aligned datasource browse exit control copy with the dashboard-style combined `Esc/q` label.
 - Result: The TUI roadmap now has a planning artifact and manual inventory helper, while two low-risk browse surfaces have focused maturity improvements covered by targeted Rust tests.
+
+## 2026-05-16 - TUI search and shell consistency pass
+- State: Done
+- Scope: Rust TUI behavior and maintainer trace for shared browser search, status overview search, access browse shell alignment, feature-disabled fallback wording, and unified `Esc/q` exit labels. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
+- Current Update: Added `/`, `?`, and `n` search support to the shared read-only browser and status overview workbench; aligned access browse with shared header/footer shell language; surfaced datasource browse row/kind/search context; normalized remaining TUI exit labels to `Esc/q`; and identified the next access user/team repeat-search wrap task as the remaining follow-up.
+- Result: The TUI surfaces now have a more consistent search/status/control vocabulary, and the latest `dev` CI and Docs Pages runs succeeded after the pushed cleanup commits.

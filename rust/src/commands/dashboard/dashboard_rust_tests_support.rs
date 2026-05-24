@@ -44,6 +44,7 @@ pub(in crate::dashboard) fn load_prompt_export_cases() -> Vec<Value> {
     .unwrap()
 }
 
+#[cfg(feature = "tui")]
 pub(in crate::dashboard) fn load_inspection_analyzer_cases() -> Vec<Value> {
     serde_json::from_str(include_str!(
         "../../../../tests/fixtures/dashboard_inspection_analyzer_cases.json"
@@ -51,6 +52,7 @@ pub(in crate::dashboard) fn load_inspection_analyzer_cases() -> Vec<Value> {
     .unwrap()
 }
 
+#[cfg(feature = "tui")]
 pub(in crate::dashboard) fn sample_topology_tui_document() -> TopologyDocument {
     let governance = json!({
         "dashboardGovernance": [

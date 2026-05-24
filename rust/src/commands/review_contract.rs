@@ -189,6 +189,7 @@ impl From<ReviewMutationActionInput> for ReviewMutationAction {
     }
 }
 
+#[cfg(any(feature = "tui", test))]
 pub(crate) fn build_review_mutation_action_detail_lines(
     action: &ReviewMutationAction,
 ) -> Vec<String> {

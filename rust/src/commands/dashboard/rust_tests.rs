@@ -31,10 +31,13 @@ pub(super) use dashboard_rust_tests_assertions::{
 pub(super) use dashboard_rust_tests_fixtures::{
     all_orgs_inspect_live_request_fixture, core_family_inspect_live_request_fixture,
 };
+#[cfg(feature = "tui")]
+pub(super) use dashboard_rust_tests_support::{
+    load_inspection_analyzer_cases, sample_topology_tui_document,
+};
 #[cfg(test)]
 pub(super) use dashboard_rust_tests_support::{
-    load_inspection_analyzer_cases, load_prompt_export_cases, make_basic_common_args,
-    make_common_args, make_import_args, sample_topology_tui_document,
+    load_prompt_export_cases, make_basic_common_args, make_common_args, make_import_args,
     with_dashboard_import_live_preflight, write_basic_provisioning_export, write_basic_raw_export,
     write_combined_export_root_metadata, TestRequestResult,
 };

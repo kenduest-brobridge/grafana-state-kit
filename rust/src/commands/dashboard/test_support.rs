@@ -104,10 +104,12 @@ pub(super) use crate::dashboard::inspect_query::{
 pub(super) use crate::dashboard::inspect_render::{
     render_csv, render_grouped_query_report, render_grouped_query_table_report,
 };
+#[cfg(feature = "tui")]
+pub(super) use crate::dashboard::inspect_report::resolve_report_column_ids;
 pub(super) use crate::dashboard::inspect_report::{
     build_export_inspection_query_report_document, normalize_query_report,
     render_query_report_column, report_column_header, report_format_supports_columns,
-    resolve_report_column_ids, resolve_report_column_ids_for_format, ExportInspectionQueryReport,
+    resolve_report_column_ids_for_format, ExportInspectionQueryReport,
     ExportInspectionQueryReportDocument, ExportInspectionQueryReportJsonSummary,
     ExportInspectionQueryRow, QueryReportSummary, DEFAULT_REPORT_COLUMN_IDS,
     SUPPORTED_REPORT_COLUMN_IDS,

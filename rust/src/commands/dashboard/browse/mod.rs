@@ -58,6 +58,7 @@ use super::BrowseArgs;
 #[cfg(feature = "tui")]
 use super::{build_http_client, build_http_client_for_org};
 
+#[cfg(any(feature = "tui", test))]
 pub(crate) fn uses_local_browse_source(args: &BrowseArgs) -> bool {
     args.input_dir.is_some() || args.workspace.is_some()
 }

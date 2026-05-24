@@ -125,8 +125,8 @@ fn normalize_report_column_id(value: &str) -> &str {
     }
 }
 
-#[cfg_attr(not(test), allow(dead_code))]
 /// Purpose: implementation note.
+#[cfg(all(test, feature = "tui"))]
 pub(crate) fn resolve_report_column_ids(selected: &[String]) -> Result<Vec<String>> {
     resolve_report_column_ids_for_format(None, selected)
 }

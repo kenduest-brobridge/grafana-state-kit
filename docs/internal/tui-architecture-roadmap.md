@@ -174,6 +174,11 @@ while skipping generated HTML and Cargo build output.
   interactive test browser branches are now gated on the `tui` feature, and
   dashboard import/inspect test-only re-exports used by TUI-gated tests no
   longer compile into no-default all-target builds.
+- The remaining no-default TUI helper/alias warning surface is cleared:
+  access plan review projections, shared review-contract detail projection,
+  dashboard browse source helpers, report-column test wrappers, TUI-only
+  dashboard fixtures, and snapshot root-command helpers no longer compile into
+  no-default targets that cannot use them.
 - The change stayed in state/tests. Public CLI/docs and generated docs remain
   unchanged because the user-facing command surface did not change.
 
@@ -188,10 +193,9 @@ while skipping generated HTML and Cargo build output.
   visualization helpers when they already expose `live`, `desired`, and
   `changedFields` evidence; sync review is now the first consumer of the shared
   view helper path.
-- Continue tightening `--no-default-features` TUI isolation opportunistically
-  by reducing the remaining no-default unused-code/import warnings around
-  access plan aliases, dashboard browse source helpers, review-contract detail
-  projection, snapshot root command support, report column helpers, and
-  dashboard test fixtures. The focused
-  `tui_not_built_returns_shared_tui_feature_error` no-default regression
-  compiles and passes with the broader TUI-helper warning noise removed.
+- Continue higher-level TUI design work by migrating compatible review surfaces
+  onto shared diff/detail visualization helpers and reducing duplicated
+  per-surface review pane shaping. The focused
+  `tui_not_built_returns_shared_tui_feature_error` regression and warnings-deny
+  no-default all-target check compile and pass with the broader TUI-helper
+  warning noise removed.

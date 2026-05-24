@@ -34,7 +34,7 @@ pub(crate) use self::snapshot_review::{
 };
 pub use self::snapshot_review_document::build_snapshot_review_document;
 #[allow(unused_imports)]
-#[cfg(any(feature = "tui", test))]
+#[cfg(feature = "tui")]
 pub use self::snapshot_support::root_command;
 pub(crate) use self::snapshot_support::run_snapshot_cli;
 #[cfg(test)]

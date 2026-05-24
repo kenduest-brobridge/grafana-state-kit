@@ -9,6 +9,7 @@ mod snapshot_metadata;
 #[path = "snapshot_review.rs"]
 mod snapshot_review;
 
+#[cfg(feature = "tui")]
 use clap::CommandFactory;
 
 pub(crate) use snapshot_access::build_snapshot_access_lane_summaries;
@@ -31,6 +32,7 @@ pub use snapshot_export::run_snapshot_export;
 pub use snapshot_review::build_snapshot_overview_args;
 pub use snapshot_review::run_snapshot_review;
 
+#[cfg(feature = "tui")]
 pub fn root_command() -> clap::Command {
     super::SnapshotCliArgs::command()
 }

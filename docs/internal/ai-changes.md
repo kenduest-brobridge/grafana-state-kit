@@ -24,6 +24,13 @@ Current AI change log only.
 - Older entries moved to [`ai-changes-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-16.md).
 - Older entries moved to [`ai-changes-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-25.md).
 
+## 2026-05-25 - No-default TUI helper warning cleanup
+- Summary: Moved remaining TUI-only or TUI-test-only helper aliases and re-exports out of no-default production/test targets so no-default all-target builds can run with warnings denied.
+- Tests: cargo fmt --check; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo check --quiet --no-default-features --all-targets; cargo test --quiet --no-default-features tui_not_built_returns_shared_tui_feature_error; cargo test --quiet --no-default-features access_plan_interactive_browser; cargo test --quiet --no-default-features review_mutation_action_detail_lines_project_generic_review_evidence; cargo test --quiet --no-default-features workspace_roots_are_treated_as_local_browse_sources; cargo test --quiet access_plan_interactive_browser; cargo test --quiet resolve_report_column_ids; cargo test --quiet dispatch_query_analysis_matches_shared_analyzer_fixture_cases; cargo test --quiet build_topology_tui_groups_summarize_node_kinds; cargo test --quiet filter_topology_tui_items_limits_items_to_selected_group; cargo test --quiet snapshot_review_parses_all_supported_output_modes; cargo test --quiet root_command_entrypoints_use_grouped_help_for_bare_and_help_forms
+- Impact: The remaining no-default TUI helper/alias warning surface is cleared while default-feature access plan, dashboard browse/report/topology, snapshot parser, and grouped-help tests remain behavior-compatible.
+- Rollback/Risk: low. Rollback would restore no-default warning noise without changing normal default-feature interactive behavior.
+- Follow-up: Continue higher-level TUI design work by migrating compatible review surfaces onto shared diff/detail visualization helpers instead of chasing no-default warning hygiene.
+
 ## 2026-05-25 - Dashboard no-default TUI cfg cleanup
 - Summary: Gated topology/impact test interactive browser branches and dashboard import/inspect test-only re-exports on the tui feature so no-default all-target builds no longer compile those TUI-only paths or emit their unreachable/unused warnings.
 - Tests: cargo fmt --check; cargo check --quiet --no-default-features --all-targets; cargo test --quiet --no-default-features tui_not_built_returns_shared_tui_feature_error; cargo test --quiet dashboard_topology; cargo test --quiet topology_impact; cargo test --quiet routed_import_scope_identity_matches_table_json_and_progress_surfaces; cargo test --quiet export_focus_report_query
@@ -78,9 +85,3 @@ Current AI change log only.
 - Tests: main is running focused Rust validation for the refactor; this update is maintainer trace only.
 - Impact: `rust/src/commands/alert/runtime_support.rs`, `rust/src/commands/alert/runtime_plan_document.rs`, `rust/src/commands/alert/runtime_review.rs`, and AI trace docs. Public CLI/JSON behavior, generated docs, and Python implementation are intentionally unchanged.
 - Rollback/Risk: low behavior-preserving module split. Rollback would move the extracted helper code back into `runtime_support.rs` without changing external output.
-
-## 2026-05-02 - Consume mutation review adapters
-- Summary: added `build_review_mutation_summary_rows(&ReviewMutationEnvelope)` as a shared internal consumer for access import dry-run, datasource import dry-run, datasource live mutation, and alert plan review adapters.
-- Tests: worker tests prove those adapters feed the shared summary consumer without public JSON drift.
-- Impact: `rust/src/commands/review_contract.rs`, focused Rust tests, `todo.md`, and AI trace docs. Public JSON, CLI behavior, generated docs, and Python implementation are intentionally unchanged.
-- Rollback/Risk: low internal-consumer change. Rollback would remove the shared summary projection while leaving public domain review and dry-run outputs unchanged.

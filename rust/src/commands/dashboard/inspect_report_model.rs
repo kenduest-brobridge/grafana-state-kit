@@ -5,11 +5,12 @@ use serde::Serialize;
 #[path = "inspect_report_model/columns.rs"]
 mod columns;
 
+#[cfg(all(test, feature = "tui"))]
+pub(crate) use columns::resolve_report_column_ids;
 #[allow(unused_imports)]
 pub(crate) use columns::{
     render_query_report_column, report_column_header, report_format_supports_columns,
-    resolve_report_column_ids, resolve_report_column_ids_for_format, DEFAULT_REPORT_COLUMN_IDS,
-    SUPPORTED_REPORT_COLUMN_IDS,
+    resolve_report_column_ids_for_format, DEFAULT_REPORT_COLUMN_IDS, SUPPORTED_REPORT_COLUMN_IDS,
 };
 
 /// Struct definition for QueryReportSummary.
