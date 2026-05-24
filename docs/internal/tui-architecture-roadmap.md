@@ -11,7 +11,7 @@ several existing Rust TUI surfaces without changing public CLI paths.
 | --- | --- | --- | --- |
 | Dashboard browse | `grafana-util dashboard browse` | Mature | Dedicated live/local tree browser under `rust/src/commands/dashboard/browse/`; keep current ownership disjoint. |
 | Access browse | `grafana-util access browse`, `access user browse`, `access team browse` | Active implementation | Consolidated access browse now has in-session filtering, selection summaries, and shared-shell header/footer language. User/team specialized browsers remain separate richer flows; repeat-search now skips the selected row and wraps across matching rows. |
-| Datasource browse | `grafana-util datasource browse`, local `datasource list --interactive` | Active implementation | Live/local datasource browser under `rust/src/commands/datasource/browse/`; it surfaces row, kind, search context, repeat-search wrap, and a first-class Review pane for secret/blocker evidence. |
+| Datasource browse | `grafana-util datasource browse`, local `datasource list --interactive` | Active implementation | Live/local datasource browser under `rust/src/commands/datasource/browse/`; it surfaces row, kind, search context, repeat-search wrap, and a first-class Review pane for secret/provider/read-only evidence. |
 | Status overview | `grafana-util status overview live --output-format interactive` and staged/live status interactive output | Mature document browser | Uses the overview/status document model, then projects into TUI. It now supports current-view `/`, `?`, and `n` item search with explicit search status in the shell. |
 | Dashboard summary / inspect workbench | `grafana-util dashboard summary --interactive` | Mature review workbench | Query, dashboard, and governance rows share the inspect workbench. |
 | Dashboard import review | `grafana-util dashboard import --interactive` | Mature but specialized | Client-backed selector and focused review flow are import-specific. Keep changes evidence-led. |
@@ -92,6 +92,6 @@ while skipping generated HTML and Cargo build output.
 
 ## Next Follow-Up
 
-- Continue datasource browse operational review maturity by surfacing
-  non-secret blocker or review-required evidence from plan/diff documents where
-  the underlying review model is already compatible.
+- Continue datasource browse operational review maturity by connecting Review
+  pane evidence to plan/diff documents where the underlying review model is
+  already compatible.

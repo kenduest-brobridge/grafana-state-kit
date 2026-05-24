@@ -27,8 +27,8 @@ Current AI-maintained status only.
 ## 2026-05-25 - Browse search and review pane consistency
 - State: Done
 - Scope: Rust TUI state/render behavior and maintainer trace for access user/team repeat-search and datasource browse search/review context. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
-- Current Update: Aligned access user/team and datasource browse `n` repeat-search with dashboard and status overview behavior by skipping the current row first, then wrapping forward to the first match or backward to the last match; added a datasource Review pane for secret placeholder, blocker, and review-required evidence.
-- Result: Browse search now moves consistently through result sets, and datasource browse keeps general metadata in Facts while surfacing safe operational review evidence without resolved credential values.
+- Current Update: Aligned access user/team and datasource browse `n` repeat-search with dashboard and status overview behavior by skipping the current row first, then wrapping forward to the first match or backward to the last match; added a datasource Review pane for secret placeholder, provider, read-only blocker, and review-required evidence.
+- Result: Browse search now moves consistently through result sets, and datasource browse keeps general metadata in Facts while surfacing safe operational review evidence without resolved credential values or raw provider tokens.
 
 ## 2026-05-16 - TUI search and shell consistency pass
 - State: Done

@@ -4,6 +4,7 @@ use serde_json::{Map, Value};
 
 use crate::common::{message, string_field, Result};
 use crate::dashboard::{build_auth_context, build_http_client_for_org, DEFAULT_ORG_ID};
+use crate::datasource_provider::{collect_provider_references, iter_provider_names};
 use crate::datasource_secret::{collect_secret_placeholders, iter_secret_placeholder_names};
 use crate::http::JsonHttpClient;
 
@@ -138,6 +139,19 @@ fn secret_review_lines(details: &Map<String, Value>) -> Vec<String> {
     if let Some(secure_json_data) = details.get("secureJsonData").and_then(Value::as_object) {
         lines.extend(resolved_secure_json_data_review_lines(secure_json_data));
     }
+    if let Some(providers) = details
+        .get("secureJsonDataProviders")
+        .and_then(Value::as_object)
+    {
+        lines.extend(provider_reference_review_lines(providers));
+    }
+    if details
+        .get("readOnly")
+        .and_then(Value::as_bool)
+        .unwrap_or(false)
+    {
+        lines.extend(read_only_review_lines());
+    }
     lines
 }
 
@@ -210,6 +224,49 @@ fn resolved_secure_json_data_review_lines(secure_json_data: &Map<String, Value>)
         "Secret blocker status: review-required; resolved credential values are never displayed"
             .to_string(),
         "Secret review required: true (resolved secureJsonData hidden)".to_string(),
+    ]
+}
+
+fn provider_reference_review_lines(providers: &Map<String, Value>) -> Vec<String> {
+    match collect_provider_references(Some(providers)) {
+        Ok(references) if references.is_empty() => Vec::new(),
+        Ok(references) => {
+            let field_names = references
+                .iter()
+                .map(|reference| reference.field_name.clone())
+                .collect::<Vec<_>>();
+            let provider_names = iter_provider_names(&references)
+                .map(str::to_string)
+                .collect::<Vec<_>>();
+            vec![
+                format!(
+                    "Secret providers: external ({} field(s): {})",
+                    field_names.len(),
+                    field_names.join(", ")
+                ),
+                format!("Secret provider names: {}", provider_names.join(", ")),
+                "Secret blocker status: review-required; provider resolution is external"
+                    .to_string(),
+                "Secret review required: true (provider-backed secureJsonData)".to_string(),
+            ]
+        }
+        Err(error) => vec![
+            format!(
+                "Secret providers: invalid provider contract ({} field(s): {})",
+                providers.len(),
+                sorted_object_keys(providers).join(", ")
+            ),
+            format!("Secret blocker status: blocked by provider contract error: {error}"),
+            "Secret review required: true (provider contract error)".to_string(),
+        ],
+    }
+}
+
+fn read_only_review_lines() -> Vec<String> {
+    vec![
+        "Datasource blocker status: blocked; read-only datasource requires external update"
+            .to_string(),
+        "Datasource review required: true (read-only datasource)".to_string(),
     ]
 }
 
@@ -559,5 +616,57 @@ mod tests {
         ));
         assert!(!rendered.contains("super-secret-value"));
         assert!(!facts.iter().any(|line| line.contains("super-secret-value")));
+    }
+
+    #[test]
+    fn review_lines_surface_provider_references_without_raw_tokens() {
+        let item = datasource_item(
+            json!({
+                "secureJsonDataProviders": {
+                    "httpHeaderValue1": "${provider:aws-sm:prod/prom/header}",
+                    "basicAuthPassword": "${provider:vault:secret/data/prom/basic-auth}"
+                }
+            })
+            .as_object()
+            .unwrap()
+            .clone(),
+        );
+
+        let lines = review_lines(&item);
+        let rendered = lines.join("\n");
+
+        assert!(lines.contains(
+            &"Secret providers: external (2 field(s): basicAuthPassword, httpHeaderValue1)"
+                .to_string()
+        ));
+        assert!(lines.contains(&"Secret provider names: vault, aws-sm".to_string()));
+        assert!(lines.contains(
+            &"Secret review required: true (provider-backed secureJsonData)".to_string()
+        ));
+        assert!(!rendered.contains("${provider:"));
+        assert!(!rendered.contains("secret/data/prom/basic-auth"));
+        assert!(!rendered.contains("prod/prom/header"));
+    }
+
+    #[test]
+    fn review_lines_surface_read_only_datasource_as_blocked_evidence() {
+        let item = datasource_item(
+            json!({
+                "readOnly": true
+            })
+            .as_object()
+            .unwrap()
+            .clone(),
+        );
+
+        let lines = review_lines(&item);
+
+        assert!(lines.contains(
+            &"Datasource blocker status: blocked; read-only datasource requires external update"
+                .to_string()
+        ));
+        assert!(
+            lines.contains(&"Datasource review required: true (read-only datasource)".to_string())
+        );
     }
 }
