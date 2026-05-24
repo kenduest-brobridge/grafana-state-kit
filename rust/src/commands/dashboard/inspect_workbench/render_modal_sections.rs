@@ -211,10 +211,17 @@ fn render_focusable_lines(
 }
 
 pub(crate) fn render_search_prompt(frame: &mut ratatui::Frame, search: &SearchPromptState) {
-    let area = centered_rect(frame.area(), 68, 5);
+    let area = centered_rect(frame.area(), 68, 6);
     frame.render_widget(Clear, area);
     frame.render_widget(
-        Paragraph::new(search.query.clone()).block(
+        Paragraph::new(vec![
+            Line::from(search.query.clone()),
+            Line::from(Span::styled(
+                "Enter search   Esc cancel   n repeat",
+                Style::default().fg(Color::Gray),
+            )),
+        ])
+        .block(
             Block::default()
                 .borders(Borders::ALL)
                 .title(match search.direction {

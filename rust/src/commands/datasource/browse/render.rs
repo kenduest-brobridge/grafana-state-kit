@@ -633,9 +633,9 @@ fn render_search_prompt(
 ) {
     let area = ratatui::layout::Rect {
         x: frame.area().x + 6,
-        y: frame.area().y + frame.area().height.saturating_sub(5),
+        y: frame.area().y + frame.area().height.saturating_sub(6),
         width: frame.area().width.saturating_sub(12).min(70),
-        height: 3,
+        height: 4,
     };
     frame.render_widget(Clear, area);
     let prefix = match direction {
@@ -655,7 +655,7 @@ fn render_search_prompt(
             Span::styled(query.to_string(), Style::default().fg(Color::White)),
         ]),
         Line::from(Span::styled(
-            "Enter search   Esc cancel   n repeat last search",
+            "Enter search   Esc cancel   n repeat",
             Style::default().fg(Color::Gray),
         )),
     ])
@@ -674,6 +674,8 @@ fn render_search_prompt(
 mod tests {
     use super::super::datasource_browse_support::DatasourceBrowseDocument;
     use super::*;
+    use ratatui::backend::TestBackend;
+    use ratatui::Terminal;
 
     fn empty_document() -> DatasourceBrowseDocument {
         DatasourceBrowseDocument {
@@ -739,6 +741,27 @@ mod tests {
         assert!(rendered.contains("Confirm: y"));
         assert!(rendered.contains("Cancel: n/Esc/q"));
         assert!(!rendered.contains("Press n, Esc, or q"));
+    }
+
+    #[test]
+    fn search_prompt_uses_compact_apply_cancel_repeat_hint() {
+        let mut terminal = Terminal::new(TestBackend::new(90, 16)).unwrap();
+
+        terminal
+            .draw(|frame| {
+                render_search_prompt(
+                    frame,
+                    super::super::datasource_browse_state::SearchDirection::Backward,
+                    "prom",
+                )
+            })
+            .unwrap();
+
+        let screen = format!("{}", terminal.backend());
+        assert!(screen.contains("Enter search"));
+        assert!(screen.contains("Esc cancel"));
+        assert!(screen.contains("n repeat"));
+        assert!(!screen.contains("repeat last search"));
     }
 
     #[test]

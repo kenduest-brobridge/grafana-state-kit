@@ -1,6 +1,8 @@
 #![cfg(test)]
 use super::*;
 use crate::dashboard::delete_support::DeletePlan;
+use ratatui::backend::TestBackend;
+use ratatui::Terminal;
 
 fn empty_document() -> super::super::browse_support::DashboardBrowseDocument {
     super::super::browse_support::DashboardBrowseDocument {
@@ -254,4 +256,19 @@ fn external_edit_control_lines_show_preview_save_apply_actions() {
     assert!(lines[0].contains("discard"));
     assert!(lines[1].contains("refresh preview"));
     assert!(!lines.iter().any(|line| line.contains("s ")));
+}
+
+#[test]
+fn search_prompt_uses_compact_apply_cancel_repeat_hint() {
+    let mut terminal = Terminal::new(TestBackend::new(90, 16)).unwrap();
+
+    terminal
+        .draw(|frame| render_search_prompt(frame, SearchDirection::Backward, "cpu"))
+        .unwrap();
+
+    let screen = format!("{}", terminal.backend());
+    assert!(screen.contains("Enter search"));
+    assert!(screen.contains("Esc cancel"));
+    assert!(screen.contains("n repeat"));
+    assert!(!screen.contains("repeat last search"));
 }

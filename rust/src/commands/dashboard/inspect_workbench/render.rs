@@ -194,6 +194,7 @@ pub(crate) fn render_frame(frame: &mut ratatui::Frame, state: &mut InspectWorkbe
 mod tests {
     use super::*;
     use crate::dashboard::inspect_workbench_state::InspectWorkbenchState;
+    use crate::dashboard::inspect_workbench_state::{SearchDirection, SearchPromptState};
     use crate::dashboard::inspect_workbench_support::{
         InspectWorkbenchDocument, InspectWorkbenchGroup, InspectWorkbenchView,
     };
@@ -277,5 +278,26 @@ mod tests {
         assert!(screen.contains("Enter/Esc/q"));
         assert!(screen.contains("close"));
         assert!(!screen.contains("Esc   close"));
+    }
+
+    #[test]
+    fn search_prompt_surfaces_compact_apply_cancel_repeat_hint() {
+        let mut state = sample_state();
+        state.modal.pending_search = Some(SearchPromptState {
+            direction: SearchDirection::Backward,
+            query: "cpu".to_string(),
+        });
+        let mut terminal = Terminal::new(TestBackend::new(180, 40)).unwrap();
+
+        terminal
+            .draw(|frame| render_frame(frame, &mut state))
+            .unwrap();
+
+        let screen = format!("{}", terminal.backend());
+        assert!(screen.contains("Search ?"));
+        assert!(screen.contains("Enter search"));
+        assert!(screen.contains("Esc cancel"));
+        assert!(screen.contains("n repeat"));
+        assert!(!screen.contains("repeat last search"));
     }
 }

@@ -233,10 +233,20 @@ pub(super) fn render_search_prompt(frame: &mut ratatui::Frame, search: &SearchPr
             SearchDirection::Backward => "Search ?",
         },
         60,
-        5,
+        6,
         Color::Yellow,
     );
-    frame.render_widget(Paragraph::new(search.query.clone()), area);
+    frame.render_widget(
+        Paragraph::new(vec![
+            Line::from(search.query.clone()),
+            Line::from(Span::styled(
+                "Enter search   Esc cancel   n repeat",
+                Style::default().fg(Color::Gray),
+            )),
+        ])
+        .style(Style::default().fg(Color::White).bg(Color::Rgb(16, 22, 30))),
+        area,
+    );
     let max_offset = area.width.saturating_sub(3) as usize;
     let offset = search.query.chars().count().min(max_offset) as u16;
     frame.set_cursor_position(Position::new(area.x + offset, area.y));
@@ -293,6 +303,8 @@ fn blank_dash(value: &str) -> &str {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ratatui::backend::TestBackend;
+    use ratatui::Terminal;
 
     #[test]
     fn delete_lines_use_compact_confirmation_controls() {
@@ -342,5 +354,25 @@ mod tests {
         assert!(rendered.contains("Confirm: y"));
         assert!(rendered.contains("Cancel: n/Esc/q"));
         assert!(!rendered.contains("Press n, Esc, or q"));
+    }
+
+    #[test]
+    fn search_prompt_surfaces_compact_apply_cancel_repeat_hint() {
+        let search = SearchPromptState {
+            direction: SearchDirection::Backward,
+            query: "ops".to_string(),
+        };
+        let mut terminal = Terminal::new(TestBackend::new(90, 16)).unwrap();
+
+        terminal
+            .draw(|frame| render_search_prompt(frame, &search))
+            .unwrap();
+
+        let screen = format!("{}", terminal.backend());
+        assert!(screen.contains("Search ?"));
+        assert!(screen.contains("Enter search"));
+        assert!(screen.contains("Esc cancel"));
+        assert!(screen.contains("n repeat"));
+        assert!(!screen.contains("repeat last search"));
     }
 }

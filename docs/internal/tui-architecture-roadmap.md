@@ -111,6 +111,9 @@ while skipping generated HTML and Cargo build output.
   reuse the same datasource Review projection in browser details.
 - Access user/team and datasource browse destructive confirmation dialogs now
   use compact `Confirm: y` and `Cancel: n/Esc/q` body copy.
+- Access user/team, dashboard browse, datasource browse, dashboard inspect
+  workbench, and status overview search prompts now share the compact
+  `Enter search`, `Esc cancel`, and `n repeat` hint language.
 - The change stayed in state/tests. Public CLI/docs and generated docs remain
   unchanged because the user-facing command surface did not change.
 

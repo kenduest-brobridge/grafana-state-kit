@@ -189,10 +189,16 @@ pub(super) fn render_search_prompt(frame: &mut ratatui::Frame, search: &SearchPr
         SearchDirection::Forward => "Search /",
         SearchDirection::Backward => "Search ?",
     };
-    let area = tui_shell::render_dialog_shell(frame, title, 60, 5, Color::Yellow);
+    let area = tui_shell::render_dialog_shell(frame, title, 60, 6, Color::Yellow);
     frame.render_widget(
-        Paragraph::new(search.query.clone())
-            .style(Style::default().fg(Color::White).bg(Color::Rgb(16, 22, 30))),
+        Paragraph::new(vec![
+            Line::from(search.query.clone()),
+            Line::from(Span::styled(
+                "Enter search   Esc cancel   n repeat",
+                Style::default().fg(Color::Gray),
+            )),
+        ])
+        .style(Style::default().fg(Color::White).bg(Color::Rgb(16, 22, 30))),
         area,
     );
     let max_offset = area.width.saturating_sub(3) as usize;
@@ -256,6 +262,8 @@ fn blank_dash(value: &str) -> &str {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ratatui::backend::TestBackend;
+    use ratatui::Terminal;
 
     #[test]
     fn remove_lines_describe_membership_target() {
@@ -308,5 +316,25 @@ mod tests {
         assert!(rendered.contains("Confirm: y"));
         assert!(rendered.contains("Cancel: n/Esc/q"));
         assert!(!rendered.contains("Press n, Esc, or q"));
+    }
+
+    #[test]
+    fn search_prompt_surfaces_compact_apply_cancel_repeat_hint() {
+        let search = SearchPromptState {
+            direction: SearchDirection::Backward,
+            query: "alice".to_string(),
+        };
+        let mut terminal = Terminal::new(TestBackend::new(90, 16)).unwrap();
+
+        terminal
+            .draw(|frame| render_search_prompt(frame, &search))
+            .unwrap();
+
+        let screen = format!("{}", terminal.backend());
+        assert!(screen.contains("Search ?"));
+        assert!(screen.contains("Enter search"));
+        assert!(screen.contains("Esc cancel"));
+        assert!(screen.contains("n repeat"));
+        assert!(!screen.contains("repeat last search"));
     }
 }

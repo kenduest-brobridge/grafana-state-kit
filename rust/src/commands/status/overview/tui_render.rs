@@ -401,7 +401,7 @@ fn render_search_prompt(frame: &mut ratatui::Frame, search: &SearchPromptState) 
         Paragraph::new(vec![
             Line::from(Span::raw(search.query.clone())),
             Line::from(Span::styled(
-                "Enter search   Esc cancel   n repeat last search",
+                "Enter search   Esc cancel   n repeat",
                 Style::default().fg(Color::Gray),
             )),
         ])
@@ -461,7 +461,9 @@ mod tests {
         let screen = format!("{}", terminal.backend());
         assert!(screen.contains("Search ?"));
         assert!(screen.contains("Enter search"));
-        assert!(screen.contains("repeat last search"));
+        assert!(screen.contains("Esc cancel"));
+        assert!(screen.contains("n repeat"));
+        assert!(!screen.contains("repeat last search"));
     }
 
     #[test]

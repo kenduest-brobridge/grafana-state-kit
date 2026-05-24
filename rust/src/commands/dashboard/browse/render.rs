@@ -298,9 +298,9 @@ fn render_focusable_lines(
 fn render_search_prompt(frame: &mut ratatui::Frame, direction: SearchDirection, query: &str) {
     let area = ratatui::layout::Rect {
         x: frame.area().x + 6,
-        y: frame.area().y + frame.area().height.saturating_sub(5),
+        y: frame.area().y + frame.area().height.saturating_sub(6),
         width: frame.area().width.saturating_sub(12).min(78),
-        height: 3,
+        height: 4,
     };
     frame.render_widget(Clear, area);
     let prefix = match direction {
@@ -320,7 +320,7 @@ fn render_search_prompt(frame: &mut ratatui::Frame, direction: SearchDirection, 
             Span::styled(query.to_string(), Style::default().fg(Color::White)),
         ]),
         Line::from(Span::styled(
-            "Enter search   Esc cancel   n repeat last search",
+            "Enter search   Esc cancel   n repeat",
             Style::default().fg(Color::Gray),
         )),
     ])
