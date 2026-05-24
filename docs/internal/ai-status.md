@@ -22,11 +22,18 @@ Current AI-maintained status only.
 - Older entries moved to [`ai-status-archive-2026-05-02.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-02.md).
 - Older entries moved to [`ai-status-archive-2026-05-14.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-14.md).
 - Older entries moved to [`ai-status-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-16.md).
+- Older entries moved to [`ai-status-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-25.md).
+
+## 2026-05-25 - Access browse repeat-search wrap
+- State: Done
+- Scope: Rust TUI state and maintainer trace for `access user browse` and `access team browse` repeat-search behavior. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
+- Current Update: Aligned user/team access browse `n` repeat-search with dashboard, datasource, and status overview behavior by skipping the current row first, then wrapping forward to the first match or backward to the last match.
+- Result: Access user/team browse now keeps repeat search moving through the current result set instead of stopping or reselecting the boundary row.
 
 ## 2026-05-16 - TUI search and shell consistency pass
 - State: Done
 - Scope: Rust TUI behavior and maintainer trace for shared browser search, status overview search, access browse shell alignment, feature-disabled fallback wording, and unified `Esc/q` exit labels. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
-- Current Update: Added `/`, `?`, and `n` search support to the shared read-only browser and status overview workbench; aligned access browse with shared header/footer shell language; surfaced datasource browse row/kind/search context; normalized remaining TUI exit labels to `Esc/q`; and kept the next access user/team repeat-search wrap task as the remaining follow-up.
+- Current Update: Added `/`, `?`, and `n` search support to the shared read-only browser and status overview workbench; aligned access browse with shared header/footer shell language; surfaced datasource browse row/kind/search context; normalized remaining TUI exit labels to `Esc/q`; and identified the next access user/team repeat-search wrap task as the remaining follow-up.
 - Result: The TUI surfaces now have a more consistent search/status/control vocabulary, and the latest `dev` CI and Docs Pages runs succeeded after the pushed cleanup commits.
 
 ## 2026-05-14 - Phase 0 TUI inventory roadmap
@@ -52,9 +59,3 @@ Current AI-maintained status only.
 - Scope: Rust internal shared review-adapter consumption for access import dry-run, datasource import dry-run, datasource live mutation, and alert plan rows; focused tests; TODO trace. Public JSON, CLI behavior, generated docs, and Python implementation are out of scope.
 - Current Update: Added `build_review_mutation_summary_rows(&ReviewMutationEnvelope)` as the shared internal consumer for the proven review adapters.
 - Result: Adapter consumption is now covered by tests without public JSON or CLI drift.
-
-## 2026-05-02 - Cleanup TODO trace after mutation adapter pass
-- State: Done
-- Scope: maintainer-only TODO cleanup and AI trace refresh after the mutation adapter pass. Rust behavior, public JSON, CLI behavior, generated docs, and Python implementation are out of scope.
-- Current Update: Recorded the latest mutation-adapter maintenance result in the active AI trace files and kept the backlog/history split intact.
-- Result: The current trace now reflects the completed TODO cleanup checkpoint; validation for this doc-only update is `make quality-ai-workflow` and `git diff --check`.

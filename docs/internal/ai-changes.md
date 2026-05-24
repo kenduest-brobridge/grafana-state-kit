@@ -22,12 +22,19 @@ Current AI change log only.
 - Older entries moved to [`ai-changes-archive-2026-05-02.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-02.md).
 - Older entries moved to [`ai-changes-archive-2026-05-14.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-14.md).
 - Older entries moved to [`ai-changes-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-16.md).
+- Older entries moved to [`ai-changes-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-25.md).
+
+## 2026-05-25 - Access browse repeat-search wrap
+- Summary: aligned `access user browse` and `access team browse` repeat-search behavior with the other Rust TUI browsers so repeated `n` searches skip the current row and wrap to the first or last matching row at result-set boundaries.
+- Tests: focused Rust state tests cover forward wrap, backward wrap, no previous search, empty query, and no-match cases for both user and team browse state.
+- Impact: `rust/src/commands/access/user_browse_state.rs`, `rust/src/commands/access/team_browse_state.rs`, and maintainer trace docs. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
+- Rollback/Risk: low. Rollback would restore the older boundary behavior where access user/team repeat search could stop or reselect the boundary row while other TUI search surfaces continued to wrap.
 
 ## 2026-05-16 - TUI search and shell consistency pass
 - Summary: advanced the Rust TUI consistency work after the Phase 0 roadmap by adding shared read-only browser search, status overview current-view search, access browse shared-shell header/footer language, datasource browse selection/search context, consistent TUI feature-required errors, and unified `Esc/q` exit labels across remaining Rust TUI surfaces.
 - Tests: focused Rust tests covered shared browser search matching/repeat behavior, status overview search and render copy, access browse shell summaries, datasource browse context summaries, feature-gate fallback messages, and the final combined exit label regression. GitHub Actions for the latest pushed `dev` state completed successfully.
 - Impact: `rust/src/common/browser/session.rs`, `rust/src/common/error.rs`, access/datasource/status/sync/dashboard TUI render/state modules, and this maintainer trace. Public CLI paths, help output, command contracts, generated man/html docs, Python package behavior, and release metadata are intentionally unchanged.
-- Rollback/Risk: low to moderate. The changes are isolated to interactive Rust TUI state/render behavior and copy; rollback would restore the older per-surface search/control behavior without affecting non-interactive outputs. The remaining follow-up is repeat-search wrap consistency for `access user browse` and `access team browse`.
+- Rollback/Risk: low to moderate. The changes are isolated to interactive Rust TUI state/render behavior and copy; rollback would restore the older per-surface search/control behavior without affecting non-interactive outputs. The remaining follow-up at the time was repeat-search wrap consistency for `access user browse` and `access team browse`.
 
 ## 2026-05-14 - Phase 0 TUI inventory roadmap
 - Summary: added `docs/internal/tui-architecture-roadmap.md` to inventory current TUI/interactive surfaces, maturity tiers, architecture debt, and the next approved implementation phases; added a read-only inventory report script; improved access browse filtering/selection summaries; and aligned datasource browse exit control copy.
@@ -80,11 +87,3 @@ Current AI change log only.
 - Impact: `docs/internal/mutation-review-envelope-inventory.md`, `todo.md`, and AI trace docs. Runtime behavior, public JSON, CLI behavior, generated docs, and Python implementation are intentionally unchanged.
 - Rollback/Risk: low documentation-only checkpoint. Rollback would restore the previous ambiguous TODO state where blocked `ReviewRisk` / `ReviewRequest` work looked equally ready as mutation action adapter coverage.
 - Follow-up: implement the next adapter pass for access import dry-run, datasource import dry-run, datasource live mutation preview, and alert plan rows only where the mapping is lossless and internal-only.
-
-## 2026-05-02 - Reduce proven JSON clone hot spots
-- Summary: removed avoidable `serde_json::Value`/object clones in owned Rust read and aggregation paths without changing public JSON or transport behavior.
-- Tests: covered dashboard API response normalization, dashboard version timestamp lookup, sync live availability merge, request-backed contact-point availability extraction, live multi-org status aggregation, broader dashboard/sync_live/status filters, and full Rust validation.
-- Test Run: `cargo fmt --manifest-path rust/Cargo.toml --all`; `cargo test --manifest-path rust/Cargo.toml --quiet dashboard_resource_client`; `cargo test --manifest-path rust/Cargo.toml --quiet latest_dashboard_version_timestamp`; `cargo test --manifest-path rust/Cargo.toml --quiet fetch_live_availability_with_request_collects_contact_points_and_plugins`; `cargo test --manifest-path rust/Cargo.toml --quiet merge_availability_deduplicates_arrays_and_overwrites_scalar_fields`; `cargo test --manifest-path rust/Cargo.toml --quiet build_live_multi_org_domain_status`; `cargo test --manifest-path rust/Cargo.toml --quiet dashboard`; `cargo test --manifest-path rust/Cargo.toml --quiet sync_live`; `cargo test --manifest-path rust/Cargo.toml --quiet status`; `cargo test --manifest-path rust/Cargo.toml --quiet`; `make quality-ai-workflow`; `git diff --check`.
-- Impact: `rust/src/grafana/api/dashboard.rs`, `rust/src/grafana/api/sync_live.rs`, `rust/src/grafana/api/sync_live_read.rs`, `rust/src/grafana/api/sync_live_read/availability.rs`, `rust/src/commands/status/live_multi_org.rs`, `rust/src/commands/sync/live_rust_tests.rs`, `todo.md`, and AI trace docs. Public JSON, CLI behavior, live transport semantics, generated docs, and Python implementation are intentionally unchanged.
-- Rollback/Risk: low behavior-preserving ownership cleanup. Rollback would restore cloning during response normalization and status aggregation; focused and broader Rust tests cover the unchanged output behavior.
-- Follow-up: keep future `Value` clone cleanup evidence-led and avoid changing flexible JSON handling just to make data structures more static.

@@ -10,7 +10,7 @@ several existing Rust TUI surfaces without changing public CLI paths.
 | Surface | Entrypoint | Current tier | Notes |
 | --- | --- | --- | --- |
 | Dashboard browse | `grafana-util dashboard browse` | Mature | Dedicated live/local tree browser under `rust/src/commands/dashboard/browse/`; keep current ownership disjoint. |
-| Access browse | `grafana-util access browse`, `access user browse`, `access team browse` | Active implementation | Consolidated access browse now has in-session filtering, selection summaries, and shared-shell header/footer language. User/team specialized browsers remain separate richer flows; repeat-search wrap consistency is the next narrow follow-up. |
+| Access browse | `grafana-util access browse`, `access user browse`, `access team browse` | Active implementation | Consolidated access browse now has in-session filtering, selection summaries, and shared-shell header/footer language. User/team specialized browsers remain separate richer flows; repeat-search now skips the selected row and wraps across matching rows. |
 | Datasource browse | `grafana-util datasource browse`, local `datasource list --interactive` | Active implementation | Live/local datasource browser under `rust/src/commands/datasource/browse/`; it now surfaces row, kind, and search context in the header. |
 | Status overview | `grafana-util status overview live --output-format interactive` and staged/live status interactive output | Mature document browser | Uses the overview/status document model, then projects into TUI. It now supports current-view `/`, `?`, and `n` item search with explicit search status in the shell. |
 | Dashboard summary / inspect workbench | `grafana-util dashboard summary --interactive` | Mature review workbench | Query, dashboard, and governance rows share the inspect workbench. |
@@ -76,10 +76,17 @@ The script is intentionally non-blocking and is not wired into CI. It scans
 `rust/src`, English command docs, English user guide docs, and `docs/internal`
 while skipping generated HTML and Cargo build output.
 
-## Current Follow-Up
+## Recent Follow-Up
 
-- Bring `access user browse` and `access team browse` repeat-search behavior in
-  line with datasource browse and status overview so `n` wraps within the current
-  result set instead of stopping at the first boundary.
-- Keep this follow-up in state/tests first. Public CLI/docs and generated docs
-  should remain unchanged unless the user-facing command surface changes.
+- `access user browse` and `access team browse` repeat-search behavior now skips
+  the selected row and wraps in line with datasource browse and status overview,
+  so `n` can continue within the current result set after reaching the first or
+  last matching row.
+- The change stayed in state/tests. Public CLI/docs and generated docs remain
+  unchanged because the user-facing command surface did not change.
+
+## Next Follow-Up
+
+- Bring datasource browse closer to dashboard browse for safe operational review:
+  show secret placeholder availability, blocker status, and review-required
+  evidence only. Do not expose resolved credential values.

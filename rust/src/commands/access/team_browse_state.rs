@@ -239,14 +239,23 @@ impl BrowserState {
 
     pub(super) fn repeat_last_search(&self) -> Option<usize> {
         let search = self.last_search.as_ref()?;
-        let next_start = self
-            .list_state
-            .selected()
-            .map(|index| match search.direction {
-                SearchDirection::Forward => index.saturating_add(1),
-                SearchDirection::Backward => index.saturating_sub(1),
-            });
-        self.find_match_from(&search.query, search.direction, next_start)
+        let next_match = match (self.list_state.selected(), search.direction) {
+            (Some(index), SearchDirection::Forward) if index + 1 < self.rows.len() => {
+                self.find_match_from(&search.query, search.direction, Some(index + 1))
+            }
+            (Some(index), SearchDirection::Backward) if index > 0 => {
+                self.find_match_from(&search.query, search.direction, Some(index - 1))
+            }
+            (Some(_), _) => None,
+            (None, _) => self.find_match_from(&search.query, search.direction, None),
+        };
+        next_match.or_else(|| {
+            let wrapped_start = match search.direction {
+                SearchDirection::Forward => Some(0),
+                SearchDirection::Backward => self.rows.len().checked_sub(1),
+            };
+            self.find_match_from(&search.query, search.direction, wrapped_start)
+        })
     }
 
     fn find_match_from(
@@ -363,8 +372,32 @@ fn flatten_team_rows(
 
 #[cfg(test)]
 mod tests {
-    use super::{row_kind, BrowserState};
+    use super::{row_kind, BrowserState, SearchDirection, SearchState};
     use serde_json::{Map, Value};
+
+    fn team_row(id: &str, name: &str, email: &str, members: &str) -> Map<String, Value> {
+        Map::from_iter(vec![
+            ("id".to_string(), Value::String(id.to_string())),
+            ("name".to_string(), Value::String(name.to_string())),
+            ("email".to_string(), Value::String(email.to_string())),
+            ("members".to_string(), Value::String(members.to_string())),
+        ])
+    }
+
+    fn search_state(direction: SearchDirection, query: &str) -> SearchState {
+        SearchState {
+            direction,
+            query: query.to_string(),
+        }
+    }
+
+    fn repeat_search_state() -> BrowserState {
+        BrowserState::new(vec![
+            team_row("1", "platform-ops", "ops@example.test", "alice"),
+            team_row("2", "billing", "billing@example.test", "bob"),
+            team_row("3", "incident-ops", "incident@example.test", "carol"),
+        ])
+    }
 
     #[test]
     fn team_browse_state_expand_selected_builds_member_child_rows() {
@@ -455,5 +488,46 @@ mod tests {
         assert_eq!(state.selected_team_id().as_deref(), Some("7"));
         assert_eq!(state.selected_member_role().as_deref(), None);
         assert_eq!(row_kind(&state.rows[0]), "team");
+    }
+
+    #[test]
+    fn team_browse_repeat_last_search_wraps_forward_to_first_match() {
+        let mut state = repeat_search_state();
+        state.last_search = Some(search_state(SearchDirection::Forward, "ops"));
+        state.select_index(2);
+
+        assert_eq!(state.repeat_last_search(), Some(0));
+    }
+
+    #[test]
+    fn team_browse_repeat_last_search_wraps_backward_to_last_match() {
+        let mut state = repeat_search_state();
+        state.last_search = Some(search_state(SearchDirection::Backward, "ops"));
+        state.select_index(0);
+
+        assert_eq!(state.repeat_last_search(), Some(2));
+    }
+
+    #[test]
+    fn team_browse_repeat_last_search_without_previous_search_does_not_select() {
+        let mut state = repeat_search_state();
+        state.select_index(1);
+
+        assert_eq!(state.repeat_last_search(), None);
+        assert_eq!(state.list_state.selected(), Some(1));
+    }
+
+    #[test]
+    fn team_browse_repeat_last_search_empty_query_or_no_match_does_not_select() {
+        let mut state = repeat_search_state();
+        state.select_index(1);
+
+        state.last_search = Some(search_state(SearchDirection::Forward, ""));
+        assert_eq!(state.repeat_last_search(), None);
+        assert_eq!(state.list_state.selected(), Some(1));
+
+        state.last_search = Some(search_state(SearchDirection::Backward, "missing"));
+        assert_eq!(state.repeat_last_search(), None);
+        assert_eq!(state.list_state.selected(), Some(1));
     }
 }
