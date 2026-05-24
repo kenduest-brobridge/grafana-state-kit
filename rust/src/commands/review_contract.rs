@@ -189,6 +189,36 @@ impl From<ReviewMutationActionInput> for ReviewMutationAction {
     }
 }
 
+pub(crate) fn build_review_mutation_action_detail_lines(
+    action: &ReviewMutationAction,
+) -> Vec<String> {
+    let mut lines = vec![
+        format!("Review action id: {}", action.action_id),
+        format!("Review domain: {}", action.domain),
+        format!("Review resource kind: {}", action.resource_kind),
+        format!(
+            "Review identity: {} {}",
+            action.resource_kind, action.identity
+        ),
+        format!(
+            "Review action: {} (status={})",
+            action.action, action.status
+        ),
+    ];
+    if let Some(details) = &action.details {
+        lines.push(format!("Review details: {}", details));
+    }
+    if let Some(reason) = &action.blocked_reason {
+        lines.push(format!(
+            "Review blocker status: {} by {}",
+            action.status, reason
+        ));
+    } else if action.status == REVIEW_STATUS_BLOCKED {
+        lines.push(format!("Review blocker status: {}", action.status));
+    }
+    lines
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct ReviewMutationDomain {
     pub id: String,
@@ -589,5 +619,58 @@ mod tests {
         assert!(rows
             .iter()
             .all(|row| row.blocked_reasons == vec!["externally synced user".to_string()]));
+    }
+
+    #[test]
+    fn review_mutation_action_detail_lines_project_generic_review_evidence() {
+        let blocked = ReviewMutationAction::from(ReviewMutationActionInput {
+            action_id: "access:user:alice".to_string(),
+            action: REVIEW_ACTION_WOULD_UPDATE.to_string(),
+            domain: "access".to_string(),
+            resource_kind: "user".to_string(),
+            identity: "alice".to_string(),
+            status: REVIEW_STATUS_BLOCKED.to_string(),
+            blocked_reason: Some("externally synced user".to_string()),
+            details: Some("fields=orgRole".to_string()),
+            review_hints: Vec::new(),
+            raw: json!({}),
+        });
+        let warning = ReviewMutationAction::from(ReviewMutationActionInput {
+            action_id: "access:team:ops".to_string(),
+            action: REVIEW_ACTION_WOULD_CREATE.to_string(),
+            domain: "access".to_string(),
+            resource_kind: "team".to_string(),
+            identity: "ops".to_string(),
+            status: REVIEW_STATUS_WARNING.to_string(),
+            blocked_reason: None,
+            details: None,
+            review_hints: Vec::new(),
+            raw: json!({}),
+        });
+
+        let blocked_lines = build_review_mutation_action_detail_lines(&blocked);
+        let warning_lines = build_review_mutation_action_detail_lines(&warning);
+
+        assert!(blocked_lines
+            .iter()
+            .any(|line| line == "Review action: would-update (status=blocked)"));
+        assert!(blocked_lines
+            .iter()
+            .any(|line| line == "Review identity: user alice"));
+        assert!(blocked_lines
+            .iter()
+            .any(|line| line == "Review details: fields=orgRole"));
+        assert!(blocked_lines
+            .iter()
+            .any(|line| line == "Review blocker status: blocked by externally synced user"));
+        assert!(warning_lines
+            .iter()
+            .any(|line| line == "Review action: would-create (status=warning)"));
+        assert!(warning_lines
+            .iter()
+            .any(|line| line == "Review identity: team ops"));
+        assert!(!warning_lines
+            .iter()
+            .any(|line| line.starts_with("Review blocker status:")));
     }
 }

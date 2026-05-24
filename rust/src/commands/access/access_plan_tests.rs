@@ -596,7 +596,15 @@ fn access_plan_interactive_browser_items_follow_review_projection() {
     assert!(items[1]
         .details
         .iter()
-        .any(|line| line == "Details: fields=orgRole,email"));
+        .any(|line| line == "Review evidence:"));
+    assert!(items[1]
+        .details
+        .iter()
+        .any(|line| line == "Review identity: user alice"));
+    assert!(items[1]
+        .details
+        .iter()
+        .any(|line| line == "Review details: fields=orgRole,email"));
     assert!(items[1]
         .details
         .iter()
@@ -608,7 +616,7 @@ fn access_plan_interactive_browser_items_follow_review_projection() {
     assert!(items[1]
         .details
         .iter()
-        .any(|line| line == "Blocked reason: externally synced user"));
+        .any(|line| line == "Review blocker status: blocked by externally synced user"));
     assert!(items[1]
         .details
         .iter()
@@ -631,6 +639,82 @@ fn access_plan_interactive_browser_items_follow_review_projection() {
         .details
         .iter()
         .any(|line| line == "Source path: ./access-users/users.json"));
+}
+
+#[test]
+fn access_plan_interactive_browser_action_details_include_shared_review_evidence() {
+    let document = AccessPlanDocument {
+        kind: ACCESS_PLAN_KIND.to_string(),
+        schema_version: ACCESS_PLAN_SCHEMA_VERSION,
+        tool_version: "test".to_string(),
+        summary: AccessPlanSummary {
+            resource_count: 1,
+            checked: 1,
+            same: 0,
+            create: 0,
+            update: 1,
+            extra_remote: 0,
+            delete: 0,
+            blocked: 1,
+            warning: 0,
+            prune: false,
+        },
+        resources: Vec::new(),
+        actions: vec![AccessPlanAction {
+            action_id: "access:user:alice".to_string(),
+            domain: "access".to_string(),
+            resource_kind: "user".to_string(),
+            identity: "alice".to_string(),
+            scope: Some("org".to_string()),
+            action: "would-update".to_string(),
+            status: "blocked".to_string(),
+            changed_fields: vec!["orgRole".to_string()],
+            changes: vec![AccessPlanChange {
+                field: "orgRole".to_string(),
+                before: json!("Editor"),
+                after: json!("Viewer"),
+            }],
+            target: Some(
+                json!({
+                    "login": "alice",
+                    "orgRole": "Viewer",
+                    "isExternallySynced": true,
+                })
+                .as_object()
+                .unwrap()
+                .clone(),
+            ),
+            blocked_reason: Some("externally synced user".to_string()),
+            review_hints: vec!["review identity source".to_string()],
+            source_path: "./access-users/users.json".to_string(),
+        }],
+    };
+
+    let items = build_access_plan_browser_items(&document);
+    let details = &items[0].details;
+
+    assert!(details.iter().any(|line| line == "Review evidence:"));
+    assert!(details
+        .iter()
+        .any(|line| line == "Review action: would-update (status=blocked)"));
+    assert!(details
+        .iter()
+        .any(|line| line == "Review identity: user alice"));
+    assert!(details
+        .iter()
+        .any(|line| { line == "Review blocker status: blocked by externally synced user" }));
+    assert!(details.iter().any(|line| {
+        line == "Narrative: changes this live user so it matches the reviewed bundle."
+    }));
+    assert!(details
+        .iter()
+        .any(|line| line == "Change: orgRole bundle=Editor live=Viewer"));
+    assert!(details
+        .iter()
+        .any(|line| line == "Live target: orgRole=Viewer"));
+    assert!(details.iter().any(|line| {
+        line == "Check next: confirm the blocker in Grafana and adjust the bundle or remote ownership before retrying."
+    }));
 }
 
 #[test]

@@ -3,9 +3,10 @@
 use crate::common::Result;
 #[cfg(any(feature = "tui", test))]
 use crate::review_contract::{
-    REVIEW_ACTION_BLOCKED, REVIEW_ACTION_EXTRA_REMOTE, REVIEW_ACTION_SAME, REVIEW_ACTION_UNMANAGED,
-    REVIEW_ACTION_WOULD_CREATE, REVIEW_ACTION_WOULD_DELETE, REVIEW_ACTION_WOULD_UPDATE,
-    REVIEW_HINT_REMOTE_ONLY, REVIEW_STATUS_BLOCKED, REVIEW_STATUS_WARNING,
+    build_review_mutation_action_detail_lines, REVIEW_ACTION_BLOCKED, REVIEW_ACTION_EXTRA_REMOTE,
+    REVIEW_ACTION_SAME, REVIEW_ACTION_UNMANAGED, REVIEW_ACTION_WOULD_CREATE,
+    REVIEW_ACTION_WOULD_DELETE, REVIEW_ACTION_WOULD_UPDATE, REVIEW_HINT_REMOTE_ONLY,
+    REVIEW_STATUS_BLOCKED, REVIEW_STATUS_WARNING,
 };
 
 #[cfg(not(feature = "tui"))]
@@ -385,27 +386,15 @@ pub(crate) fn build_access_plan_browser_items(document: &AccessPlanDocument) -> 
             .get("scope")
             .and_then(serde_json::Value::as_str)
             .unwrap_or_default();
-        let mut details = vec![
-            format!("Action id: {}", action.action_id),
-            format!("Domain: {}", action.domain),
-            format!("Resource kind: {}", action.resource_kind),
-            format!("Identity: {}", action.identity),
-            format!("Action: {}", action.action),
-            format!("Status: {}", action.status),
-            narrative_line(&action),
-        ];
+        let mut details = vec![narrative_line(&action)];
         if !scope.is_empty() {
             details.push(format!("Scope: {}", scope));
         }
         if let Some(impact) = impact_line(&action) {
             details.push(impact);
         }
-        if let Some(detail) = &action.details {
-            details.push(format!("Details: {}", detail));
-        }
-        if let Some(reason) = &action.blocked_reason {
-            details.push(format!("Blocked reason: {}", reason));
-        }
+        details.push("Review evidence:".to_string());
+        details.extend(build_review_mutation_action_detail_lines(&action));
         if !source_path.is_empty() {
             details.push(format!("Source path: {}", source_path));
         }

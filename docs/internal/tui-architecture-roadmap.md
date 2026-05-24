@@ -133,6 +133,9 @@ while skipping generated HTML and Cargo build output.
 - Sync review checklist mode now supports current-view operation
   search/filtering with the same footer search state copy while keeping `n` as
   the existing select-none command.
+- Access plan interactive review now consumes shared review-contract action
+  detail lines for generic action, identity, status, blocker, and detail
+  evidence while keeping its access-specific narrative and next-check guidance.
 - Dashboard import review footer copy now advertises the existing page jump,
   bounds jump, and `Esc/q`/`Ctrl-C` cancel controls instead of only `q`.
 - Dashboard browse delete review summary now splits `Confirm: y` from
@@ -157,4 +160,6 @@ while skipping generated HTML and Cargo build output.
 
 - Continue reducing duplicated TUI review/detail projection on the remaining
   local artifact browsers that can consume shared safe review lines without
-  changing public CLI flags.
+  changing public CLI flags; datasource local and snapshot datasource rows
+  already reuse the datasource Review projection, and access plan generic action
+  evidence now reuses the shared review-contract projection.
