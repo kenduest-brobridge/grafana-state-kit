@@ -97,11 +97,27 @@ pub(crate) use import::{
     target as import_target, validation as import_validation,
 };
 
-#[cfg(not(feature = "tui"))]
+#[cfg(any(test, not(feature = "tui")))]
 pub(crate) fn tui_not_built<T>(action: &str) -> Result<T> {
-    Err(crate::common::message(format!(
-        "Dashboard {action} requires TUI support, but it was not built in."
+    Err(crate::common::tui_feature_required(&format!(
+        "Dashboard {action}"
     )))
+}
+
+#[cfg(test)]
+mod tui_feature_fallback_tests {
+    use crate::common::GrafanaCliError;
+
+    #[test]
+    fn tui_not_built_returns_shared_tui_feature_error() {
+        let error = super::tui_not_built::<()>("browse").unwrap_err();
+
+        assert!(matches!(error, GrafanaCliError::Tui(_)));
+        assert_eq!(
+            error.to_string(),
+            "Dashboard browse requires the `tui` feature."
+        );
+    }
 }
 
 // Shared dashboard defaults and export filenames used across export/import/live flows.

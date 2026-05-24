@@ -136,6 +136,10 @@ while skipping generated HTML and Cargo build output.
 - Access plan interactive review now consumes shared review-contract action
   detail lines for generic action, identity, status, blocker, and detail
   evidence while keeping its access-specific narrative and next-check guidance.
+- Dashboard TUI feature fallback now uses the shared `tui_feature_required`
+  error helper so dashboard interactive paths report the same TUI error
+  category and `requires the `tui` feature` wording as the other Rust TUI
+  surfaces.
 - Dashboard import review footer copy now advertises the existing page jump,
   bounds jump, and `Esc/q`/`Ctrl-C` cancel controls instead of only `q`.
 - Dashboard browse delete review summary now splits `Confirm: y` from
@@ -163,3 +167,7 @@ while skipping generated HTML and Cargo build output.
   changing public CLI flags; datasource local and snapshot datasource rows
   already reuse the datasource Review projection, and access plan generic action
   evidence now reuses the shared review-contract projection.
+- Continue tightening `--no-default-features` TUI isolation. A focused dashboard
+  fallback test can run under the default feature set, but the current
+  no-default Rust test build still fails earlier on unrelated TUI-gated module
+  imports.
