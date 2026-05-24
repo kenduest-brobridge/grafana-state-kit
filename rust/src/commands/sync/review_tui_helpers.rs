@@ -289,6 +289,31 @@ pub(crate) fn collect_reviewable_operations(plan: &Value) -> Result<Vec<Reviewab
 }
 
 #[cfg(any(feature = "tui", test))]
+pub(crate) fn filter_reviewable_operations_by_query(
+    items: &[ReviewableOperation],
+    query: &str,
+) -> Vec<ReviewableOperation> {
+    let needle = query.trim().to_ascii_lowercase();
+    if needle.is_empty() {
+        return items.to_vec();
+    }
+    items
+        .iter()
+        .filter(|item| reviewable_operation_matches_query(item, &needle))
+        .cloned()
+        .collect()
+}
+
+#[cfg(any(feature = "tui", test))]
+fn reviewable_operation_matches_query(item: &ReviewableOperation, needle: &str) -> bool {
+    item.key.to_ascii_lowercase().contains(needle)
+        || item.label.to_ascii_lowercase().contains(needle)
+        || operation_preview(item)
+            .iter()
+            .any(|line| line.to_ascii_lowercase().contains(needle))
+}
+
+#[cfg(any(feature = "tui", test))]
 pub(crate) fn filter_review_plan_operations(
     plan: &Value,
     selected_keys: &BTreeSet<String>,

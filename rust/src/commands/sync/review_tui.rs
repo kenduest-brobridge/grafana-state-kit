@@ -49,10 +49,10 @@ pub(crate) use review_tui_helpers::{
 #[cfg(any(feature = "tui", test))]
 pub(crate) use review_tui_helpers::{
     build_review_operation_diff_model, clip_text_window, collect_reviewable_operations,
-    diff_pane_title, diff_scroll_max, filter_review_plan_operations, operation_changed_count,
-    operation_detail_line_count, operation_preview, selection_title_with_position,
-    wrap_text_chunks, DiffControlsState, DiffPaneFocus, ReviewDiffLine, ReviewDiffModel,
-    ReviewableOperation,
+    diff_pane_title, diff_scroll_max, filter_review_plan_operations,
+    filter_reviewable_operations_by_query, operation_changed_count, operation_detail_line_count,
+    operation_preview, selection_title_with_position, wrap_text_chunks, DiffControlsState,
+    DiffPaneFocus, ReviewDiffLine, ReviewDiffModel, ReviewableOperation,
 };
 
 #[cfg(feature = "tui")]
@@ -121,16 +121,56 @@ pub(crate) fn review_status(diff_mode: bool) -> String {
 }
 
 #[cfg(feature = "tui")]
+pub(crate) fn build_checklist_footer_control_lines(
+    active_search: Option<&str>,
+    pending_search: Option<&str>,
+    status: String,
+) -> Vec<Line<'static>> {
+    let search_summary = if let Some(query) = pending_search {
+        format!("Search prompt {query}")
+    } else if let Some(query) = active_search {
+        format!("Search filter {query}")
+    } else {
+        "Search idle".to_string()
+    };
+    let mut lines = vec![Line::from(format!("{status}   {search_summary}"))];
+    if pending_search.is_some() {
+        lines.push(tui_shell::control_line(&[
+            ("Backspace", Color::Blue, "edit"),
+            ("Enter", Color::LightGreen, "search operations"),
+            ("Esc", Color::Yellow, "cancel"),
+        ]));
+    } else {
+        lines.push(tui_shell::control_line(&[
+            ("Up/Down", Color::Blue, "move"),
+            ("Space", Color::Yellow, "keep/drop"),
+            ("a", Color::Cyan, "select-all"),
+            ("n", Color::Cyan, "select-none"),
+        ]));
+        lines.push(tui_shell::control_line(&[
+            ("/?", Color::LightGreen, "search operations"),
+            ("Enter", Color::Blue, "open diff"),
+            ("c", Color::Green, "confirm staged selection"),
+            ("Esc/q", Color::Gray, "cancel"),
+        ]));
+    }
+    lines
+}
+
+#[cfg(feature = "tui")]
 pub(crate) fn run_sync_review_tui(plan: &Value) -> Result<Value> {
-    let items = collect_reviewable_operations(plan)?;
-    if items.is_empty() {
+    let all_items = collect_reviewable_operations(plan)?;
+    if all_items.is_empty() {
         return Ok(plan.clone());
     }
     let mut session = TerminalSession::enter()?;
-    let mut selected_keys = items
+    let mut selected_keys = all_items
         .iter()
         .map(|item| item.key.clone())
         .collect::<BTreeSet<_>>();
+    let mut search_query: Option<String> = None;
+    let mut pending_search: Option<String> = None;
+    let mut items = filter_reviewable_operations_by_query(&all_items, "");
     let mut state = ListState::default();
     state.select(Some(0));
     let mut diff_mode = false;
@@ -159,7 +199,12 @@ pub(crate) fn run_sync_review_tui(plan: &Value) -> Result<Value> {
             frame.render_widget(
                 tui_shell::build_header(
                     "Sync Review",
-                    build_review_header_lines(items.len(), selected_count, diff_mode, diff_focus),
+                    build_review_header_lines(
+                        all_items.len(),
+                        selected_count,
+                        diff_mode,
+                        diff_focus,
+                    ),
                 ),
                 outer[0],
             );
@@ -332,23 +377,11 @@ pub(crate) fn run_sync_review_tui(plan: &Value) -> Result<Value> {
                 );
                 frame.render_widget(preview, outer[2]);
                 frame.render_widget(
-                    tui_shell::build_footer(
-                        vec![
-                            tui_shell::control_line(&[
-                                ("Up/Down", Color::Blue, "move"),
-                                ("Space", Color::Yellow, "keep/drop"),
-                                ("a", Color::Cyan, "select-all"),
-                                ("n", Color::Cyan, "select-none"),
-                                ("Enter", Color::Blue, "open diff"),
-                                ("c", Color::Green, "confirm staged selection"),
-                            ]),
-                            tui_shell::control_line(&[
-                                ("q", Color::Gray, "cancel"),
-                                ("Esc", Color::Gray, "cancel"),
-                            ]),
-                        ],
+                    tui_shell::build_footer_controls(build_checklist_footer_control_lines(
+                        search_query.as_deref(),
+                        pending_search.as_deref(),
                         review_status(false),
-                    ),
+                    )),
                     outer[3],
                 );
             }
@@ -362,7 +395,39 @@ pub(crate) fn run_sync_review_tui(plan: &Value) -> Result<Value> {
                 continue;
             }
             let selected = state.selected().unwrap_or(0);
+            if !diff_mode {
+                if let Some(query) = pending_search.as_mut() {
+                    match key.code {
+                        KeyCode::Esc => pending_search = None,
+                        KeyCode::Enter => {
+                            let query = query.trim().to_string();
+                            pending_search = None;
+                            search_query = (!query.is_empty()).then_some(query);
+                            items = filter_reviewable_operations_by_query(
+                                &all_items,
+                                search_query.as_deref().unwrap_or(""),
+                            );
+                            state.select((!items.is_empty()).then_some(0));
+                            live_diff_cursor = 0;
+                            desired_diff_cursor = 0;
+                            live_horizontal_offset = 0;
+                            desired_horizontal_offset = 0;
+                        }
+                        KeyCode::Backspace => {
+                            query.pop();
+                        }
+                        KeyCode::Char(ch) => {
+                            query.push(ch);
+                        }
+                        _ => {}
+                    }
+                    continue;
+                }
+            }
             match key.code {
+                KeyCode::Char('/') | KeyCode::Char('?') if !diff_mode => {
+                    pending_search = Some(String::new());
+                }
                 KeyCode::Up if diff_mode => match diff_focus {
                     DiffPaneFocus::Live => {
                         live_diff_cursor = live_diff_cursor.saturating_sub(1);
@@ -510,7 +575,7 @@ pub(crate) fn run_sync_review_tui(plan: &Value) -> Result<Value> {
                     }
                 }
                 KeyCode::Char('a') if !diff_mode => {
-                    selected_keys = items.iter().map(|item| item.key.clone()).collect();
+                    selected_keys = all_items.iter().map(|item| item.key.clone()).collect();
                 }
                 KeyCode::Char('n') if !diff_mode => {
                     selected_keys.clear();

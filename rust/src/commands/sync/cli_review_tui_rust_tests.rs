@@ -141,6 +141,92 @@ fn review_operation_preview_hides_secret_like_changed_fields() {
 }
 
 #[test]
+fn filter_reviewable_operations_by_query_matches_visible_review_fields() {
+    let plan = json!({
+        "kind": "grafana-utils-sync-plan",
+        "operations": [
+            {
+                "kind": "dashboard",
+                "identity": "cpu-main",
+                "action": "would-update",
+                "changedFields": ["title"]
+            },
+            {
+                "kind": "datasource",
+                "identity": "prom-main",
+                "action": "would-create",
+                "changedFields": ["url"]
+            },
+            {
+                "kind": "alert-rule",
+                "identity": "cpu-high",
+                "action": "would-delete",
+                "changedFields": []
+            }
+        ]
+    });
+
+    let items = review_tui::collect_reviewable_operations(&plan).unwrap();
+    let prom = review_tui::filter_reviewable_operations_by_query(&items, "prom");
+    let create = review_tui::filter_reviewable_operations_by_query(&items, "create");
+    let blank = review_tui::filter_reviewable_operations_by_query(&items, "   ");
+    let missing = review_tui::filter_reviewable_operations_by_query(&items, "missing");
+
+    assert_eq!(prom.len(), 1);
+    assert_eq!(prom[0].label, "datasource prom-main");
+    assert_eq!(create.len(), 1);
+    assert_eq!(create[0].label, "datasource prom-main");
+    assert_eq!(blank.len(), items.len());
+    assert!(missing.is_empty());
+}
+
+#[test]
+fn sync_review_checklist_footer_controls_advertise_search_without_reusing_n() {
+    #[cfg(feature = "tui")]
+    {
+        let idle = review_tui::build_checklist_footer_control_lines(
+            None,
+            None,
+            review_tui::review_status(false),
+        )
+        .into_iter()
+        .map(|line| line.to_string())
+        .collect::<Vec<_>>()
+        .join("\n");
+        let active = review_tui::build_checklist_footer_control_lines(
+            Some("prom"),
+            None,
+            review_tui::review_status(false),
+        )
+        .into_iter()
+        .map(|line| line.to_string())
+        .collect::<Vec<_>>()
+        .join("\n");
+        let pending = review_tui::build_checklist_footer_control_lines(
+            None,
+            Some("prom"),
+            review_tui::review_status(false),
+        )
+        .into_iter()
+        .map(|line| line.to_string())
+        .collect::<Vec<_>>()
+        .join("\n");
+
+        assert!(idle.contains("/?"));
+        assert!(idle.contains("search operations"));
+        assert!(idle.contains("n"));
+        assert!(idle.contains("select-none"));
+        assert!(idle.contains("Search idle"));
+        assert!(active.contains("Search filter prom"));
+        assert!(pending.contains("Search prompt prom"));
+        assert!(pending.contains("Enter"));
+        assert!(pending.contains("Esc"));
+        assert!(pending.contains("Backspace"));
+        assert!(!pending.contains("select-none"));
+    }
+}
+
+#[test]
 fn reviewable_operations_prefer_actions_and_stable_action_ids() {
     let plan = json!({
         "kind": "grafana-utils-sync-plan",

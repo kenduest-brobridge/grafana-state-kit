@@ -130,6 +130,9 @@ while skipping generated HTML and Cargo build output.
   search/filtering pattern and footer search state copy.
 - Sync audit TUI now supports current-group drift row search/filtering and the
   same idle, active, and prompt search state footer copy.
+- Sync review checklist mode now supports current-view operation
+  search/filtering with the same footer search state copy while keeping `n` as
+  the existing select-none command.
 - Dashboard import review footer copy now advertises the existing page jump,
   bounds jump, and `Esc/q`/`Ctrl-C` cancel controls instead of only `q`.
 - Dashboard browse delete review summary now splits `Confirm: y` from
