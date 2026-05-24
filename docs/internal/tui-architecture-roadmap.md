@@ -170,6 +170,10 @@ while skipping generated HTML and Cargo build output.
   shaping imports, review diff helpers, governance finding item shaping, or
   datasource browse support. Remaining warnings are smaller ownership/fallback
   cleanups.
+- Dashboard no-default TUI cfg noise is narrower again: topology/impact
+  interactive test browser branches are now gated on the `tui` feature, and
+  dashboard import/inspect test-only re-exports used by TUI-gated tests no
+  longer compile into no-default all-target builds.
 - The change stayed in state/tests. Public CLI/docs and generated docs remain
   unchanged because the user-facing command surface did not change.
 
@@ -186,7 +190,8 @@ while skipping generated HTML and Cargo build output.
   view helper path.
 - Continue tightening `--no-default-features` TUI isolation opportunistically
   by reducing the remaining no-default unused-code/import warnings around
-  dashboard import/inspect re-exports, topology fallback branches, and
-  non-TUI helper aliases. The focused
+  access plan aliases, dashboard browse source helpers, review-contract detail
+  projection, snapshot root command support, report column helpers, and
+  dashboard test fixtures. The focused
   `tui_not_built_returns_shared_tui_feature_error` no-default regression
   compiles and passes with the broader TUI-helper warning noise removed.

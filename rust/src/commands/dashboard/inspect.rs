@@ -41,7 +41,7 @@ use super::files::{
 };
 #[cfg(test)]
 pub(crate) use super::inspect_live::prepare_inspect_export_import_dir;
-#[cfg(test)]
+#[cfg(all(test, feature = "tui"))]
 pub(crate) use super::inspect_query::QueryAnalysis;
 #[allow(unused_imports)]
 pub(crate) use super::inspect_query::{

@@ -23,3 +23,9 @@
 - Scope: Maintainer trace for the Rust datasource import dry-run module split. Runtime collection remains in `dry_run.rs`; output rendering, review projection, and secret visibility moved to focused modules. Public CLI/JSON behavior, generated docs, Python implementation, and Rust edits are out of scope for this trace pass.
 - Current Update: Recorded the behavior-preserving datasource import dry-run re-layering and narrowed the architecture guardrail candidate note for remaining datasource import/export helpers.
 - Result: The active trace reflects the reduced `dry_run.rs` ownership surface while main owns focused Rust validation.
+
+## 2026-05-14 - Phase 0 TUI inventory roadmap
+- State: Done
+- Scope: Maintainer-only TUI architecture inventory plus focused access/datasource browse maturity cleanup. Dashboard browse, shared TUI modules, public CLI behavior, generated docs, and Python package behavior are intentionally unchanged.
+- Current Update: Added a concise TUI architecture roadmap and a read-only inventory report script, added in-session filtering and selection summaries to consolidated access browse, and aligned datasource browse exit control copy with the dashboard-style combined `Esc/q` label.
+- Result: The TUI roadmap now has a planning artifact and manual inventory helper, while two low-risk browse surfaces have focused maturity improvements covered by targeted Rust tests.

@@ -24,6 +24,12 @@ Current AI-maintained status only.
 - Older entries moved to [`ai-status-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-16.md).
 - Older entries moved to [`ai-status-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-25.md).
 
+## 2026-05-25 - Dashboard no-default TUI cfg cleanup
+- State: Done
+- Scope: Rust dashboard TUI cfg boundary hygiene for topology/impact interactive test branches plus dashboard import/inspect TUI-only test re-exports. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
+- Current Update: Gated topology/impact test interactive browser branches and dashboard import/inspect test-only re-exports on the tui feature so no-default all-target builds no longer compile those TUI-only paths or emit their unreachable/unused warnings.
+- Result: The no-default warning surface is narrower and now leaves only smaller helper/alias dead-code follow-ups; default-feature dashboard topology, routed import, and query report tests remain behavior-compatible.
+
 ## 2026-05-25 - No-default TUI warning cleanup
 - State: Done
 - Scope: Rust no-default TUI boundary hygiene for access browse/plan, shared browser, snapshot review browser shaping, shared review diff helpers, dashboard governance item shaping, and datasource browse support. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
@@ -53,9 +59,3 @@ Current AI-maintained status only.
 - Scope: Rust TUI behavior and maintainer trace for shared browser search, status overview search, access browse shell alignment, feature-disabled fallback wording, and unified `Esc/q` exit labels. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
 - Current Update: Added `/`, `?`, and `n` search support to the shared read-only browser and status overview workbench; aligned access browse with shared header/footer shell language; surfaced datasource browse row/kind/search context; normalized remaining TUI exit labels to `Esc/q`; and identified the next access user/team repeat-search wrap task as the remaining follow-up.
 - Result: The TUI surfaces now have a more consistent search/status/control vocabulary, and the latest `dev` CI and Docs Pages runs succeeded after the pushed cleanup commits.
-
-## 2026-05-14 - Phase 0 TUI inventory roadmap
-- State: Done
-- Scope: Maintainer-only TUI architecture inventory plus focused access/datasource browse maturity cleanup. Dashboard browse, shared TUI modules, public CLI behavior, generated docs, and Python package behavior are intentionally unchanged.
-- Current Update: Added a concise TUI architecture roadmap and a read-only inventory report script, added in-session filtering and selection summaries to consolidated access browse, and aligned datasource browse exit control copy with the dashboard-style combined `Esc/q` label.
-- Result: The TUI roadmap now has a planning artifact and manual inventory helper, while two low-risk browse surfaces have focused maturity improvements covered by targeted Rust tests.

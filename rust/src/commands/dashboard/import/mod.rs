@@ -38,7 +38,7 @@ pub(crate) use apply::{import_dashboards_with_org_clients, import_dashboards_wit
 pub(crate) use compare::diff_dashboards_with_request;
 #[allow(unused_imports)]
 pub(crate) use dry_run::collect_import_dry_run_report_with_request;
-#[cfg(test)]
+#[cfg(all(test, feature = "tui"))]
 pub(crate) use render::format_routed_import_target_org_label;
 #[allow(unused_imports)]
 pub(crate) use render::{

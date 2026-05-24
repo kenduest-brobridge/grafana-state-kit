@@ -24,6 +24,13 @@ Current AI change log only.
 - Older entries moved to [`ai-changes-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-16.md).
 - Older entries moved to [`ai-changes-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-25.md).
 
+## 2026-05-25 - Dashboard no-default TUI cfg cleanup
+- Summary: Gated topology/impact test interactive browser branches and dashboard import/inspect test-only re-exports on the tui feature so no-default all-target builds no longer compile those TUI-only paths or emit their unreachable/unused warnings.
+- Tests: cargo fmt --check; cargo check --quiet --no-default-features --all-targets; cargo test --quiet --no-default-features tui_not_built_returns_shared_tui_feature_error; cargo test --quiet dashboard_topology; cargo test --quiet topology_impact; cargo test --quiet routed_import_scope_identity_matches_table_json_and_progress_surfaces; cargo test --quiet export_focus_report_query
+- Impact: The no-default warning surface is narrower and now leaves only smaller helper/alias dead-code follow-ups; default-feature dashboard topology, routed import, and query report tests remain behavior-compatible.
+- Rollback/Risk: low. Rollback would restore the no-default unreachable/unused warning noise without changing normal default-feature interactive behavior.
+- Follow-up: Continue trimming the remaining no-default helper/alias warnings around access plan aliases, dashboard browse source helpers, review-contract detail projection, snapshot root command support, report column helpers, and dashboard test fixtures.
+
 ## 2026-05-25 - No-default TUI warning cleanup
 - Summary: reduced `--no-default-features` TUI warning noise by removing unused fallback imports and allowing dead code only on TUI-heavy helper modules that are intentionally compiled for tests or feature-enabled interactive paths.
 - Tests: `cargo fmt --check`; `cargo test --quiet --no-default-features tui_not_built_returns_shared_tui_feature_error`; `cargo test --quiet access_plan`; `cargo test --quiet snapshot_review`; `cargo test --quiet datasource_inspect_export_browser_items`; `cargo test --quiet build_governance_gate_tui_groups_summarizes_findings`.
@@ -77,9 +84,3 @@ Current AI change log only.
 - Tests: worker tests prove those adapters feed the shared summary consumer without public JSON drift.
 - Impact: `rust/src/commands/review_contract.rs`, focused Rust tests, `todo.md`, and AI trace docs. Public JSON, CLI behavior, generated docs, and Python implementation are intentionally unchanged.
 - Rollback/Risk: low internal-consumer change. Rollback would remove the shared summary projection while leaving public domain review and dry-run outputs unchanged.
-
-## 2026-05-02 - Cleanup TODO trace after mutation adapter pass
-- Summary: refreshed the active AI trace entry after the mutation adapter pass and kept this as docs/TODO cleanup only.
-- Tests: no Rust tests were needed for this documentation-only update. Validation should be `make quality-ai-workflow` and `git diff --check`.
-- Impact: `docs/internal/ai-status.md`, `docs/internal/ai-changes.md`, and the current AI trace only. Rust behavior, public JSON, CLI behavior, generated docs, and Python implementation are intentionally unchanged.
-- Rollback/Risk: low documentation-only change. Rollback would remove the refreshed TODO trace note and restore the previous active trace state.

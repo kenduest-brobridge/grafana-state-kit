@@ -34,7 +34,7 @@ pub(crate) use types::{
 use super::impact_tui::run_impact_interactive;
 #[cfg(all(feature = "tui", not(test)))]
 use super::topology_tui::run_topology_interactive;
-#[cfg(test)]
+#[cfg(all(test, feature = "tui"))]
 use crate::interactive_browser::run_interactive_browser;
 
 fn load_object(path: &Path) -> Result<Value> {
@@ -69,7 +69,7 @@ pub(crate) fn run_dashboard_topology(args: &TopologyArgs) -> Result<()> {
         {
             return run_topology_interactive(&document);
         }
-        #[cfg(test)]
+        #[cfg(all(test, feature = "tui"))]
         {
             let summary = vec![
             format!(
@@ -143,7 +143,7 @@ pub(crate) fn run_dashboard_impact(args: &ImpactArgs) -> Result<()> {
         {
             return run_impact_interactive(&document);
         }
-        #[cfg(test)]
+        #[cfg(all(test, feature = "tui"))]
         {
             return run_interactive_browser(
                 "Dashboard Impact",
