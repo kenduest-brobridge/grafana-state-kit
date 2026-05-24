@@ -174,7 +174,7 @@ pub(crate) fn render_frame(frame: &mut ratatui::Frame, state: &mut InspectWorkbe
                     ("Home/End", Color::Blue, "bounds"),
                     ("PgUp/PgDn", Color::Blue, "jump"),
                     ("Enter", Color::Blue, "open viewer"),
-                    ("q", Color::Gray, "exit"),
+                    ("Esc/q", Color::Gray, "exit"),
                 ]),
             ],
             state.status.clone(),
@@ -246,5 +246,20 @@ mod tests {
         assert!(screen.contains("Items"));
         assert!(screen.contains("Facts"));
         assert!(screen.contains("Status & Controls"));
+    }
+
+    #[test]
+    fn inspect_workbench_footer_uses_compact_exit_label() {
+        let mut state = sample_state();
+        let mut terminal = Terminal::new(TestBackend::new(180, 40)).unwrap();
+
+        terminal
+            .draw(|frame| render_frame(frame, &mut state))
+            .unwrap();
+
+        let screen = format!("{}", terminal.backend());
+        assert!(screen.contains("Esc/q"));
+        assert!(screen.contains("exit"));
+        assert!(!screen.contains(" q   exit"));
     }
 }

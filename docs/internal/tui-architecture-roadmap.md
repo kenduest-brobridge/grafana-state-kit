@@ -99,6 +99,8 @@ while skipping generated HTML and Cargo build output.
 - The shared read-only browser now applies the same repeat-search boundary rule
   as datasource/access/status browsers: `n` skips the selected row first, then
   wraps forward or backward within the active filter.
+- Dashboard inspect workbench footer controls now use the same compact `Esc/q`
+  exit label as the other Rust TUI browse/review surfaces.
 - The change stayed in state/tests. Public CLI/docs and generated docs remain
   unchanged because the user-facing command surface did not change.
 
