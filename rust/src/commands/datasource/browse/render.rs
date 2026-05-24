@@ -240,8 +240,8 @@ fn detail_text(state: &BrowserState) -> String {
             format!("UID: {}", blank_dash(&pending_delete.uid)),
             format!("ID: {}", pending_delete.id),
             String::new(),
-            "Press y to confirm delete.".to_string(),
-            "Press n, Esc, or q to cancel.".to_string(),
+            "Confirm: y".to_string(),
+            "Cancel: n/Esc/q".to_string(),
         ]
         .join("\n");
     }
@@ -723,6 +723,22 @@ mod tests {
         assert!(lines[1].contains("confirm-delete"));
         assert!(lines[1].contains("Focus"));
         assert!(lines[1].contains("list"));
+    }
+
+    #[test]
+    fn pending_delete_detail_uses_compact_confirmation_controls() {
+        let mut state = BrowserState::new(empty_document());
+        state.pending_delete = Some(super::super::datasource_browse_state::PendingDelete {
+            uid: "uid-1".to_string(),
+            name: "Prom".to_string(),
+            id: 7,
+        });
+
+        let rendered = detail_text(&state);
+
+        assert!(rendered.contains("Confirm: y"));
+        assert!(rendered.contains("Cancel: n/Esc/q"));
+        assert!(!rendered.contains("Press n, Esc, or q"));
     }
 
     #[test]

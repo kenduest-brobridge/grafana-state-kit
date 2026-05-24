@@ -138,8 +138,8 @@ pub(super) fn delete_lines(row: Option<&Map<String, Value>>) -> Vec<Line<'static
             blank_dash(&map_get_text(row, "email"))
         )),
         Line::from(""),
-        Line::from("Press y to confirm delete."),
-        Line::from("Press n, Esc, or q to cancel."),
+        Line::from("Confirm: y"),
+        Line::from("Cancel: n/Esc/q"),
     ]
 }
 
@@ -170,8 +170,8 @@ pub(super) fn remove_lines(row: Option<&Map<String, Value>>) -> Vec<Line<'static
             blank_dash(&map_get_text(row, "parentUserId"))
         )),
         Line::from(""),
-        Line::from("Press y to confirm removal."),
-        Line::from("Press n, Esc, or q to cancel."),
+        Line::from("Confirm: y"),
+        Line::from("Cancel: n/Esc/q"),
     ]
 }
 
@@ -279,6 +279,34 @@ mod tests {
             .any(|line| line.to_string().contains("platform-ops")));
         assert!(lines
             .iter()
-            .any(|line| line.to_string().contains("Press y")));
+            .any(|line| line.to_string().contains("Confirm: y")));
+        assert!(lines
+            .iter()
+            .any(|line| line.to_string().contains("Cancel: n/Esc/q")));
+        assert!(!lines
+            .iter()
+            .any(|line| line.to_string().contains("Press n, Esc, or q")));
+    }
+
+    #[test]
+    fn delete_lines_use_compact_confirmation_controls() {
+        let row = Map::from_iter(vec![
+            ("login".to_string(), Value::String("alice".to_string())),
+            ("id".to_string(), Value::String("7".to_string())),
+            (
+                "email".to_string(),
+                Value::String("alice@example.com".to_string()),
+            ),
+        ]);
+
+        let rendered = delete_lines(Some(&row))
+            .iter()
+            .map(Line::to_string)
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        assert!(rendered.contains("Confirm: y"));
+        assert!(rendered.contains("Cancel: n/Esc/q"));
+        assert!(!rendered.contains("Press n, Esc, or q"));
     }
 }

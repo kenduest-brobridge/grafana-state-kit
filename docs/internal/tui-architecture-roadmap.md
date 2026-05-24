@@ -109,6 +109,8 @@ while skipping generated HTML and Cargo build output.
   so it does not reselect the first matching tree node before wrapping.
 - Snapshot review datasource rows now preserve safe local review evidence and
   reuse the same datasource Review projection in browser details.
+- Access user/team and datasource browse destructive confirmation dialogs now
+  use compact `Confirm: y` and `Cancel: n/Esc/q` body copy.
 - The change stayed in state/tests. Public CLI/docs and generated docs remain
   unchanged because the user-facing command surface did not change.
 

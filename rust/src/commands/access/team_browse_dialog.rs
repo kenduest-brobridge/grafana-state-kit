@@ -171,8 +171,8 @@ pub(super) fn delete_lines(row: Option<&Map<String, Value>>) -> Vec<Line<'static
             blank_dash(&map_get_text(row, "email"))
         )),
         Line::from(""),
-        Line::from("Press y to confirm delete."),
-        Line::from("Press n, Esc, or q to cancel."),
+        Line::from("Confirm: y"),
+        Line::from("Cancel: n/Esc/q"),
     ]
 }
 
@@ -208,8 +208,8 @@ pub(super) fn member_remove_lines(row: Option<&Map<String, Value>>) -> Vec<Line<
             blank_dash(&map_get_text(row, "memberEmail"))
         )),
         Line::from(""),
-        Line::from("Press y to confirm removal."),
-        Line::from("Press n, Esc, or q to cancel."),
+        Line::from("Confirm: y"),
+        Line::from("Cancel: n/Esc/q"),
     ]
 }
 
@@ -287,5 +287,60 @@ fn blank_dash(value: &str) -> &str {
         "-"
     } else {
         trimmed
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn delete_lines_use_compact_confirmation_controls() {
+        let row = Map::from_iter(vec![
+            (
+                "name".to_string(),
+                Value::String("platform-ops".to_string()),
+            ),
+            ("id".to_string(), Value::String("7".to_string())),
+            (
+                "email".to_string(),
+                Value::String("team@example.com".to_string()),
+            ),
+        ]);
+
+        let rendered = delete_lines(Some(&row))
+            .iter()
+            .map(Line::to_string)
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        assert!(rendered.contains("Confirm: y"));
+        assert!(rendered.contains("Cancel: n/Esc/q"));
+        assert!(!rendered.contains("Press n, Esc, or q"));
+    }
+
+    #[test]
+    fn member_remove_lines_use_compact_confirmation_controls() {
+        let row = Map::from_iter(vec![
+            (
+                "memberIdentity".to_string(),
+                Value::String("alice".to_string()),
+            ),
+            (
+                "parentTeamName".to_string(),
+                Value::String("platform-ops".to_string()),
+            ),
+            ("parentTeamId".to_string(), Value::String("7".to_string())),
+        ]);
+
+        let rendered = member_remove_lines(Some(&row))
+            .iter()
+            .map(Line::to_string)
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        assert!(rendered.contains("Confirm: y"));
+        assert!(rendered.contains("Cancel: n/Esc/q"));
+        assert!(!rendered.contains("Press n, Esc, or q"));
     }
 }

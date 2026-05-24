@@ -634,7 +634,9 @@ mod tests {
 
         let screen = format!("{}", terminal.backend());
         assert!(screen.contains("Delete team"));
-        assert!(screen.contains("Press y to confirm delete."));
+        assert!(screen.contains("Confirm: y"));
+        assert!(screen.contains("Cancel: n/Esc/q"));
+        assert!(!screen.contains("Press y to confirm delete."));
         assert!(!screen.contains("Delete Preview"));
     }
 
@@ -652,7 +654,9 @@ mod tests {
         let screen = format!("{}", terminal.backend());
         assert!(screen.contains("Remove membership"));
         assert!(screen.contains("Remove member alice from team platform-ops"));
-        assert!(screen.contains("Press y to confirm removal."));
+        assert!(screen.contains("Confirm: y"));
+        assert!(screen.contains("Cancel: n/Esc/q"));
+        assert!(!screen.contains("Press y to confirm removal."));
     }
 
     #[test]
