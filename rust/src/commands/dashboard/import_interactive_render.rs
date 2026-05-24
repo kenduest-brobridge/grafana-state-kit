@@ -205,25 +205,7 @@ where
             frame.render_widget(context, right[1]);
 
             let footer = tui_shell::build_footer(
-                vec![tui_shell::control_line(&[
-                    ("Up/Down", Color::Rgb(24, 78, 140), "move"),
-                    ("Space", Color::Rgb(24, 106, 59), "toggle"),
-                    ("a", Color::Rgb(24, 106, 59), "all/none"),
-                    ("g", Color::Rgb(164, 116, 19), "grouping"),
-                    ("v", Color::Rgb(71, 55, 152), "context view"),
-                    ("s", Color::Rgb(71, 55, 152), "scope"),
-                    ("d", Color::Rgb(71, 55, 152), "diff depth"),
-                    (
-                        "Enter",
-                        Color::Rgb(24, 106, 59),
-                        if state.dry_run {
-                            "dry-run selected"
-                        } else {
-                            "import selected"
-                        },
-                    ),
-                    ("q", Color::Rgb(90, 98, 107), "cancel"),
-                ])],
+                build_import_footer_control_lines(state.dry_run),
                 state.status.as_str(),
             );
             frame.render_widget(Clear, chunks[2]);
@@ -427,25 +409,7 @@ pub(crate) fn run_import_selector_with_client(
             frame.render_widget(context, right[1]);
 
             let footer = tui_shell::build_footer(
-                vec![tui_shell::control_line(&[
-                    ("Up/Down", Color::Rgb(24, 78, 140), "move"),
-                    ("Space", Color::Rgb(24, 106, 59), "toggle"),
-                    ("a", Color::Rgb(24, 106, 59), "all/none"),
-                    ("g", Color::Rgb(164, 116, 19), "grouping"),
-                    ("v", Color::Rgb(71, 55, 152), "context view"),
-                    ("s", Color::Rgb(71, 55, 152), "scope"),
-                    ("d", Color::Rgb(71, 55, 152), "diff depth"),
-                    (
-                        "Enter",
-                        Color::Rgb(24, 106, 59),
-                        if state.dry_run {
-                            "dry-run selected"
-                        } else {
-                            "import selected"
-                        },
-                    ),
-                    ("q", Color::Rgb(90, 98, 107), "cancel"),
-                ])],
+                build_import_footer_control_lines(state.dry_run),
                 state.status.as_str(),
             );
             frame.render_widget(Clear, chunks[2]);
@@ -556,6 +520,35 @@ fn build_review_lines<'a>(state: &'a InteractiveImportState) -> Vec<Line<'a>> {
     }
 }
 
+fn build_import_footer_control_lines(dry_run: bool) -> Vec<Line<'static>> {
+    vec![
+        tui_shell::control_line(&[
+            ("Up/Down", Color::Rgb(24, 78, 140), "move"),
+            ("PgUp/PgDn", Color::Rgb(24, 78, 140), "jump"),
+            ("Home/End", Color::Rgb(24, 78, 140), "bounds"),
+            ("Space", Color::Rgb(24, 106, 59), "toggle"),
+            ("a", Color::Rgb(24, 106, 59), "all/none"),
+        ]),
+        tui_shell::control_line(&[
+            ("g", Color::Rgb(164, 116, 19), "grouping"),
+            ("v", Color::Rgb(71, 55, 152), "context view"),
+            ("s", Color::Rgb(71, 55, 152), "scope"),
+            ("d", Color::Rgb(71, 55, 152), "diff depth"),
+            (
+                "Enter",
+                Color::Rgb(24, 106, 59),
+                if dry_run {
+                    "dry-run selected"
+                } else {
+                    "import selected"
+                },
+            ),
+            ("Esc/q", Color::Rgb(90, 98, 107), "cancel"),
+            ("Ctrl-C", Color::Rgb(90, 98, 107), "cancel"),
+        ]),
+    ]
+}
+
 fn review_badge(item: &InteractiveImportItem) -> &'static str {
     match &item.review {
         InteractiveImportReviewState::Pending => "PENDING",
@@ -586,5 +579,31 @@ fn review_badge_style(item: &InteractiveImportItem) -> Style {
             "blocked-existing" => Style::default().fg(Color::White).bg(Color::Red),
             _ => Style::default().fg(Color::White).bg(Color::DarkGray),
         },
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn import_footer_controls_advertise_supported_navigation_and_cancel_keys() {
+        let dry_run_lines = super::build_import_footer_control_lines(true)
+            .into_iter()
+            .map(|line| line.to_string())
+            .collect::<Vec<_>>();
+        let import_lines = super::build_import_footer_control_lines(false)
+            .into_iter()
+            .map(|line| line.to_string())
+            .collect::<Vec<_>>();
+
+        let dry_run_footer = dry_run_lines.join("\n");
+        let import_footer = import_lines.join("\n");
+
+        assert!(dry_run_footer.contains("Up/Down"));
+        assert!(dry_run_footer.contains("PgUp/PgDn"));
+        assert!(dry_run_footer.contains("Home/End"));
+        assert!(dry_run_footer.contains("Esc/q"));
+        assert!(dry_run_footer.contains("Ctrl-C"));
+        assert!(dry_run_footer.contains("dry-run selected"));
+        assert!(import_footer.contains("import selected"));
     }
 }

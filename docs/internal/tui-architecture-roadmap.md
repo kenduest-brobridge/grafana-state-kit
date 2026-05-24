@@ -119,6 +119,8 @@ while skipping generated HTML and Cargo build output.
 - The shared read-only browser now also uses the compact pending search summary
   and footer copy, so downstream artifact browsers do not regress to
   `Enter apply` wording or advertise repeat while the prompt is accepting text.
+- Dashboard import review footer copy now advertises the existing page jump,
+  bounds jump, and `Esc/q`/`Ctrl-C` cancel controls instead of only `q`.
 - Dashboard browse delete review summary now splits `Confirm: y` from
   `Cancel: n/Esc/q`, matching the footer/input behavior used by the other
   destructive TUI confirmations.
