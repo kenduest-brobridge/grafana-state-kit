@@ -119,6 +119,28 @@ fn review_operation_preview_uses_readable_action_labels() {
 }
 
 #[test]
+fn review_operation_preview_hides_secret_like_changed_fields() {
+    let plan = json!({
+        "kind": "grafana-utils-sync-plan",
+        "operations": [
+            {
+                "kind": "datasource",
+                "identity": "prom-main",
+                "action": "would-update",
+                "changedFields": ["url", "secureJsonData.password", "jsonData.httpMethod"]
+            }
+        ]
+    });
+
+    let items = review_tui::collect_reviewable_operations(&plan).unwrap();
+    let preview = review_tui::operation_preview(&items[0]).join("\n");
+
+    assert!(preview.contains("Changed: url, jsonData.httpMethod"));
+    assert!(!preview.contains("secureJsonData"));
+    assert!(!preview.contains("password"));
+}
+
+#[test]
 fn reviewable_operations_prefer_actions_and_stable_action_ids() {
     let plan = json!({
         "kind": "grafana-utils-sync-plan",

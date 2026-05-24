@@ -2,6 +2,7 @@
 #![cfg_attr(not(feature = "tui"), allow(dead_code, unused_imports))]
 
 use crate::common::Result;
+use crate::datasource::is_safe_changed_field;
 #[cfg(feature = "tui")]
 use crate::tui_shell;
 use serde_json::Value;
@@ -149,6 +150,7 @@ pub(crate) fn operation_preview(item: &ReviewableOperation) -> Vec<String> {
             items
                 .iter()
                 .filter_map(Value::as_str)
+                .filter(|field| is_safe_changed_field(field))
                 .collect::<Vec<_>>()
                 .join(", ")
         })

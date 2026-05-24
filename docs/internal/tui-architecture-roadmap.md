@@ -109,6 +109,8 @@ while skipping generated HTML and Cargo build output.
   so it does not reselect the first matching tree node before wrapping.
 - Snapshot review datasource rows now preserve safe local review evidence and
   reuse the same datasource Review projection in browser details.
+- Sync review TUI operation previews now reuse the datasource safe changed-field
+  rule, so secret-like paths such as `secureJsonData.*` stay out of the preview.
 - Access user/team and datasource browse destructive confirmation dialogs now
   use compact `Confirm: y` and `Cancel: n/Esc/q` body copy.
 - Access user/team, dashboard browse, datasource browse, dashboard inspect
