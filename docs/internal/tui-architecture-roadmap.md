@@ -121,6 +121,9 @@ while skipping generated HTML and Cargo build output.
   `Enter apply` wording or advertise repeat while the prompt is accepting text.
 - Shared read-only browser detail titles now use the filtered visible position
   and total, matching the list numbering and footer selection count.
+- Dashboard policy/governance gate TUI now supports current-group finding
+  search/filtering and surfaces idle, active, and prompt search state in the
+  footer.
 - Dashboard impact TUI now supports current-group item search/filtering and
   surfaces idle, active, and prompt search state in the footer.
 - Dashboard topology/dependencies TUI now supports the same current-group node

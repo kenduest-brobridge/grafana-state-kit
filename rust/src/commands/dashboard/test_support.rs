@@ -26,7 +26,8 @@ pub(super) use crate::dashboard::files::{
     resolve_dashboard_export_root, write_dashboard, write_json_document,
 };
 pub(super) use crate::dashboard::governance_gate::{
-    build_governance_gate_tui_groups, build_governance_gate_tui_items,
+    build_governance_gate_footer_control_lines, build_governance_gate_tui_groups,
+    build_governance_gate_tui_items, build_governance_gate_tui_items_by_query,
     evaluate_dashboard_governance_gate, render_dashboard_governance_gate_result,
     run_dashboard_governance_gate, DashboardGovernanceGateFinding, DashboardGovernanceGateResult,
     DashboardGovernanceGateSummary,

@@ -143,6 +143,87 @@ pub(crate) fn build_governance_gate_tui_items(
     items
 }
 
+pub(crate) fn build_governance_gate_tui_items_by_query(
+    result: &DashboardGovernanceGateResult,
+    kind: &str,
+    query: &str,
+) -> Vec<BrowserItem> {
+    let items = build_governance_gate_tui_items(result, kind);
+    let needle = query.trim().to_ascii_lowercase();
+    if needle.is_empty() {
+        return items;
+    }
+    items
+        .into_iter()
+        .filter(|item| governance_gate_item_matches_query(item, &needle))
+        .collect()
+}
+
+fn governance_gate_item_matches_query(item: &BrowserItem, needle: &str) -> bool {
+    item.kind.to_ascii_lowercase().contains(needle)
+        || item.title.to_ascii_lowercase().contains(needle)
+        || item.meta.to_ascii_lowercase().contains(needle)
+        || item
+            .details
+            .iter()
+            .any(|line| line.to_ascii_lowercase().contains(needle))
+}
+
+pub(crate) fn build_governance_gate_footer_control_lines(
+    focus: &str,
+    selection: &str,
+    active_search: Option<&str>,
+    pending_search: Option<&str>,
+) -> Vec<Line<'static>> {
+    let search_summary = if let Some(query) = pending_search {
+        format!("Search prompt {query}")
+    } else if let Some(query) = active_search {
+        format!("Search filter {query}")
+    } else {
+        "Search idle".to_string()
+    };
+    let mut lines = vec![Line::from(vec![
+        tui_shell::focus_label("Focus "),
+        tui_shell::key_chip(focus, Color::Blue),
+        Span::raw("  "),
+        tui_shell::label("Selection "),
+        tui_shell::accent(selection.to_string(), Color::White),
+        Span::raw("  "),
+        tui_shell::label("Search "),
+        tui_shell::accent(search_summary, Color::LightMagenta),
+    ])];
+    if pending_search.is_some() {
+        lines.push(tui_shell::control_line(&[
+            ("Backspace", Color::Blue, "edit"),
+            ("Enter", Color::LightGreen, "search findings"),
+            ("Esc", Color::Yellow, "cancel"),
+        ]));
+    } else {
+        lines.push(tui_shell::control_line(&[
+            ("Tab", Color::Blue, "next pane"),
+            ("Up/Down", Color::Blue, "move"),
+            ("PgUp/PgDn", Color::Blue, "scroll detail"),
+            ("Home/End", Color::Blue, "jump"),
+        ]));
+        lines.push(tui_shell::control_line(&[
+            ("/?", Color::LightGreen, "search findings"),
+            ("Enter", Color::Blue, "reset detail"),
+            ("Esc/q", Color::Gray, "exit"),
+        ]));
+    }
+    lines
+}
+
+fn filtered_governance_gate_items(
+    result: &DashboardGovernanceGateResult,
+    kind: &str,
+    search_query: Option<&str>,
+) -> Vec<BrowserItem> {
+    search_query
+        .map(|query| build_governance_gate_tui_items_by_query(result, kind, query))
+        .unwrap_or_else(|| build_governance_gate_tui_items(result, kind))
+}
+
 pub(crate) fn run_governance_gate_interactive(
     result: &DashboardGovernanceGateResult,
 ) -> Result<()> {
@@ -150,7 +231,10 @@ pub(crate) fn run_governance_gate_interactive(
     let mut group_state = ListState::default();
     group_state.select(Some(0));
     let mut finding_state = ListState::default();
-    let mut items = build_governance_gate_tui_items(result, &groups[0].kind);
+    let mut search_query: Option<String> = None;
+    let mut pending_search: Option<String> = None;
+    let mut items =
+        filtered_governance_gate_items(result, &groups[0].kind, search_query.as_deref());
     finding_state.select((!items.is_empty()).then_some(0));
     let mut detail_scroll = 0u16;
     let mut active_pane = FindingsPane::Groups;
@@ -289,42 +373,25 @@ pub(crate) fn run_governance_gate_interactive(
                 .block(pane_block(&detail_title, active_pane == FindingsPane::Detail));
             frame.render_widget(detail_widget, panes[2]);
 
+            let focus_label = match active_pane {
+                FindingsPane::Groups => "Groups",
+                FindingsPane::Findings => "Findings",
+                FindingsPane::Detail => "Detail",
+            };
+            let selection_label = format!(
+                "group {}/{}  finding {}/{}",
+                group_state.selected().map(|index| index + 1).unwrap_or(0),
+                groups.len(),
+                finding_state.selected().map(|index| index + 1).unwrap_or(0),
+                items.len()
+            );
             frame.render_widget(
-                tui_shell::build_footer_controls(vec![
-                    Line::from(vec![
-                        tui_shell::focus_label("Focus "),
-                        tui_shell::key_chip(
-                            match active_pane {
-                                FindingsPane::Groups => "Groups",
-                                FindingsPane::Findings => "Findings",
-                                FindingsPane::Detail => "Detail",
-                            },
-                            Color::Blue,
-                        ),
-                        Span::raw("  "),
-                        tui_shell::label("Selection "),
-                        tui_shell::accent(
-                            format!(
-                                "group {}/{}  finding {}/{}",
-                                group_state.selected().map(|index| index + 1).unwrap_or(0),
-                                groups.len(),
-                                finding_state.selected().map(|index| index + 1).unwrap_or(0),
-                                items.len()
-                            ),
-                            Color::White,
-                        ),
-                    ]),
-                    tui_shell::control_line(&[
-                        ("Tab", Color::Blue, "next pane"),
-                        ("Up/Down", Color::Blue, "move"),
-                        ("PgUp/PgDn", Color::Blue, "scroll detail"),
-                        ("Home/End", Color::Blue, "jump"),
-                    ]),
-                    tui_shell::control_line(&[
-                        ("Enter", Color::Blue, "reset detail"),
-                        ("Esc/q", Color::Gray, "exit"),
-                    ]),
-                ]),
+                tui_shell::build_footer_controls(build_governance_gate_footer_control_lines(
+                    focus_label,
+                    &selection_label,
+                    search_query.as_deref(),
+                    pending_search.as_deref(),
+                )),
                 outer[2],
             );
         })?;
@@ -336,7 +403,34 @@ pub(crate) fn run_governance_gate_interactive(
             if key.kind != KeyEventKind::Press {
                 continue;
             }
+            if let Some(query) = pending_search.as_mut() {
+                match key.code {
+                    KeyCode::Esc => pending_search = None,
+                    KeyCode::Enter => {
+                        let query = query.trim().to_string();
+                        pending_search = None;
+                        search_query = (!query.is_empty()).then_some(query);
+                        let selected_group = group_state.selected().unwrap_or(0);
+                        items = filtered_governance_gate_items(
+                            result,
+                            &groups[selected_group].kind,
+                            search_query.as_deref(),
+                        );
+                        finding_state.select((!items.is_empty()).then_some(0));
+                        detail_scroll = 0;
+                    }
+                    KeyCode::Backspace => {
+                        query.pop();
+                    }
+                    KeyCode::Char(ch) => {
+                        query.push(ch);
+                    }
+                    _ => {}
+                }
+                continue;
+            }
             match key.code {
+                KeyCode::Char('/') | KeyCode::Char('?') => pending_search = Some(String::new()),
                 KeyCode::Tab => {
                     active_pane = match active_pane {
                         FindingsPane::Groups => FindingsPane::Findings,
@@ -348,7 +442,11 @@ pub(crate) fn run_governance_gate_interactive(
                     FindingsPane::Groups => {
                         let selected = group_state.selected().unwrap_or(0).saturating_sub(1);
                         group_state.select(Some(selected));
-                        items = build_governance_gate_tui_items(result, &groups[selected].kind);
+                        items = filtered_governance_gate_items(
+                            result,
+                            &groups[selected].kind,
+                            search_query.as_deref(),
+                        );
                         finding_state.select((!items.is_empty()).then_some(0));
                         detail_scroll = 0;
                     }
@@ -364,7 +462,11 @@ pub(crate) fn run_governance_gate_interactive(
                         let selected = (group_state.selected().unwrap_or(0) + 1)
                             .min(groups.len().saturating_sub(1));
                         group_state.select(Some(selected));
-                        items = build_governance_gate_tui_items(result, &groups[selected].kind);
+                        items = filtered_governance_gate_items(
+                            result,
+                            &groups[selected].kind,
+                            search_query.as_deref(),
+                        );
                         finding_state.select((!items.is_empty()).then_some(0));
                         detail_scroll = 0;
                     }
@@ -385,7 +487,11 @@ pub(crate) fn run_governance_gate_interactive(
                 KeyCode::Home => match active_pane {
                     FindingsPane::Groups => {
                         group_state.select(Some(0));
-                        items = build_governance_gate_tui_items(result, &groups[0].kind);
+                        items = filtered_governance_gate_items(
+                            result,
+                            &groups[0].kind,
+                            search_query.as_deref(),
+                        );
                         finding_state.select((!items.is_empty()).then_some(0));
                         detail_scroll = 0;
                     }
@@ -399,7 +505,11 @@ pub(crate) fn run_governance_gate_interactive(
                     FindingsPane::Groups => {
                         let selected = groups.len().saturating_sub(1);
                         group_state.select(Some(selected));
-                        items = build_governance_gate_tui_items(result, &groups[selected].kind);
+                        items = filtered_governance_gate_items(
+                            result,
+                            &groups[selected].kind,
+                            search_query.as_deref(),
+                        );
                         finding_state.select((!items.is_empty()).then_some(0));
                         detail_scroll = 0;
                     }

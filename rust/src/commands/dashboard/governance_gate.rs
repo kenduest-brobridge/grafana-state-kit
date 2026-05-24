@@ -20,7 +20,10 @@ pub(crate) use runner::run_dashboard_governance_gate;
 #[cfg(feature = "tui")]
 pub(crate) mod tui;
 #[cfg(test)]
-pub(crate) use tui::{build_governance_gate_tui_groups, build_governance_gate_tui_items};
+pub(crate) use tui::{
+    build_governance_gate_footer_control_lines, build_governance_gate_tui_groups,
+    build_governance_gate_tui_items, build_governance_gate_tui_items_by_query,
+};
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
 pub(crate) struct DashboardGovernanceGateSummary {

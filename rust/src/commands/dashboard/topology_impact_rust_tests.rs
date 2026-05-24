@@ -1,7 +1,8 @@
 //! Rust regression coverage for Dashboard behavior at this module boundary.
 
 use super::test_support::{
-    build_governance_gate_tui_groups, build_governance_gate_tui_items,
+    build_governance_gate_footer_control_lines, build_governance_gate_tui_groups,
+    build_governance_gate_tui_items, build_governance_gate_tui_items_by_query,
     build_impact_footer_control_lines, build_impact_tui_groups, build_topology_document,
     build_topology_footer_control_lines, filter_impact_tui_items, filter_impact_tui_items_by_query,
     filter_topology_tui_items_by_query, parse_cli_from, DashboardCliArgs, DashboardCommand,
@@ -865,4 +866,101 @@ fn build_governance_gate_tui_items_filters_by_kind() {
     assert_eq!(warning_items.len(), 1);
     assert_eq!(warning_items[0].kind, "warning");
     assert_eq!(all_items.len(), 2);
+}
+
+#[test]
+fn build_governance_gate_tui_items_by_query_searches_within_selected_group() {
+    let result = DashboardGovernanceGateResult {
+        ok: false,
+        summary: DashboardGovernanceGateSummary {
+            dashboard_count: 2,
+            query_record_count: 5,
+            violation_count: 1,
+            warning_count: 1,
+            checked_rules: json!([]),
+        },
+        violations: vec![DashboardGovernanceGateFinding {
+            severity: "error".to_string(),
+            code: "max-queries-per-dashboard".to_string(),
+            risk_kind: "".to_string(),
+            dashboard_uid: "cpu-main".to_string(),
+            dashboard_title: "CPU Main".to_string(),
+            panel_id: "".to_string(),
+            panel_title: "".to_string(),
+            ref_id: "".to_string(),
+            datasource: "".to_string(),
+            datasource_uid: "".to_string(),
+            datasource_family: "".to_string(),
+            message: "too many queries".to_string(),
+        }],
+        warnings: vec![DashboardGovernanceGateFinding {
+            severity: "warning".to_string(),
+            code: "warning-risk".to_string(),
+            risk_kind: "broad-loki-selector".to_string(),
+            dashboard_uid: "logs-main".to_string(),
+            dashboard_title: "Logs Main".to_string(),
+            panel_id: "".to_string(),
+            panel_title: "".to_string(),
+            ref_id: "".to_string(),
+            datasource: "".to_string(),
+            datasource_uid: "".to_string(),
+            datasource_family: "loki".to_string(),
+            message: "wide query".to_string(),
+        }],
+    };
+
+    let all_loki = build_governance_gate_tui_items_by_query(&result, "all", "loki");
+    let violation_loki = build_governance_gate_tui_items_by_query(&result, "violation", "loki");
+    let warning_code = build_governance_gate_tui_items_by_query(&result, "warning", "warning-risk");
+    let blank = build_governance_gate_tui_items_by_query(&result, "all", "   ");
+
+    assert_eq!(all_loki.len(), 1);
+    assert_eq!(all_loki[0].kind, "warning");
+    assert!(violation_loki.is_empty());
+    assert_eq!(warning_code.len(), 1);
+    assert_eq!(warning_code[0].kind, "warning");
+    assert_eq!(blank.len(), 2);
+}
+
+#[test]
+fn governance_gate_footer_controls_advertise_finding_search_and_prompt_state() {
+    let idle = build_governance_gate_footer_control_lines(
+        "Findings",
+        "group 1/3  finding 1/2",
+        None,
+        None,
+    )
+    .into_iter()
+    .map(|line| line.to_string())
+    .collect::<Vec<_>>()
+    .join("\n");
+    let active = build_governance_gate_footer_control_lines(
+        "Findings",
+        "group 1/3  finding 1/2",
+        Some("loki"),
+        None,
+    )
+    .into_iter()
+    .map(|line| line.to_string())
+    .collect::<Vec<_>>()
+    .join("\n");
+    let pending = build_governance_gate_footer_control_lines(
+        "Findings",
+        "group 1/3  finding 1/2",
+        None,
+        Some("loki"),
+    )
+    .into_iter()
+    .map(|line| line.to_string())
+    .collect::<Vec<_>>()
+    .join("\n");
+
+    assert!(idle.contains("/?"));
+    assert!(idle.contains("search findings"));
+    assert!(idle.contains("Search idle"));
+    assert!(active.contains("Search filter loki"));
+    assert!(pending.contains("Search prompt loki"));
+    assert!(pending.contains("Enter"));
+    assert!(pending.contains("Esc"));
+    assert!(pending.contains("Backspace"));
 }
