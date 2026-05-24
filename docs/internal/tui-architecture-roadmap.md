@@ -18,7 +18,7 @@ several existing Rust TUI surfaces without changing public CLI paths.
 | Dashboard policy / dependencies / impact / topology | `--interactive` review modes | Mixed maturity | Useful precedent for shared review navigation, but several surfaces still have domain-specific runners. |
 | Snapshot review | `grafana-util snapshot review --interactive` | Document-backed review | Browser-style review over snapshot artifacts. |
 | Sync audit/review | `grafana-util sync ... --interactive` internal flows | Internal review surface | Keeps shared review ideas, but public docs should continue steering users through `workspace` where applicable. |
-| Shared TUI shell | `rust/src/common/tui/` and `rust/src/common/browser/session.rs` | Shared primitive | Owns visual shell/session primitives and read-only browser search. It is not yet a complete domain-neutral workbench framework. |
+| Shared TUI shell | `rust/src/common/tui/` and `rust/src/common/browser/session.rs` | Shared primitive | Owns visual shell/session primitives and read-only browser search. Shared read-only browser repeat-search skips the current row and wraps within the active filter. It is not yet a complete domain-neutral workbench framework. |
 
 ## Maturity Tiers
 
@@ -96,6 +96,9 @@ while skipping generated HTML and Cargo build output.
   evidence to datasource item details when local inventory/provisioning records
   already carry compatible plan/diff/import fields. This reuses the browse
   projection without adding local input flags to the live browse command.
+- The shared read-only browser now applies the same repeat-search boundary rule
+  as datasource/access/status browsers: `n` skips the selected row first, then
+  wraps forward or backward within the active filter.
 - The change stayed in state/tests. Public CLI/docs and generated docs remain
   unchanged because the user-facing command surface did not change.
 

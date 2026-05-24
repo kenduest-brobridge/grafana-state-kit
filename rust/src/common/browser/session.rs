@@ -245,11 +245,20 @@ fn repeat_match_in_visible(
     match direction {
         SearchDirection::Forward => {
             let start = selected_visible.map(|index| index + 1).unwrap_or(0);
-            (start..visible_indexes.len()).find(|visible_index| {
-                items
-                    .get(visible_indexes[*visible_index])
-                    .is_some_and(|item| item.matches_query(query))
-            })
+            (start..visible_indexes.len())
+                .find(|visible_index| {
+                    items
+                        .get(visible_indexes[*visible_index])
+                        .is_some_and(|item| item.matches_query(query))
+                })
+                .or_else(|| {
+                    let wrap_end = selected_visible.unwrap_or(visible_indexes.len());
+                    (0..wrap_end).find(|visible_index| {
+                        items
+                            .get(visible_indexes[*visible_index])
+                            .is_some_and(|item| item.matches_query(query))
+                    })
+                })
         }
         SearchDirection::Backward => {
             let start = selected_visible
@@ -897,6 +906,48 @@ mod tests {
 
         assert_eq!(first, Some(0));
         assert_eq!(repeated, Some(1));
+    }
+
+    #[test]
+    fn repeat_search_wraps_forward_to_first_visible_match() {
+        let items = sample_items();
+        let visible_indexes = vec![0, 2];
+        let mut search = BrowserSearchController::default();
+
+        search.start(SearchDirection::Forward);
+        search.push_char('c');
+        search.push_char('p');
+        search.push_char('u');
+        let first = search.apply(&items, &visible_indexes, Some(1), "dashboard");
+        let repeated = search.repeat(&items, &visible_indexes, first, "dashboard");
+
+        assert_eq!(first, Some(1));
+        assert_eq!(repeated, Some(0));
+        assert_eq!(
+            search.summary_line("dashboard"),
+            "Last search /\"cpu\" in filter dashboard matched 1/2 results. Press n for next match."
+        );
+    }
+
+    #[test]
+    fn repeat_search_wraps_backward_to_last_visible_match() {
+        let items = sample_items();
+        let visible_indexes = vec![0, 2];
+        let mut search = BrowserSearchController::default();
+
+        search.start(SearchDirection::Backward);
+        search.push_char('c');
+        search.push_char('p');
+        search.push_char('u');
+        let first = search.apply(&items, &visible_indexes, Some(0), "dashboard");
+        let repeated = search.repeat(&items, &visible_indexes, first, "dashboard");
+
+        assert_eq!(first, Some(0));
+        assert_eq!(repeated, Some(1));
+        assert_eq!(
+            search.summary_line("dashboard"),
+            "Last search ?\"cpu\" in filter dashboard matched 2/2 results. Press n for next match."
+        );
     }
 
     #[test]
