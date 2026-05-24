@@ -24,11 +24,11 @@ Current AI-maintained status only.
 - Older entries moved to [`ai-status-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-16.md).
 - Older entries moved to [`ai-status-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-25.md).
 
-## 2026-05-25 - Access browse repeat-search wrap
+## 2026-05-25 - Browse repeat-search wrap consistency
 - State: Done
-- Scope: Rust TUI state and maintainer trace for `access user browse` and `access team browse` repeat-search behavior. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
-- Current Update: Aligned user/team access browse `n` repeat-search with dashboard, datasource, and status overview behavior by skipping the current row first, then wrapping forward to the first match or backward to the last match.
-- Result: Access user/team browse now keeps repeat search moving through the current result set instead of stopping or reselecting the boundary row.
+- Scope: Rust TUI state and maintainer trace for access user/team and datasource browse repeat-search behavior. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
+- Current Update: Aligned access user/team and datasource browse `n` repeat-search with dashboard and status overview behavior by skipping the current row first, then wrapping forward to the first match or backward to the last match.
+- Result: Access user/team and datasource browse now keep repeat search moving through the current result set instead of stopping or reselecting the boundary row.
 
 ## 2026-05-16 - TUI search and shell consistency pass
 - State: Done

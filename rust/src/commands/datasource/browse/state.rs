@@ -201,21 +201,23 @@ impl BrowserState {
 
     pub(crate) fn repeat_last_search(&self) -> Option<usize> {
         let search = self.last_search.as_ref()?;
-        let next_start = self
-            .list_state
-            .selected()
-            .map(|index| match search.direction {
-                SearchDirection::Forward => index.saturating_add(1),
-                SearchDirection::Backward => index.saturating_sub(1),
-            });
-        self.find_match_from(&search.query, search.direction, next_start)
-            .or_else(|| {
-                let wrapped_start = match search.direction {
-                    SearchDirection::Forward => Some(0),
-                    SearchDirection::Backward => self.document.items.len().checked_sub(1),
-                };
-                self.find_match_from(&search.query, search.direction, wrapped_start)
-            })
+        let next_match = match (self.list_state.selected(), search.direction) {
+            (Some(index), SearchDirection::Forward) if index + 1 < self.document.items.len() => {
+                self.find_match_from(&search.query, search.direction, Some(index + 1))
+            }
+            (Some(index), SearchDirection::Backward) if index > 0 => {
+                self.find_match_from(&search.query, search.direction, Some(index - 1))
+            }
+            (Some(_), _) => None,
+            (None, _) => self.find_match_from(&search.query, search.direction, None),
+        };
+        next_match.or_else(|| {
+            let wrapped_start = match search.direction {
+                SearchDirection::Forward => Some(0),
+                SearchDirection::Backward => self.document.items.len().checked_sub(1),
+            };
+            self.find_match_from(&search.query, search.direction, wrapped_start)
+        })
     }
 
     pub(crate) fn select_index(&mut self, index: usize) {
@@ -356,6 +358,28 @@ mod tests {
         });
         state.select_index(3);
         assert_eq!(state.repeat_last_search(), Some(4));
+    }
+
+    #[test]
+    fn browser_repeat_last_search_wraps_forward_without_reselecting_boundary_match() {
+        let mut state = state();
+        state.last_search = Some(SearchState {
+            direction: SearchDirection::Forward,
+            query: "smoke".to_string(),
+        });
+        state.select_index(4);
+        assert_eq!(state.repeat_last_search(), Some(3));
+    }
+
+    #[test]
+    fn browser_repeat_last_search_wraps_backward_without_reselecting_boundary_match() {
+        let mut state = state();
+        state.last_search = Some(SearchState {
+            direction: SearchDirection::Backward,
+            query: "audit".to_string(),
+        });
+        state.select_index(0);
+        assert_eq!(state.repeat_last_search(), Some(1));
     }
 
     #[test]
