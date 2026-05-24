@@ -125,6 +125,8 @@ while skipping generated HTML and Cargo build output.
   with the same compact search prompt hint language used by the browse surfaces.
 - Dashboard browse header context now matches datasource browse by surfacing the
   selected row position, selected node kind, and current search state.
+- Datasource browse edit dialog now wraps Tab/Shift+Tab field navigation and
+  advertises both next and previous field controls in the dialog header.
 - The change stayed in state/tests. Public CLI/docs and generated docs remain
   unchanged because the user-facing command surface did not change.
 

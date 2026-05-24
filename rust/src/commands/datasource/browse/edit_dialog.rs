@@ -57,11 +57,15 @@ impl EditDialogState {
                 EditDialogAction::Save
             }
             KeyCode::BackTab => {
-                self.active_field = self.active_field.saturating_sub(1);
+                self.active_field = if self.active_field == 0 {
+                    3
+                } else {
+                    self.active_field - 1
+                };
                 EditDialogAction::None
             }
             KeyCode::Tab => {
-                self.active_field = (self.active_field + 1).min(3);
+                self.active_field = (self.active_field + 1) % 4;
                 EditDialogAction::None
             }
             KeyCode::Enter | KeyCode::Char(' ') if self.active_field == 3 => {
@@ -135,7 +139,7 @@ impl EditDialogState {
                     .add_modifier(Modifier::BOLD),
             )),
             Line::from(Span::styled(
-                "Ctrl+S Save   Esc Cancel   Ctrl+X Close   Tab Next",
+                "Ctrl+S Save   Esc Cancel   Ctrl+X Close   Tab Next   Shift+Tab Previous",
                 Style::default().fg(Color::White),
             )),
         ])
@@ -231,4 +235,59 @@ fn centered_rect(area: Rect, width_percent: u16, height: u16) -> Rect {
         ])
         .split(vertical[1]);
     horizontal[1]
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::datasource_browse_support::{DatasourceBrowseItem, DatasourceBrowseItemKind};
+    use super::*;
+    use ratatui::backend::TestBackend;
+    use ratatui::Terminal;
+    use serde_json::Map;
+
+    #[test]
+    fn tab_and_backtab_wrap_between_fields() {
+        let mut dialog = EditDialogState::new(&sample_item());
+
+        dialog.active_field = 3;
+        dialog
+            .handle_key(&KeyEvent::new(KeyCode::Tab, KeyModifiers::NONE))
+            .unwrap();
+        assert_eq!(dialog.active_field, 0);
+
+        dialog
+            .handle_key(&KeyEvent::new(KeyCode::BackTab, KeyModifiers::SHIFT))
+            .unwrap();
+        assert_eq!(dialog.active_field, 3);
+    }
+
+    #[test]
+    fn render_header_surfaces_next_and_previous_field_hints() {
+        let dialog = EditDialogState::new(&sample_item());
+        let mut terminal = Terminal::new(TestBackend::new(120, 30)).unwrap();
+
+        terminal.draw(|frame| dialog.render(frame)).unwrap();
+
+        let screen = format!("{}", terminal.backend());
+        assert!(screen.contains("Tab Next"));
+        assert!(screen.contains("Shift+Tab Previous"));
+    }
+
+    fn sample_item() -> DatasourceBrowseItem {
+        DatasourceBrowseItem {
+            kind: DatasourceBrowseItemKind::Datasource,
+            depth: 1,
+            id: 9,
+            uid: "prom-main".to_string(),
+            name: "Prometheus".to_string(),
+            datasource_type: "prometheus".to_string(),
+            access: "proxy".to_string(),
+            url: "http://prometheus".to_string(),
+            is_default: false,
+            org: "Main Org.".to_string(),
+            org_id: "1".to_string(),
+            details: Map::new(),
+            datasource_count: 0,
+        }
+    }
 }
