@@ -1,8 +1,9 @@
 //! Rust regression coverage for Dashboard behavior at this module boundary.
 
 use super::test_support::{
-    build_governance_gate_tui_groups, build_governance_gate_tui_items, build_impact_tui_groups,
-    filter_impact_tui_items, parse_cli_from, DashboardCliArgs, DashboardCommand,
+    build_governance_gate_tui_groups, build_governance_gate_tui_items,
+    build_impact_footer_control_lines, build_impact_tui_groups, filter_impact_tui_items,
+    filter_impact_tui_items_by_query, parse_cli_from, DashboardCliArgs, DashboardCommand,
     DashboardGovernanceGateFinding, DashboardGovernanceGateResult, DashboardGovernanceGateSummary,
     GovernanceGateOutputFormat, ImpactAlertResource, ImpactDashboard, ImpactDocument,
     ImpactOutputFormat, ImpactSummary, TopologyOutputFormat,
@@ -569,6 +570,93 @@ fn filter_impact_tui_items_limits_items_to_selected_group() {
         .iter()
         .all(|item| item.kind == "alert-rule"));
     assert_eq!(all_items.len(), 4);
+}
+
+#[test]
+fn filter_impact_tui_items_by_query_searches_within_selected_group() {
+    let document = ImpactDocument {
+        summary: ImpactSummary {
+            datasource_uid: "prom-main".to_string(),
+            dashboard_count: 1,
+            alert_resource_count: 2,
+            alert_rule_count: 1,
+            contact_point_count: 1,
+            mute_timing_count: 0,
+            notification_policy_count: 0,
+            template_count: 0,
+        },
+        dashboards: vec![ImpactDashboard {
+            dashboard_uid: "cpu-main".to_string(),
+            dashboard_title: "CPU Main".to_string(),
+            folder_path: "Platform".to_string(),
+            panel_count: 2,
+            query_count: 3,
+        }],
+        alert_resources: vec![
+            ImpactAlertResource {
+                kind: "alert-rule".to_string(),
+                identity: "cpu-high".to_string(),
+                title: "CPU High".to_string(),
+                source_path: "rules/cpu-high.json".to_string(),
+            },
+            ImpactAlertResource {
+                kind: "contact-point".to_string(),
+                identity: "ops-email".to_string(),
+                title: "Ops Email".to_string(),
+                source_path: "contact/ops-email.yaml".to_string(),
+            },
+        ],
+        affected_contact_points: vec![ImpactAlertResource {
+            kind: "contact-point".to_string(),
+            identity: "ops-email".to_string(),
+            title: "Ops Email".to_string(),
+            source_path: "contact/ops-email.yaml".to_string(),
+        }],
+        affected_policies: Vec::new(),
+        affected_templates: Vec::new(),
+    };
+
+    let all_cpu = filter_impact_tui_items_by_query(&document, "all", "cpu");
+    let contact_cpu = filter_impact_tui_items_by_query(&document, "contact-point", "cpu");
+    let source_match = filter_impact_tui_items_by_query(&document, "alert-rule", "rules/");
+    let blank = filter_impact_tui_items_by_query(&document, "all", "   ");
+
+    assert_eq!(all_cpu.len(), 2);
+    assert!(all_cpu.iter().all(|item| item.title.contains("CPU")));
+    assert!(contact_cpu.is_empty());
+    assert_eq!(source_match.len(), 1);
+    assert_eq!(source_match[0].kind, "alert-rule");
+    assert_eq!(blank.len(), 3);
+}
+
+#[test]
+fn impact_footer_controls_advertise_item_search_and_prompt_state() {
+    let idle = build_impact_footer_control_lines("Items", "group 1/7  item 1/3", None, None)
+        .into_iter()
+        .map(|line| line.to_string())
+        .collect::<Vec<_>>()
+        .join("\n");
+    let active =
+        build_impact_footer_control_lines("Items", "group 1/7  item 1/3", Some("cpu"), None)
+            .into_iter()
+            .map(|line| line.to_string())
+            .collect::<Vec<_>>()
+            .join("\n");
+    let pending =
+        build_impact_footer_control_lines("Items", "group 1/7  item 1/3", None, Some("cpu"))
+            .into_iter()
+            .map(|line| line.to_string())
+            .collect::<Vec<_>>()
+            .join("\n");
+
+    assert!(idle.contains("/?"));
+    assert!(idle.contains("search items"));
+    assert!(idle.contains("Search idle"));
+    assert!(active.contains("Search filter cpu"));
+    assert!(pending.contains("Search prompt cpu"));
+    assert!(pending.contains("Enter"));
+    assert!(pending.contains("Esc"));
+    assert!(pending.contains("Backspace"));
 }
 
 #[test]

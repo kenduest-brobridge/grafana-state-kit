@@ -49,7 +49,10 @@ pub(super) use crate::dashboard::history::{
     DASHBOARD_HISTORY_DIFF_KIND, DASHBOARD_HISTORY_EXPORT_KIND, DASHBOARD_HISTORY_LIST_KIND,
     DASHBOARD_HISTORY_RESTORE_KIND,
 };
-pub(super) use crate::dashboard::impact_tui::{build_impact_tui_groups, filter_impact_tui_items};
+pub(super) use crate::dashboard::impact_tui::{
+    build_impact_footer_control_lines, build_impact_tui_groups, filter_impact_tui_items,
+    filter_impact_tui_items_by_query,
+};
 pub(super) use crate::dashboard::import::{
     build_import_auth_context, describe_dashboard_import_mode, diff_dashboards_with_client,
     diff_dashboards_with_request, format_import_progress_line, format_import_verbose_line,

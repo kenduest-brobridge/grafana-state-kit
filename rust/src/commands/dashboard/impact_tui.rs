@@ -152,12 +152,95 @@ pub(crate) fn filter_impact_tui_items(
         .collect()
 }
 
+pub(crate) fn filter_impact_tui_items_by_query(
+    document: &ImpactDocument,
+    group_kind: &str,
+    query: &str,
+) -> Vec<BrowserItem> {
+    let items = filter_impact_tui_items(document, group_kind);
+    let needle = query.trim().to_ascii_lowercase();
+    if needle.is_empty() {
+        return items;
+    }
+    items
+        .into_iter()
+        .filter(|item| impact_item_matches_query(item, &needle))
+        .collect()
+}
+
+fn impact_item_matches_query(item: &BrowserItem, needle: &str) -> bool {
+    item.kind.to_ascii_lowercase().contains(needle)
+        || item.title.to_ascii_lowercase().contains(needle)
+        || item.meta.to_ascii_lowercase().contains(needle)
+        || item
+            .details
+            .iter()
+            .any(|line| line.to_ascii_lowercase().contains(needle))
+}
+
+pub(crate) fn build_impact_footer_control_lines(
+    focus: &str,
+    selection: &str,
+    active_search: Option<&str>,
+    pending_search: Option<&str>,
+) -> Vec<Line<'static>> {
+    let search_summary = if let Some(query) = pending_search {
+        format!("Search prompt {query}")
+    } else if let Some(query) = active_search {
+        format!("Search filter {query}")
+    } else {
+        "Search idle".to_string()
+    };
+    let mut lines = vec![Line::from(vec![
+        tui_shell::focus_label("Focus "),
+        tui_shell::key_chip(focus, Color::Blue),
+        Span::raw("  "),
+        tui_shell::label("Selection "),
+        tui_shell::accent(selection.to_string(), Color::White),
+        Span::raw("  "),
+        tui_shell::label("Search "),
+        tui_shell::accent(search_summary, Color::LightMagenta),
+    ])];
+    if pending_search.is_some() {
+        lines.push(tui_shell::control_line(&[
+            ("Backspace", Color::Blue, "edit"),
+            ("Enter", Color::LightGreen, "search items"),
+            ("Esc", Color::Yellow, "cancel"),
+        ]));
+    } else {
+        lines.push(tui_shell::control_line(&[
+            ("Tab", Color::Blue, "next pane"),
+            ("Up/Down", Color::Blue, "move"),
+            ("PgUp/PgDn", Color::Blue, "scroll detail"),
+            ("Home/End", Color::Blue, "jump"),
+        ]));
+        lines.push(tui_shell::control_line(&[
+            ("/?", Color::LightGreen, "search items"),
+            ("Enter", Color::Blue, "reset detail"),
+            ("Esc/q", Color::Gray, "exit"),
+        ]));
+    }
+    lines
+}
+
+fn filtered_impact_items(
+    document: &ImpactDocument,
+    group_kind: &str,
+    search_query: Option<&str>,
+) -> Vec<BrowserItem> {
+    search_query
+        .map(|query| filter_impact_tui_items_by_query(document, group_kind, query))
+        .unwrap_or_else(|| filter_impact_tui_items(document, group_kind))
+}
+
 pub(crate) fn run_impact_interactive(document: &ImpactDocument) -> Result<()> {
     let groups = build_impact_tui_groups(document);
     let mut group_state = ListState::default();
     group_state.select(Some(0));
     let mut item_state = ListState::default();
-    let mut items = filter_impact_tui_items(document, &groups[0].kind);
+    let mut search_query: Option<String> = None;
+    let mut pending_search: Option<String> = None;
+    let mut items = filtered_impact_items(document, &groups[0].kind, search_query.as_deref());
     item_state.select((!items.is_empty()).then_some(0));
     let mut detail_scroll = 0u16;
     let mut active_pane = ImpactPane::Groups;
@@ -297,42 +380,25 @@ pub(crate) fn run_impact_interactive(document: &ImpactDocument) -> Result<()> {
                 .block(pane_block(&detail_title, active_pane == ImpactPane::Detail));
             frame.render_widget(detail, panes[2]);
 
+            let focus_label = match active_pane {
+                ImpactPane::Groups => "Groups",
+                ImpactPane::Items => "Items",
+                ImpactPane::Detail => "Detail",
+            };
+            let selection_label = format!(
+                "group {}/{}  item {}/{}",
+                group_state.selected().map(|index| index + 1).unwrap_or(0),
+                groups.len(),
+                item_state.selected().map(|index| index + 1).unwrap_or(0),
+                items.len()
+            );
             frame.render_widget(
-                tui_shell::build_footer_controls(vec![
-                    Line::from(vec![
-                        tui_shell::focus_label("Focus "),
-                        tui_shell::key_chip(
-                            match active_pane {
-                                ImpactPane::Groups => "Groups",
-                                ImpactPane::Items => "Items",
-                                ImpactPane::Detail => "Detail",
-                            },
-                            Color::Blue,
-                        ),
-                        Span::raw("  "),
-                        tui_shell::label("Selection "),
-                        tui_shell::accent(
-                            format!(
-                                "group {}/{}  item {}/{}",
-                                group_state.selected().map(|index| index + 1).unwrap_or(0),
-                                groups.len(),
-                                item_state.selected().map(|index| index + 1).unwrap_or(0),
-                                items.len()
-                            ),
-                            Color::White,
-                        ),
-                    ]),
-                    tui_shell::control_line(&[
-                        ("Tab", Color::Blue, "next pane"),
-                        ("Up/Down", Color::Blue, "move"),
-                        ("PgUp/PgDn", Color::Blue, "scroll detail"),
-                        ("Home/End", Color::Blue, "jump"),
-                    ]),
-                    tui_shell::control_line(&[
-                        ("Enter", Color::Blue, "reset detail"),
-                        ("Esc/q", Color::Gray, "exit"),
-                    ]),
-                ]),
+                tui_shell::build_footer_controls(build_impact_footer_control_lines(
+                    focus_label,
+                    &selection_label,
+                    search_query.as_deref(),
+                    pending_search.as_deref(),
+                )),
                 outer[2],
             );
         })?;
@@ -344,7 +410,34 @@ pub(crate) fn run_impact_interactive(document: &ImpactDocument) -> Result<()> {
             if key.kind != KeyEventKind::Press {
                 continue;
             }
+            if let Some(query) = pending_search.as_mut() {
+                match key.code {
+                    KeyCode::Esc => pending_search = None,
+                    KeyCode::Enter => {
+                        let query = query.trim().to_string();
+                        pending_search = None;
+                        search_query = (!query.is_empty()).then_some(query);
+                        let selected_group = group_state.selected().unwrap_or(0);
+                        items = filtered_impact_items(
+                            document,
+                            &groups[selected_group].kind,
+                            search_query.as_deref(),
+                        );
+                        item_state.select((!items.is_empty()).then_some(0));
+                        detail_scroll = 0;
+                    }
+                    KeyCode::Backspace => {
+                        query.pop();
+                    }
+                    KeyCode::Char(ch) => {
+                        query.push(ch);
+                    }
+                    _ => {}
+                }
+                continue;
+            }
             match key.code {
+                KeyCode::Char('/') | KeyCode::Char('?') => pending_search = Some(String::new()),
                 KeyCode::Tab => {
                     active_pane = match active_pane {
                         ImpactPane::Groups => ImpactPane::Items,
@@ -357,7 +450,11 @@ pub(crate) fn run_impact_interactive(document: &ImpactDocument) -> Result<()> {
                         let selected = group_state.selected().unwrap_or(0).saturating_sub(1);
                         group_state.select(Some(selected));
                         let selected_group = &groups[selected];
-                        items = filter_impact_tui_items(document, &selected_group.kind);
+                        items = filtered_impact_items(
+                            document,
+                            &selected_group.kind,
+                            search_query.as_deref(),
+                        );
                         item_state.select((!items.is_empty()).then_some(0));
                         detail_scroll = 0;
                     }
@@ -376,7 +473,11 @@ pub(crate) fn run_impact_interactive(document: &ImpactDocument) -> Result<()> {
                             .min(groups.len().saturating_sub(1));
                         group_state.select(Some(selected));
                         let selected_group = &groups[selected];
-                        items = filter_impact_tui_items(document, &selected_group.kind);
+                        items = filtered_impact_items(
+                            document,
+                            &selected_group.kind,
+                            search_query.as_deref(),
+                        );
                         item_state.select((!items.is_empty()).then_some(0));
                         detail_scroll = 0;
                     }
@@ -399,7 +500,11 @@ pub(crate) fn run_impact_interactive(document: &ImpactDocument) -> Result<()> {
                 KeyCode::Home => match active_pane {
                     ImpactPane::Groups => {
                         group_state.select(Some(0));
-                        items = filter_impact_tui_items(document, &groups[0].kind);
+                        items = filtered_impact_items(
+                            document,
+                            &groups[0].kind,
+                            search_query.as_deref(),
+                        );
                         item_state.select((!items.is_empty()).then_some(0));
                         detail_scroll = 0;
                     }
@@ -413,7 +518,11 @@ pub(crate) fn run_impact_interactive(document: &ImpactDocument) -> Result<()> {
                     ImpactPane::Groups => {
                         let selected = groups.len().saturating_sub(1);
                         group_state.select(Some(selected));
-                        items = filter_impact_tui_items(document, &groups[selected].kind);
+                        items = filtered_impact_items(
+                            document,
+                            &groups[selected].kind,
+                            search_query.as_deref(),
+                        );
                         item_state.select((!items.is_empty()).then_some(0));
                         detail_scroll = 0;
                     }
