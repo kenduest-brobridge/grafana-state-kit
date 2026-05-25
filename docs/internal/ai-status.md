@@ -24,6 +24,12 @@ Current AI-maintained status only.
 - Older entries moved to [`ai-status-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-16.md).
 - Older entries moved to [`ai-status-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-25.md).
 
+## 2026-05-25 - Shared browser detail facts
+- State: Done
+- Scope: rust/src/common/browser/session.rs; rust/src/commands/dashboard/inspect_workbench/content.rs; docs/internal/tui-architecture-roadmap.md
+- Current Update: Added a shared read-only browser detail fact formatter and routed dashboard inspect workbench item detail rows through it instead of a local formatter.
+- Result: Dashboard inspect workbench TUI detail rows now share browser-level Label: value formatting while existing item output remains stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+
 ## 2026-05-25 - Shared browser detail sections
 - State: Done
 - Scope: rust/src/common/browser/session.rs; rust/src/commands/dashboard/topology/browser.rs; docs/internal/tui-architecture-roadmap.md
@@ -53,9 +59,3 @@ Current AI-maintained status only.
 - Scope: Rust access plan interactive review TUI and shared review diff projection helpers. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
 - Current Update: Made access plan action details build compact shared live/desired diff previews from bundle/live change rows while filtering secret-like change fields from both the generic review details and TUI preview output.
 - Result: Access plan review rows now share the same ReviewDiffModel preview vocabulary as sync review and dashboard import review for compatible field-change evidence, reducing per-surface shaping while avoiding secret-like value leakage.
-
-## 2026-05-25 - Dashboard import shared diff preview
-- State: Done
-- Scope: Rust dashboard import interactive review TUI and shared review diff projection helpers. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
-- Current Update: Made dashboard import interactive reviews build a shared ReviewDiffModel for changed live-vs-local title, folder UID, tag, and panel evidence, then render a compact shared live/desired diff preview in the review pane.
-- Result: Dashboard import review now consumes the same shared diff model path as sync review for compatible changed-field evidence, reducing per-surface review shaping while preserving existing summary/structural/raw diff lines.

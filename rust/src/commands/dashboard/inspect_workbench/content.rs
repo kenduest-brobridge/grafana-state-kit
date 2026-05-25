@@ -1,5 +1,6 @@
 #![cfg(feature = "tui")]
 #![cfg_attr(not(test), allow(dead_code))]
+use crate::interactive_browser::browser_detail_fact as fact;
 use crate::interactive_browser::BrowserItem;
 
 use super::super::inspect_governance::ExportInspectionGovernanceDocument;
@@ -277,10 +278,6 @@ pub(crate) fn build_datasource_governance_items(
         .collect::<Vec<_>>();
     items.sort_by(|left, right| left.title.cmp(&right.title));
     items
-}
-
-fn fact(label: &str, value: impl std::fmt::Display) -> String {
-    format!("{label}: {value}")
 }
 
 fn blank_or<'a>(value: &'a str, fallback: &'a str) -> &'a str {

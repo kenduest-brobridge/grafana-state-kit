@@ -84,6 +84,11 @@ pub(crate) fn append_browser_detail_section(
 }
 
 #[cfg(any(feature = "tui", test))]
+pub(crate) fn browser_detail_fact(label: &str, value: impl std::fmt::Display) -> String {
+    format!("{label}: {value}")
+}
+
+#[cfg(any(feature = "tui", test))]
 impl BrowserItem {
     fn matches_query(&self, query: &str) -> bool {
         let needle = query.trim().to_ascii_lowercase();
@@ -854,8 +859,9 @@ fn run_interactive_browser_returns_tui_error_when_feature_disabled() {
 #[cfg(test)]
 mod tests {
     use super::{
-        append_browser_detail_section, build_search_state, detail_title, find_match_in_visible,
-        matching_visible_indexes, BrowserItem, BrowserSearchController, SearchDirection,
+        append_browser_detail_section, browser_detail_fact, build_search_state, detail_title,
+        find_match_in_visible, matching_visible_indexes, BrowserItem, BrowserSearchController,
+        SearchDirection,
     };
 
     fn sample_items() -> Vec<BrowserItem> {
@@ -917,6 +923,15 @@ mod tests {
                 "  uses -> Env [variable]".to_string(),
             ]
         );
+    }
+
+    #[test]
+    fn browser_detail_fact_formats_label_value_rows() {
+        assert_eq!(
+            browser_detail_fact("Dashboard UID", "cpu-main"),
+            "Dashboard UID: cpu-main"
+        );
+        assert_eq!(browser_detail_fact("Query Count", 3), "Query Count: 3");
     }
 
     #[test]

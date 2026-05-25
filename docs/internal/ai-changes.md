@@ -24,6 +24,13 @@ Current AI change log only.
 - Older entries moved to [`ai-changes-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-16.md).
 - Older entries moved to [`ai-changes-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-25.md).
 
+## 2026-05-25 - Shared browser detail facts
+- Summary: Added a shared read-only browser detail fact formatter and routed dashboard inspect workbench item detail rows through it instead of a local formatter.
+- Tests: cargo test --quiet browser_detail_fact_formats_label_value_rows; cargo test --quiet inspect_workbench; cargo test --quiet dashboard_inspect; cargo test --quiet interactive_browser; escalated cargo test --quiet dashboard after sandbox denied local mock server binding; cargo fmt --check; cargo check --quiet --no-default-features --all-targets; git diff --check
+- Impact: Dashboard inspect workbench TUI detail rows now share browser-level Label: value formatting while existing item output remains stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+- Rollback/Risk: Low. The change replaces a local formatter with an equivalent shared helper and is covered by focused browser and dashboard tests.
+- Follow-up: Continue migrating compatible TUI detail sections and review surfaces onto shared browser/review helpers where the data shape already matches.
+
 ## 2026-05-25 - Shared browser detail sections
 - Summary: Added a shared read-only browser detail-section helper for Heading none/body formatting and routed dashboard topology inbound/outbound edge summaries through it.
 - Tests: cargo test --quiet append_browser_detail_section_formats_empty_and_populated_sections; cargo test --quiet build_topology_browser_items_sorts_by_kind_then_label_and_summarizes_edges; cargo test --quiet dashboard_topology; cargo test --quiet topology_tui; cargo test --quiet interactive_browser; cargo fmt --check; cargo check --quiet --no-default-features --all-targets; git diff --check
@@ -85,9 +92,3 @@ Current AI change log only.
 - Tests: `cargo fmt --check`; `cargo test --quiet --no-default-features tui_not_built_returns_shared_tui_feature_error`; `cargo test --quiet access_plan`; `cargo test --quiet snapshot_review`; `cargo test --quiet datasource_inspect_export_browser_items`; `cargo test --quiet build_governance_gate_tui_groups_summarizes_findings`.
 - Impact: `rust/src/commands/access/access_browse.rs`, `rust/src/commands/access/access_plan_tui.rs`, `rust/src/common/browser/session.rs`, `rust/src/commands/review_diff.rs`, `rust/src/commands/sync/review_tui.rs`, `rust/src/commands/snapshot/review/browser.rs`, `rust/src/commands/dashboard/governance_gate.rs`, `rust/src/commands/dashboard/governance_gate/items.rs`, `rust/src/commands/datasource/browse/support.rs`, and maintainer trace docs. Public CLI paths, help output, command contracts, generated docs, Python behavior, and package metadata are intentionally unchanged.
 - Rollback/Risk: low. Rollback would restore broader no-default warning output without changing normal default-feature interactive behavior.
-
-## 2026-05-25 - Shared review diff visualization helpers
-- Summary: moved the sync review TUI's generic side-by-side diff view helpers into `review_diff.rs`, including pane focus/control state, scroll limits, pane titles, text wrapping/clipping, and TUI list-item/control rendering, while keeping sync review's operation collection and safe changed-field preview logic local.
-- Tests: `cargo fmt --check`; `cargo test --quiet review_diff`; `cargo test --quiet review_operation`; `cargo test --quiet review_diff_scroll_max_uses_longer_side`; `cargo test --quiet wrap_text_chunks_splits_long_diff_lines_for_pane_width`; `cargo test --quiet clip_text_window_slices_nowrap_diff_content`; `cargo test --quiet --no-default-features tui_not_built_returns_shared_tui_feature_error`; escalated `cargo test --quiet sync` because the sandbox denied local TCP mock-server binding.
-- Impact: `rust/src/commands/review_diff.rs`, `rust/src/commands/review_diff_rust_tests.rs`, `rust/src/commands/sync/review_tui_helpers.rs`, and maintainer trace docs. Public CLI paths, help output, command contracts, generated docs, Python behavior, and package metadata are intentionally unchanged.
-- Rollback/Risk: low. Rollback would move the generic helpers back into sync review, reducing reuse for other compatible TUI review surfaces without changing sync review behavior.

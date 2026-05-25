@@ -71,3 +71,9 @@
 - Scope: Rust no-default TUI helper ownership for access plan review projections, dashboard browse/test report helpers, snapshot CLI root helper, and shared review-contract detail projection. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
 - Current Update: Moved remaining TUI-only or TUI-test-only helper aliases and re-exports out of no-default production/test targets so no-default all-target builds can run with warnings denied.
 - Result: The remaining no-default TUI helper/alias warning surface is cleared while default-feature access plan, dashboard browse/report/topology, snapshot parser, and grouped-help tests remain behavior-compatible.
+
+## 2026-05-25 - Dashboard import shared diff preview
+- State: Done
+- Scope: Rust dashboard import interactive review TUI and shared review diff projection helpers. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
+- Current Update: Made dashboard import interactive reviews build a shared ReviewDiffModel for changed live-vs-local title, folder UID, tag, and panel evidence, then render a compact shared live/desired diff preview in the review pane.
+- Result: Dashboard import review now consumes the same shared diff model path as sync review for compatible changed-field evidence, reducing per-surface review shaping while preserving existing summary/structural/raw diff lines.

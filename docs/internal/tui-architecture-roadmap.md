@@ -189,6 +189,9 @@ while skipping generated HTML and Cargo build output.
   `Heading: none` versus `Heading:` plus body lines; dashboard topology inbound
   and outbound edge summaries use it instead of repeating that section shaping
   locally.
+- Dashboard inspect workbench detail rows now use the shared read-only browser
+  fact formatter for `Label: value` rows, reducing another local detail
+  projection helper while preserving the inspect workbench item output.
 - No-default TUI warning noise is narrower: feature-disabled builds no longer
   compile unused imports or large dead-code surfaces for access browse, access
   plan summary lines, shared read-only browser internals, snapshot browser
