@@ -168,6 +168,10 @@ while skipping generated HTML and Cargo build output.
   for compatible live-vs-local title, folder UID, tag, and panel changed-field
   evidence, then render a compact shared live/desired preview in the review
   pane while keeping the existing summary, structural, and raw diff lines.
+- Access plan interactive reviews now build compact shared live/desired diff
+  previews from safe bundle/live change rows, using the same `ReviewDiffModel`
+  vocabulary while filtering secret-like access change fields out of both the
+  generic review detail string and TUI preview output.
 - No-default TUI warning noise is narrower: feature-disabled builds no longer
   compile unused imports or large dead-code surfaces for access browse, access
   plan summary lines, shared read-only browser internals, snapshot browser
@@ -195,8 +199,8 @@ while skipping generated HTML and Cargo build output.
   evidence now reuses the shared review-contract projection.
 - Continue migrating compatible review surfaces onto the shared review diff
   visualization helpers when they already expose `live`, `desired`, and
-  `changedFields` evidence; sync review and dashboard import review now consume
-  the shared view/model helper path.
+  `changedFields` evidence; sync review, dashboard import review, and access
+  plan review now consume the shared view/model helper path.
 - Continue higher-level TUI design work by migrating compatible review surfaces
   onto shared diff/detail visualization helpers and reducing duplicated
   per-surface review pane shaping. The focused

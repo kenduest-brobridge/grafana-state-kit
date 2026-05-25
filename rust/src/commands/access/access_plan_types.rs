@@ -96,6 +96,12 @@ impl AccessPlanAction {
             Ok(other) => other,
             Err(_) => Value::Null,
         };
+        let safe_changed_fields = self
+            .changed_fields
+            .iter()
+            .filter(|field| is_safe_access_plan_change_field(field))
+            .cloned()
+            .collect::<Vec<_>>();
         ReviewMutationActionInput {
             action_id: self.action_id.clone(),
             action: self.action.clone(),
@@ -105,13 +111,20 @@ impl AccessPlanAction {
             status: self.status.clone(),
             blocked_reason: ReviewBlockedReason::from_optional_text(self.blocked_reason.as_deref())
                 .map(ReviewBlockedReason::into_string),
-            details: (!self.changed_fields.is_empty())
-                .then(|| format!("fields={}", self.changed_fields.join(","))),
+            details: (!safe_changed_fields.is_empty())
+                .then(|| format!("fields={}", safe_changed_fields.join(","))),
             review_hints: self.review_hints.clone(),
             raw,
         }
         .into()
     }
+}
+
+fn is_safe_access_plan_change_field(field: &str) -> bool {
+    let lower = field.to_ascii_lowercase();
+    !["password", "secret", "token", "apikey", "api_key", "key"]
+        .iter()
+        .any(|needle| lower.contains(needle))
 }
 
 impl AccessPlanDocument {

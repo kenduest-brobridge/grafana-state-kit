@@ -100,6 +100,14 @@ fn raw_target(raw: &Value) -> Option<&Map<String, Value>> {
 }
 
 #[cfg(any(feature = "tui", test))]
+fn is_safe_access_change_field(field: &str) -> bool {
+    let lower = field.to_ascii_lowercase();
+    !["password", "secret", "token", "apikey", "api_key", "key"]
+        .iter()
+        .any(|needle| lower.contains(needle))
+}
+
+#[cfg(any(feature = "tui", test))]
 fn narrative_line(action: &super::access_plan_types::AccessPlanReviewActionProjection) -> String {
     let resource_kind = action.resource_kind.replace('-', " ");
     let narrative = match action.action.as_str() {
@@ -179,6 +187,10 @@ fn blocked_or_warning_context(
     }
     if action.status == REVIEW_STATUS_WARNING {
         let changed_fields = raw_string_array(&action.raw, "changedFields");
+        let changed_fields = changed_fields
+            .into_iter()
+            .filter(|field| is_safe_access_change_field(field))
+            .collect::<Vec<_>>();
         if !changed_fields.is_empty() {
             lines.push(format!(
                 "Warning context: verify bundle fields {} against the live target before approving.",
@@ -269,11 +281,67 @@ fn change_detail_lines(raw: &Value) -> Vec<String> {
             if field.is_empty() {
                 return None;
             }
+            if !is_safe_access_change_field(&field) {
+                return None;
+            }
             let bundle = compact_value(change.get("before").unwrap_or(&Value::Null));
             let live = compact_value(change.get("after").unwrap_or(&Value::Null));
             Some(format!("Change: {field} bundle={bundle} live={live}"))
         })
         .collect()
+}
+
+#[cfg(any(feature = "tui", test))]
+fn action_review_diff_preview_lines(
+    action: &super::access_plan_types::AccessPlanReviewActionProjection,
+) -> Vec<String> {
+    let mut live = Map::new();
+    let mut desired = Map::new();
+    let mut changed_fields = Vec::new();
+    for change in action
+        .raw
+        .get("changes")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(Value::as_object)
+    {
+        let Some(field) = change
+            .get("field")
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .filter(|field| !field.is_empty())
+        else {
+            continue;
+        };
+        if !is_safe_access_change_field(field) {
+            continue;
+        }
+        changed_fields.push(field.to_string());
+        live.insert(
+            field.to_string(),
+            change.get("after").cloned().unwrap_or(Value::Null),
+        );
+        desired.insert(
+            field.to_string(),
+            change.get("before").cloned().unwrap_or(Value::Null),
+        );
+    }
+    if changed_fields.is_empty() {
+        return Vec::new();
+    }
+    let Ok(model) =
+        crate::review_diff::build_review_diff_model(crate::review_diff::ReviewDiffInput {
+            title: format!("{} {}", action.resource_kind, action.identity),
+            action: action.action.clone(),
+            live: Some(&live),
+            desired: Some(&desired),
+            changed_fields,
+        })
+    else {
+        return Vec::new();
+    };
+    crate::review_diff::review_diff_model_preview_lines(&model, 4)
 }
 
 #[cfg(any(feature = "tui", test))]
@@ -397,6 +465,7 @@ pub(crate) fn build_access_plan_browser_items(document: &AccessPlanDocument) -> 
             details.push(format!("Source path: {}", source_path));
         }
         details.extend(change_detail_lines(&action.raw));
+        details.extend(action_review_diff_preview_lines(&action));
         details.extend(target_evidence_lines(&action.raw));
         details.extend(blocked_or_warning_context(&action));
         details.extend(

@@ -24,6 +24,13 @@ Current AI change log only.
 - Older entries moved to [`ai-changes-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-16.md).
 - Older entries moved to [`ai-changes-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-25.md).
 
+## 2026-05-25 - Access plan shared diff preview
+- Summary: Made access plan action details build compact shared live/desired diff previews from bundle/live change rows while filtering secret-like change fields from both the generic review details and TUI preview output.
+- Tests: cargo fmt --check; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo check --quiet --no-default-features --all-targets; cargo test --quiet access_plan; cargo test --quiet review_diff; cargo test --quiet access_plan_interactive_browser_items_follow_review_projection; cargo test --quiet access_plan_interactive_browser_action_details_include_shared_review_evidence; cargo test --quiet access_plan_interactive_shared_diff_preview_hides_secret_like_fields
+- Impact: Access plan review rows now share the same ReviewDiffModel preview vocabulary as sync review and dashboard import review for compatible field-change evidence, reducing per-surface shaping while avoiding secret-like value leakage.
+- Rollback/Risk: low. Rollback would remove the compact shared live/desired preview from access plan rows and restore the previous per-row Change lines only.
+- Follow-up: Continue migrating compatible review surfaces that have safe live/desired evidence onto shared ReviewDiffModel preview or side-by-side rendering.
+
 ## 2026-05-25 - Dashboard import shared diff preview
 - Summary: Made dashboard import interactive reviews build a shared ReviewDiffModel for changed live-vs-local title, folder UID, tag, and panel evidence, then render a compact shared live/desired diff preview in the review pane.
 - Tests: cargo fmt --check; cargo check --quiet --no-default-features --all-targets; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo test --quiet import_interactive; cargo test --quiet dashboard_import; cargo test --quiet review_diff; cargo test --quiet import_review_panel_projects_shared_diff_preview_when_available; cargo test --quiet interactive_import_review_diff_model_uses_shared_changed_field_projection; cargo test --quiet shared_review_diff_view_helpers_cover_titles_scroll_and_text_windows
@@ -80,9 +87,3 @@ Current AI change log only.
 - Tests: targeted Rust tests cover the new access browse state behavior and datasource browse control-label rendering. Script smoke checks and AI workflow validation cover the maintainer-only inventory artifacts.
 - Impact: `docs/internal/tui-architecture-roadmap.md`, `scripts/tui_inventory_report.py`, `rust/src/commands/access/access_browse.rs`, `rust/src/commands/datasource/browse/render.rs`, and AI trace docs. Dashboard browse, shared TUI production code, public CLI behavior, generated docs, and Python package behavior are intentionally unchanged.
 - Rollback/Risk: low to moderate. Access browse filtering is additive and local to the TUI loop; datasource browse copy is render-only; the roadmap and manual report script can be removed without changing runtime behavior.
-
-## 2026-05-02 - Split datasource import dry-run helpers
-- Summary: split datasource import dry-run responsibilities so runtime collection remains in `dry_run.rs`, output rendering lives in `dry_run_output.rs`, review projection/tests live in `dry_run_review.rs`, and secret visibility lives in `dry_run_secret_visibility.rs`.
-- Tests: main is running focused Rust validation for the refactor; this update is maintainer trace only.
-- Impact: `rust/src/commands/datasource/import/dry_run.rs`, `rust/src/commands/datasource/import/dry_run_output.rs`, `rust/src/commands/datasource/import/dry_run_review.rs`, `rust/src/commands/datasource/import/dry_run_secret_visibility.rs`, `docs/internal/rust-architecture-guardrails.md`, and AI trace docs. Public CLI/JSON behavior, generated docs, and Python implementation are intentionally unchanged.
-- Rollback/Risk: low behavior-preserving module split. Rollback would move the extracted helper code back into `dry_run.rs` without changing external output.

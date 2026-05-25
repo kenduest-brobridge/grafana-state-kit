@@ -47,3 +47,9 @@
 - Tests: main is running focused Rust validation for the refactor; this update is maintainer trace only.
 - Impact: `rust/src/commands/alert/runtime_support.rs`, `rust/src/commands/alert/runtime_plan_document.rs`, `rust/src/commands/alert/runtime_review.rs`, and AI trace docs. Public CLI/JSON behavior, generated docs, and Python implementation are intentionally unchanged.
 - Rollback/Risk: low behavior-preserving module split. Rollback would move the extracted helper code back into `runtime_support.rs` without changing external output.
+
+## 2026-05-02 - Split datasource import dry-run helpers
+- Summary: split datasource import dry-run responsibilities so runtime collection remains in `dry_run.rs`, output rendering lives in `dry_run_output.rs`, review projection/tests live in `dry_run_review.rs`, and secret visibility lives in `dry_run_secret_visibility.rs`.
+- Tests: main is running focused Rust validation for the refactor; this update is maintainer trace only.
+- Impact: `rust/src/commands/datasource/import/dry_run.rs`, `rust/src/commands/datasource/import/dry_run_output.rs`, `rust/src/commands/datasource/import/dry_run_review.rs`, `rust/src/commands/datasource/import/dry_run_secret_visibility.rs`, `docs/internal/rust-architecture-guardrails.md`, and AI trace docs. Public CLI/JSON behavior, generated docs, and Python implementation are intentionally unchanged.
+- Rollback/Risk: low behavior-preserving module split. Rollback would move the extracted helper code back into `dry_run.rs` without changing external output.

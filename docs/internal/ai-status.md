@@ -24,6 +24,12 @@ Current AI-maintained status only.
 - Older entries moved to [`ai-status-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-16.md).
 - Older entries moved to [`ai-status-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-25.md).
 
+## 2026-05-25 - Access plan shared diff preview
+- State: Done
+- Scope: Rust access plan interactive review TUI and shared review diff projection helpers. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
+- Current Update: Made access plan action details build compact shared live/desired diff previews from bundle/live change rows while filtering secret-like change fields from both the generic review details and TUI preview output.
+- Result: Access plan review rows now share the same ReviewDiffModel preview vocabulary as sync review and dashboard import review for compatible field-change evidence, reducing per-surface shaping while avoiding secret-like value leakage.
+
 ## 2026-05-25 - Dashboard import shared diff preview
 - State: Done
 - Scope: Rust dashboard import interactive review TUI and shared review diff projection helpers. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
@@ -53,9 +59,3 @@ Current AI-maintained status only.
 - Scope: Rust internal TUI review diff helper ownership. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
 - Current Update: Moved the sync review TUI's domain-neutral side-by-side diff focus, title, scroll, wrap, clip, TUI list-item, and footer control helpers into `review_diff.rs`, leaving sync review to re-export and consume the shared helpers.
 - Result: Sync review remains behavior-compatible while future compatible review surfaces can reuse the same shared diff visualization path.
-
-## 2026-05-25 - TUI no-default feature boundary cleanup
-- State: Done
-- Scope: Rust TUI cfg boundaries for access/dashboard/datasource/status, sync audit, and snapshot review test helpers. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
-- Current Update: Kept TUI-only helpers, test re-exports, and interactive test modules behind `feature = "tui"` during no-default test builds while preserving default-feature TUI tests and the shared feature-disabled fallback regression.
-- Result: The focused no-default fallback test now compiles and passes instead of failing earlier on ratatui/crossterm or TUI-only helper imports.

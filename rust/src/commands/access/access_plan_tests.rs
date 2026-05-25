@@ -612,6 +612,18 @@ fn access_plan_interactive_browser_items_follow_review_projection() {
     assert!(items[1]
         .details
         .iter()
+        .any(|line| line == "Shared Diff: user alice [would-update]"));
+    assert!(items[1]
+        .details
+        .iter()
+        .any(|line| line == "Live -   1 | orgRole: \"Viewer\""));
+    assert!(items[1]
+        .details
+        .iter()
+        .any(|line| line == "Desired +   1 | orgRole: \"Editor\""));
+    assert!(items[1]
+        .details
+        .iter()
         .any(|line| line == "Live target: orgRole=Viewer"));
     assert!(items[1]
         .details
@@ -715,6 +727,63 @@ fn access_plan_interactive_browser_action_details_include_shared_review_evidence
     assert!(details.iter().any(|line| {
         line == "Check next: confirm the blocker in Grafana and adjust the bundle or remote ownership before retrying."
     }));
+}
+
+#[test]
+fn access_plan_interactive_shared_diff_preview_hides_secret_like_fields() {
+    let document = AccessPlanDocument {
+        kind: ACCESS_PLAN_KIND.to_string(),
+        schema_version: ACCESS_PLAN_SCHEMA_VERSION,
+        tool_version: "test".to_string(),
+        summary: AccessPlanSummary {
+            resource_count: 1,
+            checked: 1,
+            same: 0,
+            create: 0,
+            update: 1,
+            extra_remote: 0,
+            delete: 0,
+            blocked: 0,
+            warning: 1,
+            prune: false,
+        },
+        resources: Vec::new(),
+        actions: vec![AccessPlanAction {
+            action_id: "access:user:alice".to_string(),
+            domain: "access".to_string(),
+            resource_kind: "user".to_string(),
+            identity: "alice".to_string(),
+            scope: Some("org".to_string()),
+            action: "would-update".to_string(),
+            status: "warning".to_string(),
+            changed_fields: vec!["email".to_string(), "password".to_string()],
+            changes: vec![
+                AccessPlanChange {
+                    field: "email".to_string(),
+                    before: json!("alice@example.com"),
+                    after: json!("alice-old@example.com"),
+                },
+                AccessPlanChange {
+                    field: "password".to_string(),
+                    before: json!("new-secret"),
+                    after: json!("old-secret"),
+                },
+            ],
+            target: None,
+            blocked_reason: None,
+            review_hints: Vec::new(),
+            source_path: "./access-users/users.json".to_string(),
+        }],
+    };
+
+    let items = build_access_plan_browser_items(&document);
+    let rendered = items[0].details.join("\n");
+
+    assert!(rendered.contains("Shared Diff: user alice [would-update]"));
+    assert!(rendered.contains("email"));
+    assert!(!rendered.contains("password"));
+    assert!(!rendered.contains("new-secret"));
+    assert!(!rendered.contains("old-secret"));
 }
 
 #[test]
