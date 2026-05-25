@@ -95,7 +95,7 @@ impl OverviewWorkbenchState {
             section_state,
             view_state: ListState::default(),
             item_state: ListState::default(),
-            focus: OverviewPane::ProjectHome,
+            focus: OverviewPane::Items,
             detail_scroll: 0,
             pending_search: None,
             last_search: None,
@@ -903,15 +903,32 @@ mod tests {
     }
 
     #[test]
-    fn project_home_defaults_to_home_and_hands_off_to_first_blocked_section() {
+    fn overview_tui_starts_on_items_so_arrow_keys_move_rows_immediately() {
+        let mut state = OverviewWorkbenchState::new(search_document());
+
+        assert_eq!(state.focus, OverviewPane::Items);
+        assert_eq!(state.item_state.selected(), Some(0));
+
+        match state.focus {
+            OverviewPane::Items => state.move_item_selection(1),
+            _ => {}
+        }
+
+        assert_eq!(state.item_state.selected(), Some(1));
+    }
+
+    #[test]
+    fn project_home_is_available_and_hands_off_to_first_blocked_section() {
         let mut state = OverviewWorkbenchState::new(test_document());
 
-        assert_eq!(state.focus, OverviewPane::ProjectHome);
+        assert_eq!(state.focus, OverviewPane::Items);
         assert_eq!(
             state.project_home_target_label().as_deref(),
             Some("Sync bundle preflight")
         );
 
+        state.focus_project_home();
+        assert_eq!(state.focus, OverviewPane::ProjectHome);
         state.focus_next();
         assert_eq!(state.focus, OverviewPane::Sections);
         state.focus_previous();
@@ -957,7 +974,7 @@ mod tests {
         assert!(screen.contains("Recommended handoff section: Sync bundle preflight"));
         assert!(screen.contains("Status & Controls"));
         assert!(!screen.contains("Project Home [Focused]"));
-        assert_eq!(state.focus, OverviewPane::ProjectHome);
+        assert_eq!(state.focus, OverviewPane::Items);
     }
 
     #[test]

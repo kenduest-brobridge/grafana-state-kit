@@ -24,6 +24,13 @@ Current AI change log only.
 - Older entries moved to [`ai-changes-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-16.md).
 - Older entries moved to [`ai-changes-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-25.md).
 
+## 2026-05-25 - Status overview starts on items
+- Summary: Changed status overview interactive mode to start with the Items pane focused so Up/Down moves rows immediately after launch instead of requiring Tab first.
+- Tests: cargo test --quiet overview_tui_starts_on_items_so_arrow_keys_move_rows_immediately; cargo test --quiet project_home_is_available_and_hands_off_to_first_blocked_section; cargo test --quiet interactive_render_starts_on_project_home_surface; cargo test --quiet status_overview; cargo test --quiet status_tui; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; git diff --check
+- Impact: Operators entering status overview interactive mode can navigate the item list with arrow keys immediately. Project Home remains available via h and its handoff behavior is preserved. Public CLI paths, help text, generated docs, and command contracts are unchanged.
+- Rollback/Risk: Low. The change only adjusts initial TUI focus and focused tests cover immediate row movement plus Project Home access.
+- Follow-up: If operators prefer a visual home summary on launch, consider a visible non-focused home panel while keeping keyboard focus on Items.
+
 ## 2026-05-25 - TUI completion audit
 - Summary: Replaced the open-ended TUI follow-up section with a completion audit that maps current evidence to the finished shared review/detail/diff projection work and records why domain-specific input loops remain local.
 - Tests: cargo test --quiet; cargo test --quiet user_browse; cargo test --quiet team_browse; cargo test --quiet datasource_browse; cargo test --quiet status_tui; cargo test --quiet review_contract; cargo test --quiet access (outside sandbox for local mock-server coverage after sandbox denied binding); RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; python3 scripts/tui_inventory_report.py --json; make quality-ai-workflow; git diff --check
@@ -86,10 +93,3 @@ Current AI change log only.
 - Impact: The manual TUI inventory report now has zero helper-drift candidates while dashboard browse fact rendering keeps the existing shared browser_detail_info_lines_with output path and behavior.
 - Rollback/Risk: Low. This is a local rename plus a regression that guards against reintroducing the generic helper-drift shape.
 - Follow-up: Use the roadmap for any remaining non-helper-drift TUI design work.
-
-## 2026-05-25 - Shared datasource review empty lines
-- Summary: Moved datasource browse REVIEW empty-state line formatting into a shared browser helper and renamed the datasource review panel builder to avoid a generic helper-drift wrapper.
-- Tests: cargo test --quiet browser_review_empty_line_formats_review_prefixed_message; cargo test --quiet datasource_review_panel_does_not_keep_generic_build_review_wrapper; cargo test --quiet datasource_browse; cargo test --quiet interactive_browser; cargo test --quiet datasource (outside sandbox for local mock-server coverage after sandbox denied binding); RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; python3 scripts/tui_inventory_report.py; make quality-ai-workflow; git diff --check
-- Impact: Datasource browse review empty states now share browser-level REVIEW message formatting while review evidence rendering and public CLI/doc surfaces remain unchanged.
-- Rollback/Risk: Low. The shared helper renders the same REVIEW-prefixed message and focused datasource/browser tests cover both empty-state and evidence rows.
-- Follow-up: Re-run the TUI inventory report and evaluate the final dashboard browse build_info_lines candidate separately.
