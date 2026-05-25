@@ -16,5 +16,6 @@ scratch/
 notes/
 .codex/
 .workspace-noise/
+.codegraph/
 tmp/
 .playwright-cli/
