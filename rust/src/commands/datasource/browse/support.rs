@@ -124,6 +124,32 @@ pub(crate) fn review_lines(item: &DatasourceBrowseItem) -> Vec<String> {
     review_lines_from_datasource_details(&item.details)
 }
 
+pub(crate) fn datasource_browser_detail_lines_from_details(
+    details: &Map<String, Value>,
+) -> Vec<String> {
+    let name = string_field(details, "name", "");
+    let uid = string_field(details, "uid", "");
+    let datasource_type = string_field(details, "type", "");
+    let org = string_field(details, "org", "");
+    let org_id = string_field(details, "orgId", "");
+    let url = string_field(details, "url", "");
+    let access = string_field(details, "access", "");
+    let is_default = bool_or_string_field(details, "isDefault");
+
+    vec![
+        browser_detail_fallback_fact("Name", &name, "-"),
+        browser_detail_fallback_fact("UID", &uid, "-"),
+        browser_detail_fallback_fact("Type", &datasource_type, "-"),
+        browser_detail_fact(
+            "Org",
+            format!("{} ({})", blank_dash(&org), blank_dash(&org_id)),
+        ),
+        browser_detail_fallback_fact("URL", &url, "-"),
+        browser_detail_fallback_fact("Access", &access, "-"),
+        browser_detail_fallback_fact("Default", &is_default, "-"),
+    ]
+}
+
 pub(crate) fn review_lines_from_datasource_details(details: &Map<String, Value>) -> Vec<String> {
     secret_review_lines(details)
 }
@@ -272,6 +298,21 @@ fn read_only_review_lines() -> Vec<String> {
             .to_string(),
         "Datasource review required: true (read-only datasource)".to_string(),
     ]
+}
+
+fn bool_or_string_field(details: &Map<String, Value>, name: &str) -> String {
+    if let Some(value) = details.get(name).and_then(Value::as_bool) {
+        return value.to_string();
+    }
+    string_field(details, name, "")
+}
+
+fn blank_dash(value: &str) -> &str {
+    if value.trim().is_empty() {
+        "-"
+    } else {
+        value.trim()
+    }
 }
 
 fn local_review_evidence_lines(details: &Map<String, Value>) -> Vec<String> {
@@ -711,6 +752,36 @@ mod tests {
                 "Database: prometheus",
                 "jsonData keys: alpha, zulu",
                 "secureJsonFields: basicAuthPassword",
+            ]
+        );
+    }
+
+    #[test]
+    fn datasource_browser_detail_lines_from_details_formats_local_artifact_identity() {
+        let details = json!({
+            "name": "Prometheus",
+            "uid": "prom-main",
+            "type": "prometheus",
+            "org": "Main Org.",
+            "orgId": "1",
+            "url": "http://prometheus:9090",
+            "access": "proxy",
+            "isDefault": true
+        })
+        .as_object()
+        .unwrap()
+        .clone();
+
+        assert_eq!(
+            datasource_browser_detail_lines_from_details(&details),
+            vec![
+                "Name: Prometheus".to_string(),
+                "UID: prom-main".to_string(),
+                "Type: prometheus".to_string(),
+                "Org: Main Org. (1)".to_string(),
+                "URL: http://prometheus:9090".to_string(),
+                "Access: proxy".to_string(),
+                "Default: true".to_string(),
             ]
         );
     }

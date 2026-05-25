@@ -193,6 +193,9 @@ still look like possible shared-helper follow-up work.
   the datasource Review projection directly from datasource details instead of
   constructing dummy browse items, reducing repeated local artifact browser
   shaping while preserving the live datasource browse review pane.
+- Datasource local list and snapshot datasource review browser rows now also
+  share datasource identity detail projection, so `Name`, `UID`, `Type`, `Org`,
+  `URL`, `Access`, and `Default` facts stay consistent before review evidence.
 - Access plan, datasource local, and snapshot datasource review browser rows now
   use the shared review-contract helper for appending `Review evidence:`
   sections, keeping the heading/empty-section rule consistent across these TUI

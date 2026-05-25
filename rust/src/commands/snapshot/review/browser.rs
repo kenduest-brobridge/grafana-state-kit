@@ -7,7 +7,9 @@ use serde_json::Value;
 use crate::common::Result;
 
 #[cfg(any(feature = "tui", test))]
-use crate::datasource::review_lines_from_datasource_details;
+use crate::datasource::{
+    datasource_browser_detail_lines_from_details, review_lines_from_datasource_details,
+};
 #[cfg(feature = "tui")]
 use crate::interactive_browser::run_interactive_browser;
 #[cfg(any(feature = "tui", test))]
@@ -492,39 +494,11 @@ pub(crate) fn build_snapshot_review_browser_items(document: &Value) -> Result<Ve
             .and_then(Value::as_str)
             .unwrap_or_default()
             .to_string();
-        let org_id = datasource
-            .get("orgId")
-            .and_then(Value::as_str)
-            .unwrap_or_default()
-            .to_string();
-        let uid = datasource
-            .get("uid")
-            .and_then(Value::as_str)
-            .unwrap_or_default()
-            .to_string();
-        let url = datasource
-            .get("url")
-            .and_then(Value::as_str)
-            .unwrap_or_default()
-            .to_string();
-        let access = datasource
-            .get("access")
-            .and_then(Value::as_str)
-            .unwrap_or_default()
-            .to_string();
         let is_default = datasource
             .get("isDefault")
             .and_then(Value::as_bool)
             .unwrap_or(false);
-        let mut details = vec![
-            format!("Name: {name}"),
-            format!("UID: {uid}"),
-            format!("Type: {datasource_type}"),
-            format!("Org: {org} ({org_id})"),
-            format!("URL: {url}"),
-            format!("Access: {access}"),
-            format!("Default: {}", if is_default { "true" } else { "false" }),
-        ];
+        let mut details = datasource_browser_detail_lines_from_details(datasource);
         append_review_evidence_section(&mut details, snapshot_datasource_review_lines(datasource));
         items.push(BrowserItem {
             kind: "datasource".to_string(),

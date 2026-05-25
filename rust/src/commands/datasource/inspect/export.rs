@@ -10,7 +10,9 @@ use std::path::{Path, PathBuf};
 use crate::common::string_field;
 use crate::common::{load_json_object_file, message, render_json_value, Result};
 #[cfg(any(feature = "tui", test))]
-use crate::datasource::review_lines_from_datasource_details;
+use crate::datasource::{
+    datasource_browser_detail_lines_from_details, review_lines_from_datasource_details,
+};
 #[cfg(any(feature = "tui", test))]
 use crate::interactive_browser::BrowserItem;
 #[cfg(any(feature = "tui", test))]
@@ -136,20 +138,12 @@ pub(crate) fn build_datasource_inspect_export_browser_items(
             let name = string_field(record, "name", "");
             let datasource_type = string_field(record, "type", "");
             let uid = string_field(record, "uid", "");
-            let url = string_field(record, "url", "");
+            let is_default = string_field(record, "isDefault", "");
             let org = string_field(record, "org", "");
             let org_id = string_field(record, "orgId", "");
-            let is_default = string_field(record, "isDefault", "");
-            let mut details = vec![
-                format!("Name: {name}"),
-                format!("Type: {datasource_type}"),
-                format!("UID: {uid}"),
-                format!("URL: {url}"),
-                format!("Default: {is_default}"),
-                format!("Org: {org} ({org_id})"),
-                format!("Input mode: {}", source.input_mode),
-                format!("Input path: {}", source.input_path),
-            ];
+            let mut details = datasource_browser_detail_lines_from_details(record);
+            details.push(format!("Input mode: {}", source.input_mode));
+            details.push(format!("Input path: {}", source.input_path));
             append_review_evidence_section(
                 &mut details,
                 datasource_inspect_export_review_lines(record),
