@@ -221,6 +221,43 @@ pub(crate) fn build_review_mutation_action_detail_lines(
 }
 
 #[cfg(any(feature = "tui", test))]
+pub(crate) fn build_review_mutation_action_next_check_lines(
+    action: &ReviewMutationAction,
+) -> Vec<String> {
+    let mut lines = Vec::new();
+    for hint in &action.review_hints {
+        let hint_line = if hint.contains(REVIEW_HINT_REMOTE_ONLY) {
+            "Check next: decide whether this live-only record should stay unmanaged or be deleted."
+                .to_string()
+        } else {
+            format!("Check next: {}.", hint.trim_end_matches('.'))
+        };
+        if !lines.contains(&hint_line) {
+            lines.push(hint_line);
+        }
+    }
+
+    let default_line = if action.status == REVIEW_STATUS_BLOCKED {
+        "Check next: confirm the blocker in Grafana and adjust the bundle or remote ownership before retrying."
+    } else if action.action == REVIEW_ACTION_WOULD_DELETE {
+        "Check next: confirm this live-only record is still safe to delete."
+    } else if action.action == REVIEW_ACTION_WOULD_CREATE {
+        "Check next: confirm identifiers, scope, and memberships before creating it."
+    } else if action.action == REVIEW_ACTION_WOULD_UPDATE {
+        "Check next: compare the listed bundle fields against the live target evidence."
+    } else if action.status == REVIEW_STATUS_WARNING {
+        "Check next: review the warning evidence and verify operator intent."
+    } else {
+        "Check next: no further action is needed unless the bundle changes."
+    };
+    let default_line = default_line.to_string();
+    if !lines.contains(&default_line) {
+        lines.push(default_line);
+    }
+    lines
+}
+
+#[cfg(any(feature = "tui", test))]
 pub(crate) fn append_review_evidence_section(lines: &mut Vec<String>, review_lines: Vec<String>) {
     if review_lines.is_empty() {
         return;
@@ -682,6 +719,49 @@ mod tests {
         assert!(!warning_lines
             .iter()
             .any(|line| line.starts_with("Review blocker status:")));
+    }
+
+    #[test]
+    fn review_mutation_action_next_check_lines_project_hints_and_default_guidance() {
+        let blocked = ReviewMutationAction::from(ReviewMutationActionInput {
+            action_id: "access:user:alice".to_string(),
+            action: REVIEW_ACTION_WOULD_UPDATE.to_string(),
+            domain: "access".to_string(),
+            resource_kind: "user".to_string(),
+            identity: "alice".to_string(),
+            status: REVIEW_STATUS_BLOCKED.to_string(),
+            blocked_reason: Some("externally synced user".to_string()),
+            details: Some("fields=orgRole".to_string()),
+            review_hints: vec!["review identity source".to_string()],
+            raw: json!({}),
+        });
+        let remote_only = ReviewMutationAction::from(ReviewMutationActionInput {
+            action_id: "access:user:bob".to_string(),
+            action: REVIEW_ACTION_EXTRA_REMOTE.to_string(),
+            domain: "access".to_string(),
+            resource_kind: "user".to_string(),
+            identity: "bob".to_string(),
+            status: REVIEW_STATUS_WARNING.to_string(),
+            blocked_reason: None,
+            details: None,
+            review_hints: vec![REVIEW_HINT_REMOTE_ONLY.to_string()],
+            raw: json!({}),
+        });
+
+        assert_eq!(
+            build_review_mutation_action_next_check_lines(&blocked),
+            vec![
+                "Check next: review identity source.".to_string(),
+                "Check next: confirm the blocker in Grafana and adjust the bundle or remote ownership before retrying.".to_string(),
+            ]
+        );
+        assert_eq!(
+            build_review_mutation_action_next_check_lines(&remote_only),
+            vec![
+                "Check next: decide whether this live-only record should stay unmanaged or be deleted.".to_string(),
+                "Check next: review the warning evidence and verify operator intent.".to_string(),
+            ]
+        );
     }
 
     #[test]

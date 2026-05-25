@@ -215,3 +215,10 @@
 - Impact: Access user/team browse action rows now share shell-level key-chip/plain rendering without changing public CLI paths, help text, command contracts, generated docs, Python behavior, or package metadata.
 - Rollback/Risk: Low. The change replaces local delegate wrappers with direct calls to equivalent shared shell helpers and focused access browse tests cover the render/state paths.
 - Follow-up: Continue auditing remaining TUI render wrappers and control-line adapters before considering broader workbench abstraction.
+
+## 2026-05-25 - Shared inspect workbench shell controls
+- Summary: Routed dashboard inspect workbench shell control/key/plain spans directly through shared tui_shell helpers and added a regression against reintroducing local delegate wrappers.
+- Tests: cargo test --quiet inspect_workbench_render_helpers_do_not_wrap_shared_shell_spans; cargo test --quiet inspect_workbench; cargo test --quiet full_detail_viewer; cargo test --quiet dashboard_inspect; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; make quality-ai-workflow; git diff --check
+- Impact: Dashboard inspect workbench shell controls now share tui_shell primitives directly while existing render output remains stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+- Rollback/Risk: Low. The change removes equivalent local delegate wrappers and focused inspect workbench tests cover the render paths.
+- Follow-up: Continue auditing remaining TUI control-line adapters and detail/review projection helpers before broader workbench abstraction.

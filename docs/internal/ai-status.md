@@ -24,6 +24,12 @@ Current AI-maintained status only.
 - Older entries moved to [`ai-status-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-16.md).
 - Older entries moved to [`ai-status-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-25.md).
 
+## 2026-05-25 - Shared review next-check projection
+- State: Done
+- Scope: rust/src/commands/review_contract.rs; rust/src/commands/access/access_plan_tui.rs; docs/internal/tui-architecture-roadmap.md
+- Current Update: Moved access plan action next-check line projection into the shared review contract so TUI review surfaces can reuse hint/default follow-up guidance.
+- Result: Access plan interactive reviews now consume shared review-contract next-check lines while preserving existing hint, blocker, warning, create/update/delete, and no-op guidance strings. Public CLI paths, help text, generated docs, and command contracts are unchanged.
+
 ## 2026-05-25 - Shared datasource artifact detail projection
 - State: Done
 - Scope: rust/src/commands/datasource/browse/support.rs; rust/src/commands/datasource/inspect/export.rs; rust/src/commands/snapshot/review/browser.rs; docs/internal/tui-architecture-roadmap.md
@@ -53,9 +59,3 @@ Current AI-maintained status only.
 - Scope: scripts/tui_inventory_report.py; scripts/test_tui_inventory_report.py; docs/internal/tui-architecture-roadmap.md
 - Current Update: Extended the manual TUI inventory report with helper-drift candidate detection for remaining local TUI/detail/review helper functions and added focused unittest coverage.
 - Result: Maintainers can now use the TUI inventory helper to see remaining local helper candidates alongside the surface inventory, making future completion audits evidence-based. Public CLI paths, help text, command contracts, generated docs, Rust runtime behavior, Python package behavior, and package metadata are unchanged.
-
-## 2026-05-25 - Shared datasource browse fixed control lines
-- State: Done
-- Scope: rust/src/common/tui/shell.rs; rust/src/commands/datasource/browse/render.rs; docs/internal/tui-architecture-roadmap.md
-- Current Update: Added a shared fixed-body-width shell control-line helper and routed datasource browse footer rows through it instead of a local control_line renderer.
-- Result: Datasource browse footer rows now share shell-level fixed-width control-line rendering while preserving existing 14-column label spacing. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.

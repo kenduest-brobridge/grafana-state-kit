@@ -4,9 +4,10 @@ use crate::common::Result;
 #[cfg(any(feature = "tui", test))]
 use crate::review_contract::{
     append_review_evidence_section, build_review_mutation_action_detail_lines,
-    REVIEW_ACTION_BLOCKED, REVIEW_ACTION_EXTRA_REMOTE, REVIEW_ACTION_SAME, REVIEW_ACTION_UNMANAGED,
+    build_review_mutation_action_next_check_lines, REVIEW_ACTION_BLOCKED,
+    REVIEW_ACTION_EXTRA_REMOTE, REVIEW_ACTION_SAME, REVIEW_ACTION_UNMANAGED,
     REVIEW_ACTION_WOULD_CREATE, REVIEW_ACTION_WOULD_DELETE, REVIEW_ACTION_WOULD_UPDATE,
-    REVIEW_HINT_REMOTE_ONLY, REVIEW_STATUS_BLOCKED, REVIEW_STATUS_WARNING,
+    REVIEW_STATUS_BLOCKED, REVIEW_STATUS_WARNING,
 };
 
 #[cfg(feature = "tui")]
@@ -226,43 +227,6 @@ fn blocked_or_warning_context(
 }
 
 #[cfg(any(feature = "tui", test))]
-fn next_check_lines(
-    action: &super::access_plan_types::AccessPlanReviewActionProjection,
-) -> Vec<String> {
-    let mut lines = Vec::new();
-    for hint in &action.review_hints {
-        let hint_line = if hint.contains(REVIEW_HINT_REMOTE_ONLY) {
-            "Check next: decide whether this live-only record should stay unmanaged or be deleted."
-                .to_string()
-        } else {
-            format!("Check next: {}.", hint.trim_end_matches('.'))
-        };
-        if !lines.contains(&hint_line) {
-            lines.push(hint_line);
-        }
-    }
-
-    let default_line = if action.status == REVIEW_STATUS_BLOCKED {
-        "Check next: confirm the blocker in Grafana and adjust the bundle or remote ownership before retrying."
-    } else if action.action == REVIEW_ACTION_WOULD_DELETE {
-        "Check next: confirm this live-only record is still safe to delete."
-    } else if action.action == REVIEW_ACTION_WOULD_CREATE {
-        "Check next: confirm identifiers, scope, and memberships before creating it."
-    } else if action.action == REVIEW_ACTION_WOULD_UPDATE {
-        "Check next: compare the listed bundle fields against the live target evidence."
-    } else if action.status == REVIEW_STATUS_WARNING {
-        "Check next: review the warning evidence and verify operator intent."
-    } else {
-        "Check next: no further action is needed unless the bundle changes."
-    };
-    let default_line = default_line.to_string();
-    if !lines.contains(&default_line) {
-        lines.push(default_line);
-    }
-    lines
-}
-
-#[cfg(any(feature = "tui", test))]
 fn change_detail_lines(raw: &Value) -> Vec<String> {
     raw.get("changes")
         .and_then(Value::as_array)
@@ -473,7 +437,7 @@ pub(crate) fn build_access_plan_browser_items(document: &AccessPlanDocument) -> 
                 .iter()
                 .map(|hint| format!("Hint: {}", hint)),
         );
-        details.extend(next_check_lines(&action));
+        details.extend(build_review_mutation_action_next_check_lines(&action));
         items.push(BrowserItem {
             kind: action.resource_kind.clone(),
             title: action.identity,

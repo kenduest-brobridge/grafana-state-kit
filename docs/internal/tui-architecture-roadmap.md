@@ -184,6 +184,9 @@ still look like possible shared-helper follow-up work.
   previews from safe bundle/live change rows, using the same `ReviewDiffModel`
   vocabulary while filtering secret-like access change fields out of both the
   generic review detail string and TUI preview output.
+- Access plan interactive reviews now also use shared review-contract next-check
+  projection for action hints and default follow-up guidance, reducing another
+  per-surface review pane shaping rule.
 - Review changed-field safety now uses the shared review diff predicate across
   sync diff models, datasource/snapshot review evidence, and access plan review
   details so secret-like paths such as password, token, API key, and
