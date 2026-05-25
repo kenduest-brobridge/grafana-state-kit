@@ -410,19 +410,23 @@ fn user_detail_lines(row: &Map<String, Value>) -> Vec<Line<'static>> {
         }
     };
     vec![
-        detail_line("ID", &user_id),
-        detail_line("Login", &map_get_text(row, "login")),
-        detail_line("Email", &map_get_text(row, "email")),
-        detail_line("Name", &map_get_text(row, "name")),
-        detail_line("Org", &map_get_text(row, "orgName")),
-        detail_line("Org Role", &map_get_text(row, "orgRole")),
-        detail_line("Role Summary", &map_get_text(row, "roleSummary")),
-        detail_line("Grafana Admin", &map_get_text(row, "grafanaAdmin")),
-        detail_line("Org Memberships", &map_get_text(row, "orgMembershipCount")),
-        detail_line("Scope", &map_get_text(row, "scope")),
-        detail_line("Identity Scope", &map_get_text(row, "accountScope")),
-        detail_line("Cross Orgs", &map_get_text(row, "crossOrgMemberships")),
-        detail_line("Teams", &map_get_text(row, "teams")),
+        browser_detail_info_line("ID", &user_id, "-"),
+        browser_detail_info_line("Login", &map_get_text(row, "login"), "-"),
+        browser_detail_info_line("Email", &map_get_text(row, "email"), "-"),
+        browser_detail_info_line("Name", &map_get_text(row, "name"), "-"),
+        browser_detail_info_line("Org", &map_get_text(row, "orgName"), "-"),
+        browser_detail_info_line("Org Role", &map_get_text(row, "orgRole"), "-"),
+        browser_detail_info_line("Role Summary", &map_get_text(row, "roleSummary"), "-"),
+        browser_detail_info_line("Grafana Admin", &map_get_text(row, "grafanaAdmin"), "-"),
+        browser_detail_info_line(
+            "Org Memberships",
+            &map_get_text(row, "orgMembershipCount"),
+            "-",
+        ),
+        browser_detail_info_line("Scope", &map_get_text(row, "scope"), "-"),
+        browser_detail_info_line("Identity Scope", &map_get_text(row, "accountScope"), "-"),
+        browser_detail_info_line("Cross Orgs", &map_get_text(row, "crossOrgMemberships"), "-"),
+        browser_detail_info_line("Teams", &map_get_text(row, "teams"), "-"),
     ]
 }
 
@@ -481,10 +485,10 @@ fn render_org_detail_panel(
         frame,
         sections[1],
         vec![
-            detail_line("Org Name", &map_get_text(row, "orgName")),
-            detail_line("Org ID", &map_get_text(row, "orgId")),
-            detail_line("Users", &map_get_text(row, "memberCount")),
-            detail_line("Mode", "org-grouped memberships"),
+            browser_detail_info_line("Org Name", &map_get_text(row, "orgName"), "-"),
+            browser_detail_info_line("Org ID", &map_get_text(row, "orgId"), "-"),
+            browser_detail_info_line("Users", &map_get_text(row, "memberCount"), "-"),
+            browser_detail_info_line("Mode", "org-grouped memberships", "-"),
         ],
         pane_block("Facts", state.focus == PaneFocus::Facts, Color::LightCyan),
         state.focus == PaneFocus::Facts,
@@ -570,10 +574,10 @@ fn render_team_detail_panel(
         frame,
         sections[1],
         vec![
-            detail_line("Team/Group", &map_get_text(row, "teamName")),
-            detail_line("User", &map_get_text(row, "parentLogin")),
-            detail_line("User ID", &map_get_text(row, "parentUserId")),
-            detail_line("Row Kind", "team-group membership"),
+            browser_detail_info_line("Team/Group", &map_get_text(row, "teamName"), "-"),
+            browser_detail_info_line("User", &map_get_text(row, "parentLogin"), "-"),
+            browser_detail_info_line("User ID", &map_get_text(row, "parentUserId"), "-"),
+            browser_detail_info_line("Row Kind", "team-group membership", "-"),
         ],
         pane_block("Facts", state.focus == PaneFocus::Facts, Color::LightCyan),
         state.focus == PaneFocus::Facts,
@@ -642,10 +646,6 @@ fn render_focusable_lines(
     } else {
         frame.render_widget(List::new(items).block(block), area);
     }
-}
-
-fn detail_line(label: &str, value: &str) -> Line<'static> {
-    browser_detail_info_line(label, value, "-")
 }
 
 fn control_lines(state: &BrowserState, args: &UserBrowseArgs) -> Vec<Line<'static>> {
@@ -726,5 +726,19 @@ fn blank_dash(value: &str) -> &str {
         "-"
     } else {
         value
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn user_browse_render_does_not_wrap_shared_detail_info_lines() {
+        let source = include_str!("user_browse_render.rs");
+        let wrapper_signature = format!("{}{}(", "fn ", "detail_line");
+        assert!(
+            !source.contains(&wrapper_signature),
+            "user_browse_render.rs should call browser_detail_info_line directly instead of \
+             carrying a local detail_line delegate wrapper"
+        );
     }
 }

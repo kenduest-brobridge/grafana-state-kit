@@ -214,6 +214,9 @@ while skipping generated HTML and Cargo build output.
   removing duplicated detail-line renderers from both specialized browsers.
 - Access user/team browse action rows now call shared shell key-chip/plain span
   helpers directly instead of carrying local delegate wrappers.
+- Access user/team browse facts now call the shared browser detail info-line
+  helper directly for `Label: value` rows instead of keeping local
+  `detail_line` delegate wrappers.
 - Dashboard inspect workbench full-detail viewer wrapping now uses a shared
   read-only browser labeled-detail wrapper for aligned metadata rows, keeping
   logical row mapping local to the viewer.

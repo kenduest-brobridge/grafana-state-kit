@@ -285,11 +285,11 @@ fn render_detail_panel(frame: &mut ratatui::Frame, area: Rect, state: &BrowserSt
 
 fn team_detail_lines(row: &Map<String, Value>) -> Vec<Line<'static>> {
     vec![
-        detail_line("ID", &map_get_text(row, "id")),
-        detail_line("Name", &map_get_text(row, "name")),
-        detail_line("Email", &map_get_text(row, "email")),
-        detail_line("Member Count", &map_get_text(row, "memberCount")),
-        detail_line("Members", &map_get_text(row, "members")),
+        browser_detail_info_line("ID", &map_get_text(row, "id"), "-"),
+        browser_detail_info_line("Name", &map_get_text(row, "name"), "-"),
+        browser_detail_info_line("Email", &map_get_text(row, "email"), "-"),
+        browser_detail_info_line("Member Count", &map_get_text(row, "memberCount"), "-"),
+        browser_detail_info_line("Members", &map_get_text(row, "members"), "-"),
     ]
 }
 
@@ -344,13 +344,13 @@ fn render_member_detail_panel(
         frame,
         sections[1],
         vec![
-            detail_line("Login", &map_get_text(row, "memberLogin")),
-            detail_line("Email", &map_get_text(row, "memberEmail")),
-            detail_line("Name", &map_get_text(row, "memberName")),
-            detail_line("Role", &map_get_text(row, "memberRole")),
-            detail_line("Team", &map_get_text(row, "parentTeamName")),
-            detail_line("Team ID", &map_get_text(row, "parentTeamId")),
-            detail_line("Row Kind", "team-member"),
+            browser_detail_info_line("Login", &map_get_text(row, "memberLogin"), "-"),
+            browser_detail_info_line("Email", &map_get_text(row, "memberEmail"), "-"),
+            browser_detail_info_line("Name", &map_get_text(row, "memberName"), "-"),
+            browser_detail_info_line("Role", &map_get_text(row, "memberRole"), "-"),
+            browser_detail_info_line("Team", &map_get_text(row, "parentTeamName"), "-"),
+            browser_detail_info_line("Team ID", &map_get_text(row, "parentTeamId"), "-"),
+            browser_detail_info_line("Row Kind", "team-member", "-"),
         ],
         pane_block("Facts", state.focus == PaneFocus::Facts, Color::LightCyan),
         state.focus == PaneFocus::Facts,
@@ -403,10 +403,6 @@ fn render_focusable_lines(
     } else {
         frame.render_widget(List::new(items).block(block), area);
     }
-}
-
-fn detail_line(label: &str, value: &str) -> Line<'static> {
-    browser_detail_info_line(label, value, "-")
 }
 
 fn member_action_lines(row: &Map<String, Value>) -> Vec<Line<'static>> {
@@ -523,6 +519,17 @@ fn blank_dash(value: &str) -> &str {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn team_browse_render_does_not_wrap_shared_detail_info_lines() {
+        let source = include_str!("team_browse_render.rs");
+        let wrapper_signature = format!("{}{}(", "fn ", "detail_line");
+        assert!(
+            !source.contains(&wrapper_signature),
+            "team_browse_render.rs should call browser_detail_info_line directly instead of \
+             carrying a local detail_line delegate wrapper"
+        );
+    }
+
     use super::*;
     use crate::access::CommonCliArgs;
     use ratatui::backend::TestBackend;
