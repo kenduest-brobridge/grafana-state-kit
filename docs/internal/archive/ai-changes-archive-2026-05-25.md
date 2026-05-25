@@ -194,3 +194,10 @@
 - Impact: Access user/team browse detail rows now share browser-level 18-column Label: value rendering and blank-value fallback while preserving existing detail output. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
 - Rollback/Risk: Low. The change replaces equivalent local detail-line renderers with a shared helper and focused tests cover fallback formatting plus access browse render paths.
 - Follow-up: Continue scanning specialized TUI browsers for remaining local detail/review row renderers that match shared browser projection helpers.
+
+## 2026-05-25 - Shared inspect viewer wrapped detail lines
+- Summary: Added a shared read-only browser wrapped labeled-detail helper and routed dashboard inspect workbench full-detail viewer label/value wrapping through it while keeping logical row mapping local.
+- Tests: cargo test --quiet browser_wrapped_labeled_detail_lines_preserve_prefix_width; cargo test --quiet full_detail_viewer; cargo test --quiet inspect_workbench; cargo test --quiet interactive_browser; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; make quality-ai-workflow; git diff --check
+- Impact: Dashboard inspect workbench full-detail viewer metadata rows now share browser-level aligned label/value wrapping while existing viewer output and logical row mapping remain stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+- Rollback/Risk: Low. The change moves an equivalent wrapped label/value renderer into the shared browser helper layer and focused tests cover the helper plus viewer/workbench paths.
+- Follow-up: Continue auditing remaining TUI render helpers for shared-shell primitives before introducing broader workbench abstractions.

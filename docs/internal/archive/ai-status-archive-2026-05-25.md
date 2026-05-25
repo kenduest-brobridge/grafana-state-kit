@@ -173,3 +173,9 @@
 - Scope: rust/src/commands/dashboard/inspect_workbench/render.rs; rust/src/commands/dashboard/inspect_workbench/render_modal_sections.rs; rust/src/commands/dashboard/inspect_workbench/render_helpers.rs; docs/internal/tui-architecture-roadmap.md
 - Current Update: Routed dashboard inspect workbench shell control/key/plain spans directly through shared tui_shell helpers and added a regression against reintroducing local delegate wrappers.
 - Result: Dashboard inspect workbench shell controls now share tui_shell primitives directly while existing render output remains stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+
+## 2026-05-25 - Shared access browse detail info lines
+- State: Done
+- Scope: rust/src/commands/access/user_browse_render.rs; rust/src/commands/access/team_browse_render.rs; docs/internal/tui-architecture-roadmap.md
+- Current Update: Routed access user/team browse fact rows directly through shared browser_detail_info_line and added regressions against reintroducing local detail_line delegate wrappers.
+- Result: Access user/team browse fact rows now share browser-level detail info-line rendering directly while existing rendered detail output remains stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.

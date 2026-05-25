@@ -157,6 +157,9 @@ still look like possible shared-helper follow-up work.
   instead of carrying local duplicates for the same visual primitives.
 - Status overview section details now use the shared browser detail fact helper
   for `Label: value` strings instead of carrying a local formatter.
+- Datasource browse review empty states now use a shared browser `REVIEW`
+  message helper, leaving the datasource renderer with only panel-specific
+  review selection logic.
 - Dashboard browse header context now matches datasource browse by surfacing the
   selected row position, selected node kind, and current search state.
 - Dashboard browse overlay modes such as search now surface as explicit header

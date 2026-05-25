@@ -24,6 +24,13 @@ Current AI change log only.
 - Older entries moved to [`ai-changes-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-16.md).
 - Older entries moved to [`ai-changes-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-25.md).
 
+## 2026-05-25 - Shared datasource review empty lines
+- Summary: Moved datasource browse REVIEW empty-state line formatting into a shared browser helper and renamed the datasource review panel builder to avoid a generic helper-drift wrapper.
+- Tests: cargo test --quiet browser_review_empty_line_formats_review_prefixed_message; cargo test --quiet datasource_review_panel_does_not_keep_generic_build_review_wrapper; cargo test --quiet datasource_browse; cargo test --quiet interactive_browser; cargo test --quiet datasource (outside sandbox for local mock-server coverage after sandbox denied binding); RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; python3 scripts/tui_inventory_report.py; make quality-ai-workflow; git diff --check
+- Impact: Datasource browse review empty states now share browser-level REVIEW message formatting while review evidence rendering and public CLI/doc surfaces remain unchanged.
+- Rollback/Risk: Low. The shared helper renders the same REVIEW-prefixed message and focused datasource/browser tests cover both empty-state and evidence rows.
+- Follow-up: Re-run the TUI inventory report and evaluate the final dashboard browse build_info_lines candidate separately.
+
 ## 2026-05-25 - Shared status overview detail facts
 - Summary: Routed status overview section detail strings through shared browser_detail_fact instead of a local detail_line formatter and added a regression against reintroducing the wrapper.
 - Tests: cargo test --quiet status_overview_section_rows_do_not_wrap_shared_detail_facts; cargo test --quiet status_overview; cargo test --quiet status (outside sandbox for local mock-server coverage); RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; python3 scripts/tui_inventory_report.py; make quality-ai-workflow; git diff --check
@@ -86,10 +93,3 @@ Current AI change log only.
 - Impact: Status TUI header rows now share shell-level key-chip/plain span rendering while existing status output remains stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
 - Rollback/Risk: Low. The change replaces equivalent local span helpers with shared shell helpers and focused status tests cover the render paths.
 - Follow-up: Continue auditing remaining TUI render helpers for shared-shell primitives before broader workbench abstraction.
-
-## 2026-05-25 - Shared inspect viewer wrapped detail lines
-- Summary: Added a shared read-only browser wrapped labeled-detail helper and routed dashboard inspect workbench full-detail viewer label/value wrapping through it while keeping logical row mapping local.
-- Tests: cargo test --quiet browser_wrapped_labeled_detail_lines_preserve_prefix_width; cargo test --quiet full_detail_viewer; cargo test --quiet inspect_workbench; cargo test --quiet interactive_browser; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; make quality-ai-workflow; git diff --check
-- Impact: Dashboard inspect workbench full-detail viewer metadata rows now share browser-level aligned label/value wrapping while existing viewer output and logical row mapping remain stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
-- Rollback/Risk: Low. The change moves an equivalent wrapped label/value renderer into the shared browser helper layer and focused tests cover the helper plus viewer/workbench paths.
-- Follow-up: Continue auditing remaining TUI render helpers for shared-shell primitives before introducing broader workbench abstractions.

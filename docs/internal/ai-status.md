@@ -24,6 +24,12 @@ Current AI-maintained status only.
 - Older entries moved to [`ai-status-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-16.md).
 - Older entries moved to [`ai-status-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-25.md).
 
+## 2026-05-25 - Shared datasource review empty lines
+- State: Done
+- Scope: rust/src/common/browser/session.rs; rust/src/commands/datasource/browse/render.rs; docs/internal/tui-architecture-roadmap.md
+- Current Update: Moved datasource browse REVIEW empty-state line formatting into a shared browser helper and renamed the datasource review panel builder to avoid a generic helper-drift wrapper.
+- Result: Datasource browse review empty states now share browser-level REVIEW message formatting while review evidence rendering and public CLI/doc surfaces remain unchanged.
+
 ## 2026-05-25 - Shared status overview detail facts
 - State: Done
 - Scope: rust/src/commands/status/overview/section_rows.rs; docs/internal/tui-architecture-roadmap.md
@@ -53,9 +59,3 @@ Current AI-maintained status only.
 - Scope: rust/src/common/tui/shell.rs; rust/src/commands/dashboard/browse/render_detail.rs; rust/src/commands/datasource/browse/render.rs; docs/internal/tui-architecture-roadmap.md
 - Current Update: Added shared tui_shell::muted and routed dashboard/datasource browse muted labels through it instead of identical local helpers.
 - Result: Dashboard and datasource browse muted labels now share the shell-level muted span primitive while existing detail/review output remains stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
-
-## 2026-05-25 - Shared access browse detail info lines
-- State: Done
-- Scope: rust/src/commands/access/user_browse_render.rs; rust/src/commands/access/team_browse_render.rs; docs/internal/tui-architecture-roadmap.md
-- Current Update: Routed access user/team browse fact rows directly through shared browser_detail_info_line and added regressions against reintroducing local detail_line delegate wrappers.
-- Result: Access user/team browse fact rows now share browser-level detail info-line rendering directly while existing rendered detail output remains stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.

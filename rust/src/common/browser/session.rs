@@ -157,6 +157,14 @@ pub(crate) fn browser_detail_info_lines_with(
 }
 
 #[cfg(feature = "tui")]
+pub(crate) fn browser_review_empty_line(message: &str) -> Line<'static> {
+    Line::from(vec![
+        tui_shell::muted("REVIEW "),
+        tui_shell::plain(message.to_string()),
+    ])
+}
+
+#[cfg(feature = "tui")]
 pub(crate) fn browser_review_info_lines(lines: &[String]) -> Vec<Line<'static>> {
     lines
         .iter()
@@ -1111,6 +1119,15 @@ mod tests {
         assert_eq!(
             super::browser_detail_info_line("Email", "", "-").to_string(),
             "Email             : -"
+        );
+    }
+
+    #[cfg(feature = "tui")]
+    #[test]
+    fn browser_review_empty_line_formats_review_prefixed_message() {
+        assert_eq!(
+            super::browser_review_empty_line("No review evidence.").to_string(),
+            "REVIEW No review evidence."
         );
     }
 

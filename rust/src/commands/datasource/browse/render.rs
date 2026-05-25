@@ -1,7 +1,8 @@
 #![cfg(feature = "tui")]
 
 use crate::interactive_browser::{
-    browser_detail_info_lines as build_info_lines, browser_review_info_lines,
+    browser_detail_info_lines as build_info_lines, browser_review_empty_line,
+    browser_review_info_lines,
 };
 use crate::tui_shell;
 use crate::tui_shell::pane_block;
@@ -405,7 +406,7 @@ fn render_detail_panel(
     render_focusable_lines(
         frame,
         sections[2],
-        build_review_lines(item),
+        datasource_review_panel_lines(item),
         pane_block(
             "Review",
             state.focus == PaneFocus::Review,
@@ -461,19 +462,17 @@ fn render_detail_panel(
     );
 }
 
-fn build_review_lines(item: &DatasourceBrowseItem) -> Vec<Line<'static>> {
+fn datasource_review_panel_lines(item: &DatasourceBrowseItem) -> Vec<Line<'static>> {
     if item.is_org_row() {
-        return vec![Line::from(vec![
-            tui_shell::muted("REVIEW "),
-            tui_shell::plain("Select a datasource row to inspect review evidence."),
-        ])];
+        return vec![browser_review_empty_line(
+            "Select a datasource row to inspect review evidence.",
+        )];
     }
     let lines = review_lines(item);
     if lines.is_empty() {
-        return vec![Line::from(vec![
-            tui_shell::muted("REVIEW "),
-            tui_shell::plain("No secret placeholder or review-required evidence."),
-        ])];
+        return vec![browser_review_empty_line(
+            "No secret placeholder or review-required evidence.",
+        )];
     }
     browser_review_info_lines(&lines)
 }
@@ -854,7 +853,7 @@ mod tests {
             datasource_count: 0,
         };
 
-        let rendered = build_review_lines(&item)
+        let rendered = datasource_review_panel_lines(&item)
             .into_iter()
             .map(|line| line.to_string())
             .collect::<Vec<_>>()
@@ -897,7 +896,7 @@ mod tests {
             datasource_count: 0,
         };
 
-        let rendered = build_review_lines(&item)
+        let rendered = datasource_review_panel_lines(&item)
             .into_iter()
             .map(|line| line.to_string())
             .collect::<Vec<_>>()
@@ -930,5 +929,16 @@ mod tests {
         assert!(lines[1].contains("Review required"));
         assert!(lines[1].contains("true"));
         assert!(lines[2].contains("plain review note"));
+    }
+
+    #[test]
+    fn datasource_review_panel_does_not_keep_generic_build_review_wrapper() {
+        let source = include_str!("render.rs");
+        let wrapper_signature = format!("{}{}(", "fn ", "build_review_lines");
+        assert!(
+            !source.contains(&wrapper_signature),
+            "datasource browse review rendering should use a domain-specific panel builder name \
+             instead of carrying a generic build_review_lines helper-drift candidate"
+        );
     }
 }
