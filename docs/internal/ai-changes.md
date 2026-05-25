@@ -24,6 +24,13 @@ Current AI change log only.
 - Older entries moved to [`ai-changes-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-16.md).
 - Older entries moved to [`ai-changes-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-25.md).
 
+## 2026-05-25 - Shared status tui shell spans
+- Summary: Routed status TUI key-chip/plain spans through shared tui_shell helpers instead of local duplicates.
+- Tests: cargo test --quiet status_tui; cargo test --quiet --test project_status_tui_rust_tests; cargo test --quiet project_status (rerun outside sandbox after local mock-server permission denial); cargo test --quiet status (outside sandbox for local mock-server coverage); RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; make quality-ai-workflow; git diff --check
+- Impact: Status TUI header rows now share shell-level key-chip/plain span rendering while existing status output remains stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+- Rollback/Risk: Low. The change replaces equivalent local span helpers with shared shell helpers and focused status tests cover the render paths.
+- Follow-up: Continue auditing remaining TUI render helpers for shared-shell primitives before broader workbench abstraction.
+
 ## 2026-05-25 - Shared inspect viewer wrapped detail lines
 - Summary: Added a shared read-only browser wrapped labeled-detail helper and routed dashboard inspect workbench full-detail viewer label/value wrapping through it while keeping logical row mapping local.
 - Tests: cargo test --quiet browser_wrapped_labeled_detail_lines_preserve_prefix_width; cargo test --quiet full_detail_viewer; cargo test --quiet inspect_workbench; cargo test --quiet interactive_browser; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; make quality-ai-workflow; git diff --check
@@ -86,10 +93,3 @@ Current AI change log only.
 - Impact: Dashboard topology TUI detail rows now share browser-level detail section shaping while keeping existing edge summary output stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
 - Rollback/Risk: Low. The helper preserves existing labels and body lines, with focused tests for empty and populated sections plus topology browser output.
 - Follow-up: Continue migrating compatible TUI detail sections and review surfaces onto shared browser/review helpers where the data shape already matches.
-
-## 2026-05-25 - Shared TUI review evidence sections
-- Summary: Added a shared review-contract helper for appending Review evidence sections and routed access plan, datasource local, and snapshot datasource browser details through it.
-- Tests: cargo test --quiet append_review_evidence_section_adds_heading_only_for_non_empty_lines; cargo test --quiet access_plan_interactive_browser_action_details_include_shared_review_evidence; cargo test --quiet datasource_inspect_export_browser_items_include_review_evidence; cargo test --quiet snapshot_review_browser_items_reuse_datasource_review_evidence_without_secret_paths; cargo test --quiet review_contract; cargo test --quiet access_plan; cargo test --quiet datasource_inspect_export; cargo test --quiet snapshot_review; cargo fmt --check; cargo check --quiet --no-default-features --all-targets; git diff --check
-- Impact: TUI browser details now share the same Review evidence heading and empty-section behavior across access plan, datasource local, and snapshot datasource rows. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
-- Rollback/Risk: Low. The helper preserves existing rendered lines and centralizes repeated section-shaping logic covered by focused tests.
-- Follow-up: Continue migrating compatible review surfaces onto shared review diff/detail helpers when they expose safe live/desired evidence.

@@ -131,3 +131,10 @@
 - Impact: Datasource local list and snapshot review interactive browser rows now share the datasource Review projection directly from details while live datasource browse behavior stays unchanged. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
 - Rollback/Risk: Low. The change removes duplicate adapter objects and preserves existing review line output through focused equivalence coverage.
 - Follow-up: Continue migrating compatible review surfaces onto shared review diff/detail helpers when they expose safe live/desired evidence.
+
+## 2026-05-25 - Shared TUI review evidence sections
+- Summary: Added a shared review-contract helper for appending Review evidence sections and routed access plan, datasource local, and snapshot datasource browser details through it.
+- Tests: cargo test --quiet append_review_evidence_section_adds_heading_only_for_non_empty_lines; cargo test --quiet access_plan_interactive_browser_action_details_include_shared_review_evidence; cargo test --quiet datasource_inspect_export_browser_items_include_review_evidence; cargo test --quiet snapshot_review_browser_items_reuse_datasource_review_evidence_without_secret_paths; cargo test --quiet review_contract; cargo test --quiet access_plan; cargo test --quiet datasource_inspect_export; cargo test --quiet snapshot_review; cargo fmt --check; cargo check --quiet --no-default-features --all-targets; git diff --check
+- Impact: TUI browser details now share the same Review evidence heading and empty-section behavior across access plan, datasource local, and snapshot datasource rows. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+- Rollback/Risk: Low. The helper preserves existing rendered lines and centralizes repeated section-shaping logic covered by focused tests.
+- Follow-up: Continue migrating compatible review surfaces onto shared review diff/detail helpers when they expose safe live/desired evidence.

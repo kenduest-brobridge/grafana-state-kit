@@ -84,7 +84,7 @@ pub(crate) fn render_project_status_frame(
                     .fg(Color::LightCyan)
                     .add_modifier(Modifier::BOLD),
             ),
-            key_chip(focus_label(state.focus()), Color::Blue),
+            tui_shell::key_chip(focus_label(state.focus()), Color::Blue),
             Span::raw("  "),
             Span::styled(
                 "Path ",
@@ -92,7 +92,7 @@ pub(crate) fn render_project_status_frame(
                     .fg(Color::LightCyan)
                     .add_modifier(Modifier::BOLD),
             ),
-            plain("Home -> Domains -> Details -> Actions"),
+            tui_shell::plain("Home -> Domains -> Details -> Actions"),
         ]),
     ];
     frame.render_widget(
@@ -316,20 +316,6 @@ fn action_color(reason_code: &str) -> Color {
         "ready" => Color::Green,
         _ => Color::Cyan,
     }
-}
-
-fn key_chip(label: &str, color: Color) -> Span<'static> {
-    Span::styled(
-        format!(" {label} "),
-        Style::default()
-            .fg(Color::White)
-            .bg(color)
-            .add_modifier(Modifier::BOLD),
-    )
-}
-
-fn plain(value: impl Into<String>) -> Span<'static> {
-    Span::styled(value.into(), Style::default().fg(Color::White))
 }
 
 struct SummaryCell {

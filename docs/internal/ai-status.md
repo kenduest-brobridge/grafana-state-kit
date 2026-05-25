@@ -24,6 +24,12 @@ Current AI-maintained status only.
 - Older entries moved to [`ai-status-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-16.md).
 - Older entries moved to [`ai-status-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-25.md).
 
+## 2026-05-25 - Shared status tui shell spans
+- State: Done
+- Scope: rust/src/commands/status/tui/render.rs; docs/internal/tui-architecture-roadmap.md
+- Current Update: Routed status TUI key-chip/plain spans through shared tui_shell helpers instead of local duplicates.
+- Result: Status TUI header rows now share shell-level key-chip/plain span rendering while existing status output remains stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+
 ## 2026-05-25 - Shared inspect viewer wrapped detail lines
 - State: Done
 - Scope: rust/src/common/browser/session.rs; rust/src/commands/dashboard/inspect_workbench/render_modal_sections/viewer_rows.rs; docs/internal/tui-architecture-roadmap.md
@@ -53,9 +59,3 @@ Current AI-maintained status only.
 - Scope: rust/src/common/browser/session.rs; rust/src/commands/datasource/browse/render.rs; docs/internal/tui-architecture-roadmap.md
 - Current Update: Added a shared read-only browser styled info-line projection and routed datasource browse detail rendering through it instead of a local Label/value renderer.
 - Result: Datasource browse detail panes now share browser-level 18-column Label: value styling while preserving existing datasource detail output. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
-
-## 2026-05-25 - Shared datasource browser detail facts
-- State: Done
-- Scope: rust/src/common/browser/session.rs; rust/src/commands/datasource/browse/support.rs; docs/internal/tui-architecture-roadmap.md
-- Current Update: Added a shared read-only browser fallback fact formatter and routed datasource browse detail rows through shared browser fact helpers instead of local Label/value formatting.
-- Result: Datasource browse detail rows now share browser-level Label: value formatting and blank-value fallback trimming while preserving existing detail output. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.

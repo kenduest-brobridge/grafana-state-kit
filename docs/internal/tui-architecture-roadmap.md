@@ -151,6 +151,8 @@ while skipping generated HTML and Cargo build output.
   alongside movement, detail scroll, and `Esc/q` exit controls.
 - Status TUI now supports `/`, `?`, and `n` search over domain and action lists
   with the same compact search prompt hint language used by the browse surfaces.
+- Status TUI header rows now use the shared shell key-chip/plain span helpers
+  instead of carrying local duplicates for the same visual primitives.
 - Dashboard browse header context now matches datasource browse by surfacing the
   selected row position, selected node kind, and current search state.
 - Dashboard browse overlay modes such as search now surface as explicit header
