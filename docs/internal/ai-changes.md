@@ -24,6 +24,13 @@ Current AI change log only.
 - Older entries moved to [`ai-changes-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-16.md).
 - Older entries moved to [`ai-changes-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-25.md).
 
+## 2026-05-25 - Shared datasource browser info lines
+- Summary: Added a shared read-only browser styled info-line projection and routed datasource browse detail rendering through it instead of a local Label/value renderer.
+- Tests: cargo test --quiet shared_browser_info_lines_format_datasource_detail_rows; cargo test --quiet datasource_browse; cargo test --quiet interactive_browser; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; make quality-ai-workflow; git diff --check
+- Impact: Datasource browse detail panes now share browser-level 18-column Label: value styling while preserving existing datasource detail output. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+- Rollback/Risk: Low. The change replaces an equivalent local renderer with a shared helper, and focused render/browser tests cover the projected output path.
+- Follow-up: Continue migrating compatible dashboard browse detail rendering onto the same shared info-line helper, preserving its dashboard-specific filters and live-details badge handling.
+
 ## 2026-05-25 - Shared datasource browser detail facts
 - Summary: Added a shared read-only browser fallback fact formatter and routed datasource browse detail rows through shared browser fact helpers instead of local Label/value formatting.
 - Tests: cargo test --quiet browser_detail_fallback_fact_trims_or_uses_fallback; cargo test --quiet detail_lines_use_shared_browser_fact_formatting; cargo test --quiet detail_lines_sort_json_data_and_secure_json_field_keys; cargo test --quiet datasource_browse; cargo test --quiet interactive_browser; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; make quality-ai-workflow; git diff --check
@@ -86,10 +93,3 @@ Current AI change log only.
 - Impact: Dashboard import review now consumes the same shared diff model path as sync review for compatible changed-field evidence, reducing per-surface review shaping while preserving existing summary/structural/raw diff lines.
 - Rollback/Risk: low. Rollback would remove the compact shared live/desired preview from the import review pane while keeping existing import summary, structural, and raw diff lines.
 - Follow-up: Continue migrating other compatible review surfaces that already expose live/desired/changed-field evidence onto the shared ReviewDiffModel projection.
-
-## 2026-05-25 - No-default TUI helper warning cleanup
-- Summary: Moved remaining TUI-only or TUI-test-only helper aliases and re-exports out of no-default production/test targets so no-default all-target builds can run with warnings denied.
-- Tests: cargo fmt --check; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo check --quiet --no-default-features --all-targets; cargo test --quiet --no-default-features tui_not_built_returns_shared_tui_feature_error; cargo test --quiet --no-default-features access_plan_interactive_browser; cargo test --quiet --no-default-features review_mutation_action_detail_lines_project_generic_review_evidence; cargo test --quiet --no-default-features workspace_roots_are_treated_as_local_browse_sources; cargo test --quiet access_plan_interactive_browser; cargo test --quiet resolve_report_column_ids; cargo test --quiet dispatch_query_analysis_matches_shared_analyzer_fixture_cases; cargo test --quiet build_topology_tui_groups_summarize_node_kinds; cargo test --quiet filter_topology_tui_items_limits_items_to_selected_group; cargo test --quiet snapshot_review_parses_all_supported_output_modes; cargo test --quiet root_command_entrypoints_use_grouped_help_for_bare_and_help_forms
-- Impact: The remaining no-default TUI helper/alias warning surface is cleared while default-feature access plan, dashboard browse/report/topology, snapshot parser, and grouped-help tests remain behavior-compatible.
-- Rollback/Risk: low. Rollback would restore no-default warning noise without changing normal default-feature interactive behavior.
-- Follow-up: Continue higher-level TUI design work by migrating compatible review surfaces onto shared diff/detail visualization helpers instead of chasing no-default warning hygiene.

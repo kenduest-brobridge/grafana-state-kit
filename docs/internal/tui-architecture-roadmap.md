@@ -198,6 +198,9 @@ while skipping generated HTML and Cargo build output.
 - Datasource browse detail rows now reuse shared read-only browser fact
   formatters, including trimmed fallback handling for blank UID/name/type/URL
   style metadata, while preserving existing datasource detail output.
+- Datasource browse detail rendering now uses the shared read-only browser
+  styled info-line projection for `Label: value` rows instead of carrying a
+  local copy of the same 18-column label/value styling.
 - No-default TUI warning noise is narrower: feature-disabled builds no longer
   compile unused imports or large dead-code surfaces for access browse, access
   plan summary lines, shared read-only browser internals, snapshot browser

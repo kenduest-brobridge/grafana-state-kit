@@ -1,5 +1,6 @@
 #![cfg(feature = "tui")]
 
+use crate::interactive_browser::browser_detail_info_lines as build_info_lines;
 use crate::tui_shell;
 use crate::tui_shell::pane_block;
 use ratatui::layout::{Constraint, Direction, Layout};
@@ -498,31 +499,6 @@ fn build_review_lines(item: &DatasourceBrowseItem) -> Vec<Line<'static>> {
         .collect()
 }
 
-fn build_info_lines(lines: &[String]) -> Vec<Line<'static>> {
-    lines
-        .iter()
-        .filter(|line| !line.is_empty())
-        .map(|line| {
-            if let Some((label, value)) = line.split_once(':') {
-                Line::from(vec![
-                    Span::styled(
-                        format!("{label:<18}: "),
-                        Style::default()
-                            .fg(Color::LightBlue)
-                            .add_modifier(Modifier::BOLD),
-                    ),
-                    Span::styled(value.trim().to_string(), Style::default().fg(Color::White)),
-                ])
-            } else {
-                Line::from(Span::styled(
-                    line.clone(),
-                    Style::default().fg(Color::White),
-                ))
-            }
-        })
-        .collect()
-}
-
 fn control_lines(has_pending_delete: bool, has_pending_edit: bool) -> Vec<Line<'static>> {
     if has_pending_delete {
         return vec![control_line(&[
@@ -833,6 +809,23 @@ mod tests {
         assert!(lines[1].contains("search"));
         assert!(lines[2].contains("exit"));
         assert!(lines[2].contains("Esc/q"));
+    }
+
+    #[test]
+    fn shared_browser_info_lines_format_datasource_detail_rows() {
+        let lines = crate::interactive_browser::browser_detail_info_lines(&[
+            "UID: smoke-prom".to_string(),
+            String::new(),
+            "No colon row".to_string(),
+        ])
+        .into_iter()
+        .map(|line| line.to_string())
+        .collect::<Vec<_>>();
+
+        assert_eq!(lines.len(), 2);
+        assert!(lines[0].contains("UID"));
+        assert!(lines[0].contains("smoke-prom"));
+        assert!(lines[1].contains("No colon row"));
     }
 
     #[test]

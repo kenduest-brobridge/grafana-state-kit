@@ -98,6 +98,32 @@ pub(crate) fn browser_detail_aligned_fact(label: &str, value: impl std::fmt::Dis
     format!("{label:<16}: {value}")
 }
 
+#[cfg(feature = "tui")]
+pub(crate) fn browser_detail_info_lines(lines: &[String]) -> Vec<Line<'static>> {
+    lines
+        .iter()
+        .filter(|line| !line.is_empty())
+        .map(|line| {
+            if let Some((label, value)) = line.split_once(':') {
+                Line::from(vec![
+                    Span::styled(
+                        format!("{label:<18}: "),
+                        Style::default()
+                            .fg(Color::LightBlue)
+                            .add_modifier(Modifier::BOLD),
+                    ),
+                    Span::styled(value.trim().to_string(), Style::default().fg(Color::White)),
+                ])
+            } else {
+                Line::from(Span::styled(
+                    line.clone(),
+                    Style::default().fg(Color::White),
+                ))
+            }
+        })
+        .collect()
+}
+
 #[cfg(any(feature = "tui", test))]
 impl BrowserItem {
     fn matches_query(&self, query: &str) -> bool {
