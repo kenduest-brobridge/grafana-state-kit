@@ -13,6 +13,8 @@ use crate::common::{load_json_object_file, message, render_json_value, Result};
 use crate::datasource::review_lines_from_datasource_details;
 #[cfg(any(feature = "tui", test))]
 use crate::interactive_browser::BrowserItem;
+#[cfg(any(feature = "tui", test))]
+use crate::review_contract::append_review_evidence_section;
 use crate::tabular_output::render_yaml;
 #[cfg(feature = "tui")]
 use crate::tui_shell;
@@ -148,11 +150,10 @@ pub(crate) fn build_datasource_inspect_export_browser_items(
                 format!("Input mode: {}", source.input_mode),
                 format!("Input path: {}", source.input_path),
             ];
-            let review = datasource_inspect_export_review_lines(record);
-            if !review.is_empty() {
-                details.push("Review evidence:".to_string());
-                details.extend(review);
-            }
+            append_review_evidence_section(
+                &mut details,
+                datasource_inspect_export_review_lines(record),
+            );
             BrowserItem {
                 kind: "datasource".to_string(),
                 title: name.clone(),

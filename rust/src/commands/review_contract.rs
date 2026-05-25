@@ -220,6 +220,15 @@ pub(crate) fn build_review_mutation_action_detail_lines(
     lines
 }
 
+#[cfg(any(feature = "tui", test))]
+pub(crate) fn append_review_evidence_section(lines: &mut Vec<String>, review_lines: Vec<String>) {
+    if review_lines.is_empty() {
+        return;
+    }
+    lines.push("Review evidence:".to_string());
+    lines.extend(review_lines);
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct ReviewMutationDomain {
     pub id: String,
@@ -673,5 +682,31 @@ mod tests {
         assert!(!warning_lines
             .iter()
             .any(|line| line.starts_with("Review blocker status:")));
+    }
+
+    #[test]
+    fn append_review_evidence_section_adds_heading_only_for_non_empty_lines() {
+        let mut lines = vec!["Name: Prometheus".to_string()];
+
+        append_review_evidence_section(&mut lines, Vec::new());
+        assert_eq!(lines, vec!["Name: Prometheus".to_string()]);
+
+        append_review_evidence_section(
+            &mut lines,
+            vec![
+                "Review action: would-update (status=ready)".to_string(),
+                "Review changed fields: url".to_string(),
+            ],
+        );
+
+        assert_eq!(
+            lines,
+            vec![
+                "Name: Prometheus".to_string(),
+                "Review evidence:".to_string(),
+                "Review action: would-update (status=ready)".to_string(),
+                "Review changed fields: url".to_string(),
+            ]
+        );
     }
 }

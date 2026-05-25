@@ -12,6 +12,8 @@ use crate::datasource::review_lines_from_datasource_details;
 use crate::interactive_browser::run_interactive_browser;
 #[cfg(any(feature = "tui", test))]
 use crate::interactive_browser::BrowserItem;
+#[cfg(any(feature = "tui", test))]
+use crate::review_contract::append_review_evidence_section;
 
 #[cfg(any(feature = "tui", test))]
 use super::common::{review_summary, review_warnings};
@@ -523,11 +525,7 @@ pub(crate) fn build_snapshot_review_browser_items(document: &Value) -> Result<Ve
             format!("Access: {access}"),
             format!("Default: {}", if is_default { "true" } else { "false" }),
         ];
-        let review = snapshot_datasource_review_lines(datasource);
-        if !review.is_empty() {
-            details.push("Review evidence:".to_string());
-            details.extend(review);
-        }
+        append_review_evidence_section(&mut details, snapshot_datasource_review_lines(datasource));
         items.push(BrowserItem {
             kind: "datasource".to_string(),
             title: name,

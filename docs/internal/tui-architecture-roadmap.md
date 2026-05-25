@@ -181,6 +181,10 @@ while skipping generated HTML and Cargo build output.
   the datasource Review projection directly from datasource details instead of
   constructing dummy browse items, reducing repeated local artifact browser
   shaping while preserving the live datasource browse review pane.
+- Access plan, datasource local, and snapshot datasource review browser rows now
+  use the shared review-contract helper for appending `Review evidence:`
+  sections, keeping the heading/empty-section rule consistent across these TUI
+  browser details.
 - No-default TUI warning noise is narrower: feature-disabled builds no longer
   compile unused imports or large dead-code surfaces for access browse, access
   plan summary lines, shared read-only browser internals, snapshot browser

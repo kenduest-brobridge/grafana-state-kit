@@ -3,10 +3,10 @@
 use crate::common::Result;
 #[cfg(any(feature = "tui", test))]
 use crate::review_contract::{
-    build_review_mutation_action_detail_lines, REVIEW_ACTION_BLOCKED, REVIEW_ACTION_EXTRA_REMOTE,
-    REVIEW_ACTION_SAME, REVIEW_ACTION_UNMANAGED, REVIEW_ACTION_WOULD_CREATE,
-    REVIEW_ACTION_WOULD_DELETE, REVIEW_ACTION_WOULD_UPDATE, REVIEW_HINT_REMOTE_ONLY,
-    REVIEW_STATUS_BLOCKED, REVIEW_STATUS_WARNING,
+    append_review_evidence_section, build_review_mutation_action_detail_lines,
+    REVIEW_ACTION_BLOCKED, REVIEW_ACTION_EXTRA_REMOTE, REVIEW_ACTION_SAME, REVIEW_ACTION_UNMANAGED,
+    REVIEW_ACTION_WOULD_CREATE, REVIEW_ACTION_WOULD_DELETE, REVIEW_ACTION_WOULD_UPDATE,
+    REVIEW_HINT_REMOTE_ONLY, REVIEW_STATUS_BLOCKED, REVIEW_STATUS_WARNING,
 };
 
 #[cfg(feature = "tui")]
@@ -456,8 +456,10 @@ pub(crate) fn build_access_plan_browser_items(document: &AccessPlanDocument) -> 
         if let Some(impact) = impact_line(&action) {
             details.push(impact);
         }
-        details.push("Review evidence:".to_string());
-        details.extend(build_review_mutation_action_detail_lines(&action));
+        append_review_evidence_section(
+            &mut details,
+            build_review_mutation_action_detail_lines(&action),
+        );
         if !source_path.is_empty() {
             details.push(format!("Source path: {}", source_path));
         }
