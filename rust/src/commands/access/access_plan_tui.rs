@@ -3,9 +3,10 @@
 use crate::common::Result;
 #[cfg(any(feature = "tui", test))]
 use crate::review_contract::{
-    append_review_evidence_section, build_review_mutation_action_detail_lines,
-    build_review_mutation_action_diff_preview_lines, build_review_mutation_action_next_check_lines,
-    REVIEW_ACTION_BLOCKED, REVIEW_ACTION_EXTRA_REMOTE, REVIEW_ACTION_SAME, REVIEW_ACTION_UNMANAGED,
+    append_review_evidence_section, build_review_mutation_action_change_detail_lines,
+    build_review_mutation_action_detail_lines, build_review_mutation_action_diff_preview_lines,
+    build_review_mutation_action_next_check_lines, REVIEW_ACTION_BLOCKED,
+    REVIEW_ACTION_EXTRA_REMOTE, REVIEW_ACTION_SAME, REVIEW_ACTION_UNMANAGED,
     REVIEW_ACTION_WOULD_CREATE, REVIEW_ACTION_WOULD_DELETE, REVIEW_ACTION_WOULD_UPDATE,
     REVIEW_STATUS_BLOCKED, REVIEW_STATUS_WARNING,
 };
@@ -227,32 +228,6 @@ fn blocked_or_warning_context(
 }
 
 #[cfg(any(feature = "tui", test))]
-fn change_detail_lines(raw: &Value) -> Vec<String> {
-    raw.get("changes")
-        .and_then(Value::as_array)
-        .into_iter()
-        .flatten()
-        .filter_map(Value::as_object)
-        .filter_map(|change| {
-            let field = change
-                .get("field")
-                .and_then(Value::as_str)?
-                .trim()
-                .to_string();
-            if field.is_empty() {
-                return None;
-            }
-            if !is_safe_access_change_field(&field) {
-                return None;
-            }
-            let bundle = compact_value(change.get("before").unwrap_or(&Value::Null));
-            let live = compact_value(change.get("after").unwrap_or(&Value::Null));
-            Some(format!("Change: {field} bundle={bundle} live={live}"))
-        })
-        .collect()
-}
-
-#[cfg(any(feature = "tui", test))]
 fn target_evidence_lines(raw: &Value) -> Vec<String> {
     let Some(target) = raw_target(raw) else {
         return Vec::new();
@@ -374,7 +349,7 @@ pub(crate) fn build_access_plan_browser_items(document: &AccessPlanDocument) -> 
         if !source_path.is_empty() {
             details.push(format!("Source path: {}", source_path));
         }
-        details.extend(change_detail_lines(&action.raw));
+        details.extend(build_review_mutation_action_change_detail_lines(&action));
         details.extend(build_review_mutation_action_diff_preview_lines(&action));
         details.extend(target_evidence_lines(&action.raw));
         details.extend(blocked_or_warning_context(&action));

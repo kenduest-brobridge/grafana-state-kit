@@ -24,6 +24,12 @@ Current AI-maintained status only.
 - Older entries moved to [`ai-status-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-16.md).
 - Older entries moved to [`ai-status-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-25.md).
 
+## 2026-05-25 - Shared review change-detail projection
+- State: Done
+- Scope: rust/src/commands/review_contract.rs; rust/src/commands/access/access_plan_tui.rs; docs/internal/tui-architecture-roadmap.md
+- Current Update: Moved access plan action change-detail row projection into the shared review contract so mutation review surfaces can reuse safe Change: field bundle/live rows.
+- Result: Access plan TUI keeps the same Change: field bundle/live rows while the reusable review contract now owns safe changed-field filtering and compact value formatting for generic mutation action changes. Public CLI paths, help text, generated docs, and command contracts are unchanged.
+
 ## 2026-05-25 - Shared review diff preview projection
 - State: Done
 - Scope: rust/src/commands/review_contract.rs; rust/src/commands/access/access_plan_tui.rs; docs/internal/tui-architecture-roadmap.md
@@ -53,9 +59,3 @@ Current AI-maintained status only.
 - Scope: rust/src/common/browser/session.rs; rust/src/commands/datasource/browse/render.rs; docs/internal/tui-architecture-roadmap.md
 - Current Update: Moved datasource browse REVIEW empty-state line formatting into a shared browser helper and renamed the datasource review panel builder to avoid a generic helper-drift wrapper.
 - Result: Datasource browse review empty states now share browser-level REVIEW message formatting while review evidence rendering and public CLI/doc surfaces remain unchanged.
-
-## 2026-05-25 - Shared status overview detail facts
-- State: Done
-- Scope: rust/src/commands/status/overview/section_rows.rs; docs/internal/tui-architecture-roadmap.md
-- Current Update: Routed status overview section detail strings through shared browser_detail_fact instead of a local detail_line formatter and added a regression against reintroducing the wrapper.
-- Result: Status overview section item details now share the browser-level Label: value fact formatter, reducing helper drift candidates from three to two while preserving existing detail strings. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.

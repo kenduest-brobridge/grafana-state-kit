@@ -221,6 +221,66 @@ pub(crate) fn build_review_mutation_action_detail_lines(
 }
 
 #[cfg(any(feature = "tui", test))]
+fn compact_review_value(value: &Value) -> String {
+    match value {
+        Value::Null => "-".to_string(),
+        Value::Bool(flag) => flag.to_string(),
+        Value::Number(number) => number.to_string(),
+        Value::String(text) => {
+            let trimmed = text.trim();
+            if trimmed.is_empty() {
+                "-".to_string()
+            } else {
+                trimmed.to_string()
+            }
+        }
+        Value::Array(items) => {
+            let compact = items
+                .iter()
+                .map(compact_review_value)
+                .filter(|value| value != "-")
+                .collect::<Vec<_>>();
+            if compact.is_empty() {
+                "[]".to_string()
+            } else {
+                compact.join(", ")
+            }
+        }
+        Value::Object(_) => serde_json::to_string(value).unwrap_or_else(|_| "<object>".to_string()),
+    }
+}
+
+#[cfg(any(feature = "tui", test))]
+pub(crate) fn build_review_mutation_action_change_detail_lines(
+    action: &ReviewMutationAction,
+) -> Vec<String> {
+    action
+        .raw
+        .get("changes")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(Value::as_object)
+        .filter_map(|change| {
+            let field = change
+                .get("field")
+                .and_then(Value::as_str)?
+                .trim()
+                .to_string();
+            if field.is_empty() {
+                return None;
+            }
+            if !crate::review_diff::is_safe_review_changed_field(&field) {
+                return None;
+            }
+            let bundle = compact_review_value(change.get("before").unwrap_or(&Value::Null));
+            let live = compact_review_value(change.get("after").unwrap_or(&Value::Null));
+            Some(format!("Change: {field} bundle={bundle} live={live}"))
+        })
+        .collect()
+}
+
+#[cfg(any(feature = "tui", test))]
 pub(crate) fn build_review_mutation_action_next_check_lines(
     action: &ReviewMutationAction,
 ) -> Vec<String> {
@@ -850,6 +910,46 @@ mod tests {
 
         assert!(rendered.contains("Shared Diff: user alice [would-update]"));
         assert!(rendered.contains("email"));
+        assert!(!rendered.contains("password"));
+        assert!(!rendered.contains("new-secret"));
+        assert!(!rendered.contains("old-secret"));
+    }
+
+    #[test]
+    fn review_mutation_action_change_detail_lines_hide_secret_like_fields() {
+        let action = ReviewMutationAction::from(ReviewMutationActionInput {
+            action_id: "access:user:alice".to_string(),
+            action: REVIEW_ACTION_WOULD_UPDATE.to_string(),
+            domain: "access".to_string(),
+            resource_kind: "user".to_string(),
+            identity: "alice".to_string(),
+            status: REVIEW_STATUS_WARNING.to_string(),
+            blocked_reason: None,
+            details: Some("fields=email".to_string()),
+            review_hints: Vec::new(),
+            raw: json!({
+                "changes": [
+                    {
+                        "field": "email",
+                        "before": "alice@example.com",
+                        "after": "alice-old@example.com"
+                    },
+                    {
+                        "field": "password",
+                        "before": "new-secret",
+                        "after": "old-secret"
+                    }
+                ]
+            }),
+        });
+
+        let lines = build_review_mutation_action_change_detail_lines(&action);
+        let rendered = lines.join("\n");
+
+        assert_eq!(
+            lines,
+            vec!["Change: email bundle=alice@example.com live=alice-old@example.com"]
+        );
         assert!(!rendered.contains("password"));
         assert!(!rendered.contains("new-secret"));
         assert!(!rendered.contains("old-secret"));

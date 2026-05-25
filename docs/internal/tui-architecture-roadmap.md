@@ -187,6 +187,9 @@ still look like possible shared-helper follow-up work.
 - Access plan now gets that compact live/desired diff preview through the
   shared review-contract action projection, so compatible mutation review TUIs
   can reuse the same safe changed-field preview path.
+- Access plan change-detail rows now also come from the shared review-contract
+  action projection, keeping `Change: field bundle=... live=...` rows and
+  secret-like field filtering reusable across mutation review panes.
 - Access plan interactive reviews now also use shared review-contract next-check
   projection for action hints and default follow-up guidance, reducing another
   per-surface review pane shaping rule.
