@@ -146,7 +146,7 @@ fn snapshot_review_document_preserves_datasource_review_evidence_for_browser_pro
             "status": "ready",
             "blockedReason": "target-read-only",
             "targetReadOnly": true,
-            "changedFields": ["url", "secureJsonData.password"],
+            "changedFields": ["url", "secureJsonData.password", "jsonData.token", "basicAuthPassword"],
             "reviewRequired": true,
             "secureJsonData": {
                 "password": "super-secret-value"
@@ -172,6 +172,8 @@ fn snapshot_review_document_preserves_datasource_review_evidence_for_browser_pro
     assert!(datasource.get("secureJsonData").is_none());
     assert!(!datasource.to_string().contains("super-secret-value"));
     assert!(!datasource.to_string().contains("secureJsonData.password"));
+    assert!(!datasource.to_string().contains("jsonData.token"));
+    assert!(!datasource.to_string().contains("basicAuthPassword"));
 }
 
 #[test]
@@ -211,7 +213,7 @@ fn snapshot_review_browser_items_reuse_datasource_review_evidence_without_secret
                 "status": "blocked",
                 "blockedReason": "target-read-only",
                 "targetReadOnly": true,
-                "changedFields": ["url", "secureJsonData.password"],
+                "changedFields": ["url", "secureJsonData.password", "jsonData.token", "basicAuthPassword"],
                 "reviewRequired": true,
                 "secureJsonData": {
                     "password": "super-secret-value"
@@ -236,6 +238,8 @@ fn snapshot_review_browser_items_reuse_datasource_review_evidence_without_secret
     assert!(details.contains("Review required: true"));
     assert!(!details.contains("super-secret-value"));
     assert!(!details.contains("secureJsonData.password"));
+    assert!(!details.contains("jsonData.token"));
+    assert!(!details.contains("basicAuthPassword"));
 }
 
 #[test]

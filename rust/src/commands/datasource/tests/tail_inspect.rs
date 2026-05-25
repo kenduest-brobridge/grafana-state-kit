@@ -100,7 +100,7 @@ fn datasource_inspect_export_browser_items_include_review_evidence() {
             "status": "blocked",
             "blockedReason": "target-read-only",
             "targetReadOnly": true,
-            "changedFields": ["url", "secureJsonData.password"],
+            "changedFields": ["url", "secureJsonData.password", "jsonData.token", "basicAuthPassword"],
             "secureJsonData": {
                 "password": "super-secret-value"
             }
@@ -119,6 +119,8 @@ fn datasource_inspect_export_browser_items_include_review_evidence() {
     assert!(details.contains("Review changed fields: url"));
     assert!(!details.contains("super-secret-value"));
     assert!(!details.contains("secureJsonData.password"));
+    assert!(!details.contains("jsonData.token"));
+    assert!(!details.contains("basicAuthPassword"));
 }
 
 #[test]

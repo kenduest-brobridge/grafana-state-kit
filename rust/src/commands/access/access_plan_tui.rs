@@ -101,10 +101,7 @@ fn raw_target(raw: &Value) -> Option<&Map<String, Value>> {
 
 #[cfg(any(feature = "tui", test))]
 fn is_safe_access_change_field(field: &str) -> bool {
-    let lower = field.to_ascii_lowercase();
-    !["password", "secret", "token", "apikey", "api_key", "key"]
-        .iter()
-        .any(|needle| lower.contains(needle))
+    crate::review_diff::is_safe_review_changed_field(field)
 }
 
 #[cfg(any(feature = "tui", test))]

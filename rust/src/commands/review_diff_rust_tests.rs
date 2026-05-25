@@ -1,9 +1,9 @@
 //! Shared review diff visualization model tests.
 
 use crate::review_diff::{
-    build_review_diff_model, clip_text_window, review_diff_model_preview_lines,
-    review_diff_pane_title, review_diff_scroll_max, wrap_text_chunks, ReviewDiffInput,
-    ReviewDiffLine, ReviewDiffModel, ReviewDiffPaneFocus,
+    build_review_diff_model, clip_text_window, is_safe_review_changed_field,
+    review_diff_model_preview_lines, review_diff_pane_title, review_diff_scroll_max,
+    wrap_text_chunks, ReviewDiffInput, ReviewDiffLine, ReviewDiffModel, ReviewDiffPaneFocus,
 };
 use serde_json::json;
 
@@ -55,6 +55,27 @@ fn shared_review_diff_model_represents_workspace_and_domain_shaped_operations() 
     assert_eq!(alert_model.desired_lines.len(), 2);
     assert!(alert_model.live_lines.iter().all(|line| line.changed));
     assert!(alert_model.desired_lines[1].content.contains("for"));
+}
+
+#[test]
+fn shared_review_changed_field_filter_hides_secret_like_paths() {
+    for field in [
+        "secureJsonData.password",
+        "password",
+        "basicAuthPassword",
+        "secretMaterial",
+        "apiToken",
+        "token",
+        "api_key",
+        "apiKey",
+        "privateKey",
+    ] {
+        assert!(!is_safe_review_changed_field(field), "{field}");
+    }
+
+    for field in ["url", "jsonData.httpMethod", "email", "orgRole", "members"] {
+        assert!(is_safe_review_changed_field(field), "{field}");
+    }
 }
 
 #[test]

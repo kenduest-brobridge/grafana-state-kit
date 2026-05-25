@@ -7,6 +7,7 @@ use crate::dashboard::{build_auth_context, build_http_client_for_org, DEFAULT_OR
 use crate::datasource_provider::{collect_provider_references, iter_provider_names};
 use crate::datasource_secret::{collect_secret_placeholders, iter_secret_placeholder_names};
 use crate::http::JsonHttpClient;
+use crate::review_diff::is_safe_review_changed_field;
 
 use super::DatasourceBrowseArgs;
 
@@ -383,7 +384,7 @@ fn text_list_field(details: &Map<String, Value>, names: &[&str]) -> Option<Vec<S
 }
 
 pub(crate) fn is_safe_changed_field(field: &str) -> bool {
-    !field.to_ascii_lowercase().contains("securejsondata")
+    is_safe_review_changed_field(field)
 }
 
 fn sorted_object_keys(object: &Map<String, Value>) -> Vec<String> {

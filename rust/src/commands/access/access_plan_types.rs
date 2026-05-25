@@ -121,10 +121,7 @@ impl AccessPlanAction {
 }
 
 fn is_safe_access_plan_change_field(field: &str) -> bool {
-    let lower = field.to_ascii_lowercase();
-    !["password", "secret", "token", "apikey", "api_key", "key"]
-        .iter()
-        .any(|needle| lower.contains(needle))
+    crate::review_diff::is_safe_review_changed_field(field)
 }
 
 impl AccessPlanDocument {

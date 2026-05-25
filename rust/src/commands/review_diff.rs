@@ -90,6 +90,7 @@ impl<'a> ReviewDiffInput<'a> {
             .unwrap_or_default()
             .into_iter()
             .filter_map(|item| item.as_str().map(str::to_string))
+            .filter(|field| is_safe_review_changed_field(field))
             .collect::<Vec<_>>();
 
         Ok(Self {
@@ -149,6 +150,21 @@ fn diff_highlight_ranges(left: &str, right: &str) -> (HighlightRange, HighlightR
     (left_range, right_range)
 }
 
+pub(crate) fn is_safe_review_changed_field(field: &str) -> bool {
+    let lower = field.to_ascii_lowercase();
+    ![
+        "securejsondata",
+        "password",
+        "secret",
+        "token",
+        "apikey",
+        "api_key",
+        "key",
+    ]
+    .iter()
+    .any(|needle| lower.contains(needle))
+}
+
 pub(crate) fn build_review_diff_model(input: ReviewDiffInput<'_>) -> Result<ReviewDiffModel> {
     let fields = if input.changed_fields.is_empty() {
         let mut combined = BTreeSet::new();
@@ -161,7 +177,10 @@ pub(crate) fn build_review_diff_model(input: ReviewDiffInput<'_>) -> Result<Revi
         combined.into_iter().collect::<Vec<_>>()
     } else {
         input.changed_fields
-    };
+    }
+    .into_iter()
+    .filter(|field| is_safe_review_changed_field(field))
+    .collect::<Vec<_>>();
     if fields.is_empty() {
         return Ok(ReviewDiffModel {
             title: input.title,

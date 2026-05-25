@@ -24,6 +24,12 @@ Current AI-maintained status only.
 - Older entries moved to [`ai-status-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-16.md).
 - Older entries moved to [`ai-status-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-25.md).
 
+## 2026-05-25 - Shared TUI review changed-field safety
+- State: Done
+- Scope: rust/src/commands/review_diff.rs; rust/src/commands/datasource/browse/support.rs; rust/src/commands/access/access_plan_tui.rs; rust/src/commands/access/access_plan_types.rs; sync/datasource/snapshot/access review tests; docs/internal/tui-architecture-roadmap.md
+- Current Update: Moved secret-like changed-field filtering into the shared review diff helper and routed sync diff models, datasource/snapshot review evidence, and access plan review detail filtering through the shared predicate.
+- Result: TUI review panes now share the same changed-field redaction policy before rendering field names or side-by-side values. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+
 ## 2026-05-25 - Access plan shared diff preview
 - State: Done
 - Scope: Rust access plan interactive review TUI and shared review diff projection helpers. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
@@ -53,9 +59,3 @@ Current AI-maintained status only.
 - Scope: Rust no-default TUI boundary hygiene for access browse/plan, shared browser, snapshot review browser shaping, shared review diff helpers, dashboard governance item shaping, and datasource browse support. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
 - Current Update: Removed unused no-default fallback imports and narrowed no-default dead-code noise on TUI-only helper modules while keeping default-feature tests and the shared feature-disabled fallback regression intact.
 - Result: The focused no-default fallback test still passes and its warning output is now limited to smaller remaining ownership/fallback cleanup items instead of broad TUI helper modules.
-
-## 2026-05-25 - Shared review diff visualization helpers
-- State: Done
-- Scope: Rust internal TUI review diff helper ownership. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
-- Current Update: Moved the sync review TUI's domain-neutral side-by-side diff focus, title, scroll, wrap, clip, TUI list-item, and footer control helpers into `review_diff.rs`, leaving sync review to re-export and consume the shared helpers.
-- Result: Sync review remains behavior-compatible while future compatible review surfaces can reuse the same shared diff visualization path.

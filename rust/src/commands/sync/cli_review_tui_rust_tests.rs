@@ -141,6 +141,42 @@ fn review_operation_preview_hides_secret_like_changed_fields() {
 }
 
 #[test]
+fn review_operation_diff_model_hides_secret_like_changed_fields() {
+    let operation = json!({
+        "kind": "datasource",
+        "identity": "prom-main",
+        "action": "would-update",
+        "changedFields": ["url", "secureJsonData.password", "apiToken"],
+        "live": {
+            "url": "http://old-prometheus:9090",
+            "secureJsonData.password": "old-secret",
+            "apiToken": "old-token"
+        },
+        "desired": {
+            "url": "http://new-prometheus:9090",
+            "secureJsonData.password": "new-secret",
+            "apiToken": "new-token"
+        }
+    });
+
+    let model = review_tui::build_review_operation_diff_model(&operation).unwrap();
+    let rendered = model
+        .live_lines
+        .iter()
+        .chain(model.desired_lines.iter())
+        .map(|line| line.content.as_str())
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    assert!(rendered.contains("url"));
+    assert!(!rendered.contains("secureJsonData"));
+    assert!(!rendered.contains("password"));
+    assert!(!rendered.contains("apiToken"));
+    assert!(!rendered.contains("secret"));
+    assert!(!rendered.contains("token"));
+}
+
+#[test]
 fn filter_reviewable_operations_by_query_matches_visible_review_fields() {
     let plan = json!({
         "kind": "grafana-utils-sync-plan",

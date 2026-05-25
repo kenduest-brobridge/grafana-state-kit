@@ -172,6 +172,11 @@ while skipping generated HTML and Cargo build output.
   previews from safe bundle/live change rows, using the same `ReviewDiffModel`
   vocabulary while filtering secret-like access change fields out of both the
   generic review detail string and TUI preview output.
+- Review changed-field safety now uses the shared review diff predicate across
+  sync diff models, datasource/snapshot review evidence, and access plan review
+  details so secret-like paths such as password, token, API key, and
+  secureJsonData fields are filtered before TUI review panes render field names
+  or values.
 - No-default TUI warning noise is narrower: feature-disabled builds no longer
   compile unused imports or large dead-code surfaces for access browse, access
   plan summary lines, shared read-only browser internals, snapshot browser

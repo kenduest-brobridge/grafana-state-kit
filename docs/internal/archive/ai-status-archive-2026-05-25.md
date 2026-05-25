@@ -47,3 +47,9 @@
 - Scope: Rust TUI cfg boundaries for access/dashboard/datasource/status, sync audit, and snapshot review test helpers. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
 - Current Update: Kept TUI-only helpers, test re-exports, and interactive test modules behind `feature = "tui"` during no-default test builds while preserving default-feature TUI tests and the shared feature-disabled fallback regression.
 - Result: The focused no-default fallback test now compiles and passes instead of failing earlier on ratatui/crossterm or TUI-only helper imports.
+
+## 2026-05-25 - Shared review diff visualization helpers
+- State: Done
+- Scope: Rust internal TUI review diff helper ownership. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
+- Current Update: Moved the sync review TUI's domain-neutral side-by-side diff focus, title, scroll, wrap, clip, TUI list-item, and footer control helpers into `review_diff.rs`, leaving sync review to re-export and consume the shared helpers.
+- Result: Sync review remains behavior-compatible while future compatible review surfaces can reuse the same shared diff visualization path.
