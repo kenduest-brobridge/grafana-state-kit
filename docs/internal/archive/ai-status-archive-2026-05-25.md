@@ -65,3 +65,9 @@
 - Scope: Rust dashboard TUI cfg boundary hygiene for topology/impact interactive test branches plus dashboard import/inspect TUI-only test re-exports. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
 - Current Update: Gated topology/impact test interactive browser branches and dashboard import/inspect test-only re-exports on the tui feature so no-default all-target builds no longer compile those TUI-only paths or emit their unreachable/unused warnings.
 - Result: The no-default warning surface is narrower and now leaves only smaller helper/alias dead-code follow-ups; default-feature dashboard topology, routed import, and query report tests remain behavior-compatible.
+
+## 2026-05-25 - No-default TUI helper warning cleanup
+- State: Done
+- Scope: Rust no-default TUI helper ownership for access plan review projections, dashboard browse/test report helpers, snapshot CLI root helper, and shared review-contract detail projection. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
+- Current Update: Moved remaining TUI-only or TUI-test-only helper aliases and re-exports out of no-default production/test targets so no-default all-target builds can run with warnings denied.
+- Result: The remaining no-default TUI helper/alias warning surface is cleared while default-feature access plan, dashboard browse/report/topology, snapshot parser, and grouped-help tests remain behavior-compatible.

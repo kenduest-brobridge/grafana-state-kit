@@ -185,6 +185,10 @@ while skipping generated HTML and Cargo build output.
   use the shared review-contract helper for appending `Review evidence:`
   sections, keeping the heading/empty-section rule consistent across these TUI
   browser details.
+- The shared read-only browser now owns a reusable detail-section helper for
+  `Heading: none` versus `Heading:` plus body lines; dashboard topology inbound
+  and outbound edge summaries use it instead of repeating that section shaping
+  locally.
 - No-default TUI warning noise is narrower: feature-disabled builds no longer
   compile unused imports or large dead-code surfaces for access browse, access
   plan summary lines, shared read-only browser internals, snapshot browser

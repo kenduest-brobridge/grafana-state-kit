@@ -70,6 +70,20 @@ pub(crate) struct BrowserItem {
 }
 
 #[cfg(any(feature = "tui", test))]
+pub(crate) fn append_browser_detail_section(
+    details: &mut Vec<String>,
+    heading: &str,
+    lines: Vec<String>,
+) {
+    if lines.is_empty() {
+        details.push(format!("{heading}: none"));
+        return;
+    }
+    details.push(format!("{heading}:"));
+    details.extend(lines);
+}
+
+#[cfg(any(feature = "tui", test))]
 impl BrowserItem {
     fn matches_query(&self, query: &str) -> bool {
         let needle = query.trim().to_ascii_lowercase();
@@ -840,8 +854,8 @@ fn run_interactive_browser_returns_tui_error_when_feature_disabled() {
 #[cfg(test)]
 mod tests {
     use super::{
-        build_search_state, detail_title, find_match_in_visible, matching_visible_indexes,
-        BrowserItem, BrowserSearchController, SearchDirection,
+        append_browser_detail_section, build_search_state, detail_title, find_match_in_visible,
+        matching_visible_indexes, BrowserItem, BrowserSearchController, SearchDirection,
     };
 
     fn sample_items() -> Vec<BrowserItem> {
@@ -881,6 +895,28 @@ mod tests {
         assert!(item.matches_query("ops"));
         assert!(item.matches_query("datasource"));
         assert!(!item.matches_query("loki"));
+    }
+
+    #[test]
+    fn append_browser_detail_section_formats_empty_and_populated_sections() {
+        let mut details = vec!["Node ID: dashboard:db".to_string()];
+
+        append_browser_detail_section(&mut details, "Inbound edge summary", Vec::new());
+        append_browser_detail_section(
+            &mut details,
+            "Outbound edge summary",
+            vec!["  uses -> Env [variable]".to_string()],
+        );
+
+        assert_eq!(
+            details,
+            vec![
+                "Node ID: dashboard:db".to_string(),
+                "Inbound edge summary: none".to_string(),
+                "Outbound edge summary:".to_string(),
+                "  uses -> Env [variable]".to_string(),
+            ]
+        );
     }
 
     #[test]

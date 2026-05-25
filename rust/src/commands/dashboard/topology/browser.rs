@@ -1,7 +1,7 @@
 //! Browser item builders for topology and impact inspection.
 use std::collections::BTreeMap;
 
-use crate::interactive_browser::BrowserItem;
+use crate::interactive_browser::{append_browser_detail_section, BrowserItem};
 
 use super::build::compare_topology_nodes;
 use super::{ImpactAlertResource, ImpactDashboard, ImpactDocument, TopologyDocument, TopologyNode};
@@ -242,36 +242,34 @@ pub(crate) fn build_topology_browser_items(document: &TopologyDocument) -> Vec<B
             ];
             let inbound_count = inbound_edges.len();
             let outbound_count = outbound_edges.len();
-            if inbound_edges.is_empty() {
-                details.push("Inbound edge summary: none".to_string());
-            } else {
-                details.push("Inbound edge summary:".to_string());
-                for edge in &inbound_edges {
-                    let (source_label, source_kind) = node_lookup
-                        .get(edge.from.as_str())
-                        .cloned()
-                        .unwrap_or_else(|| (edge.from.clone(), "unknown".to_string()));
-                    details.push(format!(
-                        "  {} <- {} [{}]",
-                        edge.relation, source_label, source_kind
-                    ));
-                }
-            }
-            if outbound_edges.is_empty() {
-                details.push("Outbound edge summary: none".to_string());
-            } else {
-                details.push("Outbound edge summary:".to_string());
-                for edge in &outbound_edges {
-                    let (target_label, target_kind) = node_lookup
-                        .get(edge.to.as_str())
-                        .cloned()
-                        .unwrap_or_else(|| (edge.to.clone(), "unknown".to_string()));
-                    details.push(format!(
-                        "  {} -> {} [{}]",
-                        edge.relation, target_label, target_kind
-                    ));
-                }
-            }
+            append_browser_detail_section(
+                &mut details,
+                "Inbound edge summary",
+                inbound_edges
+                    .iter()
+                    .map(|edge| {
+                        let (source_label, source_kind) = node_lookup
+                            .get(edge.from.as_str())
+                            .cloned()
+                            .unwrap_or_else(|| (edge.from.clone(), "unknown".to_string()));
+                        format!("  {} <- {} [{}]", edge.relation, source_label, source_kind)
+                    })
+                    .collect(),
+            );
+            append_browser_detail_section(
+                &mut details,
+                "Outbound edge summary",
+                outbound_edges
+                    .iter()
+                    .map(|edge| {
+                        let (target_label, target_kind) = node_lookup
+                            .get(edge.to.as_str())
+                            .cloned()
+                            .unwrap_or_else(|| (edge.to.clone(), "unknown".to_string()));
+                        format!("  {} -> {} [{}]", edge.relation, target_label, target_kind)
+                    })
+                    .collect(),
+            );
             BrowserItem {
                 kind: node.kind.clone(),
                 title: display_label,
