@@ -164,6 +164,10 @@ while skipping generated HTML and Cargo build output.
   review diff model, so future compatible dashboard, alert, datasource, access,
   or workspace review surfaces can reuse the same title, scroll, wrap, clip,
   and TUI list-item projection instead of copying sync-local helpers.
+- Dashboard import interactive reviews now build a shared `ReviewDiffModel`
+  for compatible live-vs-local title, folder UID, tag, and panel changed-field
+  evidence, then render a compact shared live/desired preview in the review
+  pane while keeping the existing summary, structural, and raw diff lines.
 - No-default TUI warning noise is narrower: feature-disabled builds no longer
   compile unused imports or large dead-code surfaces for access browse, access
   plan summary lines, shared read-only browser internals, snapshot browser
@@ -191,8 +195,8 @@ while skipping generated HTML and Cargo build output.
   evidence now reuses the shared review-contract projection.
 - Continue migrating compatible review surfaces onto the shared review diff
   visualization helpers when they already expose `live`, `desired`, and
-  `changedFields` evidence; sync review is now the first consumer of the shared
-  view helper path.
+  `changedFields` evidence; sync review and dashboard import review now consume
+  the shared view/model helper path.
 - Continue higher-level TUI design work by migrating compatible review surfaces
   onto shared diff/detail visualization helpers and reducing duplicated
   per-surface review pane shaping. The focused

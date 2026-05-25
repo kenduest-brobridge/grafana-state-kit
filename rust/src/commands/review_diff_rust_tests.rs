@@ -1,8 +1,9 @@
 //! Shared review diff visualization model tests.
 
 use crate::review_diff::{
-    build_review_diff_model, clip_text_window, review_diff_pane_title, review_diff_scroll_max,
-    wrap_text_chunks, ReviewDiffInput, ReviewDiffLine, ReviewDiffModel, ReviewDiffPaneFocus,
+    build_review_diff_model, clip_text_window, review_diff_model_preview_lines,
+    review_diff_pane_title, review_diff_scroll_max, wrap_text_chunks, ReviewDiffInput,
+    ReviewDiffLine, ReviewDiffModel, ReviewDiffPaneFocus,
 };
 use serde_json::json;
 
@@ -100,4 +101,10 @@ fn shared_review_diff_view_helpers_cover_titles_scroll_and_text_windows() {
         clip_text_window("  1 | datasourceUid: \"smoke-prom-extra\"", 6, 16),
         "datasourceUid: \""
     );
+
+    let preview = review_diff_model_preview_lines(&model, 1);
+    assert_eq!(preview[0], "Shared Diff: dashboard cpu-main [would-update]");
+    assert_eq!(preview[1], "Live -   1 | title: \"old\"");
+    assert_eq!(preview[2], "Desired +   1 | title: \"new\"");
+    assert_eq!(preview.len(), 3);
 }

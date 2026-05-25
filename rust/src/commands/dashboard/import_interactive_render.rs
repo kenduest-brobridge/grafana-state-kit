@@ -512,6 +512,14 @@ fn build_review_lines<'a>(state: &'a InteractiveImportState) -> Vec<Line<'a>> {
                 for diff_line in &review.diff_summary_lines {
                     lines.push(Line::from(diff_line.as_str()));
                 }
+                if let Some(diff_model) = review.diff_model.as_ref() {
+                    lines.push(Line::from(""));
+                    for diff_line in
+                        crate::review_diff::review_diff_model_preview_lines(diff_model, 4)
+                    {
+                        lines.push(Line::from(diff_line));
+                    }
+                }
             }
         }
         lines
@@ -584,6 +592,14 @@ fn review_badge_style(item: &InteractiveImportItem) -> Style {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
+    use crate::dashboard::import_interactive::{
+        InteractiveImportItem, InteractiveImportReview, InteractiveImportReviewState,
+        InteractiveImportState,
+    };
+    use crate::review_diff::{ReviewDiffLine, ReviewDiffModel};
+
     #[test]
     fn import_footer_controls_advertise_supported_navigation_and_cancel_keys() {
         let dry_run_lines = super::build_import_footer_control_lines(true)
@@ -605,5 +621,58 @@ mod tests {
         assert!(dry_run_footer.contains("Ctrl-C"));
         assert!(dry_run_footer.contains("dry-run selected"));
         assert!(import_footer.contains("import selected"));
+    }
+
+    #[test]
+    fn import_review_panel_projects_shared_diff_preview_when_available() {
+        let state = InteractiveImportState::new(
+            vec![InteractiveImportItem {
+                path: PathBuf::from("dashboards/cpu.json"),
+                uid: "cpu-main".to_string(),
+                title: "CPU".to_string(),
+                folder_path: "Infra".to_string(),
+                file_label: "cpu.json".to_string(),
+                review: InteractiveImportReviewState::Resolved(Box::new(InteractiveImportReview {
+                    action: "would-update".to_string(),
+                    destination: "exists".to_string(),
+                    action_label: "update".to_string(),
+                    folder_path: "Infra".to_string(),
+                    source_folder_path: "Infra".to_string(),
+                    destination_folder_path: "Infra".to_string(),
+                    reason: "".to_string(),
+                    diff_status: "changed".to_string(),
+                    diff_summary_lines: vec!["Title: CPU Old -> CPU".to_string()],
+                    diff_structural_lines: vec!["Title: CPU Old -> CPU".to_string()],
+                    diff_raw_lines: vec!["REMOTE".to_string(), "LOCAL".to_string()],
+                    diff_model: Some(ReviewDiffModel {
+                        title: "dashboard cpu-main".to_string(),
+                        action: "would-update".to_string(),
+                        live_lines: vec![ReviewDiffLine {
+                            changed: true,
+                            marker: '-',
+                            content: "  1 | title: \"CPU Old\"".to_string(),
+                            highlight_range: None,
+                        }],
+                        desired_lines: vec![ReviewDiffLine {
+                            changed: true,
+                            marker: '+',
+                            content: "  1 | title: \"CPU\"".to_string(),
+                            highlight_range: None,
+                        }],
+                    }),
+                })),
+            }],
+            "update".to_string(),
+            true,
+        );
+        let rendered = super::build_review_lines(&state)
+            .into_iter()
+            .map(|line| line.to_string())
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        assert!(rendered.contains("Shared Diff: dashboard cpu-main [would-update]"));
+        assert!(rendered.contains("Live -   1 | title: \"CPU Old\""));
+        assert!(rendered.contains("Desired +   1 | title: \"CPU\""));
     }
 }

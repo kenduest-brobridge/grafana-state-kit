@@ -24,6 +24,13 @@ Current AI change log only.
 - Older entries moved to [`ai-changes-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-16.md).
 - Older entries moved to [`ai-changes-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-25.md).
 
+## 2026-05-25 - Dashboard import shared diff preview
+- Summary: Made dashboard import interactive reviews build a shared ReviewDiffModel for changed live-vs-local title, folder UID, tag, and panel evidence, then render a compact shared live/desired diff preview in the review pane.
+- Tests: cargo fmt --check; cargo check --quiet --no-default-features --all-targets; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo test --quiet import_interactive; cargo test --quiet dashboard_import; cargo test --quiet review_diff; cargo test --quiet import_review_panel_projects_shared_diff_preview_when_available; cargo test --quiet interactive_import_review_diff_model_uses_shared_changed_field_projection; cargo test --quiet shared_review_diff_view_helpers_cover_titles_scroll_and_text_windows
+- Impact: Dashboard import review now consumes the same shared diff model path as sync review for compatible changed-field evidence, reducing per-surface review shaping while preserving existing summary/structural/raw diff lines.
+- Rollback/Risk: low. Rollback would remove the compact shared live/desired preview from the import review pane while keeping existing import summary, structural, and raw diff lines.
+- Follow-up: Continue migrating other compatible review surfaces that already expose live/desired/changed-field evidence onto the shared ReviewDiffModel projection.
+
 ## 2026-05-25 - No-default TUI helper warning cleanup
 - Summary: Moved remaining TUI-only or TUI-test-only helper aliases and re-exports out of no-default production/test targets so no-default all-target builds can run with warnings denied.
 - Tests: cargo fmt --check; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo check --quiet --no-default-features --all-targets; cargo test --quiet --no-default-features tui_not_built_returns_shared_tui_feature_error; cargo test --quiet --no-default-features access_plan_interactive_browser; cargo test --quiet --no-default-features review_mutation_action_detail_lines_project_generic_review_evidence; cargo test --quiet --no-default-features workspace_roots_are_treated_as_local_browse_sources; cargo test --quiet access_plan_interactive_browser; cargo test --quiet resolve_report_column_ids; cargo test --quiet dispatch_query_analysis_matches_shared_analyzer_fixture_cases; cargo test --quiet build_topology_tui_groups_summarize_node_kinds; cargo test --quiet filter_topology_tui_items_limits_items_to_selected_group; cargo test --quiet snapshot_review_parses_all_supported_output_modes; cargo test --quiet root_command_entrypoints_use_grouped_help_for_bare_and_help_forms
@@ -79,9 +86,3 @@ Current AI change log only.
 - Tests: main is running focused Rust validation for the refactor; this update is maintainer trace only.
 - Impact: `rust/src/commands/datasource/import/dry_run.rs`, `rust/src/commands/datasource/import/dry_run_output.rs`, `rust/src/commands/datasource/import/dry_run_review.rs`, `rust/src/commands/datasource/import/dry_run_secret_visibility.rs`, `docs/internal/rust-architecture-guardrails.md`, and AI trace docs. Public CLI/JSON behavior, generated docs, and Python implementation are intentionally unchanged.
 - Rollback/Risk: low behavior-preserving module split. Rollback would move the extracted helper code back into `dry_run.rs` without changing external output.
-
-## 2026-05-02 - Split alert runtime support helpers
-- Summary: split alert runtime support responsibilities so plan/delete/import/diff document construction lives in `runtime_plan_document.rs` and alert plan review projections live in `runtime_review.rs`, leaving `runtime_support.rs` as the narrower runtime assembly surface.
-- Tests: main is running focused Rust validation for the refactor; this update is maintainer trace only.
-- Impact: `rust/src/commands/alert/runtime_support.rs`, `rust/src/commands/alert/runtime_plan_document.rs`, `rust/src/commands/alert/runtime_review.rs`, and AI trace docs. Public CLI/JSON behavior, generated docs, and Python implementation are intentionally unchanged.
-- Rollback/Risk: low behavior-preserving module split. Rollback would move the extracted helper code back into `runtime_support.rs` without changing external output.

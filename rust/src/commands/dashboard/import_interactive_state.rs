@@ -154,6 +154,7 @@ pub(crate) struct InteractiveImportReview {
     pub(crate) diff_summary_lines: Vec<String>,
     pub(crate) diff_structural_lines: Vec<String>,
     pub(crate) diff_raw_lines: Vec<String>,
+    pub(crate) diff_model: Option<crate::review_diff::ReviewDiffModel>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -163,7 +164,13 @@ pub(crate) enum InteractiveImportReviewState {
     Failed(String),
 }
 
-pub(crate) type InteractiveImportDiffData = (String, Vec<String>, Vec<String>, Vec<String>);
+pub(crate) type InteractiveImportDiffData = (
+    String,
+    Vec<String>,
+    Vec<String>,
+    Vec<String>,
+    Option<crate::review_diff::ReviewDiffModel>,
+);
 
 pub(crate) struct InteractiveImportState {
     pub(crate) items: Vec<InteractiveImportItem>,

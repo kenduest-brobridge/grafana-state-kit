@@ -229,6 +229,29 @@ pub(crate) fn build_review_diff_model(input: ReviewDiffInput<'_>) -> Result<Revi
     })
 }
 
+pub(crate) fn review_diff_model_preview_lines(
+    model: &ReviewDiffModel,
+    max_changed_fields: usize,
+) -> Vec<String> {
+    let mut lines = vec![format!("Shared Diff: {} [{}]", model.title, model.action)];
+    let changed_pairs = model
+        .live_lines
+        .iter()
+        .zip(model.desired_lines.iter())
+        .filter(|(live, desired)| live.changed || desired.changed)
+        .take(max_changed_fields)
+        .collect::<Vec<_>>();
+    if changed_pairs.is_empty() {
+        lines.push("Shared Diff: no managed field changes.".to_string());
+        return lines;
+    }
+    for (live, desired) in changed_pairs {
+        lines.push(format!("Live {} {}", live.marker, live.content));
+        lines.push(format!("Desired {} {}", desired.marker, desired.content));
+    }
+    lines
+}
+
 pub(crate) fn wrap_text_chunks(text: &str, width: usize) -> Vec<String> {
     if width == 0 {
         return vec![String::new()];

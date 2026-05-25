@@ -377,6 +377,7 @@ mod tests {
                     "REMOTE <missing>".to_string(),
                     "LOCAL <new dashboard payload>".to_string(),
                 ],
+                diff_model: None,
             })),
         };
         let mut state = InteractiveImportState::new(vec![item], "create-only".to_string(), true);

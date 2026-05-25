@@ -3,7 +3,7 @@
 use std::collections::BTreeMap;
 
 use reqwest::Method;
-use serde_json::Value;
+use serde_json::{Map, Value};
 
 use crate::common::{message, string_field, value_as_object, Result};
 use crate::grafana_api::DashboardResourceClient;
@@ -111,13 +111,14 @@ where
         "would-fail-existing" => ("exists", "blocked-existing"),
         _ => ("unknown", action),
     };
-    let (diff_status, diff_summary_lines, diff_structural_lines, diff_raw_lines) =
+    let (diff_status, diff_summary_lines, diff_structural_lines, diff_raw_lines, diff_model) =
         build_interactive_import_diff_summary_with_request(
             request_json,
             lookup_cache,
             &document,
             &payload,
             uid,
+            action,
         )?;
     Ok(InteractiveImportReview {
         action: action.to_string(),
@@ -131,6 +132,7 @@ where
         diff_summary_lines,
         diff_structural_lines,
         diff_raw_lines,
+        diff_model,
     })
 }
 
@@ -222,13 +224,14 @@ pub(crate) fn build_interactive_import_review_with_client(
         "would-fail-existing" => ("exists", "blocked-existing"),
         _ => ("unknown", action),
     };
-    let (diff_status, diff_summary_lines, diff_structural_lines, diff_raw_lines) =
+    let (diff_status, diff_summary_lines, diff_structural_lines, diff_raw_lines, diff_model) =
         build_interactive_import_diff_summary_with_client(
             client,
             lookup_cache,
             &document,
             &payload,
             uid,
+            action,
         )?;
     Ok(InteractiveImportReview {
         action: action.to_string(),
@@ -242,6 +245,7 @@ pub(crate) fn build_interactive_import_review_with_client(
         diff_summary_lines,
         diff_structural_lines,
         diff_raw_lines,
+        diff_model,
     })
 }
 
@@ -251,6 +255,7 @@ fn build_interactive_import_diff_summary_with_request<F>(
     local_document: &Value,
     payload: &Value,
     uid: &str,
+    action: &str,
 ) -> Result<InteractiveImportDiffData>
 where
     F: FnMut(Method, &str, &[(String, String)], Option<&Value>) -> Result<Option<Value>>,
@@ -264,6 +269,7 @@ where
                 "REMOTE <missing>".to_string(),
                 "LOCAL <new dashboard payload>".to_string(),
             ],
+            None,
         ));
     }
     let Some(remote_payload) = fetch_dashboard_if_exists_cached(request_json, lookup_cache, uid)?
@@ -276,6 +282,7 @@ where
                 "REMOTE <missing>".to_string(),
                 "LOCAL <new dashboard payload>".to_string(),
             ],
+            None,
         ));
     };
     let payload_object =
@@ -343,6 +350,18 @@ where
         ));
     }
     let raw_lines = build_raw_diff_lines(&remote_payload, payload)?;
+    let diff_model = Some(build_interactive_import_review_diff_model(
+        uid,
+        &remote_title,
+        &local_title,
+        &remote_folder_uid,
+        local_folder_uid,
+        &remote_tags,
+        &local_tags,
+        remote_panels,
+        local_panels,
+        action,
+    )?);
 
     if summary_lines.is_empty() {
         Ok((
@@ -352,6 +371,7 @@ where
                 "Title, folder, tags, panels, and variables match the live dashboard.".to_string(),
             ],
             raw_lines,
+            diff_model,
         ))
     } else {
         Ok((
@@ -359,6 +379,7 @@ where
             summary_lines,
             structural_lines,
             raw_lines,
+            diff_model,
         ))
     }
 }
@@ -369,6 +390,7 @@ fn build_interactive_import_diff_summary_with_client(
     local_document: &Value,
     payload: &Value,
     uid: &str,
+    action: &str,
 ) -> Result<InteractiveImportDiffData> {
     if uid.is_empty() {
         return Ok((
@@ -379,6 +401,7 @@ fn build_interactive_import_diff_summary_with_client(
                 "REMOTE <missing>".to_string(),
                 "LOCAL <new dashboard payload>".to_string(),
             ],
+            None,
         ));
     }
     let Some(remote_payload) =
@@ -392,6 +415,7 @@ fn build_interactive_import_diff_summary_with_client(
                 "REMOTE <missing>".to_string(),
                 "LOCAL <new dashboard payload>".to_string(),
             ],
+            None,
         ));
     };
     let payload_object =
@@ -459,6 +483,18 @@ fn build_interactive_import_diff_summary_with_client(
         ));
     }
     let raw_lines = build_raw_diff_lines(&remote_payload, payload)?;
+    let diff_model = Some(build_interactive_import_review_diff_model(
+        uid,
+        &remote_title,
+        &local_title,
+        &remote_folder_uid,
+        local_folder_uid,
+        &remote_tags,
+        &local_tags,
+        remote_panels,
+        local_panels,
+        action,
+    )?);
 
     if summary_lines.is_empty() {
         Ok((
@@ -468,6 +504,7 @@ fn build_interactive_import_diff_summary_with_client(
                 "Title, folder, tags, panels, and variables match the live dashboard.".to_string(),
             ],
             raw_lines,
+            diff_model,
         ))
     } else {
         Ok((
@@ -475,8 +512,62 @@ fn build_interactive_import_diff_summary_with_client(
             summary_lines,
             structural_lines,
             raw_lines,
+            diff_model,
         ))
     }
+}
+
+fn build_interactive_import_review_diff_model(
+    uid: &str,
+    remote_title: &str,
+    local_title: &str,
+    remote_folder_uid: &str,
+    local_folder_uid: &str,
+    remote_tags: &str,
+    local_tags: &str,
+    remote_panels: usize,
+    local_panels: usize,
+    action: &str,
+) -> Result<crate::review_diff::ReviewDiffModel> {
+    let mut live = Map::new();
+    live.insert("title".to_string(), Value::String(remote_title.to_string()));
+    live.insert(
+        "folderUid".to_string(),
+        Value::String(remote_folder_uid.to_string()),
+    );
+    live.insert("tags".to_string(), Value::String(remote_tags.to_string()));
+    live.insert("panels".to_string(), Value::from(remote_panels));
+
+    let mut desired = Map::new();
+    desired.insert("title".to_string(), Value::String(local_title.to_string()));
+    desired.insert(
+        "folderUid".to_string(),
+        Value::String(local_folder_uid.to_string()),
+    );
+    desired.insert("tags".to_string(), Value::String(local_tags.to_string()));
+    desired.insert("panels".to_string(), Value::from(local_panels));
+
+    let mut changed_fields = Vec::new();
+    if remote_title != local_title {
+        changed_fields.push("title".to_string());
+    }
+    if remote_folder_uid != local_folder_uid {
+        changed_fields.push("folderUid".to_string());
+    }
+    if remote_tags != local_tags {
+        changed_fields.push("tags".to_string());
+    }
+    if remote_panels != local_panels {
+        changed_fields.push("panels".to_string());
+    }
+
+    crate::review_diff::build_review_diff_model(crate::review_diff::ReviewDiffInput {
+        title: format!("dashboard {uid}"),
+        action: action.to_string(),
+        live: Some(&live),
+        desired: Some(&desired),
+        changed_fields,
+    })
 }
 
 fn join_tags(value: Option<&Value>) -> String {
@@ -542,4 +633,39 @@ fn build_raw_diff_lines(remote_payload: &Value, payload: &Value) -> Result<Vec<S
     .take(24)
     .map(str::to_string)
     .collect())
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn interactive_import_review_diff_model_uses_shared_changed_field_projection() {
+        let model = super::build_interactive_import_review_diff_model(
+            "cpu-main",
+            "CPU Old",
+            "CPU Main",
+            "ops",
+            "infra",
+            "gold, ops",
+            "",
+            2,
+            1,
+            "would-update",
+        )
+        .unwrap();
+
+        assert_eq!(model.title, "dashboard cpu-main");
+        assert_eq!(model.action, "would-update");
+        assert_eq!(model.live_lines.len(), 4);
+        assert_eq!(model.desired_lines.len(), 4);
+        assert!(model
+            .live_lines
+            .iter()
+            .any(|line| line.marker == '-' && line.content.contains("title")));
+        assert!(model
+            .desired_lines
+            .iter()
+            .any(|line| line.marker == '+' && line.content.contains("folderUid")));
+        assert!(model.live_lines.iter().all(|line| line.changed));
+        assert!(model.desired_lines.iter().all(|line| line.changed));
+    }
 }
