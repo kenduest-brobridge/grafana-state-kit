@@ -239,3 +239,9 @@
 - Scope: rust/src/commands/review_contract.rs; rust/src/commands/access/access_plan_tui.rs; docs/internal/tui-architecture-roadmap.md
 - Current Update: Moved access plan action diff-preview line projection into the shared review contract so mutation review surfaces can reuse safe live/desired preview rows.
 - Result: Access plan TUI keeps the same shared diff preview output and secret-like field filtering while the reusable review contract now owns the generic action changes to ReviewDiffModel preview projection. Public CLI paths, help text, generated docs, and command contracts are unchanged.
+
+## 2026-05-25 - Shared review change-detail projection
+- State: Done
+- Scope: rust/src/commands/review_contract.rs; rust/src/commands/access/access_plan_tui.rs; docs/internal/tui-architecture-roadmap.md
+- Current Update: Moved access plan action change-detail row projection into the shared review contract so mutation review surfaces can reuse safe Change: field bundle/live rows.
+- Result: Access plan TUI keeps the same Change: field bundle/live rows while the reusable review contract now owns safe changed-field filtering and compact value formatting for generic mutation action changes. Public CLI paths, help text, generated docs, and command contracts are unchanged.

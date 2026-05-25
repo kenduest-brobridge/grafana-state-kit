@@ -6,7 +6,6 @@ use serde_json::Value;
 
 use crate::access::render::map_get_text;
 use crate::access::{Result, Scope, UserBrowseArgs};
-use crate::common::message;
 
 use super::user_browse_dialog::EditDialogState;
 use super::user_browse_input::load_rows;
@@ -173,10 +172,10 @@ where
                 state.status = "Select a user row to edit the user.".to_string();
                 return Ok(BrowseAction::Continue);
             }
-            let row = state
-                .selected_row()
-                .ok_or_else(|| message("User browse has no selected user to edit."))?
-                .clone();
+            let Some(row) = state.selected_row().cloned() else {
+                state.status = "No user selected to edit.".to_string();
+                return Ok(BrowseAction::Continue);
+            };
             let login = map_get_text(&row, "login");
             state.pending_edit = Some(EditDialogState::new(&row));
             state.status = format!("Editing user {}.", login);
@@ -202,6 +201,8 @@ where
             } else if state.selected_row().is_some() {
                 state.pending_delete = true;
                 state.status = "Previewing user delete.".to_string();
+            } else {
+                state.status = "No user selected to delete.".to_string();
             }
         }
         KeyCode::Char('r') => {

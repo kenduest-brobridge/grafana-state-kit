@@ -271,3 +271,10 @@
 - Impact: Datasource browse review empty states now share browser-level REVIEW message formatting while review evidence rendering and public CLI/doc surfaces remain unchanged.
 - Rollback/Risk: Low. The shared helper renders the same REVIEW-prefixed message and focused datasource/browser tests cover both empty-state and evidence rows.
 - Follow-up: Re-run the TUI inventory report and evaluate the final dashboard browse build_info_lines candidate separately.
+
+## 2026-05-25 - Cleared dashboard browse helper drift
+- Summary: Renamed the dashboard browse fact-line builder to describe its dashboard-specific filtering and live-details badge behavior instead of looking like a generic build_info_lines helper.
+- Tests: cargo test --quiet dashboard_browse_detail_does_not_keep_generic_build_info_wrapper; cargo test --quiet dashboard_browse; cargo test --quiet dashboard (outside sandbox for local mock-server coverage after sandbox denied binding); RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; python3 scripts/tui_inventory_report.py; make quality-ai-workflow; git diff --check
+- Impact: The manual TUI inventory report now has zero helper-drift candidates while dashboard browse fact rendering keeps the existing shared browser_detail_info_lines_with output path and behavior.
+- Rollback/Risk: Low. This is a local rename plus a regression that guards against reintroducing the generic helper-drift shape.
+- Follow-up: Use the roadmap for any remaining non-helper-drift TUI design work.

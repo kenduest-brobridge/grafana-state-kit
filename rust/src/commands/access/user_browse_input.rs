@@ -17,6 +17,40 @@ mod tests {
     use std::fs;
     use tempfile::tempdir;
 
+    fn live_user_browse_args() -> UserBrowseArgs {
+        UserBrowseArgs {
+            common: CommonCliArgs {
+                profile: None,
+                url: "http://127.0.0.1:3000".to_string(),
+                api_token: None,
+                username: Some("admin".to_string()),
+                password: Some("admin".to_string()),
+                prompt_password: false,
+                prompt_token: false,
+                org_id: None,
+                timeout: 30,
+                verify_ssl: false,
+                insecure: false,
+                ca_cert: None,
+            },
+            input_dir: None,
+            local: false,
+            run: None,
+            run_id: None,
+            scope: Scope::Org,
+            all_orgs: false,
+            current_org: false,
+            query: None,
+            login: None,
+            email: None,
+            org_role: None,
+            grafana_admin: None,
+            with_teams: false,
+            page: 1,
+            per_page: 100,
+        }
+    }
+
     #[test]
     fn load_rows_reads_local_user_bundle_without_live_requests() {
         let temp = tempdir().unwrap();
@@ -171,6 +205,48 @@ mod tests {
 
         assert!(state.pending_member_remove);
         assert_eq!(state.status, "Previewing team membership removal.");
+    }
+
+    #[test]
+    fn empty_user_browse_edit_and_delete_keys_stay_in_browser() {
+        let args = live_user_browse_args();
+        let mut state = BrowserState::new(Vec::new(), DisplayMode::GlobalAccounts);
+        let mut request_json = |_method: Method,
+                                _path: &str,
+                                _params: &[(String, String)],
+                                _payload: Option<&Value>| {
+            panic!("empty user action keys should not call Grafana")
+        };
+
+        let edit_action = handle_key(
+            &mut request_json,
+            &args,
+            &mut state,
+            &KeyEvent::new(KeyCode::Char('e'), KeyModifiers::NONE),
+        )
+        .expect("empty edit should stay in TUI");
+
+        assert!(matches!(
+            edit_action,
+            super::super::user_browse_key::BrowseAction::Continue
+        ));
+        assert!(state.pending_edit.is_none());
+        assert_eq!(state.status, "No user selected to edit.");
+
+        let delete_action = handle_key(
+            &mut request_json,
+            &args,
+            &mut state,
+            &KeyEvent::new(KeyCode::Char('d'), KeyModifiers::NONE),
+        )
+        .expect("empty delete should stay in TUI");
+
+        assert!(matches!(
+            delete_action,
+            super::super::user_browse_key::BrowseAction::Continue
+        ));
+        assert!(!state.pending_delete);
+        assert_eq!(state.status, "No user selected to delete.");
     }
 
     #[test]

@@ -202,10 +202,11 @@ fn repeat_search(state: &mut BrowserState) {
 }
 
 fn start_modify_selected(state: &mut BrowserState) -> Result<()> {
-    let item = state
-        .selected_item()
-        .ok_or_else(|| message("Datasource browse has no selected datasource to modify."))?
-        .clone();
+    let Some(item) = state.selected_item().cloned() else {
+        state.pending_edit = None;
+        state.status = "No datasource selected to edit.".to_string();
+        return Ok(());
+    };
     if item.is_org_row() {
         state.status = format!("Select a datasource row under org {} to edit.", item.org_id);
         return Ok(());
@@ -216,10 +217,11 @@ fn start_modify_selected(state: &mut BrowserState) -> Result<()> {
 }
 
 fn start_delete_selected(state: &mut BrowserState) -> Result<()> {
-    let item = state
-        .selected_item()
-        .ok_or_else(|| message("Datasource browse has no selected datasource to delete."))?
-        .clone();
+    let Some(item) = state.selected_item().cloned() else {
+        state.pending_delete = None;
+        state.status = "No datasource selected to delete.".to_string();
+        return Ok(());
+    };
     if item.is_org_row() {
         state.status = format!(
             "Select a datasource row under org {} to delete.",
@@ -322,6 +324,9 @@ fn confirm_delete(
 mod tests {
     use super::super::datasource_browse_support::DatasourceBrowseDocument;
     use super::*;
+    use crate::common::CliColorChoice;
+    use crate::dashboard::CommonCliArgs;
+    use crate::http::{JsonHttpClient, JsonHttpClientConfig};
 
     fn empty_document() -> DatasourceBrowseDocument {
         DatasourceBrowseDocument {
@@ -331,6 +336,35 @@ mod tests {
             items: Vec::new(),
             org_count: 1,
             datasource_count: 0,
+        }
+    }
+
+    fn test_client() -> JsonHttpClient {
+        JsonHttpClient::new(JsonHttpClientConfig {
+            base_url: "http://127.0.0.1:3000".to_string(),
+            headers: Vec::new(),
+            timeout_secs: 1,
+            verify_ssl: false,
+        })
+        .expect("test client")
+    }
+
+    fn browse_args() -> DatasourceBrowseArgs {
+        DatasourceBrowseArgs {
+            common: CommonCliArgs {
+                color: CliColorChoice::Auto,
+                profile: None,
+                url: "http://127.0.0.1:3000".to_string(),
+                api_token: None,
+                username: Some("admin".to_string()),
+                password: Some("admin".to_string()),
+                prompt_password: false,
+                prompt_token: false,
+                timeout: 30,
+                verify_ssl: false,
+            },
+            org_id: None,
+            all_orgs: false,
         }
     }
 
@@ -353,5 +387,43 @@ mod tests {
                 .map(|search| search.query.as_str()),
             Some("q")
         );
+    }
+
+    #[test]
+    fn edit_key_on_empty_document_stays_in_browser() {
+        let client = test_client();
+        let args = browse_args();
+        let mut state = BrowserState::new(empty_document());
+
+        let action = handle_browser_key(
+            &client,
+            &args,
+            &mut state,
+            &KeyEvent::new(KeyCode::Char('e'), KeyModifiers::NONE),
+        )
+        .expect("empty edit should stay in TUI");
+
+        assert!(matches!(action, BrowserLoopAction::Continue));
+        assert!(state.pending_edit.is_none());
+        assert_eq!(state.status, "No datasource selected to edit.");
+    }
+
+    #[test]
+    fn delete_key_on_empty_document_stays_in_browser() {
+        let client = test_client();
+        let args = browse_args();
+        let mut state = BrowserState::new(empty_document());
+
+        let action = handle_browser_key(
+            &client,
+            &args,
+            &mut state,
+            &KeyEvent::new(KeyCode::Char('d'), KeyModifiers::NONE),
+        )
+        .expect("empty delete should stay in TUI");
+
+        assert!(matches!(action, BrowserLoopAction::Continue));
+        assert!(state.pending_delete.is_none());
+        assert_eq!(state.status, "No datasource selected to delete.");
     }
 }

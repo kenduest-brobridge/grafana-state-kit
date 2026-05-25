@@ -24,6 +24,13 @@ Current AI change log only.
 - Older entries moved to [`ai-changes-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-16.md).
 - Older entries moved to [`ai-changes-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-25.md).
 
+## 2026-05-25 - TUI empty selection key handling
+- Summary: Kept datasource/access browse edit and delete keys inside the TUI when no row is selected, surfacing status messages instead of propagating selected-row errors.
+- Tests: cargo test --quiet edit_key_on_empty_document_stays_in_browser; cargo test --quiet delete_key_on_empty_document_stays_in_browser; cargo test --quiet empty_user_browse_edit_and_delete_keys_stay_in_browser; cargo test --quiet empty_team_browse_edit_and_delete_keys_stay_in_browser; cargo test --quiet datasource_browse_input; cargo test --quiet user_browse_input; cargo test --quiet team_browse_input; cargo test --quiet datasource_browse; cargo test --quiet access::user_browse; cargo test --quiet access::team_browse; cargo test --quiet browse; cargo fmt --check; git diff --check
+- Impact: Datasource browse, access user browse, and access team browse now treat empty edit/delete key presses as in-browser no-selection states.
+- Rollback/Risk: Low; changes are limited to empty-selection branches and regression tests cover the key paths.
+- Follow-up: none
+
 ## 2026-05-25 - Status overview starts on items
 - Summary: Changed status overview interactive mode to start with the Items pane focused so Up/Down moves rows immediately after launch instead of requiring Tab first.
 - Tests: cargo test --quiet overview_tui_starts_on_items_so_arrow_keys_move_rows_immediately; cargo test --quiet project_home_is_available_and_hands_off_to_first_blocked_section; cargo test --quiet interactive_render_starts_on_project_home_surface; cargo test --quiet status_overview; cargo test --quiet status_tui; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; git diff --check
@@ -86,10 +93,3 @@ Current AI change log only.
 - Impact: Datasource local list and snapshot datasource review browser rows now share identity fact shaping for Name, UID, Type, Org, URL, Access, and Default while preserving existing shared review evidence projection and public CLI/doc surfaces.
 - Rollback/Risk: Low. The change centralizes equivalent datasource fact strings and focused datasource/snapshot tests cover both local artifact browser paths.
 - Follow-up: Continue migrating compatible local artifact browser detail sections onto shared projections where output contracts are already aligned.
-
-## 2026-05-25 - Cleared dashboard browse helper drift
-- Summary: Renamed the dashboard browse fact-line builder to describe its dashboard-specific filtering and live-details badge behavior instead of looking like a generic build_info_lines helper.
-- Tests: cargo test --quiet dashboard_browse_detail_does_not_keep_generic_build_info_wrapper; cargo test --quiet dashboard_browse; cargo test --quiet dashboard (outside sandbox for local mock-server coverage after sandbox denied binding); RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; python3 scripts/tui_inventory_report.py; make quality-ai-workflow; git diff --check
-- Impact: The manual TUI inventory report now has zero helper-drift candidates while dashboard browse fact rendering keeps the existing shared browser_detail_info_lines_with output path and behavior.
-- Rollback/Risk: Low. This is a local rename plus a regression that guards against reintroducing the generic helper-drift shape.
-- Follow-up: Use the roadmap for any remaining non-helper-drift TUI design work.

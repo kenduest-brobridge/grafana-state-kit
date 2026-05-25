@@ -222,6 +222,49 @@ fn member_row_edit_prompts_user_browse_instead_of_team_editor() {
 }
 
 #[test]
+fn empty_team_browse_edit_and_delete_keys_stay_in_browser() {
+    let args = live_browse_args();
+    let mut state = BrowserState::new(Vec::new());
+    let mut request_json = |_method: Method,
+                            _path: &str,
+                            _params: &[(String, String)],
+                            _payload: Option<&Value>|
+     -> Result<Option<Value>> {
+        panic!("empty team action keys should not call Grafana");
+    };
+
+    let edit_action = handle_key(
+        &mut request_json,
+        &args,
+        &mut state,
+        &KeyEvent::new(
+            crossterm::event::KeyCode::Char('e'),
+            crossterm::event::KeyModifiers::NONE,
+        ),
+    )
+    .expect("empty edit should stay in TUI");
+
+    assert!(matches!(edit_action, BrowseAction::Continue));
+    assert!(state.pending_edit.is_none());
+    assert_eq!(state.status, "No team selected to edit.");
+
+    let delete_action = handle_key(
+        &mut request_json,
+        &args,
+        &mut state,
+        &KeyEvent::new(
+            crossterm::event::KeyCode::Char('d'),
+            crossterm::event::KeyModifiers::NONE,
+        ),
+    )
+    .expect("empty delete should stay in TUI");
+
+    assert!(matches!(delete_action, BrowseAction::Continue));
+    assert!(!state.pending_delete);
+    assert_eq!(state.status, "No team selected to delete.");
+}
+
+#[test]
 fn member_row_remove_updates_membership_and_keeps_parent_selected() {
     let mut state = selected_member_state(vec![
         member_row("alice", "Member"),

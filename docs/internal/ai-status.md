@@ -24,6 +24,12 @@ Current AI-maintained status only.
 - Older entries moved to [`ai-status-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-16.md).
 - Older entries moved to [`ai-status-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-25.md).
 
+## 2026-05-25 - TUI empty selection key handling
+- State: Done
+- Scope: rust/src/commands/datasource/browse/input.rs; rust/src/commands/access/user_browse_dispatch.rs; rust/src/commands/access/user_browse_input.rs; rust/src/commands/access/team_browse_dispatch.rs; rust/src/commands/access/team_browse_input_tests.rs
+- Current Update: Kept datasource/access browse edit and delete keys inside the TUI when no row is selected, surfacing status messages instead of propagating selected-row errors.
+- Result: Datasource browse, access user browse, and access team browse now treat empty edit/delete key presses as in-browser no-selection states.
+
 ## 2026-05-25 - Status overview starts on items
 - State: Done
 - Scope: rust/src/commands/status/overview/tui.rs
@@ -53,9 +59,3 @@ Current AI-maintained status only.
 - Scope: rust/src/commands/review_contract.rs; rust/src/commands/access/access_plan_tui.rs; docs/internal/tui-architecture-roadmap.md
 - Current Update: Moved access plan live-target evidence row projection into the shared review contract so mutation review surfaces can reuse known target field rows.
 - Result: Access plan TUI keeps the same Live target: key=value rows while review_contract now owns the known target field projection for generic mutation actions. Public CLI paths, help text, generated docs, and command contracts are unchanged.
-
-## 2026-05-25 - Shared review change-detail projection
-- State: Done
-- Scope: rust/src/commands/review_contract.rs; rust/src/commands/access/access_plan_tui.rs; docs/internal/tui-architecture-roadmap.md
-- Current Update: Moved access plan action change-detail row projection into the shared review contract so mutation review surfaces can reuse safe Change: field bundle/live rows.
-- Result: Access plan TUI keeps the same Change: field bundle/live rows while the reusable review contract now owns safe changed-field filtering and compact value formatting for generic mutation action changes. Public CLI paths, help text, generated docs, and command contracts are unchanged.

@@ -6,7 +6,7 @@ use serde_json::Value;
 
 use crate::access::render::map_get_text;
 use crate::access::TeamBrowseArgs;
-use crate::common::{message, Result};
+use crate::common::Result;
 
 use super::team_browse_dialog::EditDialogState;
 use super::team_browse_input::BrowseAction;
@@ -119,10 +119,10 @@ where
                         .to_string();
                 return Ok(BrowseAction::Continue);
             }
-            let row = state
-                .selected_row()
-                .ok_or_else(|| message("Team browse has no selected team to edit."))?
-                .clone();
+            let Some(row) = state.selected_row().cloned() else {
+                state.status = "No team selected to edit.".to_string();
+                return Ok(BrowseAction::Continue);
+            };
             if row_kind(&row) == "member" {
                 state.status =
                     "Member rows do not edit user fields. Use access user browse to edit the user."
@@ -179,6 +179,8 @@ where
             } else if state.selected_row().is_some() {
                 state.pending_delete = true;
                 state.status = "Previewing team delete.".to_string();
+            } else {
+                state.status = "No team selected to delete.".to_string();
             }
         }
         KeyCode::Esc | KeyCode::Char('q') => return Ok(BrowseAction::Exit),
