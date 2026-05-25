@@ -24,6 +24,13 @@ Current AI change log only.
 - Older entries moved to [`ai-changes-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-16.md).
 - Older entries moved to [`ai-changes-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-25.md).
 
+## 2026-05-25 - Shared review diff preview projection
+- Summary: Moved access plan action diff-preview line projection into the shared review contract so mutation review surfaces can reuse safe live/desired preview rows.
+- Tests: cargo test --quiet review_mutation_action_diff_preview_lines_hide_secret_like_fields; cargo test --quiet access_plan_interactive_shared_diff_preview_hides_secret_like_fields; cargo test --quiet access_plan_interactive_browser; cargo test --quiet review_contract; cargo test --quiet access (outside sandbox for local mock-server coverage after sandbox denied binding); RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; python3 scripts/tui_inventory_report.py; make quality-ai-workflow; git diff --check
+- Impact: Access plan TUI keeps the same shared diff preview output and secret-like field filtering while the reusable review contract now owns the generic action changes to ReviewDiffModel preview projection. Public CLI paths, help text, generated docs, and command contracts are unchanged.
+- Rollback/Risk: Low. This moves equivalent projection code into review_contract and focused access/review-contract tests cover safe field filtering plus existing TUI output.
+- Follow-up: Continue moving compatible mutation review detail rows out of per-surface TUI renderers and into shared review projections.
+
 ## 2026-05-25 - Shared review next-check projection
 - Summary: Moved access plan action next-check line projection into the shared review contract so TUI review surfaces can reuse hint/default follow-up guidance.
 - Tests: cargo test --quiet review_mutation_action_next_check_lines_project_hints_and_default_guidance; cargo test --quiet access_plan_interactive_browser; cargo test --quiet review_contract; cargo test --quiet access (outside sandbox for local mock-server coverage after sandbox denied binding); RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; python3 scripts/tui_inventory_report.py; make quality-ai-workflow; git diff --check
@@ -86,10 +93,3 @@ Current AI change log only.
 - Impact: Dashboard and datasource browse muted labels now share the shell-level muted span primitive while existing detail/review output remains stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
 - Rollback/Risk: Low. The change moves equivalent gray-span helpers into shared shell code and focused browse tests cover both render paths.
 - Follow-up: Continue auditing remaining TUI control-line adapters and detail/review projection helpers before broader workbench abstraction.
-
-## 2026-05-25 - Shared access browse detail info lines
-- Summary: Routed access user/team browse fact rows directly through shared browser_detail_info_line and added regressions against reintroducing local detail_line delegate wrappers.
-- Tests: cargo test --quiet user_browse_render_does_not_wrap_shared_detail_info_lines; cargo test --quiet team_browse_render_does_not_wrap_shared_detail_info_lines; cargo test --quiet user_browse; cargo test --quiet team_browse; cargo test --quiet access (rerun outside sandbox after local mock-server permission denial); RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; make quality-ai-workflow; git diff --check
-- Impact: Access user/team browse fact rows now share browser-level detail info-line rendering directly while existing rendered detail output remains stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
-- Rollback/Risk: Low. The change removes equivalent local delegate wrappers, keeps the same fallback value, and focused plus broader access tests cover the render/state paths.
-- Follow-up: Continue auditing remaining TUI detail/review projection helpers and datasource browse control-line adapters before broader workbench abstraction.

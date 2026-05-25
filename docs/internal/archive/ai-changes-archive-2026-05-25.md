@@ -222,3 +222,10 @@
 - Impact: Dashboard inspect workbench shell controls now share tui_shell primitives directly while existing render output remains stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
 - Rollback/Risk: Low. The change removes equivalent local delegate wrappers and focused inspect workbench tests cover the render paths.
 - Follow-up: Continue auditing remaining TUI control-line adapters and detail/review projection helpers before broader workbench abstraction.
+
+## 2026-05-25 - Shared access browse detail info lines
+- Summary: Routed access user/team browse fact rows directly through shared browser_detail_info_line and added regressions against reintroducing local detail_line delegate wrappers.
+- Tests: cargo test --quiet user_browse_render_does_not_wrap_shared_detail_info_lines; cargo test --quiet team_browse_render_does_not_wrap_shared_detail_info_lines; cargo test --quiet user_browse; cargo test --quiet team_browse; cargo test --quiet access (rerun outside sandbox after local mock-server permission denial); RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; make quality-ai-workflow; git diff --check
+- Impact: Access user/team browse fact rows now share browser-level detail info-line rendering directly while existing rendered detail output remains stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+- Rollback/Risk: Low. The change removes equivalent local delegate wrappers, keeps the same fallback value, and focused plus broader access tests cover the render/state paths.
+- Follow-up: Continue auditing remaining TUI detail/review projection helpers and datasource browse control-line adapters before broader workbench abstraction.

@@ -4,8 +4,8 @@ use crate::common::Result;
 #[cfg(any(feature = "tui", test))]
 use crate::review_contract::{
     append_review_evidence_section, build_review_mutation_action_detail_lines,
-    build_review_mutation_action_next_check_lines, REVIEW_ACTION_BLOCKED,
-    REVIEW_ACTION_EXTRA_REMOTE, REVIEW_ACTION_SAME, REVIEW_ACTION_UNMANAGED,
+    build_review_mutation_action_diff_preview_lines, build_review_mutation_action_next_check_lines,
+    REVIEW_ACTION_BLOCKED, REVIEW_ACTION_EXTRA_REMOTE, REVIEW_ACTION_SAME, REVIEW_ACTION_UNMANAGED,
     REVIEW_ACTION_WOULD_CREATE, REVIEW_ACTION_WOULD_DELETE, REVIEW_ACTION_WOULD_UPDATE,
     REVIEW_STATUS_BLOCKED, REVIEW_STATUS_WARNING,
 };
@@ -253,59 +253,6 @@ fn change_detail_lines(raw: &Value) -> Vec<String> {
 }
 
 #[cfg(any(feature = "tui", test))]
-fn action_review_diff_preview_lines(
-    action: &super::access_plan_types::AccessPlanReviewActionProjection,
-) -> Vec<String> {
-    let mut live = Map::new();
-    let mut desired = Map::new();
-    let mut changed_fields = Vec::new();
-    for change in action
-        .raw
-        .get("changes")
-        .and_then(Value::as_array)
-        .into_iter()
-        .flatten()
-        .filter_map(Value::as_object)
-    {
-        let Some(field) = change
-            .get("field")
-            .and_then(Value::as_str)
-            .map(str::trim)
-            .filter(|field| !field.is_empty())
-        else {
-            continue;
-        };
-        if !is_safe_access_change_field(field) {
-            continue;
-        }
-        changed_fields.push(field.to_string());
-        live.insert(
-            field.to_string(),
-            change.get("after").cloned().unwrap_or(Value::Null),
-        );
-        desired.insert(
-            field.to_string(),
-            change.get("before").cloned().unwrap_or(Value::Null),
-        );
-    }
-    if changed_fields.is_empty() {
-        return Vec::new();
-    }
-    let Ok(model) =
-        crate::review_diff::build_review_diff_model(crate::review_diff::ReviewDiffInput {
-            title: format!("{} {}", action.resource_kind, action.identity),
-            action: action.action.clone(),
-            live: Some(&live),
-            desired: Some(&desired),
-            changed_fields,
-        })
-    else {
-        return Vec::new();
-    };
-    crate::review_diff::review_diff_model_preview_lines(&model, 4)
-}
-
-#[cfg(any(feature = "tui", test))]
 fn target_evidence_lines(raw: &Value) -> Vec<String> {
     let Some(target) = raw_target(raw) else {
         return Vec::new();
@@ -428,7 +375,7 @@ pub(crate) fn build_access_plan_browser_items(document: &AccessPlanDocument) -> 
             details.push(format!("Source path: {}", source_path));
         }
         details.extend(change_detail_lines(&action.raw));
-        details.extend(action_review_diff_preview_lines(&action));
+        details.extend(build_review_mutation_action_diff_preview_lines(&action));
         details.extend(target_evidence_lines(&action.raw));
         details.extend(blocked_or_warning_context(&action));
         details.extend(

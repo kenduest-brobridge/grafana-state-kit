@@ -258,6 +258,59 @@ pub(crate) fn build_review_mutation_action_next_check_lines(
 }
 
 #[cfg(any(feature = "tui", test))]
+pub(crate) fn build_review_mutation_action_diff_preview_lines(
+    action: &ReviewMutationAction,
+) -> Vec<String> {
+    let mut live = Map::new();
+    let mut desired = Map::new();
+    let mut changed_fields = Vec::new();
+    for change in action
+        .raw
+        .get("changes")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(Value::as_object)
+    {
+        let Some(field) = change
+            .get("field")
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .filter(|field| !field.is_empty())
+        else {
+            continue;
+        };
+        if !crate::review_diff::is_safe_review_changed_field(field) {
+            continue;
+        }
+        changed_fields.push(field.to_string());
+        live.insert(
+            field.to_string(),
+            change.get("after").cloned().unwrap_or(Value::Null),
+        );
+        desired.insert(
+            field.to_string(),
+            change.get("before").cloned().unwrap_or(Value::Null),
+        );
+    }
+    if changed_fields.is_empty() {
+        return Vec::new();
+    }
+    let Ok(model) =
+        crate::review_diff::build_review_diff_model(crate::review_diff::ReviewDiffInput {
+            title: format!("{} {}", action.resource_kind, action.identity),
+            action: action.action.clone(),
+            live: Some(&live),
+            desired: Some(&desired),
+            changed_fields,
+        })
+    else {
+        return Vec::new();
+    };
+    crate::review_diff::review_diff_model_preview_lines(&model, 4)
+}
+
+#[cfg(any(feature = "tui", test))]
 pub(crate) fn append_review_evidence_section(lines: &mut Vec<String>, review_lines: Vec<String>) {
     if review_lines.is_empty() {
         return;
@@ -762,6 +815,44 @@ mod tests {
                 "Check next: review the warning evidence and verify operator intent.".to_string(),
             ]
         );
+    }
+
+    #[test]
+    fn review_mutation_action_diff_preview_lines_hide_secret_like_fields() {
+        let action = ReviewMutationAction::from(ReviewMutationActionInput {
+            action_id: "access:user:alice".to_string(),
+            action: REVIEW_ACTION_WOULD_UPDATE.to_string(),
+            domain: "access".to_string(),
+            resource_kind: "user".to_string(),
+            identity: "alice".to_string(),
+            status: REVIEW_STATUS_WARNING.to_string(),
+            blocked_reason: None,
+            details: Some("fields=email".to_string()),
+            review_hints: Vec::new(),
+            raw: json!({
+                "changes": [
+                    {
+                        "field": "email",
+                        "before": "alice@example.com",
+                        "after": "alice-old@example.com"
+                    },
+                    {
+                        "field": "password",
+                        "before": "new-secret",
+                        "after": "old-secret"
+                    }
+                ]
+            }),
+        });
+
+        let lines = build_review_mutation_action_diff_preview_lines(&action);
+        let rendered = lines.join("\n");
+
+        assert!(rendered.contains("Shared Diff: user alice [would-update]"));
+        assert!(rendered.contains("email"));
+        assert!(!rendered.contains("password"));
+        assert!(!rendered.contains("new-secret"));
+        assert!(!rendered.contains("old-secret"));
     }
 
     #[test]

@@ -24,6 +24,12 @@ Current AI-maintained status only.
 - Older entries moved to [`ai-status-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-16.md).
 - Older entries moved to [`ai-status-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-25.md).
 
+## 2026-05-25 - Shared review diff preview projection
+- State: Done
+- Scope: rust/src/commands/review_contract.rs; rust/src/commands/access/access_plan_tui.rs; docs/internal/tui-architecture-roadmap.md
+- Current Update: Moved access plan action diff-preview line projection into the shared review contract so mutation review surfaces can reuse safe live/desired preview rows.
+- Result: Access plan TUI keeps the same shared diff preview output and secret-like field filtering while the reusable review contract now owns the generic action changes to ReviewDiffModel preview projection. Public CLI paths, help text, generated docs, and command contracts are unchanged.
+
 ## 2026-05-25 - Shared review next-check projection
 - State: Done
 - Scope: rust/src/commands/review_contract.rs; rust/src/commands/access/access_plan_tui.rs; docs/internal/tui-architecture-roadmap.md
@@ -53,9 +59,3 @@ Current AI-maintained status only.
 - Scope: rust/src/commands/status/overview/section_rows.rs; docs/internal/tui-architecture-roadmap.md
 - Current Update: Routed status overview section detail strings through shared browser_detail_fact instead of a local detail_line formatter and added a regression against reintroducing the wrapper.
 - Result: Status overview section item details now share the browser-level Label: value fact formatter, reducing helper drift candidates from three to two while preserving existing detail strings. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
-
-## 2026-05-25 - TUI inventory helper-drift report
-- State: Done
-- Scope: scripts/tui_inventory_report.py; scripts/test_tui_inventory_report.py; docs/internal/tui-architecture-roadmap.md
-- Current Update: Extended the manual TUI inventory report with helper-drift candidate detection for remaining local TUI/detail/review helper functions and added focused unittest coverage.
-- Result: Maintainers can now use the TUI inventory helper to see remaining local helper candidates alongside the surface inventory, making future completion audits evidence-based. Public CLI paths, help text, command contracts, generated docs, Rust runtime behavior, Python package behavior, and package metadata are unchanged.

@@ -197,3 +197,9 @@
 - Scope: rust/src/common/tui/shell.rs; rust/src/commands/datasource/browse/render.rs; docs/internal/tui-architecture-roadmap.md
 - Current Update: Added a shared fixed-body-width shell control-line helper and routed datasource browse footer rows through it instead of a local control_line renderer.
 - Result: Datasource browse footer rows now share shell-level fixed-width control-line rendering while preserving existing 14-column label spacing. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+
+## 2026-05-25 - TUI inventory helper-drift report
+- State: Done
+- Scope: scripts/tui_inventory_report.py; scripts/test_tui_inventory_report.py; docs/internal/tui-architecture-roadmap.md
+- Current Update: Extended the manual TUI inventory report with helper-drift candidate detection for remaining local TUI/detail/review helper functions and added focused unittest coverage.
+- Result: Maintainers can now use the TUI inventory helper to see remaining local helper candidates alongside the surface inventory, making future completion audits evidence-based. Public CLI paths, help text, command contracts, generated docs, Rust runtime behavior, Python package behavior, and package metadata are unchanged.
