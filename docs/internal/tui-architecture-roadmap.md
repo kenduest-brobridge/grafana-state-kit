@@ -160,6 +160,9 @@ still look like possible shared-helper follow-up work.
 - Datasource browse review empty states now use a shared browser `REVIEW`
   message helper, leaving the datasource renderer with only panel-specific
   review selection logic.
+- Dashboard browse fact rendering now uses a dashboard-specific detail builder
+  name for its local action-row filtering and live-details badge behavior,
+  clearing the remaining helper-drift inventory candidate.
 - Dashboard browse header context now matches datasource browse by surfacing the
   selected row position, selected node kind, and current search state.
 - Dashboard browse overlay modes such as search now surface as explicit header

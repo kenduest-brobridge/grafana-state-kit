@@ -179,3 +179,9 @@
 - Scope: rust/src/commands/access/user_browse_render.rs; rust/src/commands/access/team_browse_render.rs; docs/internal/tui-architecture-roadmap.md
 - Current Update: Routed access user/team browse fact rows directly through shared browser_detail_info_line and added regressions against reintroducing local detail_line delegate wrappers.
 - Result: Access user/team browse fact rows now share browser-level detail info-line rendering directly while existing rendered detail output remains stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+
+## 2026-05-25 - Shared browse muted shell spans
+- State: Done
+- Scope: rust/src/common/tui/shell.rs; rust/src/commands/dashboard/browse/render_detail.rs; rust/src/commands/datasource/browse/render.rs; docs/internal/tui-architecture-roadmap.md
+- Current Update: Added shared tui_shell::muted and routed dashboard/datasource browse muted labels through it instead of identical local helpers.
+- Result: Dashboard and datasource browse muted labels now share the shell-level muted span primitive while existing detail/review output remains stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.

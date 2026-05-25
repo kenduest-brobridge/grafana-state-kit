@@ -92,7 +92,7 @@ pub(crate) fn render_detail_panel(
     super::render_focusable_lines(
         frame,
         sections[1],
-        build_info_lines(&detail_lines),
+        dashboard_detail_fact_lines(&detail_lines),
         super::pane_block(
             "Facts",
             state.focus == PaneFocus::Facts,
@@ -118,7 +118,7 @@ pub(crate) fn render_detail_panel(
     );
 }
 
-fn build_info_lines(lines: &[String]) -> Vec<Line<'static>> {
+fn dashboard_detail_fact_lines(lines: &[String]) -> Vec<Line<'static>> {
     browser_detail_info_lines_with(
         lines,
         |line| {
@@ -270,6 +270,17 @@ mod tests {
             !source.contains(&wrapper_signature),
             "dashboard browse detail rendering should call tui_shell::boxed directly instead of \
              carrying a local plain_boxed delegate wrapper"
+        );
+    }
+
+    #[test]
+    fn dashboard_browse_detail_does_not_keep_generic_build_info_wrapper() {
+        let source = include_str!("render_detail.rs");
+        let wrapper_signature = format!("{}{}(", "fn ", "build_info_lines");
+        assert!(
+            !source.contains(&wrapper_signature),
+            "dashboard browse detail rendering should use a domain-specific fact-line builder \
+             name instead of carrying a generic build_info_lines helper-drift candidate"
         );
     }
 

@@ -24,6 +24,12 @@ Current AI-maintained status only.
 - Older entries moved to [`ai-status-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-16.md).
 - Older entries moved to [`ai-status-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-25.md).
 
+## 2026-05-25 - Cleared dashboard browse helper drift
+- State: Done
+- Scope: rust/src/commands/dashboard/browse/render_detail.rs; docs/internal/tui-architecture-roadmap.md
+- Current Update: Renamed the dashboard browse fact-line builder to describe its dashboard-specific filtering and live-details badge behavior instead of looking like a generic build_info_lines helper.
+- Result: The manual TUI inventory report now has zero helper-drift candidates while dashboard browse fact rendering keeps the existing shared browser_detail_info_lines_with output path and behavior.
+
 ## 2026-05-25 - Shared datasource review empty lines
 - State: Done
 - Scope: rust/src/common/browser/session.rs; rust/src/commands/datasource/browse/render.rs; docs/internal/tui-architecture-roadmap.md
@@ -53,9 +59,3 @@ Current AI-maintained status only.
 - Scope: rust/src/common/tui/shell.rs; rust/src/commands/dashboard/browse/render_detail.rs; rust/src/commands/datasource/browse/render.rs; docs/internal/tui-architecture-roadmap.md
 - Current Update: Added shared tui_shell::boxed and routed dashboard/datasource browse boxed helper labels through it instead of local plain_boxed helpers.
 - Result: Dashboard and datasource browse boxed helper labels now share the shell-level boxed span primitive while preserving existing fallback behavior and rendered detail output. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
-
-## 2026-05-25 - Shared browse muted shell spans
-- State: Done
-- Scope: rust/src/common/tui/shell.rs; rust/src/commands/dashboard/browse/render_detail.rs; rust/src/commands/datasource/browse/render.rs; docs/internal/tui-architecture-roadmap.md
-- Current Update: Added shared tui_shell::muted and routed dashboard/datasource browse muted labels through it instead of identical local helpers.
-- Result: Dashboard and datasource browse muted labels now share the shell-level muted span primitive while existing detail/review output remains stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
