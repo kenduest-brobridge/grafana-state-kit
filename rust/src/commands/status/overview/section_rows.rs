@@ -1,5 +1,6 @@
 //! Overview section row builders for artifact-specific views.
 
+use crate::interactive_browser::browser_detail_fact;
 use serde_json::{Map, Value};
 
 use super::overview_kind::{parse_overview_artifact_kind, OverviewArtifactKind};
@@ -43,10 +44,6 @@ fn meta_value(value: &str) -> &str {
     }
 }
 
-fn detail_line(label: &str, value: impl std::fmt::Display) -> String {
-    format!("{label}: {value}")
-}
-
 fn overview_item_kind(artifact_kind: &str) -> Option<&'static str> {
     parse_overview_artifact_kind(artifact_kind)
         .ok()
@@ -84,8 +81,8 @@ pub(super) fn build_input_view(artifact: &OverviewArtifact) -> Option<OverviewSe
                 meta: input.value.clone(),
                 facts: Vec::new(),
                 details: vec![
-                    detail_line("Input", &input.name),
-                    detail_line("Value", &input.value),
+                    browser_detail_fact("Input", &input.name),
+                    browser_detail_fact("Value", &input.value),
                 ],
             })
             .collect(),
@@ -142,13 +139,13 @@ fn build_datasource_inventory_view(artifact: &OverviewArtifact) -> Option<Overvi
                         },
                     ],
                     details: vec![
-                        detail_line("Datasource", meta_value(&name)),
-                        detail_line("UID", &uid),
-                        detail_line("Type", &kind),
-                        detail_line("Org", &org),
-                        detail_line("Access", meta_value(&access)),
-                        detail_line("Default", is_default),
-                        detail_line("URL", meta_value(&url)),
+                        browser_detail_fact("Datasource", meta_value(&name)),
+                        browser_detail_fact("UID", &uid),
+                        browser_detail_fact("Type", &kind),
+                        browser_detail_fact("Org", &org),
+                        browser_detail_fact("Access", meta_value(&access)),
+                        browser_detail_fact("Default", is_default),
+                        browser_detail_fact("URL", meta_value(&url)),
                     ],
                 }
             })
@@ -198,11 +195,11 @@ fn build_alert_assets_view(artifact: &OverviewArtifact) -> Option<OverviewSectio
                     },
                 ],
                 details: vec![
-                    detail_line("Kind", kind),
-                    detail_line("Title", &title),
-                    detail_line("Name", &name),
-                    detail_line("Receiver", &receiver),
-                    detail_line("Path", &path),
+                    browser_detail_fact("Kind", kind),
+                    browser_detail_fact("Title", &title),
+                    browser_detail_fact("Name", &name),
+                    browser_detail_fact("Receiver", &receiver),
+                    browser_detail_fact("Path", &path),
                 ],
             });
         }
@@ -266,26 +263,26 @@ fn build_access_roster_view(artifact: &OverviewArtifact) -> Option<OverviewSecti
                 };
                 let details = match access_kind {
                     OverviewArtifactKind::AccessUserExport => vec![
-                        detail_line("Login", &login),
-                        detail_line("Name", &name),
-                        detail_line("Email", &email),
-                        detail_line("Teams", &teams),
+                        browser_detail_fact("Login", &login),
+                        browser_detail_fact("Name", &name),
+                        browser_detail_fact("Email", &email),
+                        browser_detail_fact("Teams", &teams),
                     ],
                     OverviewArtifactKind::AccessTeamExport => vec![
-                        detail_line("Team", &name),
-                        detail_line("Email", &email),
-                        detail_line("Members", &members),
-                        detail_line("Admins", &admins),
+                        browser_detail_fact("Team", &name),
+                        browser_detail_fact("Email", &email),
+                        browser_detail_fact("Members", &members),
+                        browser_detail_fact("Admins", &admins),
                     ],
                     OverviewArtifactKind::AccessOrgExport => vec![
-                        detail_line("Org", &name),
-                        detail_line("ID", &id),
-                        detail_line("User count", users),
+                        browser_detail_fact("Org", &name),
+                        browser_detail_fact("ID", &id),
+                        browser_detail_fact("User count", users),
                     ],
                     OverviewArtifactKind::AccessServiceAccountExport => vec![
-                        detail_line("Service account", &name),
-                        detail_line("Role", &role),
-                        detail_line("Disabled", &disabled),
+                        browser_detail_fact("Service account", &name),
+                        browser_detail_fact("Role", &role),
+                        browser_detail_fact("Disabled", &disabled),
                     ],
                     _ => vec!["Record".to_string()],
                 };
@@ -339,12 +336,12 @@ fn build_sync_resources_view(artifact: &OverviewArtifact) -> Option<OverviewSect
                         value: managed_fields.to_string(),
                     }],
                     details: vec![
-                        detail_line("Kind", &kind),
-                        detail_line("Identity", &identity),
-                        detail_line("Title", &title),
-                        detail_line("Managed fields", managed_fields),
-                        detail_line("Body field count", &body_field_count),
-                        detail_line("Source path", &source_path),
+                        browser_detail_fact("Kind", &kind),
+                        browser_detail_fact("Identity", &identity),
+                        browser_detail_fact("Title", &title),
+                        browser_detail_fact("Managed fields", managed_fields),
+                        browser_detail_fact("Body field count", &body_field_count),
+                        browser_detail_fact("Source path", &source_path),
                     ],
                 }
             })
@@ -386,12 +383,12 @@ fn build_promotion_checks_view(artifact: &OverviewArtifact) -> Option<OverviewSe
                         value: resolution.clone(),
                     }],
                     details: vec![
-                        detail_line("Kind", &kind),
-                        detail_line("Identity", &identity),
-                        detail_line("Status", &status),
-                        detail_line("Resolution", &resolution),
-                        detail_line("Detail", &detail),
-                        detail_line("Blocking", &blocking),
+                        browser_detail_fact("Kind", &kind),
+                        browser_detail_fact("Identity", &identity),
+                        browser_detail_fact("Status", &status),
+                        browser_detail_fact("Resolution", &resolution),
+                        browser_detail_fact("Detail", &detail),
+                        browser_detail_fact("Blocking", &blocking),
                     ],
                 }
             })
@@ -458,16 +455,16 @@ fn build_bundle_assessment_checks_view(
                         },
                     ],
                     details: vec![
-                        detail_line("Kind", &kind),
-                        detail_line("Identity", &identity),
-                        detail_line("Title", &title),
-                        detail_line("Datasource", &datasource_name),
-                        detail_line("Provider", &provider_name),
-                        detail_line("Placeholder", &placeholder_name),
-                        detail_line("Source path", &source_path),
-                        detail_line("Status", &status),
-                        detail_line("Blocking", &blocking),
-                        detail_line("Detail", &detail),
+                        browser_detail_fact("Kind", &kind),
+                        browser_detail_fact("Identity", &identity),
+                        browser_detail_fact("Title", &title),
+                        browser_detail_fact("Datasource", &datasource_name),
+                        browser_detail_fact("Provider", &provider_name),
+                        browser_detail_fact("Placeholder", &placeholder_name),
+                        browser_detail_fact("Source path", &source_path),
+                        browser_detail_fact("Status", &status),
+                        browser_detail_fact("Blocking", &blocking),
+                        browser_detail_fact("Detail", &detail),
                     ],
                 }
             })
@@ -549,11 +546,25 @@ pub(super) fn build_fact_breakdown_view(
                 meta: fact.value.clone(),
                 facts: vec![fact.clone()],
                 details: vec![
-                    detail_line("Section", &artifact.title),
-                    detail_line("Metric", &fact.label),
-                    detail_line("Value", &fact.value),
+                    browser_detail_fact("Section", &artifact.title),
+                    browser_detail_fact("Metric", &fact.label),
+                    browser_detail_fact("Value", &fact.value),
                 ],
             })
             .collect(),
     })
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn status_overview_section_rows_do_not_wrap_shared_detail_facts() {
+        let source = include_str!("section_rows.rs");
+        let wrapper_signature = format!("{}{}(", "fn ", "detail_line");
+        assert!(
+            !source.contains(&wrapper_signature),
+            "status overview section rows should call browser_detail_fact directly instead of \
+             carrying a local detail_line wrapper"
+        );
+    }
 }

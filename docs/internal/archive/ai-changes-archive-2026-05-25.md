@@ -187,3 +187,10 @@
 - Impact: Datasource browse review panes now share browser-level 24-column Label: value evidence rendering and blocker/required highlighting while preserving existing review output. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
 - Rollback/Risk: Low. The change replaces an equivalent local renderer with a shared helper, and focused tests cover shared review row rendering plus existing datasource review evidence output.
 - Follow-up: Look for other TUI review panes with the same review evidence label/value shape before adding new local renderers.
+
+## 2026-05-25 - Shared access browser detail lines
+- Summary: Added a shared read-only browser detail info-line helper and routed access user/team browse detail rows through it instead of duplicate local renderers.
+- Tests: cargo test --quiet browser_detail_info_line_formats_label_value_with_fallback; cargo test --quiet access_user_browse; cargo test --quiet interactive_browser; escalated cargo test --quiet access after sandbox denied local mock-server binding; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; make quality-ai-workflow; git diff --check
+- Impact: Access user/team browse detail rows now share browser-level 18-column Label: value rendering and blank-value fallback while preserving existing detail output. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+- Rollback/Risk: Low. The change replaces equivalent local detail-line renderers with a shared helper and focused tests cover fallback formatting plus access browse render paths.
+- Follow-up: Continue scanning specialized TUI browsers for remaining local detail/review row renderers that match shared browser projection helpers.

@@ -155,6 +155,8 @@ still look like possible shared-helper follow-up work.
   with the same compact search prompt hint language used by the browse surfaces.
 - Status TUI header rows now use the shared shell key-chip/plain span helpers
   instead of carrying local duplicates for the same visual primitives.
+- Status overview section details now use the shared browser detail fact helper
+  for `Label: value` strings instead of carrying a local formatter.
 - Dashboard browse header context now matches datasource browse by surfacing the
   selected row position, selected node kind, and current search state.
 - Dashboard browse overlay modes such as search now surface as explicit header

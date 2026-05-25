@@ -24,6 +24,13 @@ Current AI change log only.
 - Older entries moved to [`ai-changes-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-16.md).
 - Older entries moved to [`ai-changes-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-25.md).
 
+## 2026-05-25 - Shared status overview detail facts
+- Summary: Routed status overview section detail strings through shared browser_detail_fact instead of a local detail_line formatter and added a regression against reintroducing the wrapper.
+- Tests: cargo test --quiet status_overview_section_rows_do_not_wrap_shared_detail_facts; cargo test --quiet status_overview; cargo test --quiet status (outside sandbox for local mock-server coverage); RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; python3 scripts/tui_inventory_report.py; make quality-ai-workflow; git diff --check
+- Impact: Status overview section item details now share the browser-level Label: value fact formatter, reducing helper drift candidates from three to two while preserving existing detail strings. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+- Rollback/Risk: Low. The shared helper produces the same Label: value string and focused plus broader status tests cover the overview path.
+- Follow-up: Use the remaining helper-drift candidates to decide whether dashboard build_info_lines and datasource build_review_lines are domain-specific or worth extracting before declaring the TUI design work complete.
+
 ## 2026-05-25 - TUI inventory helper-drift report
 - Summary: Extended the manual TUI inventory report with helper-drift candidate detection for remaining local TUI/detail/review helper functions and added focused unittest coverage.
 - Tests: python3 -m unittest -v scripts.test_tui_inventory_report; python3 scripts/tui_inventory_report.py; python3 scripts/tui_inventory_report.py --json; make quality-ai-workflow; git diff --check
@@ -86,10 +93,3 @@ Current AI change log only.
 - Impact: Dashboard inspect workbench full-detail viewer metadata rows now share browser-level aligned label/value wrapping while existing viewer output and logical row mapping remain stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
 - Rollback/Risk: Low. The change moves an equivalent wrapped label/value renderer into the shared browser helper layer and focused tests cover the helper plus viewer/workbench paths.
 - Follow-up: Continue auditing remaining TUI render helpers for shared-shell primitives before introducing broader workbench abstractions.
-
-## 2026-05-25 - Shared access browser detail lines
-- Summary: Added a shared read-only browser detail info-line helper and routed access user/team browse detail rows through it instead of duplicate local renderers.
-- Tests: cargo test --quiet browser_detail_info_line_formats_label_value_with_fallback; cargo test --quiet access_user_browse; cargo test --quiet interactive_browser; escalated cargo test --quiet access after sandbox denied local mock-server binding; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; make quality-ai-workflow; git diff --check
-- Impact: Access user/team browse detail rows now share browser-level 18-column Label: value rendering and blank-value fallback while preserving existing detail output. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
-- Rollback/Risk: Low. The change replaces equivalent local detail-line renderers with a shared helper and focused tests cover fallback formatting plus access browse render paths.
-- Follow-up: Continue scanning specialized TUI browsers for remaining local detail/review row renderers that match shared browser projection helpers.
