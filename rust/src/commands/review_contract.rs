@@ -251,6 +251,19 @@ fn compact_review_value(value: &Value) -> String {
 }
 
 #[cfg(any(feature = "tui", test))]
+fn review_raw_string_array(raw: &Value, key: &str) -> Vec<String> {
+    raw.get(key)
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_string)
+        .collect()
+}
+
+#[cfg(any(feature = "tui", test))]
 pub(crate) fn build_review_mutation_action_change_detail_lines(
     action: &ReviewMutationAction,
 ) -> Vec<String> {
@@ -310,6 +323,57 @@ pub(crate) fn build_review_mutation_action_target_evidence_lines(
             .map(|value| format!("Live target: {key}={}", compact_review_value(value)))
     })
     .collect()
+}
+
+#[cfg(any(feature = "tui", test))]
+pub(crate) fn build_review_mutation_action_context_lines(
+    action: &ReviewMutationAction,
+) -> Vec<String> {
+    let mut lines = Vec::new();
+    if let Some(reason) = &action.blocked_reason {
+        lines.push(format!("Blocked context: {reason}."));
+    }
+    if action.status == REVIEW_STATUS_WARNING {
+        let changed_fields = review_raw_string_array(&action.raw, "changedFields");
+        let changed_fields = changed_fields
+            .into_iter()
+            .filter(|field| crate::review_diff::is_safe_review_changed_field(field))
+            .collect::<Vec<_>>();
+        if !changed_fields.is_empty() {
+            lines.push(format!(
+                "Warning context: verify bundle fields {} against the live target before approving.",
+                changed_fields.join(", ")
+            ));
+        } else {
+            lines.push(
+                "Warning context: compare the reviewed bundle with the live target before approving."
+                    .to_string(),
+            );
+        }
+    }
+    if let Some(target) = action.raw.get("target").and_then(Value::as_object) {
+        let flags = [
+            "isExternal",
+            "isProvisioned",
+            "isExternallySynced",
+            "isGrafanaAdminExternallySynced",
+            "disabled",
+        ]
+        .into_iter()
+        .filter_map(|key| {
+            target
+                .get(key)
+                .map(|value| format!("{key}={}", compact_review_value(value)))
+        })
+        .collect::<Vec<_>>();
+        if !flags.is_empty() && action.status == REVIEW_STATUS_BLOCKED {
+            lines.push(format!(
+                "Blocked evidence: live target flags {}.",
+                flags.join(" ")
+            ));
+        }
+    }
+    lines
 }
 
 #[cfg(any(feature = "tui", test))]
@@ -1014,6 +1078,60 @@ mod tests {
             vec![
                 "Live target: login=alice".to_string(),
                 "Live target: orgRole=Viewer".to_string(),
+            ]
+        );
+    }
+
+    #[test]
+    fn review_mutation_action_context_lines_project_warning_and_blocker_evidence() {
+        let action = ReviewMutationAction::from(ReviewMutationActionInput {
+            action_id: "access:user:alice".to_string(),
+            action: REVIEW_ACTION_WOULD_UPDATE.to_string(),
+            domain: "access".to_string(),
+            resource_kind: "user".to_string(),
+            identity: "alice".to_string(),
+            status: REVIEW_STATUS_BLOCKED.to_string(),
+            blocked_reason: Some("externally synced user".to_string()),
+            details: Some("fields=orgRole,password".to_string()),
+            review_hints: Vec::new(),
+            raw: json!({
+                "changedFields": ["orgRole", "password"],
+                "target": {
+                    "isExternal": true,
+                    "isProvisioned": false,
+                    "disabled": false,
+                    "ignored": true
+                }
+            }),
+        });
+
+        assert_eq!(
+            build_review_mutation_action_context_lines(&action),
+            vec![
+                "Blocked context: externally synced user.".to_string(),
+                "Blocked evidence: live target flags isExternal=true isProvisioned=false disabled=false.".to_string(),
+            ]
+        );
+
+        let warning = ReviewMutationAction::from(ReviewMutationActionInput {
+            action_id: "access:user:bob".to_string(),
+            action: REVIEW_ACTION_WOULD_UPDATE.to_string(),
+            domain: "access".to_string(),
+            resource_kind: "user".to_string(),
+            identity: "bob".to_string(),
+            status: REVIEW_STATUS_WARNING.to_string(),
+            blocked_reason: None,
+            details: Some("fields=orgRole,password".to_string()),
+            review_hints: Vec::new(),
+            raw: json!({
+                "changedFields": ["orgRole", "password"]
+            }),
+        });
+
+        assert_eq!(
+            build_review_mutation_action_context_lines(&warning),
+            vec![
+                "Warning context: verify bundle fields orgRole against the live target before approving.".to_string(),
             ]
         );
     }

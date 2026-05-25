@@ -192,6 +192,9 @@ still look like possible shared-helper follow-up work.
   secret-like field filtering reusable across mutation review panes.
 - Access plan live-target evidence rows now use shared review-contract action
   projection for the known target fields rendered as `Live target: key=value`.
+- Access plan warning/blocker context rows now use shared review-contract action
+  projection for blocked reasons, safe warning changed fields, and blocked live
+  target flags.
 - Access plan interactive reviews now also use shared review-contract next-check
   projection for action hints and default follow-up guidance, reducing another
   per-surface review pane shaping rule.

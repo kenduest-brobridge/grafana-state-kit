@@ -4,8 +4,8 @@ use crate::common::Result;
 #[cfg(any(feature = "tui", test))]
 use crate::review_contract::{
     append_review_evidence_section, build_review_mutation_action_change_detail_lines,
-    build_review_mutation_action_detail_lines, build_review_mutation_action_diff_preview_lines,
-    build_review_mutation_action_next_check_lines,
+    build_review_mutation_action_context_lines, build_review_mutation_action_detail_lines,
+    build_review_mutation_action_diff_preview_lines, build_review_mutation_action_next_check_lines,
     build_review_mutation_action_target_evidence_lines, REVIEW_ACTION_BLOCKED,
     REVIEW_ACTION_EXTRA_REMOTE, REVIEW_ACTION_SAME, REVIEW_ACTION_UNMANAGED,
     REVIEW_ACTION_WOULD_CREATE, REVIEW_ACTION_WOULD_DELETE, REVIEW_ACTION_WOULD_UPDATE,
@@ -17,7 +17,7 @@ use crate::interactive_browser::run_interactive_browser;
 #[cfg(any(feature = "tui", test))]
 use crate::interactive_browser::BrowserItem;
 #[cfg(any(feature = "tui", test))]
-use serde_json::{Map, Value};
+use serde_json::Value;
 
 use super::AccessPlanDocument;
 
@@ -55,36 +55,6 @@ fn build_access_plan_summary_lines(document: &AccessPlanDocument) -> Vec<String>
 }
 
 #[cfg(any(feature = "tui", test))]
-fn compact_value(value: &Value) -> String {
-    match value {
-        Value::Null => "-".to_string(),
-        Value::Bool(flag) => flag.to_string(),
-        Value::Number(number) => number.to_string(),
-        Value::String(text) => {
-            let trimmed = text.trim();
-            if trimmed.is_empty() {
-                "-".to_string()
-            } else {
-                trimmed.to_string()
-            }
-        }
-        Value::Array(items) => {
-            let compact = items
-                .iter()
-                .map(compact_value)
-                .filter(|value| value != "-")
-                .collect::<Vec<_>>();
-            if compact.is_empty() {
-                "[]".to_string()
-            } else {
-                compact.join(", ")
-            }
-        }
-        Value::Object(_) => serde_json::to_string(value).unwrap_or_else(|_| "<object>".to_string()),
-    }
-}
-
-#[cfg(any(feature = "tui", test))]
 fn raw_string_array(raw: &Value, key: &str) -> Vec<String> {
     raw.get(key)
         .and_then(Value::as_array)
@@ -95,16 +65,6 @@ fn raw_string_array(raw: &Value, key: &str) -> Vec<String> {
         .filter(|value| !value.is_empty())
         .map(str::to_string)
         .collect()
-}
-
-#[cfg(any(feature = "tui", test))]
-fn raw_target(raw: &Value) -> Option<&Map<String, Value>> {
-    raw.get("target").and_then(Value::as_object)
-}
-
-#[cfg(any(feature = "tui", test))]
-fn is_safe_access_change_field(field: &str) -> bool {
-    crate::review_diff::is_safe_review_changed_field(field)
 }
 
 #[cfg(any(feature = "tui", test))]
@@ -175,57 +135,6 @@ fn impact_line(
         None
     }?;
     Some(format!("Why this matters: {impact}."))
-}
-
-#[cfg(any(feature = "tui", test))]
-fn blocked_or_warning_context(
-    action: &super::access_plan_types::AccessPlanReviewActionProjection,
-) -> Vec<String> {
-    let mut lines = Vec::new();
-    if let Some(reason) = &action.blocked_reason {
-        lines.push(format!("Blocked context: {reason}."));
-    }
-    if action.status == REVIEW_STATUS_WARNING {
-        let changed_fields = raw_string_array(&action.raw, "changedFields");
-        let changed_fields = changed_fields
-            .into_iter()
-            .filter(|field| is_safe_access_change_field(field))
-            .collect::<Vec<_>>();
-        if !changed_fields.is_empty() {
-            lines.push(format!(
-                "Warning context: verify bundle fields {} against the live target before approving.",
-                changed_fields.join(", ")
-            ));
-        } else {
-            lines.push(
-                "Warning context: compare the reviewed bundle with the live target before approving."
-                    .to_string(),
-            );
-        }
-    }
-    if let Some(target) = raw_target(&action.raw) {
-        let flags = [
-            "isExternal",
-            "isProvisioned",
-            "isExternallySynced",
-            "isGrafanaAdminExternallySynced",
-            "disabled",
-        ]
-        .into_iter()
-        .filter_map(|key| {
-            target
-                .get(key)
-                .map(|value| format!("{key}={}", compact_value(value)))
-        })
-        .collect::<Vec<_>>();
-        if !flags.is_empty() && action.status == REVIEW_STATUS_BLOCKED {
-            lines.push(format!(
-                "Blocked evidence: live target flags {}.",
-                flags.join(" ")
-            ));
-        }
-    }
-    lines
 }
 
 #[cfg(any(feature = "tui", test))]
@@ -323,7 +232,7 @@ pub(crate) fn build_access_plan_browser_items(document: &AccessPlanDocument) -> 
         details.extend(build_review_mutation_action_change_detail_lines(&action));
         details.extend(build_review_mutation_action_diff_preview_lines(&action));
         details.extend(build_review_mutation_action_target_evidence_lines(&action));
-        details.extend(blocked_or_warning_context(&action));
+        details.extend(build_review_mutation_action_context_lines(&action));
         details.extend(
             action
                 .review_hints
