@@ -123,7 +123,11 @@ pub(crate) fn review_lines(item: &DatasourceBrowseItem) -> Vec<String> {
     if item.is_org_row() {
         return Vec::new();
     }
-    secret_review_lines(&item.details)
+    review_lines_from_datasource_details(&item.details)
+}
+
+pub(crate) fn review_lines_from_datasource_details(details: &Map<String, Value>) -> Vec<String> {
+    secret_review_lines(details)
 }
 
 fn secret_review_lines(details: &Map<String, Value>) -> Vec<String> {
@@ -789,8 +793,7 @@ mod tests {
 
     #[test]
     fn review_lines_surface_plan_action_evidence_from_details() {
-        let item = datasource_item(
-            json!({
+        let details = json!({
                 "action": "blocked-read-only",
                 "status": "blocked",
                 "matchBasis": "uid",
@@ -802,13 +805,14 @@ mod tests {
                 "targetReadOnly": true,
                 "changedFields": ["url", "jsonData"],
                 "reviewHints": ["requires-secret-values"]
-            })
-            .as_object()
-            .unwrap()
-            .clone(),
-        );
+        })
+        .as_object()
+        .unwrap()
+        .clone();
+        let item = datasource_item(details.clone());
 
         let lines = review_lines(&item);
+        let detail_lines = review_lines_from_datasource_details(&details);
 
         assert!(lines.contains(&"Review action: blocked-read-only (status=blocked)".to_string()));
         assert!(lines.contains(&"Review blocker status: blocked by target-read-only".to_string()));
@@ -820,6 +824,7 @@ mod tests {
         assert!(lines.contains(&"Review target: read-only=true".to_string()));
         assert!(lines.contains(&"Review changed fields: jsonData, url".to_string()));
         assert!(lines.contains(&"Review hints: requires-secret-values".to_string()));
+        assert_eq!(detail_lines, lines);
     }
 
     #[test]

@@ -69,9 +69,7 @@ mod datasource_runtime_sync;
 
 pub(crate) use datasource_browse_support::is_safe_changed_field;
 #[cfg(any(feature = "tui", test))]
-pub(crate) use datasource_browse_support::{
-    review_lines, DatasourceBrowseItem, DatasourceBrowseItemKind,
-};
+pub(crate) use datasource_browse_support::review_lines_from_datasource_details;
 pub(crate) use datasource_cli_defs::{normalize_datasource_group_command, root_command};
 pub use datasource_cli_defs::{
     ArtifactRunMode, DatasourceAddArgs, DatasourceBrowseArgs, DatasourceCliArgs,

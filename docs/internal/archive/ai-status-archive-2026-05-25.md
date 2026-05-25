@@ -53,3 +53,9 @@
 - Scope: Rust internal TUI review diff helper ownership. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
 - Current Update: Moved the sync review TUI's domain-neutral side-by-side diff focus, title, scroll, wrap, clip, TUI list-item, and footer control helpers into `review_diff.rs`, leaving sync review to re-export and consume the shared helpers.
 - Result: Sync review remains behavior-compatible while future compatible review surfaces can reuse the same shared diff visualization path.
+
+## 2026-05-25 - No-default TUI warning cleanup
+- State: Done
+- Scope: Rust no-default TUI boundary hygiene for access browse/plan, shared browser, snapshot review browser shaping, shared review diff helpers, dashboard governance item shaping, and datasource browse support. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
+- Current Update: Removed unused no-default fallback imports and narrowed no-default dead-code noise on TUI-only helper modules while keeping default-feature tests and the shared feature-disabled fallback regression intact.
+- Result: The focused no-default fallback test still passes and its warning output is now limited to smaller remaining ownership/fallback cleanup items instead of broad TUI helper modules.

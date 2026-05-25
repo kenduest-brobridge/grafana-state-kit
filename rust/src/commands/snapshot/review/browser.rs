@@ -7,7 +7,7 @@ use serde_json::Value;
 use crate::common::Result;
 
 #[cfg(any(feature = "tui", test))]
-use crate::datasource::{review_lines, DatasourceBrowseItem, DatasourceBrowseItemKind};
+use crate::datasource::review_lines_from_datasource_details;
 #[cfg(feature = "tui")]
 use crate::interactive_browser::run_interactive_browser;
 #[cfg(any(feature = "tui", test))]
@@ -591,56 +591,7 @@ pub(crate) fn build_snapshot_review_browser_items(document: &Value) -> Result<Ve
 
 #[cfg(any(feature = "tui", test))]
 fn snapshot_datasource_review_lines(datasource: &serde_json::Map<String, Value>) -> Vec<String> {
-    let item = DatasourceBrowseItem {
-        kind: DatasourceBrowseItemKind::Datasource,
-        depth: 0,
-        id: datasource
-            .get("id")
-            .and_then(Value::as_i64)
-            .unwrap_or_default(),
-        uid: datasource
-            .get("uid")
-            .and_then(Value::as_str)
-            .unwrap_or_default()
-            .to_string(),
-        name: datasource
-            .get("name")
-            .and_then(Value::as_str)
-            .unwrap_or_default()
-            .to_string(),
-        datasource_type: datasource
-            .get("type")
-            .and_then(Value::as_str)
-            .unwrap_or_default()
-            .to_string(),
-        access: datasource
-            .get("access")
-            .and_then(Value::as_str)
-            .unwrap_or_default()
-            .to_string(),
-        url: datasource
-            .get("url")
-            .and_then(Value::as_str)
-            .unwrap_or_default()
-            .to_string(),
-        is_default: datasource
-            .get("isDefault")
-            .and_then(Value::as_bool)
-            .unwrap_or(false),
-        org: datasource
-            .get("org")
-            .and_then(Value::as_str)
-            .unwrap_or_default()
-            .to_string(),
-        org_id: datasource
-            .get("orgId")
-            .and_then(Value::as_str)
-            .unwrap_or_default()
-            .to_string(),
-        details: datasource.clone(),
-        datasource_count: 1,
-    };
-    review_lines(&item)
+    review_lines_from_datasource_details(datasource)
 }
 
 #[cfg(feature = "tui")]

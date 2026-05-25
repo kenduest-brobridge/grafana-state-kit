@@ -24,6 +24,12 @@ Current AI-maintained status only.
 - Older entries moved to [`ai-status-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-16.md).
 - Older entries moved to [`ai-status-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-25.md).
 
+## 2026-05-25 - Shared datasource TUI review projection
+- State: Done
+- Scope: rust/src/commands/datasource/browse/support.rs; rust/src/commands/datasource/inspect/export.rs; rust/src/commands/snapshot/review/browser.rs; rust/src/commands/datasource/mod.rs; docs/internal/tui-architecture-roadmap.md
+- Current Update: Added a datasource-details review projection helper and routed datasource local interactive rows plus snapshot datasource review rows through it instead of constructing dummy browse items.
+- Result: Datasource local list and snapshot review interactive browser rows now share the datasource Review projection directly from details while live datasource browse behavior stays unchanged. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+
 ## 2026-05-25 - Shared TUI review changed-field safety
 - State: Done
 - Scope: rust/src/commands/review_diff.rs; rust/src/commands/datasource/browse/support.rs; rust/src/commands/access/access_plan_tui.rs; rust/src/commands/access/access_plan_types.rs; sync/datasource/snapshot/access review tests; docs/internal/tui-architecture-roadmap.md
@@ -53,9 +59,3 @@ Current AI-maintained status only.
 - Scope: Rust dashboard TUI cfg boundary hygiene for topology/impact interactive test branches plus dashboard import/inspect TUI-only test re-exports. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
 - Current Update: Gated topology/impact test interactive browser branches and dashboard import/inspect test-only re-exports on the tui feature so no-default all-target builds no longer compile those TUI-only paths or emit their unreachable/unused warnings.
 - Result: The no-default warning surface is narrower and now leaves only smaller helper/alias dead-code follow-ups; default-feature dashboard topology, routed import, and query report tests remain behavior-compatible.
-
-## 2026-05-25 - No-default TUI warning cleanup
-- State: Done
-- Scope: Rust no-default TUI boundary hygiene for access browse/plan, shared browser, snapshot review browser shaping, shared review diff helpers, dashboard governance item shaping, and datasource browse support. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
-- Current Update: Removed unused no-default fallback imports and narrowed no-default dead-code noise on TUI-only helper modules while keeping default-feature tests and the shared feature-disabled fallback regression intact.
-- Result: The focused no-default fallback test still passes and its warning output is now limited to smaller remaining ownership/fallback cleanup items instead of broad TUI helper modules.

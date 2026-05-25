@@ -10,9 +10,7 @@ use std::path::{Path, PathBuf};
 use crate::common::string_field;
 use crate::common::{load_json_object_file, message, render_json_value, Result};
 #[cfg(any(feature = "tui", test))]
-use crate::datasource::datasource_browse_support::{
-    review_lines, DatasourceBrowseItem, DatasourceBrowseItemKind,
-};
+use crate::datasource::review_lines_from_datasource_details;
 #[cfg(any(feature = "tui", test))]
 use crate::interactive_browser::BrowserItem;
 use crate::tabular_output::render_yaml;
@@ -150,7 +148,7 @@ pub(crate) fn build_datasource_inspect_export_browser_items(
                 format!("Input mode: {}", source.input_mode),
                 format!("Input path: {}", source.input_path),
             ];
-            let review = datasource_inspect_export_review_lines(record, source);
+            let review = datasource_inspect_export_review_lines(record);
             if !review.is_empty() {
                 details.push("Review evidence:".to_string());
                 details.extend(review);
@@ -169,29 +167,8 @@ pub(crate) fn build_datasource_inspect_export_browser_items(
 }
 
 #[cfg(any(feature = "tui", test))]
-fn datasource_inspect_export_review_lines(
-    record: &Map<String, Value>,
-    source: &DatasourceInspectExportSource,
-) -> Vec<String> {
-    let item = DatasourceBrowseItem {
-        kind: DatasourceBrowseItemKind::Datasource,
-        depth: 0,
-        id: record.get("id").and_then(Value::as_i64).unwrap_or_default(),
-        uid: string_field(record, "uid", ""),
-        name: string_field(record, "name", ""),
-        datasource_type: string_field(record, "type", ""),
-        access: string_field(record, "access", ""),
-        url: string_field(record, "url", ""),
-        is_default: record
-            .get("isDefault")
-            .and_then(Value::as_bool)
-            .unwrap_or(false),
-        org: string_field(record, "org", ""),
-        org_id: string_field(record, "orgId", ""),
-        details: record.clone(),
-        datasource_count: source.records.len(),
-    };
-    review_lines(&item)
+fn datasource_inspect_export_review_lines(record: &Map<String, Value>) -> Vec<String> {
+    review_lines_from_datasource_details(record)
 }
 
 fn datasource_inspect_export_record(record: &DatasourceImportRecord) -> Map<String, Value> {
