@@ -29,6 +29,11 @@ TUI_RE = re.compile(
     r"--interactive|output-format interactive|browse interactively|"
     r"interactive terminal|terminal UI|Terminal UI|TUI",
 )
+HELPER_DRIFT_RE = re.compile(
+    r"^\s*fn\s+"
+    r"(?P<helper>detail_line|fact_line|build_info_lines|build_review_lines|"
+    r"control_line|key_chip|plain|muted|plain_boxed|boxed)\s*\("
+)
 
 
 @dataclass(frozen=True)
@@ -36,6 +41,14 @@ class InventoryItem:
     path: str
     kind: str
     signals: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class HelperDriftItem:
+    path: str
+    helper: str
+    line: int
+    signal: str
 
 
 def iter_scan_files() -> list[Path]:
@@ -112,7 +125,51 @@ def build_inventory() -> list[InventoryItem]:
     return items
 
 
-def print_text_report(items: list[InventoryItem]) -> None:
+def collect_helper_drift(path: Path, text: str) -> list[HelperDriftItem]:
+    path_text = path.as_posix()
+    if "common/tui" in path_text or "common/browser/session.rs" in path_text:
+        return []
+    if "tests" in path.parts or path.name.endswith("_tests.rs"):
+        return []
+    items: list[HelperDriftItem] = []
+    lines = text.splitlines()
+    for index, line in enumerate(lines, start=1):
+        match = HELPER_DRIFT_RE.search(line)
+        if not match:
+            continue
+        body = "\n".join(lines[index : min(index + 6, len(lines))])
+        body_signal = next(
+            (
+                body_line.strip()
+                for body_line in body.splitlines()
+                if "tui_shell::" in body_line or "browser_" in body_line or "format!" in body_line
+            ),
+            "",
+        )
+        if body_signal:
+            signal = f"{line.strip()} -> {body_signal}"
+            items.append(
+                HelperDriftItem(
+                    path=path_text,
+                    helper=match.group("helper"),
+                    line=index,
+                    signal=signal,
+                )
+            )
+    return items
+
+
+def build_helper_drift() -> list[HelperDriftItem]:
+    items: list[HelperDriftItem] = []
+    for relative in iter_scan_files():
+        if relative.suffix != ".rs":
+            continue
+        text = (REPO_ROOT / relative).read_text(encoding="utf-8")
+        items.extend(collect_helper_drift(relative, text))
+    return sorted(items, key=lambda item: (item.path, item.line, item.helper))
+
+
+def print_text_report(items: list[InventoryItem], helper_drift: list[HelperDriftItem]) -> None:
     by_kind: dict[str, list[InventoryItem]] = {}
     for item in items:
         by_kind.setdefault(item.kind, []).append(item)
@@ -130,6 +187,12 @@ def print_text_report(items: list[InventoryItem]) -> None:
             print(f"    signal: {item.signals[0]}")
         print()
 
+    print(f"helper-drift candidates ({len(helper_drift)})")
+    for item in helper_drift:
+        print(f"  - {item.path}:{item.line} {item.helper}")
+        print(f"    signal: {item.signal}")
+    print()
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -137,10 +200,20 @@ def main() -> int:
     args = parser.parse_args()
 
     items = build_inventory()
+    helper_drift = build_helper_drift()
     if args.json:
-        print(json.dumps([asdict(item) for item in items], indent=2, sort_keys=True))
+        print(
+            json.dumps(
+                {
+                    "items": [asdict(item) for item in items],
+                    "helperDrift": [asdict(item) for item in helper_drift],
+                },
+                indent=2,
+                sort_keys=True,
+            )
+        )
     else:
-        print_text_report(items)
+        print_text_report(items, helper_drift)
     return 0
 
 

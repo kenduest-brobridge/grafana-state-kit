@@ -24,6 +24,13 @@ Current AI change log only.
 - Older entries moved to [`ai-changes-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-16.md).
 - Older entries moved to [`ai-changes-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-25.md).
 
+## 2026-05-25 - TUI inventory helper-drift report
+- Summary: Extended the manual TUI inventory report with helper-drift candidate detection for remaining local TUI/detail/review helper functions and added focused unittest coverage.
+- Tests: python3 -m unittest -v scripts.test_tui_inventory_report; python3 scripts/tui_inventory_report.py; python3 scripts/tui_inventory_report.py --json; make quality-ai-workflow; git diff --check
+- Impact: Maintainers can now use the TUI inventory helper to see remaining local helper candidates alongside the surface inventory, making future completion audits evidence-based. Public CLI paths, help text, command contracts, generated docs, Rust runtime behavior, Python package behavior, and package metadata are unchanged.
+- Rollback/Risk: Low. This is a manual maintainer report enhancement with focused unittest coverage and no CI gate change.
+- Follow-up: Use the helper-drift candidate list to decide whether remaining build_info_lines/build_review_lines/detail_line helpers are domain-specific or worth extracting before declaring the TUI design work complete.
+
 ## 2026-05-25 - Shared datasource browse fixed control lines
 - Summary: Added a shared fixed-body-width shell control-line helper and routed datasource browse footer rows through it instead of a local control_line renderer.
 - Tests: cargo test --quiet datasource_browse_render_does_not_wrap_control_line_shell_rows; cargo test --quiet control_lines_surface_consistent_focus_cycle_and_exit_labels; cargo test --quiet datasource_browse; cargo test --quiet interactive_browser; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; make quality-ai-workflow; git diff --check
@@ -86,10 +93,3 @@ Current AI change log only.
 - Impact: Access user/team browse detail rows now share browser-level 18-column Label: value rendering and blank-value fallback while preserving existing detail output. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
 - Rollback/Risk: Low. The change replaces equivalent local detail-line renderers with a shared helper and focused tests cover fallback formatting plus access browse render paths.
 - Follow-up: Continue scanning specialized TUI browsers for remaining local detail/review row renderers that match shared browser projection helpers.
-
-## 2026-05-25 - Shared datasource browser review lines
-- Summary: Added a shared read-only browser review info-line projection and routed datasource browse review-pane evidence rows through it instead of a local renderer.
-- Tests: cargo test --quiet shared_browser_review_lines_format_datasource_review_rows; cargo test --quiet review_pane_formats_local_review_evidence_without_secret_values; cargo test --quiet datasource_browse; cargo test --quiet interactive_browser; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; make quality-ai-workflow; git diff --check
-- Impact: Datasource browse review panes now share browser-level 24-column Label: value evidence rendering and blocker/required highlighting while preserving existing review output. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
-- Rollback/Risk: Low. The change replaces an equivalent local renderer with a shared helper, and focused tests cover shared review row rendering plus existing datasource review evidence output.
-- Follow-up: Look for other TUI review panes with the same review evidence label/value shape before adding new local renderers.

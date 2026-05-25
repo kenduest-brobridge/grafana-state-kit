@@ -24,6 +24,12 @@ Current AI-maintained status only.
 - Older entries moved to [`ai-status-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-16.md).
 - Older entries moved to [`ai-status-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-25.md).
 
+## 2026-05-25 - TUI inventory helper-drift report
+- State: Done
+- Scope: scripts/tui_inventory_report.py; scripts/test_tui_inventory_report.py; docs/internal/tui-architecture-roadmap.md
+- Current Update: Extended the manual TUI inventory report with helper-drift candidate detection for remaining local TUI/detail/review helper functions and added focused unittest coverage.
+- Result: Maintainers can now use the TUI inventory helper to see remaining local helper candidates alongside the surface inventory, making future completion audits evidence-based. Public CLI paths, help text, command contracts, generated docs, Rust runtime behavior, Python package behavior, and package metadata are unchanged.
+
 ## 2026-05-25 - Shared datasource browse fixed control lines
 - State: Done
 - Scope: rust/src/common/tui/shell.rs; rust/src/commands/datasource/browse/render.rs; docs/internal/tui-architecture-roadmap.md
@@ -53,9 +59,3 @@ Current AI-maintained status only.
 - Scope: rust/src/commands/dashboard/inspect_workbench/render.rs; rust/src/commands/dashboard/inspect_workbench/render_modal_sections.rs; rust/src/commands/dashboard/inspect_workbench/render_helpers.rs; docs/internal/tui-architecture-roadmap.md
 - Current Update: Routed dashboard inspect workbench shell control/key/plain spans directly through shared tui_shell helpers and added a regression against reintroducing local delegate wrappers.
 - Result: Dashboard inspect workbench shell controls now share tui_shell primitives directly while existing render output remains stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
-
-## 2026-05-25 - Shared access browse shell spans
-- State: Done
-- Scope: rust/src/commands/access/user_browse_render.rs; rust/src/commands/access/team_browse_render.rs; docs/internal/tui-architecture-roadmap.md
-- Current Update: Routed access user/team browse action-row key-chip/plain spans directly through shared tui_shell helpers instead of local delegate wrappers.
-- Result: Access user/team browse action rows now share shell-level key-chip/plain rendering without changing public CLI paths, help text, command contracts, generated docs, Python behavior, or package metadata.

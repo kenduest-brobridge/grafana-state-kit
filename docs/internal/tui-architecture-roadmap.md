@@ -74,7 +74,9 @@ python3 scripts/tui_inventory_report.py
 
 The script is intentionally non-blocking and is not wired into CI. It scans
 `rust/src`, English command docs, English user guide docs, and `docs/internal`
-while skipping generated HTML and Cargo build output.
+while skipping generated HTML and Cargo build output. It also reports
+`helper-drift candidates` for local TUI/detail/review helper functions that
+still look like possible shared-helper follow-up work.
 
 ## Recent Follow-Up
 
