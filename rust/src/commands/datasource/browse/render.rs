@@ -328,7 +328,7 @@ fn render_detail_panel(
                 Style::default().fg(Color::Cyan),
             )),
             Line::from(vec![
-                muted("SCOPE "),
+                tui_shell::muted("SCOPE "),
                 plain_boxed("all-org browse header", Color::Rgb(40, 49, 61)),
             ]),
         ]
@@ -367,10 +367,10 @@ fn render_detail_panel(
                 Style::default().fg(Color::Cyan),
             )),
             Line::from(vec![
-                muted("URL "),
+                tui_shell::muted("URL "),
                 plain_boxed(&item.url, Color::Rgb(40, 49, 61)),
                 Span::raw("   "),
-                muted("ORG "),
+                tui_shell::muted("ORG "),
                 tui_shell::plain(format!(
                     "{} ({})",
                     blank_dash(&item.org),
@@ -464,14 +464,14 @@ fn render_detail_panel(
 fn build_review_lines(item: &DatasourceBrowseItem) -> Vec<Line<'static>> {
     if item.is_org_row() {
         return vec![Line::from(vec![
-            muted("REVIEW "),
+            tui_shell::muted("REVIEW "),
             tui_shell::plain("Select a datasource row to inspect review evidence."),
         ])];
     }
     let lines = review_lines(item);
     if lines.is_empty() {
         return vec![Line::from(vec![
-            muted("REVIEW "),
+            tui_shell::muted("REVIEW "),
             tui_shell::plain("No secret placeholder or review-required evidence."),
         ])];
     }
@@ -532,10 +532,6 @@ fn plain_boxed(text: &str, bg: Color) -> Span<'static> {
         format!(" {} ", blank_dash(text)),
         Style::default().fg(Color::White).bg(bg),
     )
-}
-
-fn muted(text: &'static str) -> Span<'static> {
-    Span::styled(text, Style::default().fg(Color::Gray))
 }
 
 fn render_focusable_lines(
@@ -631,6 +627,17 @@ mod tests {
     use super::*;
     use ratatui::backend::TestBackend;
     use ratatui::Terminal;
+
+    #[test]
+    fn datasource_browse_render_does_not_wrap_muted_shell_span() {
+        let source = include_str!("render.rs");
+        let wrapper_signature = format!("{}{}(", "fn ", "muted");
+        assert!(
+            !source.contains(&wrapper_signature),
+            "datasource browse rendering should call tui_shell::muted directly instead of \
+             carrying a local muted delegate wrapper"
+        );
+    }
 
     fn empty_document() -> DatasourceBrowseDocument {
         DatasourceBrowseDocument {

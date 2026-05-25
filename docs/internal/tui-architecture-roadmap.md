@@ -206,6 +206,8 @@ while skipping generated HTML and Cargo build output.
 - Dashboard browse detail rendering now uses the same shared styled info-line
   projection while keeping its dashboard-specific action-line filters and
   `LIVE DETAILS` badge behavior.
+- Dashboard browse and datasource browse muted labels now use shared
+  `tui_shell::muted` spans instead of carrying identical local helpers.
 - Datasource browse review-pane rows now use a shared read-only browser review
   info-line projection for 24-column `Label: value` evidence and
   blocker/required highlighting.

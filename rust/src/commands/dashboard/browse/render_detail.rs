@@ -67,7 +67,7 @@ pub(crate) fn render_detail_panel(
             Style::default().fg(Color::Cyan),
         )),
         Line::from(vec![
-            muted("UID "),
+            tui_shell::muted("UID "),
             tui_shell::plain(
                 node.uid
                     .as_deref()
@@ -75,7 +75,7 @@ pub(crate) fn render_detail_panel(
                     .unwrap_or("-"),
             ),
             Span::raw("   "),
-            muted("META "),
+            tui_shell::muted("META "),
             plain_boxed(&node.meta, Color::Rgb(40, 49, 61)),
         ]),
     ];
@@ -246,10 +246,6 @@ fn detail_lines_for_node(
     node.details.clone()
 }
 
-fn muted(text: &'static str) -> Span<'static> {
-    Span::styled(text, Style::default().fg(Color::Gray))
-}
-
 fn plain_boxed(text: &str, bg: Color) -> Span<'static> {
     Span::styled(
         format!(" {} ", text),
@@ -261,6 +257,17 @@ fn plain_boxed(text: &str, bg: Color) -> Span<'static> {
 mod tests {
     use super::*;
     use std::collections::BTreeMap;
+
+    #[test]
+    fn dashboard_browse_render_detail_does_not_wrap_muted_shell_span() {
+        let source = include_str!("render_detail.rs");
+        let wrapper_signature = format!("{}{}(", "fn ", "muted");
+        assert!(
+            !source.contains(&wrapper_signature),
+            "dashboard browse detail rendering should call tui_shell::muted directly instead of \
+             carrying a local muted delegate wrapper"
+        );
+    }
 
     fn sample_node(kind: DashboardBrowseNodeKind) -> DashboardBrowseNode {
         DashboardBrowseNode {

@@ -159,3 +159,10 @@
 - Impact: Dashboard inspect workbench full-detail rows now share browser-level aligned Label: value formatting while existing viewer output remains stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
 - Rollback/Risk: Low. The change replaces a local formatter with an equivalent shared helper and focused tests cover both the helper and full-detail viewer path.
 - Follow-up: Continue migrating compatible TUI detail sections and review surfaces onto shared browser/review helpers where the data shape already matches.
+
+## 2026-05-25 - Shared datasource browser detail facts
+- Summary: Added a shared read-only browser fallback fact formatter and routed datasource browse detail rows through shared browser fact helpers instead of local Label/value formatting.
+- Tests: cargo test --quiet browser_detail_fallback_fact_trims_or_uses_fallback; cargo test --quiet detail_lines_use_shared_browser_fact_formatting; cargo test --quiet detail_lines_sort_json_data_and_secure_json_field_keys; cargo test --quiet datasource_browse; cargo test --quiet interactive_browser; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; make quality-ai-workflow; git diff --check
+- Impact: Datasource browse detail rows now share browser-level Label: value formatting and blank-value fallback trimming while preserving existing detail output. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+- Rollback/Risk: Low. The change replaces local detail string formatting with equivalent shared helpers and focused tests cover fallback trimming plus datasource detail output.
+- Follow-up: Continue migrating compatible datasource/status/dashboard TUI detail projections onto shared browser fact and section helpers where the data shape already matches.
