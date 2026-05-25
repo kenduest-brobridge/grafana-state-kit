@@ -329,7 +329,7 @@ fn render_detail_panel(
             )),
             Line::from(vec![
                 tui_shell::muted("SCOPE "),
-                plain_boxed("all-org browse header", Color::Rgb(40, 49, 61)),
+                tui_shell::boxed("all-org browse header", Color::Rgb(40, 49, 61)),
             ]),
         ]
     } else {
@@ -368,7 +368,7 @@ fn render_detail_panel(
             )),
             Line::from(vec![
                 tui_shell::muted("URL "),
-                plain_boxed(&item.url, Color::Rgb(40, 49, 61)),
+                tui_shell::boxed(blank_dash(&item.url), Color::Rgb(40, 49, 61)),
                 Span::raw("   "),
                 tui_shell::muted("ORG "),
                 tui_shell::plain(format!(
@@ -527,13 +527,6 @@ fn control_line(segments: &[(&'static str, Color, &'static str)]) -> Line<'stati
     Line::from(spans)
 }
 
-fn plain_boxed(text: &str, bg: Color) -> Span<'static> {
-    Span::styled(
-        format!(" {} ", blank_dash(text)),
-        Style::default().fg(Color::White).bg(bg),
-    )
-}
-
 fn render_focusable_lines(
     frame: &mut ratatui::Frame,
     area: ratatui::layout::Rect,
@@ -636,6 +629,17 @@ mod tests {
             !source.contains(&wrapper_signature),
             "datasource browse rendering should call tui_shell::muted directly instead of \
              carrying a local muted delegate wrapper"
+        );
+    }
+
+    #[test]
+    fn datasource_browse_render_does_not_wrap_boxed_shell_span() {
+        let source = include_str!("render.rs");
+        let wrapper_signature = format!("{}{}(", "fn ", "plain_boxed");
+        assert!(
+            !source.contains(&wrapper_signature),
+            "datasource browse rendering should call tui_shell::boxed directly instead of \
+             carrying a local plain_boxed delegate wrapper"
         );
     }
 

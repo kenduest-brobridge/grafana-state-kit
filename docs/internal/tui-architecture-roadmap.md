@@ -208,6 +208,8 @@ while skipping generated HTML and Cargo build output.
   `LIVE DETAILS` badge behavior.
 - Dashboard browse and datasource browse muted labels now use shared
   `tui_shell::muted` spans instead of carrying identical local helpers.
+- Dashboard browse and datasource browse boxed helper text now use shared
+  `tui_shell::boxed` spans instead of carrying local plain-boxed helpers.
 - Datasource browse review-pane rows now use a shared read-only browser review
   info-line projection for 24-column `Label: value` evidence and
   blocker/required highlighting.

@@ -166,3 +166,10 @@
 - Impact: Datasource browse detail rows now share browser-level Label: value formatting and blank-value fallback trimming while preserving existing detail output. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
 - Rollback/Risk: Low. The change replaces local detail string formatting with equivalent shared helpers and focused tests cover fallback trimming plus datasource detail output.
 - Follow-up: Continue migrating compatible datasource/status/dashboard TUI detail projections onto shared browser fact and section helpers where the data shape already matches.
+
+## 2026-05-25 - Shared datasource browser info lines
+- Summary: Added a shared read-only browser styled info-line projection and routed datasource browse detail rendering through it instead of a local Label/value renderer.
+- Tests: cargo test --quiet shared_browser_info_lines_format_datasource_detail_rows; cargo test --quiet datasource_browse; cargo test --quiet interactive_browser; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; make quality-ai-workflow; git diff --check
+- Impact: Datasource browse detail panes now share browser-level 18-column Label: value styling while preserving existing datasource detail output. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+- Rollback/Risk: Low. The change replaces an equivalent local renderer with a shared helper, and focused render/browser tests cover the projected output path.
+- Follow-up: Continue migrating compatible dashboard browse detail rendering onto the same shared info-line helper, preserving its dashboard-specific filters and live-details badge handling.

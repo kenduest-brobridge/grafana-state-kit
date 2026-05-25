@@ -60,6 +60,13 @@ pub(crate) fn muted(value: impl Into<String>) -> Span<'static> {
     Span::styled(value.into(), Style::default().fg(Color::Gray))
 }
 
+pub(crate) fn boxed(value: impl Into<String>, bg: Color) -> Span<'static> {
+    Span::styled(
+        format!(" {} ", value.into()),
+        Style::default().fg(Color::White).bg(bg),
+    )
+}
+
 pub(crate) fn label(value: impl Into<String>) -> Span<'static> {
     Span::styled(
         value.into(),

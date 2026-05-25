@@ -76,7 +76,7 @@ pub(crate) fn render_detail_panel(
             ),
             Span::raw("   "),
             tui_shell::muted("META "),
-            plain_boxed(&node.meta, Color::Rgb(40, 49, 61)),
+            tui_shell::boxed(&node.meta, Color::Rgb(40, 49, 61)),
         ]),
     ];
     super::render_focusable_lines(
@@ -246,13 +246,6 @@ fn detail_lines_for_node(
     node.details.clone()
 }
 
-fn plain_boxed(text: &str, bg: Color) -> Span<'static> {
-    Span::styled(
-        format!(" {} ", text),
-        Style::default().fg(Color::White).bg(bg),
-    )
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -266,6 +259,17 @@ mod tests {
             !source.contains(&wrapper_signature),
             "dashboard browse detail rendering should call tui_shell::muted directly instead of \
              carrying a local muted delegate wrapper"
+        );
+    }
+
+    #[test]
+    fn dashboard_browse_render_detail_does_not_wrap_boxed_shell_span() {
+        let source = include_str!("render_detail.rs");
+        let wrapper_signature = format!("{}{}(", "fn ", "plain_boxed");
+        assert!(
+            !source.contains(&wrapper_signature),
+            "dashboard browse detail rendering should call tui_shell::boxed directly instead of \
+             carrying a local plain_boxed delegate wrapper"
         );
     }
 

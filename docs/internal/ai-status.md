@@ -24,6 +24,12 @@ Current AI-maintained status only.
 - Older entries moved to [`ai-status-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-16.md).
 - Older entries moved to [`ai-status-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-25.md).
 
+## 2026-05-25 - Shared browse boxed shell spans
+- State: Done
+- Scope: rust/src/common/tui/shell.rs; rust/src/commands/dashboard/browse/render_detail.rs; rust/src/commands/datasource/browse/render.rs; docs/internal/tui-architecture-roadmap.md
+- Current Update: Added shared tui_shell::boxed and routed dashboard/datasource browse boxed helper labels through it instead of local plain_boxed helpers.
+- Result: Dashboard and datasource browse boxed helper labels now share the shell-level boxed span primitive while preserving existing fallback behavior and rendered detail output. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+
 ## 2026-05-25 - Shared browse muted shell spans
 - State: Done
 - Scope: rust/src/common/tui/shell.rs; rust/src/commands/dashboard/browse/render_detail.rs; rust/src/commands/datasource/browse/render.rs; docs/internal/tui-architecture-roadmap.md
@@ -53,9 +59,3 @@ Current AI-maintained status only.
 - Scope: rust/src/commands/status/tui/render.rs; docs/internal/tui-architecture-roadmap.md
 - Current Update: Routed status TUI key-chip/plain spans through shared tui_shell helpers instead of local duplicates.
 - Result: Status TUI header rows now share shell-level key-chip/plain span rendering while existing status output remains stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
-
-## 2026-05-25 - Shared inspect viewer wrapped detail lines
-- State: Done
-- Scope: rust/src/common/browser/session.rs; rust/src/commands/dashboard/inspect_workbench/render_modal_sections/viewer_rows.rs; docs/internal/tui-architecture-roadmap.md
-- Current Update: Added a shared read-only browser wrapped labeled-detail helper and routed dashboard inspect workbench full-detail viewer label/value wrapping through it while keeping logical row mapping local.
-- Result: Dashboard inspect workbench full-detail viewer metadata rows now share browser-level aligned label/value wrapping while existing viewer output and logical row mapping remain stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
