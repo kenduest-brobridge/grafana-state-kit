@@ -1,6 +1,8 @@
 #![cfg(feature = "tui")]
 
-use crate::interactive_browser::browser_detail_info_lines as build_info_lines;
+use crate::interactive_browser::{
+    browser_detail_info_lines as build_info_lines, browser_review_info_lines,
+};
 use crate::tui_shell;
 use crate::tui_shell::pane_block;
 use ratatui::layout::{Constraint, Direction, Layout};
@@ -473,30 +475,7 @@ fn build_review_lines(item: &DatasourceBrowseItem) -> Vec<Line<'static>> {
             tui_shell::plain("No secret placeholder or review-required evidence."),
         ])];
     }
-    lines
-        .iter()
-        .map(|line| {
-            if let Some((label, value)) = line.split_once(':') {
-                let color = if label.contains("blocker") || label.contains("required") {
-                    Color::Yellow
-                } else {
-                    Color::LightCyan
-                };
-                Line::from(vec![
-                    Span::styled(
-                        format!("{label:<24}: "),
-                        Style::default().fg(color).add_modifier(Modifier::BOLD),
-                    ),
-                    Span::styled(value.trim().to_string(), Style::default().fg(Color::White)),
-                ])
-            } else {
-                Line::from(Span::styled(
-                    line.clone(),
-                    Style::default().fg(Color::White),
-                ))
-            }
-        })
-        .collect()
+    browser_review_info_lines(&lines)
 }
 
 fn control_lines(has_pending_delete: bool, has_pending_edit: bool) -> Vec<Line<'static>> {
@@ -910,5 +889,24 @@ mod tests {
         assert!(rendered.contains("jsonData, url"));
         assert!(rendered.contains("Review requires secret values"));
         assert!(!rendered.contains("super-secret-value"));
+    }
+
+    #[test]
+    fn shared_browser_review_lines_format_datasource_review_rows() {
+        let lines = crate::interactive_browser::browser_review_info_lines(&[
+            "Review action: would-update".to_string(),
+            "Review required: true".to_string(),
+            "plain review note".to_string(),
+        ])
+        .into_iter()
+        .map(|line| line.to_string())
+        .collect::<Vec<_>>();
+
+        assert_eq!(lines.len(), 3);
+        assert!(lines[0].contains("Review action"));
+        assert!(lines[0].contains("would-update"));
+        assert!(lines[1].contains("Review required"));
+        assert!(lines[1].contains("true"));
+        assert!(lines[2].contains("plain review note"));
     }
 }

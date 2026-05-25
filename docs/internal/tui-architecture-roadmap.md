@@ -204,6 +204,9 @@ while skipping generated HTML and Cargo build output.
 - Dashboard browse detail rendering now uses the same shared styled info-line
   projection while keeping its dashboard-specific action-line filters and
   `LIVE DETAILS` badge behavior.
+- Datasource browse review-pane rows now use a shared read-only browser review
+  info-line projection for 24-column `Label: value` evidence and
+  blocker/required highlighting.
 - No-default TUI warning noise is narrower: feature-disabled builds no longer
   compile unused imports or large dead-code surfaces for access browse, access
   plan summary lines, shared read-only browser internals, snapshot browser

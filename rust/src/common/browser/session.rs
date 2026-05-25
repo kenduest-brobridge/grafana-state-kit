@@ -135,6 +135,34 @@ pub(crate) fn browser_detail_info_lines_with(
         .collect()
 }
 
+#[cfg(feature = "tui")]
+pub(crate) fn browser_review_info_lines(lines: &[String]) -> Vec<Line<'static>> {
+    lines
+        .iter()
+        .map(|line| {
+            if let Some((label, value)) = line.split_once(':') {
+                let color = if label.contains("blocker") || label.contains("required") {
+                    Color::Yellow
+                } else {
+                    Color::LightCyan
+                };
+                Line::from(vec![
+                    Span::styled(
+                        format!("{label:<24}: "),
+                        Style::default().fg(color).add_modifier(Modifier::BOLD),
+                    ),
+                    Span::styled(value.trim().to_string(), Style::default().fg(Color::White)),
+                ])
+            } else {
+                Line::from(Span::styled(
+                    line.clone(),
+                    Style::default().fg(Color::White),
+                ))
+            }
+        })
+        .collect()
+}
+
 #[cfg(any(feature = "tui", test))]
 impl BrowserItem {
     fn matches_query(&self, query: &str) -> bool {

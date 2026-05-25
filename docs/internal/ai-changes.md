@@ -24,6 +24,13 @@ Current AI change log only.
 - Older entries moved to [`ai-changes-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-16.md).
 - Older entries moved to [`ai-changes-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-25.md).
 
+## 2026-05-25 - Shared datasource browser review lines
+- Summary: Added a shared read-only browser review info-line projection and routed datasource browse review-pane evidence rows through it instead of a local renderer.
+- Tests: cargo test --quiet shared_browser_review_lines_format_datasource_review_rows; cargo test --quiet review_pane_formats_local_review_evidence_without_secret_values; cargo test --quiet datasource_browse; cargo test --quiet interactive_browser; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; make quality-ai-workflow; git diff --check
+- Impact: Datasource browse review panes now share browser-level 24-column Label: value evidence rendering and blocker/required highlighting while preserving existing review output. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+- Rollback/Risk: Low. The change replaces an equivalent local renderer with a shared helper, and focused tests cover shared review row rendering plus existing datasource review evidence output.
+- Follow-up: Look for other TUI review panes with the same review evidence label/value shape before adding new local renderers.
+
 ## 2026-05-25 - Shared dashboard browser info lines
 - Summary: Extended the shared read-only browser info-line projection with filter and special-row hooks, then routed dashboard browse detail rendering through it while preserving dashboard-specific hidden action lines and the live-details badge.
 - Tests: cargo test --quiet shared_browser_info_lines_preserve_dashboard_filters_and_live_badge; cargo test --quiet dashboard_browse; cargo test --quiet datasource_browse; cargo test --quiet interactive_browser; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; make quality-ai-workflow; git diff --check
@@ -86,10 +93,3 @@ Current AI change log only.
 - Impact: TUI review panes now share the same changed-field redaction policy before rendering field names or side-by-side values. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
 - Rollback/Risk: Low. The change narrows review display output for secret-like fields and keeps existing safe fields visible; rollback would restore duplicated predicates and narrower datasource filtering.
 - Follow-up: Continue migrating compatible review surfaces onto shared review diff/detail helpers when they already expose safe live/desired evidence.
-
-## 2026-05-25 - Access plan shared diff preview
-- Summary: Made access plan action details build compact shared live/desired diff previews from bundle/live change rows while filtering secret-like change fields from both the generic review details and TUI preview output.
-- Tests: cargo fmt --check; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo check --quiet --no-default-features --all-targets; cargo test --quiet access_plan; cargo test --quiet review_diff; cargo test --quiet access_plan_interactive_browser_items_follow_review_projection; cargo test --quiet access_plan_interactive_browser_action_details_include_shared_review_evidence; cargo test --quiet access_plan_interactive_shared_diff_preview_hides_secret_like_fields
-- Impact: Access plan review rows now share the same ReviewDiffModel preview vocabulary as sync review and dashboard import review for compatible field-change evidence, reducing per-surface shaping while avoiding secret-like value leakage.
-- Rollback/Risk: low. Rollback would remove the compact shared live/desired preview from access plan rows and restore the previous per-row Change lines only.
-- Follow-up: Continue migrating compatible review surfaces that have safe live/desired evidence onto shared ReviewDiffModel preview or side-by-side rendering.

@@ -110,3 +110,10 @@
 - Impact: Dashboard import review now consumes the same shared diff model path as sync review for compatible changed-field evidence, reducing per-surface review shaping while preserving existing summary/structural/raw diff lines.
 - Rollback/Risk: low. Rollback would remove the compact shared live/desired preview from the import review pane while keeping existing import summary, structural, and raw diff lines.
 - Follow-up: Continue migrating other compatible review surfaces that already expose live/desired/changed-field evidence onto the shared ReviewDiffModel projection.
+
+## 2026-05-25 - Access plan shared diff preview
+- Summary: Made access plan action details build compact shared live/desired diff previews from bundle/live change rows while filtering secret-like change fields from both the generic review details and TUI preview output.
+- Tests: cargo fmt --check; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo check --quiet --no-default-features --all-targets; cargo test --quiet access_plan; cargo test --quiet review_diff; cargo test --quiet access_plan_interactive_browser_items_follow_review_projection; cargo test --quiet access_plan_interactive_browser_action_details_include_shared_review_evidence; cargo test --quiet access_plan_interactive_shared_diff_preview_hides_secret_like_fields
+- Impact: Access plan review rows now share the same ReviewDiffModel preview vocabulary as sync review and dashboard import review for compatible field-change evidence, reducing per-surface shaping while avoiding secret-like value leakage.
+- Rollback/Risk: low. Rollback would remove the compact shared live/desired preview from access plan rows and restore the previous per-row Change lines only.
+- Follow-up: Continue migrating compatible review surfaces that have safe live/desired evidence onto shared ReviewDiffModel preview or side-by-side rendering.
