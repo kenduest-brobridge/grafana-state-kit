@@ -195,6 +195,9 @@ while skipping generated HTML and Cargo build output.
 - Dashboard inspect workbench full-detail rows now use a shared read-only
   browser aligned fact formatter for the `Kind`, `Title`, and `Summary`
   metadata rows, removing the remaining local full-detail fact helper.
+- Datasource browse detail rows now reuse shared read-only browser fact
+  formatters, including trimmed fallback handling for blank UID/name/type/URL
+  style metadata, while preserving existing datasource detail output.
 - No-default TUI warning noise is narrower: feature-disabled builds no longer
   compile unused imports or large dead-code surfaces for access browse, access
   plan summary lines, shared read-only browser internals, snapshot browser

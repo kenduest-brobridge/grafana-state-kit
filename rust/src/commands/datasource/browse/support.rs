@@ -7,6 +7,7 @@ use crate::dashboard::{build_auth_context, build_http_client_for_org, DEFAULT_OR
 use crate::datasource_provider::{collect_provider_references, iter_provider_names};
 use crate::datasource_secret::{collect_secret_placeholders, iter_secret_placeholder_names};
 use crate::http::JsonHttpClient;
+use crate::interactive_browser::{browser_detail_fact, browser_detail_fallback_fact};
 use crate::review_diff::is_safe_review_changed_field;
 
 use super::DatasourceBrowseArgs;
@@ -63,47 +64,44 @@ pub(crate) fn load_datasource_browse_document(
 pub(crate) fn detail_lines(item: &DatasourceBrowseItem) -> Vec<String> {
     if item.is_org_row() {
         return vec![
-            format!("Org: {}", display_value(&item.org, "-")),
-            format!("Org ID: {}", display_value(&item.org_id, "-")),
-            format!("Datasources: {}", item.datasource_count),
+            browser_detail_fallback_fact("Org", &item.org, "-"),
+            browser_detail_fallback_fact("Org ID", &item.org_id, "-"),
+            browser_detail_fact("Datasources", item.datasource_count),
         ];
     }
 
     let mut lines = vec![
-        format!("ID: {}", item.id),
-        format!("UID: {}", display_value(&item.uid, "-")),
-        format!("Name: {}", display_value(&item.name, "-")),
-        format!("Type: {}", display_value(&item.datasource_type, "-")),
-        format!("URL: {}", display_value(&item.url, "-")),
-        format!("Access: {}", display_value(&item.access, "-")),
-        format!(
-            "Default: {}",
-            if item.is_default { "true" } else { "false" }
-        ),
-        format!("Org: {}", display_value(&item.org, "-")),
-        format!("Org ID: {}", display_value(&item.org_id, "-")),
+        browser_detail_fact("ID", item.id),
+        browser_detail_fallback_fact("UID", &item.uid, "-"),
+        browser_detail_fallback_fact("Name", &item.name, "-"),
+        browser_detail_fallback_fact("Type", &item.datasource_type, "-"),
+        browser_detail_fallback_fact("URL", &item.url, "-"),
+        browser_detail_fallback_fact("Access", &item.access, "-"),
+        browser_detail_fact("Default", if item.is_default { "true" } else { "false" }),
+        browser_detail_fallback_fact("Org", &item.org, "-"),
+        browser_detail_fallback_fact("Org ID", &item.org_id, "-"),
     ];
 
     if let Some(user) = item.details.get("user").and_then(Value::as_str) {
         if !user.trim().is_empty() {
-            lines.push(format!("User: {}", user.trim()));
+            lines.push(browser_detail_fallback_fact("User", user, "-"));
         }
     }
     if let Some(value) = item.details.get("basicAuth").and_then(Value::as_bool) {
-        lines.push(format!("Basic auth: {value}"));
+        lines.push(browser_detail_fact("Basic auth", value));
     }
     if let Some(value) = item.details.get("withCredentials").and_then(Value::as_bool) {
-        lines.push(format!("With credentials: {value}"));
+        lines.push(browser_detail_fact("With credentials", value));
     }
     if let Some(database) = item.details.get("database").and_then(Value::as_str) {
         if !database.trim().is_empty() {
-            lines.push(format!("Database: {}", database.trim()));
+            lines.push(browser_detail_fallback_fact("Database", database, "-"));
         }
     }
     if let Some(json_data) = item.details.get("jsonData").and_then(Value::as_object) {
         if !json_data.is_empty() {
             let keys = sorted_object_keys(json_data).join(", ");
-            lines.push(format!("jsonData keys: {keys}"));
+            lines.push(browser_detail_fact("jsonData keys", keys));
         }
     }
     if let Some(secure_json_fields) = item
@@ -113,7 +111,7 @@ pub(crate) fn detail_lines(item: &DatasourceBrowseItem) -> Vec<String> {
     {
         if !secure_json_fields.is_empty() {
             let keys = sorted_object_keys(secure_json_fields).join(", ");
-            lines.push(format!("secureJsonFields: {keys}"));
+            lines.push(browser_detail_fact("secureJsonFields", keys));
         }
     }
     lines
@@ -670,6 +668,50 @@ mod tests {
         assert!(lines.contains(&"jsonData keys: alpha, zulu".to_string()));
         assert!(
             lines.contains(&"secureJsonFields: basicAuthPassword, httpHeaderValue1".to_string())
+        );
+    }
+
+    #[test]
+    fn detail_lines_use_shared_browser_fact_formatting() {
+        let mut item = datasource_item(
+            json!({
+                "user": " prom-user ",
+                "basicAuth": true,
+                "withCredentials": false,
+                "database": " prometheus ",
+                "jsonData": {
+                    "zulu": true,
+                    "alpha": true
+                },
+                "secureJsonFields": {
+                    "basicAuthPassword": true
+                }
+            })
+            .as_object()
+            .unwrap()
+            .clone(),
+        );
+        item.uid = "  ".to_string();
+
+        assert_eq!(
+            detail_lines(&item),
+            vec![
+                "ID: 12",
+                "UID: -",
+                "Name: Prometheus Main",
+                "Type: prometheus",
+                "URL: http://prometheus",
+                "Access: proxy",
+                "Default: true",
+                "Org: Main Org.",
+                "Org ID: 1",
+                "User: prom-user",
+                "Basic auth: true",
+                "With credentials: false",
+                "Database: prometheus",
+                "jsonData keys: alpha, zulu",
+                "secureJsonFields: basicAuthPassword",
+            ]
         );
     }
 

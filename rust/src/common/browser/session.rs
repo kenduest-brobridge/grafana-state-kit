@@ -83,8 +83,13 @@ pub(crate) fn append_browser_detail_section(
     details.extend(lines);
 }
 
-#[cfg(any(feature = "tui", test))]
 pub(crate) fn browser_detail_fact(label: &str, value: impl std::fmt::Display) -> String {
+    format!("{label}: {value}")
+}
+
+pub(crate) fn browser_detail_fallback_fact(label: &str, value: &str, fallback: &str) -> String {
+    let value = value.trim();
+    let value = if value.is_empty() { fallback } else { value };
     format!("{label}: {value}")
 }
 
@@ -865,8 +870,8 @@ fn run_interactive_browser_returns_tui_error_when_feature_disabled() {
 mod tests {
     use super::{
         append_browser_detail_section, browser_detail_aligned_fact, browser_detail_fact,
-        build_search_state, detail_title, find_match_in_visible, matching_visible_indexes,
-        BrowserItem, BrowserSearchController, SearchDirection,
+        browser_detail_fallback_fact, build_search_state, detail_title, find_match_in_visible,
+        matching_visible_indexes, BrowserItem, BrowserSearchController, SearchDirection,
     };
 
     fn sample_items() -> Vec<BrowserItem> {
@@ -937,6 +942,15 @@ mod tests {
             "Dashboard UID: cpu-main"
         );
         assert_eq!(browser_detail_fact("Query Count", 3), "Query Count: 3");
+    }
+
+    #[test]
+    fn browser_detail_fallback_fact_trims_or_uses_fallback() {
+        assert_eq!(
+            browser_detail_fallback_fact("Org", " Main Org. ", "-"),
+            "Org: Main Org."
+        );
+        assert_eq!(browser_detail_fallback_fact("UID", "  ", "-"), "UID: -");
     }
 
     #[test]

@@ -24,6 +24,12 @@ Current AI-maintained status only.
 - Older entries moved to [`ai-status-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-16.md).
 - Older entries moved to [`ai-status-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-25.md).
 
+## 2026-05-25 - Shared datasource browser detail facts
+- State: Done
+- Scope: rust/src/common/browser/session.rs; rust/src/commands/datasource/browse/support.rs; docs/internal/tui-architecture-roadmap.md
+- Current Update: Added a shared read-only browser fallback fact formatter and routed datasource browse detail rows through shared browser fact helpers instead of local Label/value formatting.
+- Result: Datasource browse detail rows now share browser-level Label: value formatting and blank-value fallback trimming while preserving existing detail output. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+
 ## 2026-05-25 - Shared browser aligned detail facts
 - State: Done
 - Scope: rust/src/common/browser/session.rs; rust/src/commands/dashboard/inspect_workbench/state/detail.rs; docs/internal/tui-architecture-roadmap.md
