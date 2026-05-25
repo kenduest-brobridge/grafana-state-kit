@@ -192,6 +192,9 @@ while skipping generated HTML and Cargo build output.
 - Dashboard inspect workbench detail rows now use the shared read-only browser
   fact formatter for `Label: value` rows, reducing another local detail
   projection helper while preserving the inspect workbench item output.
+- Dashboard inspect workbench full-detail rows now use a shared read-only
+  browser aligned fact formatter for the `Kind`, `Title`, and `Summary`
+  metadata rows, removing the remaining local full-detail fact helper.
 - No-default TUI warning noise is narrower: feature-disabled builds no longer
   compile unused imports or large dead-code surfaces for access browse, access
   plan summary lines, shared read-only browser internals, snapshot browser

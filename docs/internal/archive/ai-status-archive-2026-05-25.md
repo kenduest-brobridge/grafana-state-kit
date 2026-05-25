@@ -77,3 +77,15 @@
 - Scope: Rust dashboard import interactive review TUI and shared review diff projection helpers. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
 - Current Update: Made dashboard import interactive reviews build a shared ReviewDiffModel for changed live-vs-local title, folder UID, tag, and panel evidence, then render a compact shared live/desired diff preview in the review pane.
 - Result: Dashboard import review now consumes the same shared diff model path as sync review for compatible changed-field evidence, reducing per-surface review shaping while preserving existing summary/structural/raw diff lines.
+
+## 2026-05-25 - Access plan shared diff preview
+- State: Done
+- Scope: Rust access plan interactive review TUI and shared review diff projection helpers. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
+- Current Update: Made access plan action details build compact shared live/desired diff previews from bundle/live change rows while filtering secret-like change fields from both the generic review details and TUI preview output.
+- Result: Access plan review rows now share the same ReviewDiffModel preview vocabulary as sync review and dashboard import review for compatible field-change evidence, reducing per-surface shaping while avoiding secret-like value leakage.
+
+## 2026-05-25 - Shared TUI review changed-field safety
+- State: Done
+- Scope: rust/src/commands/review_diff.rs; rust/src/commands/datasource/browse/support.rs; rust/src/commands/access/access_plan_tui.rs; rust/src/commands/access/access_plan_types.rs; sync/datasource/snapshot/access review tests; docs/internal/tui-architecture-roadmap.md
+- Current Update: Moved secret-like changed-field filtering into the shared review diff helper and routed sync diff models, datasource/snapshot review evidence, and access plan review detail filtering through the shared predicate.
+- Result: TUI review panes now share the same changed-field redaction policy before rendering field names or side-by-side values. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.

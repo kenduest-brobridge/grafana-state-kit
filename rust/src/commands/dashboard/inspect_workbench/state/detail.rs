@@ -1,6 +1,6 @@
 #![cfg(feature = "tui")]
 
-use crate::interactive_browser::BrowserItem;
+use crate::interactive_browser::{browser_detail_aligned_fact as fact_line, BrowserItem};
 
 pub(super) fn current_detail_lines(selected_item: Option<&BrowserItem>) -> Vec<String> {
     selected_item
@@ -31,8 +31,4 @@ pub(super) fn current_full_detail_lines(selected_item: Option<&BrowserItem>) -> 
             lines
         })
         .unwrap_or_else(|| vec!["No item selected.".to_string()])
-}
-
-fn fact_line(label: &str, value: &str) -> String {
-    format!("{label:<16}: {value}")
 }

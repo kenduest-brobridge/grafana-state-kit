@@ -24,6 +24,12 @@ Current AI-maintained status only.
 - Older entries moved to [`ai-status-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-16.md).
 - Older entries moved to [`ai-status-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-25.md).
 
+## 2026-05-25 - Shared browser aligned detail facts
+- State: Done
+- Scope: rust/src/common/browser/session.rs; rust/src/commands/dashboard/inspect_workbench/state/detail.rs; docs/internal/tui-architecture-roadmap.md
+- Current Update: Added a shared read-only browser aligned detail fact formatter and routed dashboard inspect workbench full-detail rows through it instead of a local formatter.
+- Result: Dashboard inspect workbench full-detail rows now share browser-level aligned Label: value formatting while existing viewer output remains stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+
 ## 2026-05-25 - Shared browser detail facts
 - State: Done
 - Scope: rust/src/common/browser/session.rs; rust/src/commands/dashboard/inspect_workbench/content.rs; docs/internal/tui-architecture-roadmap.md
@@ -47,15 +53,3 @@ Current AI-maintained status only.
 - Scope: rust/src/commands/datasource/browse/support.rs; rust/src/commands/datasource/inspect/export.rs; rust/src/commands/snapshot/review/browser.rs; rust/src/commands/datasource/mod.rs; docs/internal/tui-architecture-roadmap.md
 - Current Update: Added a datasource-details review projection helper and routed datasource local interactive rows plus snapshot datasource review rows through it instead of constructing dummy browse items.
 - Result: Datasource local list and snapshot review interactive browser rows now share the datasource Review projection directly from details while live datasource browse behavior stays unchanged. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
-
-## 2026-05-25 - Shared TUI review changed-field safety
-- State: Done
-- Scope: rust/src/commands/review_diff.rs; rust/src/commands/datasource/browse/support.rs; rust/src/commands/access/access_plan_tui.rs; rust/src/commands/access/access_plan_types.rs; sync/datasource/snapshot/access review tests; docs/internal/tui-architecture-roadmap.md
-- Current Update: Moved secret-like changed-field filtering into the shared review diff helper and routed sync diff models, datasource/snapshot review evidence, and access plan review detail filtering through the shared predicate.
-- Result: TUI review panes now share the same changed-field redaction policy before rendering field names or side-by-side values. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
-
-## 2026-05-25 - Access plan shared diff preview
-- State: Done
-- Scope: Rust access plan interactive review TUI and shared review diff projection helpers. Public CLI paths, help text, command contracts, generated man/html docs, Python behavior, and package metadata are intentionally unchanged.
-- Current Update: Made access plan action details build compact shared live/desired diff previews from bundle/live change rows while filtering secret-like change fields from both the generic review details and TUI preview output.
-- Result: Access plan review rows now share the same ReviewDiffModel preview vocabulary as sync review and dashboard import review for compatible field-change evidence, reducing per-surface shaping while avoiding secret-like value leakage.

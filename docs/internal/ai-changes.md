@@ -24,6 +24,13 @@ Current AI change log only.
 - Older entries moved to [`ai-changes-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-16.md).
 - Older entries moved to [`ai-changes-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-25.md).
 
+## 2026-05-25 - Shared browser aligned detail facts
+- Summary: Added a shared read-only browser aligned detail fact formatter and routed dashboard inspect workbench full-detail rows through it instead of a local formatter.
+- Tests: cargo test --quiet browser_detail_aligned_fact_formats_full_detail_rows; cargo test --quiet inspect_workbench; cargo test --quiet full_detail_viewer; cargo test --quiet interactive_browser; cargo test --quiet dashboard_inspect; cargo fmt --check; cargo check --quiet --no-default-features --all-targets; git diff --check
+- Impact: Dashboard inspect workbench full-detail rows now share browser-level aligned Label: value formatting while existing viewer output remains stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+- Rollback/Risk: Low. The change replaces a local formatter with an equivalent shared helper and focused tests cover both the helper and full-detail viewer path.
+- Follow-up: Continue migrating compatible TUI detail sections and review surfaces onto shared browser/review helpers where the data shape already matches.
+
 ## 2026-05-25 - Shared browser detail facts
 - Summary: Added a shared read-only browser detail fact formatter and routed dashboard inspect workbench item detail rows through it instead of a local formatter.
 - Tests: cargo test --quiet browser_detail_fact_formats_label_value_rows; cargo test --quiet inspect_workbench; cargo test --quiet dashboard_inspect; cargo test --quiet interactive_browser; escalated cargo test --quiet dashboard after sandbox denied local mock server binding; cargo fmt --check; cargo check --quiet --no-default-features --all-targets; git diff --check
@@ -79,16 +86,3 @@ Current AI change log only.
 - Impact: The remaining no-default TUI helper/alias warning surface is cleared while default-feature access plan, dashboard browse/report/topology, snapshot parser, and grouped-help tests remain behavior-compatible.
 - Rollback/Risk: low. Rollback would restore no-default warning noise without changing normal default-feature interactive behavior.
 - Follow-up: Continue higher-level TUI design work by migrating compatible review surfaces onto shared diff/detail visualization helpers instead of chasing no-default warning hygiene.
-
-## 2026-05-25 - Dashboard no-default TUI cfg cleanup
-- Summary: Gated topology/impact test interactive browser branches and dashboard import/inspect test-only re-exports on the tui feature so no-default all-target builds no longer compile those TUI-only paths or emit their unreachable/unused warnings.
-- Tests: cargo fmt --check; cargo check --quiet --no-default-features --all-targets; cargo test --quiet --no-default-features tui_not_built_returns_shared_tui_feature_error; cargo test --quiet dashboard_topology; cargo test --quiet topology_impact; cargo test --quiet routed_import_scope_identity_matches_table_json_and_progress_surfaces; cargo test --quiet export_focus_report_query
-- Impact: The no-default warning surface is narrower and now leaves only smaller helper/alias dead-code follow-ups; default-feature dashboard topology, routed import, and query report tests remain behavior-compatible.
-- Rollback/Risk: low. Rollback would restore the no-default unreachable/unused warning noise without changing normal default-feature interactive behavior.
-- Follow-up: Continue trimming the remaining no-default helper/alias warnings around access plan aliases, dashboard browse source helpers, review-contract detail projection, snapshot root command support, report column helpers, and dashboard test fixtures.
-
-## 2026-05-25 - No-default TUI warning cleanup
-- Summary: reduced `--no-default-features` TUI warning noise by removing unused fallback imports and allowing dead code only on TUI-heavy helper modules that are intentionally compiled for tests or feature-enabled interactive paths.
-- Tests: `cargo fmt --check`; `cargo test --quiet --no-default-features tui_not_built_returns_shared_tui_feature_error`; `cargo test --quiet access_plan`; `cargo test --quiet snapshot_review`; `cargo test --quiet datasource_inspect_export_browser_items`; `cargo test --quiet build_governance_gate_tui_groups_summarizes_findings`.
-- Impact: `rust/src/commands/access/access_browse.rs`, `rust/src/commands/access/access_plan_tui.rs`, `rust/src/common/browser/session.rs`, `rust/src/commands/review_diff.rs`, `rust/src/commands/sync/review_tui.rs`, `rust/src/commands/snapshot/review/browser.rs`, `rust/src/commands/dashboard/governance_gate.rs`, `rust/src/commands/dashboard/governance_gate/items.rs`, `rust/src/commands/datasource/browse/support.rs`, and maintainer trace docs. Public CLI paths, help output, command contracts, generated docs, Python behavior, and package metadata are intentionally unchanged.
-- Rollback/Risk: low. Rollback would restore broader no-default warning output without changing normal default-feature interactive behavior.
