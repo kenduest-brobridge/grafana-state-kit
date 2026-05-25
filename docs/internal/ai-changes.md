@@ -24,6 +24,13 @@ Current AI change log only.
 - Older entries moved to [`ai-changes-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-16.md).
 - Older entries moved to [`ai-changes-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-25.md).
 
+## 2026-05-25 - Shared dashboard browser info lines
+- Summary: Extended the shared read-only browser info-line projection with filter and special-row hooks, then routed dashboard browse detail rendering through it while preserving dashboard-specific hidden action lines and the live-details badge.
+- Tests: cargo test --quiet shared_browser_info_lines_preserve_dashboard_filters_and_live_badge; cargo test --quiet dashboard_browse; cargo test --quiet datasource_browse; cargo test --quiet interactive_browser; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; make quality-ai-workflow; git diff --check
+- Impact: Dashboard browse and datasource browse now share the same styled Label: value detail projection path while dashboard browse keeps its action filtering and LIVE DETAILS marker. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+- Rollback/Risk: Low. The change replaces an equivalent local renderer with a shared helper variant, and focused tests cover dashboard filtering/badge behavior plus the datasource wrapper path.
+- Follow-up: Continue migrating compatible TUI review/detail renderers onto shared browser projection helpers where their row filtering and special cases can stay explicit.
+
 ## 2026-05-25 - Shared datasource browser info lines
 - Summary: Added a shared read-only browser styled info-line projection and routed datasource browse detail rendering through it instead of a local Label/value renderer.
 - Tests: cargo test --quiet shared_browser_info_lines_format_datasource_detail_rows; cargo test --quiet datasource_browse; cargo test --quiet interactive_browser; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; make quality-ai-workflow; git diff --check
@@ -86,10 +93,3 @@ Current AI change log only.
 - Impact: Access plan review rows now share the same ReviewDiffModel preview vocabulary as sync review and dashboard import review for compatible field-change evidence, reducing per-surface shaping while avoiding secret-like value leakage.
 - Rollback/Risk: low. Rollback would remove the compact shared live/desired preview from access plan rows and restore the previous per-row Change lines only.
 - Follow-up: Continue migrating compatible review surfaces that have safe live/desired evidence onto shared ReviewDiffModel preview or side-by-side rendering.
-
-## 2026-05-25 - Dashboard import shared diff preview
-- Summary: Made dashboard import interactive reviews build a shared ReviewDiffModel for changed live-vs-local title, folder UID, tag, and panel evidence, then render a compact shared live/desired diff preview in the review pane.
-- Tests: cargo fmt --check; cargo check --quiet --no-default-features --all-targets; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo test --quiet import_interactive; cargo test --quiet dashboard_import; cargo test --quiet review_diff; cargo test --quiet import_review_panel_projects_shared_diff_preview_when_available; cargo test --quiet interactive_import_review_diff_model_uses_shared_changed_field_projection; cargo test --quiet shared_review_diff_view_helpers_cover_titles_scroll_and_text_windows
-- Impact: Dashboard import review now consumes the same shared diff model path as sync review for compatible changed-field evidence, reducing per-surface review shaping while preserving existing summary/structural/raw diff lines.
-- Rollback/Risk: low. Rollback would remove the compact shared live/desired preview from the import review pane while keeping existing import summary, structural, and raw diff lines.
-- Follow-up: Continue migrating other compatible review surfaces that already expose live/desired/changed-field evidence onto the shared ReviewDiffModel projection.

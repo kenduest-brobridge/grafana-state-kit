@@ -1,4 +1,5 @@
 #![cfg(feature = "tui")]
+use crate::interactive_browser::browser_detail_info_lines_with;
 use crate::tui_shell;
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::style::{Color, Modifier, Style};
@@ -118,15 +119,16 @@ pub(crate) fn render_detail_panel(
 }
 
 fn build_info_lines(lines: &[String]) -> Vec<Line<'static>> {
-    lines
-        .iter()
-        .filter(|line| !line.is_empty())
-        .filter(|line| !line.starts_with("Delete:"))
-        .filter(|line| !line.starts_with("Delete folders:"))
-        .filter(|line| !line.starts_with("Advanced edit:"))
-        .filter(|line| !line.starts_with("View:"))
-        .map(|line| {
-            if line == "Live details:" {
+    browser_detail_info_lines_with(
+        lines,
+        |line| {
+            !line.starts_with("Delete:")
+                && !line.starts_with("Delete folders:")
+                && !line.starts_with("Advanced edit:")
+                && !line.starts_with("View:")
+        },
+        |line| {
+            (line == "Live details:").then(|| {
                 Line::from(vec![Span::styled(
                     "LIVE DETAILS",
                     Style::default()
@@ -134,24 +136,9 @@ fn build_info_lines(lines: &[String]) -> Vec<Line<'static>> {
                         .bg(Color::LightCyan)
                         .add_modifier(Modifier::BOLD),
                 )])
-            } else if let Some((label, value)) = line.split_once(':') {
-                Line::from(vec![
-                    Span::styled(
-                        format!("{label:<18}: "),
-                        Style::default()
-                            .fg(Color::LightBlue)
-                            .add_modifier(Modifier::BOLD),
-                    ),
-                    Span::styled(value.trim().to_string(), Style::default().fg(Color::White)),
-                ])
-            } else {
-                Line::from(Span::styled(
-                    line.clone(),
-                    Style::default().fg(Color::White),
-                ))
-            }
-        })
-        .collect()
+            })
+        },
+    )
 }
 
 fn detail_shortcut_lines(node: &DashboardBrowseNode, local_mode: bool) -> Vec<Line<'static>> {
@@ -319,5 +306,40 @@ mod tests {
         assert!(lines
             .iter()
             .any(|line| line.contains("local history unavailable")));
+    }
+
+    #[test]
+    fn shared_browser_info_lines_preserve_dashboard_filters_and_live_badge() {
+        let lines = crate::interactive_browser::browser_detail_info_lines_with(
+            &[
+                "Live details:".to_string(),
+                "folder: ops".to_string(),
+                "Delete: allowed".to_string(),
+                String::new(),
+                "raw detail".to_string(),
+            ],
+            |line| !line.starts_with("Delete:"),
+            |line| {
+                (line == "Live details:").then(|| {
+                    Line::from(vec![Span::styled(
+                        "LIVE DETAILS",
+                        Style::default()
+                            .fg(Color::Black)
+                            .bg(Color::LightCyan)
+                            .add_modifier(Modifier::BOLD),
+                    )])
+                })
+            },
+        )
+        .into_iter()
+        .map(|line| line.to_string())
+        .collect::<Vec<_>>();
+
+        assert_eq!(lines.len(), 3);
+        assert!(lines[0].contains("LIVE DETAILS"));
+        assert!(lines[1].contains("folder"));
+        assert!(lines[1].contains("ops"));
+        assert!(lines[2].contains("raw detail"));
+        assert!(!lines.join("\n").contains("Delete"));
     }
 }

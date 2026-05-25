@@ -24,6 +24,12 @@ Current AI-maintained status only.
 - Older entries moved to [`ai-status-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-16.md).
 - Older entries moved to [`ai-status-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-25.md).
 
+## 2026-05-25 - Shared dashboard browser info lines
+- State: Done
+- Scope: rust/src/common/browser/session.rs; rust/src/commands/dashboard/browse/render_detail.rs; docs/internal/tui-architecture-roadmap.md
+- Current Update: Extended the shared read-only browser info-line projection with filter and special-row hooks, then routed dashboard browse detail rendering through it while preserving dashboard-specific hidden action lines and the live-details badge.
+- Result: Dashboard browse and datasource browse now share the same styled Label: value detail projection path while dashboard browse keeps its action filtering and LIVE DETAILS marker. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+
 ## 2026-05-25 - Shared datasource browser info lines
 - State: Done
 - Scope: rust/src/common/browser/session.rs; rust/src/commands/datasource/browse/render.rs; docs/internal/tui-architecture-roadmap.md
@@ -53,9 +59,3 @@ Current AI-maintained status only.
 - Scope: rust/src/common/browser/session.rs; rust/src/commands/dashboard/topology/browser.rs; docs/internal/tui-architecture-roadmap.md
 - Current Update: Added a shared read-only browser detail-section helper for Heading none/body formatting and routed dashboard topology inbound/outbound edge summaries through it.
 - Result: Dashboard topology TUI detail rows now share browser-level detail section shaping while keeping existing edge summary output stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
-
-## 2026-05-25 - Shared TUI review evidence sections
-- State: Done
-- Scope: rust/src/commands/review_contract.rs; rust/src/commands/access/access_plan_tui.rs; rust/src/commands/datasource/inspect/export.rs; rust/src/commands/snapshot/review/browser.rs; docs/internal/tui-architecture-roadmap.md
-- Current Update: Added a shared review-contract helper for appending Review evidence sections and routed access plan, datasource local, and snapshot datasource browser details through it.
-- Result: TUI browser details now share the same Review evidence heading and empty-section behavior across access plan, datasource local, and snapshot datasource rows. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.

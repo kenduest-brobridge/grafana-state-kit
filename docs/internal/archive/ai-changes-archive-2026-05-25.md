@@ -103,3 +103,10 @@
 - Impact: The remaining no-default TUI helper/alias warning surface is cleared while default-feature access plan, dashboard browse/report/topology, snapshot parser, and grouped-help tests remain behavior-compatible.
 - Rollback/Risk: low. Rollback would restore no-default warning noise without changing normal default-feature interactive behavior.
 - Follow-up: Continue higher-level TUI design work by migrating compatible review surfaces onto shared diff/detail visualization helpers instead of chasing no-default warning hygiene.
+
+## 2026-05-25 - Dashboard import shared diff preview
+- Summary: Made dashboard import interactive reviews build a shared ReviewDiffModel for changed live-vs-local title, folder UID, tag, and panel evidence, then render a compact shared live/desired diff preview in the review pane.
+- Tests: cargo fmt --check; cargo check --quiet --no-default-features --all-targets; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo test --quiet import_interactive; cargo test --quiet dashboard_import; cargo test --quiet review_diff; cargo test --quiet import_review_panel_projects_shared_diff_preview_when_available; cargo test --quiet interactive_import_review_diff_model_uses_shared_changed_field_projection; cargo test --quiet shared_review_diff_view_helpers_cover_titles_scroll_and_text_windows
+- Impact: Dashboard import review now consumes the same shared diff model path as sync review for compatible changed-field evidence, reducing per-surface review shaping while preserving existing summary/structural/raw diff lines.
+- Rollback/Risk: low. Rollback would remove the compact shared live/desired preview from the import review pane while keeping existing import summary, structural, and raw diff lines.
+- Follow-up: Continue migrating other compatible review surfaces that already expose live/desired/changed-field evidence onto the shared ReviewDiffModel projection.

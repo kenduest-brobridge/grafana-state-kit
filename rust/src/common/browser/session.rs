@@ -100,11 +100,22 @@ pub(crate) fn browser_detail_aligned_fact(label: &str, value: impl std::fmt::Dis
 
 #[cfg(feature = "tui")]
 pub(crate) fn browser_detail_info_lines(lines: &[String]) -> Vec<Line<'static>> {
+    browser_detail_info_lines_with(lines, |_| true, |_| None)
+}
+
+#[cfg(feature = "tui")]
+pub(crate) fn browser_detail_info_lines_with(
+    lines: &[String],
+    include_line: impl Fn(&str) -> bool,
+    special_line: impl Fn(&str) -> Option<Line<'static>>,
+) -> Vec<Line<'static>> {
     lines
         .iter()
-        .filter(|line| !line.is_empty())
+        .filter(|line| !line.is_empty() && include_line(line))
         .map(|line| {
-            if let Some((label, value)) = line.split_once(':') {
+            if let Some(line) = special_line(line) {
+                line
+            } else if let Some((label, value)) = line.split_once(':') {
                 Line::from(vec![
                     Span::styled(
                         format!("{label:<18}: "),

@@ -95,3 +95,9 @@
 - Scope: rust/src/commands/datasource/browse/support.rs; rust/src/commands/datasource/inspect/export.rs; rust/src/commands/snapshot/review/browser.rs; rust/src/commands/datasource/mod.rs; docs/internal/tui-architecture-roadmap.md
 - Current Update: Added a datasource-details review projection helper and routed datasource local interactive rows plus snapshot datasource review rows through it instead of constructing dummy browse items.
 - Result: Datasource local list and snapshot review interactive browser rows now share the datasource Review projection directly from details while live datasource browse behavior stays unchanged. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+
+## 2026-05-25 - Shared TUI review evidence sections
+- State: Done
+- Scope: rust/src/commands/review_contract.rs; rust/src/commands/access/access_plan_tui.rs; rust/src/commands/datasource/inspect/export.rs; rust/src/commands/snapshot/review/browser.rs; docs/internal/tui-architecture-roadmap.md
+- Current Update: Added a shared review-contract helper for appending Review evidence sections and routed access plan, datasource local, and snapshot datasource browser details through it.
+- Result: TUI browser details now share the same Review evidence heading and empty-section behavior across access plan, datasource local, and snapshot datasource rows. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
