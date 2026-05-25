@@ -277,20 +277,28 @@ still look like possible shared-helper follow-up work.
 - The change stayed in state/tests. Public CLI/docs and generated docs remain
   unchanged because the user-facing command surface did not change.
 
-## Next Follow-Up
+## Completion Audit
 
-- Continue reducing duplicated TUI review/detail projection on the remaining
-  local artifact browsers that can consume shared safe review lines without
-  changing public CLI flags; datasource local and snapshot datasource rows
-  already reuse the datasource Review projection, and access plan generic action
-  evidence now reuses the shared review-contract projection.
-- Continue migrating compatible review surfaces onto the shared review diff
-  visualization helpers when they already expose `live`, `desired`, and
-  `changedFields` evidence; sync review, dashboard import review, and access
-  plan review now consume the shared view/model helper path.
-- Continue higher-level TUI design work by migrating compatible review surfaces
-  onto shared diff/detail visualization helpers and reducing duplicated
-  per-surface review pane shaping. The focused
-  `tui_not_built_returns_shared_tui_feature_error` regression and warnings-deny
-  no-default all-target check compile and pass with the broader TUI-helper
-  warning noise removed.
+The 2026-05-25 completion pass found no remaining helper-drift candidates in
+`scripts/tui_inventory_report.py --json`; its `helperDrift` array is empty.
+The earlier follow-up items are now covered by current code:
+
+- Local artifact browser review/detail projection is shared where the data
+  shape is compatible: datasource local list and snapshot datasource rows reuse
+  the datasource detail and Review projections, and access plan rows reuse the
+  shared review-contract action evidence, narrative, impact, target, context,
+  next-check, and diff-preview projections.
+- Compatible diff review surfaces consume the shared review diff model path:
+  sync review builds operation diff models through `review_diff`, dashboard
+  import review builds `ReviewDiffModel` for compatible live/local evidence,
+  and access plan review gets compact shared diff-preview rows through the
+  review contract.
+- Remaining domain TUI modules still own domain-specific input loops, focus
+  state, and renderer layout by design. The roadmap does not require replacing
+  those with a complete domain-neutral workbench framework in this pass.
+
+Completion evidence for this pass should include the focused TUI regressions,
+`cargo test --quiet access` outside the sandbox when local mock-server binding
+is denied, `RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features
+--all-targets`, `cargo fmt --check`, `python3 scripts/tui_inventory_report.py
+--json`, `make quality-ai-workflow`, and `git diff --check`.
