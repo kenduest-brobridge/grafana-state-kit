@@ -6,8 +6,7 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::{List, ListItem};
 
 use super::render_helpers::{
-    compact_count_label, control_line, group_color, item_color, item_row_text, pane_block,
-    slice_visible,
+    compact_count_label, group_color, item_color, item_row_text, pane_block, slice_visible,
 };
 use super::render_modal::{render_detail_panel, render_full_detail_viewer, render_search_prompt};
 use super::state::{InspectPane, InspectWorkbenchState};
@@ -39,7 +38,7 @@ pub(crate) fn render_frame(frame: &mut ratatui::Frame, state: &mut InspectWorkbe
         .collect::<Vec<_>>();
     header_lines.push(Line::from(vec![
         tui_shell::focus_label("Focus "),
-        super::render_helpers::key_chip(
+        tui_shell::key_chip(
             match state.focus {
                 InspectPane::Groups => "Modes",
                 InspectPane::Items => "Items",
@@ -160,7 +159,7 @@ pub(crate) fn render_frame(frame: &mut ratatui::Frame, state: &mut InspectWorkbe
     frame.render_widget(
         tui_shell::build_footer(
             vec![
-                control_line(&[
+                tui_shell::control_line(&[
                     ("Tab", Color::Blue, "next pane"),
                     ("Shift+Tab", Color::Blue, "previous pane"),
                     ("g", Color::Magenta, "mode"),
@@ -168,7 +167,7 @@ pub(crate) fn render_frame(frame: &mut ratatui::Frame, state: &mut InspectWorkbe
                     ("/?", Color::Yellow, "search"),
                     ("n", Color::Yellow, "next"),
                 ]),
-                control_line(&[
+                tui_shell::control_line(&[
                     ("Up/Down", Color::Blue, "move"),
                     ("Left/Right", Color::Blue, "items pan"),
                     ("Home/End", Color::Blue, "bounds"),

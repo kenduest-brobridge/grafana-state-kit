@@ -1,12 +1,13 @@
 #![cfg(feature = "tui")]
 mod viewer_rows;
 
+use crate::tui_shell;
 use ratatui::layout::{Constraint, Direction, Layout, Position, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Clear, List, ListItem, Paragraph};
 
-use super::render_helpers::{item_badge_label, key_chip, pane_block, plain};
+use super::render_helpers::{item_badge_label, pane_block};
 use super::state::{InspectPane, InspectWorkbenchState, SearchDirection, SearchPromptState};
 use viewer_rows::viewer_rows;
 
@@ -159,18 +160,18 @@ pub(crate) fn render_detail_panel(
     frame.render_widget(
         Paragraph::new(vec![
             Line::from(vec![
-                key_chip("g", Color::Magenta),
-                plain(" switch mode"),
-                plain("   "),
-                key_chip("v", Color::Magenta),
-                plain(" switch mode view"),
+                tui_shell::key_chip("g", Color::Magenta),
+                tui_shell::plain(" switch mode"),
+                tui_shell::plain("   "),
+                tui_shell::key_chip("v", Color::Magenta),
+                tui_shell::plain(" switch mode view"),
             ]),
             Line::from(vec![
-                key_chip("/", Color::Yellow),
-                plain(" search forward"),
-                plain("   "),
-                key_chip("?", Color::Yellow),
-                plain(" search backward"),
+                tui_shell::key_chip("/", Color::Yellow),
+                tui_shell::plain(" search forward"),
+                tui_shell::plain("   "),
+                tui_shell::key_chip("?", Color::Yellow),
+                tui_shell::plain(" search backward"),
             ]),
         ])
         .block(Block::default().borders(Borders::ALL).title("Actions")),
@@ -357,17 +358,17 @@ pub(crate) fn render_full_detail_viewer(
     frame.render_widget(List::new(visible_items).block(body_block), sections[1]);
     frame.render_widget(
         Paragraph::new(Line::from(vec![
-            key_chip("w", Color::Yellow),
-            plain(" wrap"),
+            tui_shell::key_chip("w", Color::Yellow),
+            tui_shell::plain(" wrap"),
             Span::raw("   "),
-            key_chip("Up/Down", Color::Blue),
-            plain(" scroll"),
+            tui_shell::key_chip("Up/Down", Color::Blue),
+            tui_shell::plain(" scroll"),
             Span::raw("   "),
-            key_chip("PgUp/PgDn", Color::Blue),
-            plain(" jump"),
+            tui_shell::key_chip("PgUp/PgDn", Color::Blue),
+            tui_shell::plain(" jump"),
             Span::raw("   "),
-            key_chip("Enter/Esc/q", Color::Gray),
-            plain(" close"),
+            tui_shell::key_chip("Enter/Esc/q", Color::Gray),
+            tui_shell::plain(" close"),
         ]))
         .style(Style::default().bg(Color::Rgb(16, 18, 24))),
         sections[2],

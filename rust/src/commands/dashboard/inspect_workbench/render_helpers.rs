@@ -1,6 +1,5 @@
 #![cfg(feature = "tui")]
 use ratatui::style::Color;
-use ratatui::text::{Line, Span};
 
 use crate::interactive_browser::BrowserItem;
 use crate::tui_shell;
@@ -59,22 +58,26 @@ pub(crate) fn slice_visible(value: &str, offset: usize, width: usize) -> String 
     value.chars().skip(offset).take(width).collect()
 }
 
-pub(crate) fn control_line(items: &[(&str, Color, &str)]) -> Line<'static> {
-    tui_shell::control_line(items)
-}
-
-pub(crate) fn key_chip(label: &str, color: Color) -> Span<'static> {
-    tui_shell::key_chip(label, color)
-}
-
-pub(crate) fn plain(value: impl Into<String>) -> Span<'static> {
-    tui_shell::plain(value)
-}
-
 pub(crate) fn compact_count_label(count: usize) -> String {
     if count > 99 {
         "99+".to_string()
     } else {
         format!("{count:>2}")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn inspect_workbench_render_helpers_do_not_wrap_shared_shell_spans() {
+        let source = include_str!("render_helpers.rs");
+        for helper in ["control_line", "key_chip", "plain"] {
+            let wrapper_signature = format!("{}{}(", "pub(crate) fn ", helper);
+            assert!(
+                !source.contains(&wrapper_signature),
+                "render_helpers.rs should call shared tui_shell::{helper} directly instead of \
+                 carrying a local delegate wrapper"
+            );
+        }
     }
 }

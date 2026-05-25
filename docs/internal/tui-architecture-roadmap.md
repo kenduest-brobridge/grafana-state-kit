@@ -217,6 +217,9 @@ while skipping generated HTML and Cargo build output.
 - Dashboard inspect workbench full-detail viewer wrapping now uses a shared
   read-only browser labeled-detail wrapper for aligned metadata rows, keeping
   logical row mapping local to the viewer.
+- Dashboard inspect workbench shell controls now call shared `tui_shell`
+  key-chip/plain/control-line helpers directly instead of keeping local
+  delegate wrappers in render helpers.
 - No-default TUI warning noise is narrower: feature-disabled builds no longer
   compile unused imports or large dead-code surfaces for access browse, access
   plan summary lines, shared read-only browser internals, snapshot browser
