@@ -138,3 +138,10 @@
 - Impact: TUI browser details now share the same Review evidence heading and empty-section behavior across access plan, datasource local, and snapshot datasource rows. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
 - Rollback/Risk: Low. The helper preserves existing rendered lines and centralizes repeated section-shaping logic covered by focused tests.
 - Follow-up: Continue migrating compatible review surfaces onto shared review diff/detail helpers when they expose safe live/desired evidence.
+
+## 2026-05-25 - Shared browser detail sections
+- Summary: Added a shared read-only browser detail-section helper for Heading none/body formatting and routed dashboard topology inbound/outbound edge summaries through it.
+- Tests: cargo test --quiet append_browser_detail_section_formats_empty_and_populated_sections; cargo test --quiet build_topology_browser_items_sorts_by_kind_then_label_and_summarizes_edges; cargo test --quiet dashboard_topology; cargo test --quiet topology_tui; cargo test --quiet interactive_browser; cargo fmt --check; cargo check --quiet --no-default-features --all-targets; git diff --check
+- Impact: Dashboard topology TUI detail rows now share browser-level detail section shaping while keeping existing edge summary output stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+- Rollback/Risk: Low. The helper preserves existing labels and body lines, with focused tests for empty and populated sections plus topology browser output.
+- Follow-up: Continue migrating compatible TUI detail sections and review surfaces onto shared browser/review helpers where the data shape already matches.

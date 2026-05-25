@@ -259,22 +259,22 @@ fn render_detail_panel(frame: &mut ratatui::Frame, area: Rect, state: &BrowserSt
         sections[2],
         vec![
             Line::from(vec![
-                key_chip("g", Color::Magenta),
-                plain(" jump user browse"),
-                plain("   "),
-                key_chip("c", Color::Magenta),
-                plain(" toggle all"),
+                tui_shell::key_chip("g", Color::Magenta),
+                tui_shell::plain(" jump user browse"),
+                tui_shell::plain("   "),
+                tui_shell::key_chip("c", Color::Magenta),
+                tui_shell::plain(" toggle all"),
             ]),
             Line::from(vec![
-                key_chip("e", Color::Green),
-                plain(" edit members/admins"),
+                tui_shell::key_chip("e", Color::Green),
+                tui_shell::plain(" edit members/admins"),
             ]),
             Line::from(vec![
-                key_chip("d", Color::Red),
-                plain(" delete team"),
-                plain("   "),
-                key_chip("l", Color::Cyan),
-                plain(" refresh"),
+                tui_shell::key_chip("d", Color::Red),
+                tui_shell::plain(" delete team"),
+                tui_shell::plain("   "),
+                tui_shell::key_chip("l", Color::Cyan),
+                tui_shell::plain(" refresh"),
             ]),
         ],
         pane_block("Actions", false, Color::LightMagenta),
@@ -413,27 +413,26 @@ fn member_action_lines(row: &Map<String, Value>) -> Vec<Line<'static>> {
     let is_admin = map_get_text(row, "memberRole").eq_ignore_ascii_case("admin");
     vec![
         Line::from(vec![
-            key_chip("Left", Color::Blue),
-            plain(" collapse parent"),
+            tui_shell::key_chip("Left", Color::Blue),
+            tui_shell::plain(" collapse parent"),
         ]),
         Line::from(vec![
-            key_chip("e", Color::DarkGray),
-            plain(" use access user browse"),
+            tui_shell::key_chip("e", Color::DarkGray),
+            tui_shell::plain(" use access user browse"),
         ]),
-        Line::from(vec![key_chip("r", Color::Red), plain(" remove membership")]),
         Line::from(vec![
-            key_chip("a", Color::Magenta),
-            plain(if is_admin {
+            tui_shell::key_chip("r", Color::Red),
+            tui_shell::plain(" remove membership"),
+        ]),
+        Line::from(vec![
+            tui_shell::key_chip("a", Color::Magenta),
+            tui_shell::plain(if is_admin {
                 " revoke team admin"
             } else {
                 " grant team admin"
             }),
         ]),
     ]
-}
-
-fn key_chip(label: &'static str, bg: Color) -> Span<'static> {
-    tui_shell::key_chip(label, bg)
 }
 
 fn control_lines(args: &TeamBrowseArgs) -> Vec<Line<'static>> {
@@ -511,10 +510,6 @@ fn control_lines(args: &TeamBrowseArgs) -> Vec<Line<'static>> {
             ("Esc/q", Color::Gray, "exit"),
         ],
     ])
-}
-
-fn plain(text: impl Into<std::borrow::Cow<'static, str>>) -> Span<'static> {
-    tui_shell::plain(text.into())
 }
 
 fn blank_dash(value: &str) -> &str {

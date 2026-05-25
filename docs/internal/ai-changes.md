@@ -24,6 +24,13 @@ Current AI change log only.
 - Older entries moved to [`ai-changes-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-16.md).
 - Older entries moved to [`ai-changes-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-25.md).
 
+## 2026-05-25 - Shared access browse shell spans
+- Summary: Routed access user/team browse action-row key-chip/plain spans directly through shared tui_shell helpers instead of local delegate wrappers.
+- Tests: cargo test --quiet user_browse; cargo test --quiet team_browse; cargo test --quiet access; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; make quality-ai-workflow; git diff --check
+- Impact: Access user/team browse action rows now share shell-level key-chip/plain rendering without changing public CLI paths, help text, command contracts, generated docs, Python behavior, or package metadata.
+- Rollback/Risk: Low. The change replaces local delegate wrappers with direct calls to equivalent shared shell helpers and focused access browse tests cover the render/state paths.
+- Follow-up: Continue auditing remaining TUI render wrappers and control-line adapters before considering broader workbench abstraction.
+
 ## 2026-05-25 - Shared status tui shell spans
 - Summary: Routed status TUI key-chip/plain spans through shared tui_shell helpers instead of local duplicates.
 - Tests: cargo test --quiet status_tui; cargo test --quiet --test project_status_tui_rust_tests; cargo test --quiet project_status (rerun outside sandbox after local mock-server permission denial); cargo test --quiet status (outside sandbox for local mock-server coverage); RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; make quality-ai-workflow; git diff --check
@@ -85,11 +92,4 @@ Current AI change log only.
 - Tests: cargo test --quiet browser_detail_fact_formats_label_value_rows; cargo test --quiet inspect_workbench; cargo test --quiet dashboard_inspect; cargo test --quiet interactive_browser; escalated cargo test --quiet dashboard after sandbox denied local mock server binding; cargo fmt --check; cargo check --quiet --no-default-features --all-targets; git diff --check
 - Impact: Dashboard inspect workbench TUI detail rows now share browser-level Label: value formatting while existing item output remains stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
 - Rollback/Risk: Low. The change replaces a local formatter with an equivalent shared helper and is covered by focused browser and dashboard tests.
-- Follow-up: Continue migrating compatible TUI detail sections and review surfaces onto shared browser/review helpers where the data shape already matches.
-
-## 2026-05-25 - Shared browser detail sections
-- Summary: Added a shared read-only browser detail-section helper for Heading none/body formatting and routed dashboard topology inbound/outbound edge summaries through it.
-- Tests: cargo test --quiet append_browser_detail_section_formats_empty_and_populated_sections; cargo test --quiet build_topology_browser_items_sorts_by_kind_then_label_and_summarizes_edges; cargo test --quiet dashboard_topology; cargo test --quiet topology_tui; cargo test --quiet interactive_browser; cargo fmt --check; cargo check --quiet --no-default-features --all-targets; git diff --check
-- Impact: Dashboard topology TUI detail rows now share browser-level detail section shaping while keeping existing edge summary output stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
-- Rollback/Risk: Low. The helper preserves existing labels and body lines, with focused tests for empty and populated sections plus topology browser output.
 - Follow-up: Continue migrating compatible TUI detail sections and review surfaces onto shared browser/review helpers where the data shape already matches.

@@ -212,6 +212,8 @@ while skipping generated HTML and Cargo build output.
 - Access user/team browse detail rows now share the read-only browser detail
   info-line helper for 18-column `Label: value` rows with blank-value fallback,
   removing duplicated detail-line renderers from both specialized browsers.
+- Access user/team browse action rows now call shared shell key-chip/plain span
+  helpers directly instead of carrying local delegate wrappers.
 - Dashboard inspect workbench full-detail viewer wrapping now uses a shared
   read-only browser labeled-detail wrapper for aligned metadata rows, keeping
   logical row mapping local to the viewer.

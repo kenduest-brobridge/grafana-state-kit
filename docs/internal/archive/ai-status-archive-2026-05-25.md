@@ -125,3 +125,9 @@
 - Scope: rust/src/common/browser/session.rs; rust/src/commands/datasource/browse/support.rs; docs/internal/tui-architecture-roadmap.md
 - Current Update: Added a shared read-only browser fallback fact formatter and routed datasource browse detail rows through shared browser fact helpers instead of local Label/value formatting.
 - Result: Datasource browse detail rows now share browser-level Label: value formatting and blank-value fallback trimming while preserving existing detail output. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+
+## 2026-05-25 - Shared datasource browser info lines
+- State: Done
+- Scope: rust/src/common/browser/session.rs; rust/src/commands/datasource/browse/render.rs; docs/internal/tui-architecture-roadmap.md
+- Current Update: Added a shared read-only browser styled info-line projection and routed datasource browse detail rendering through it instead of a local Label/value renderer.
+- Result: Datasource browse detail panes now share browser-level 18-column Label: value styling while preserving existing datasource detail output. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
