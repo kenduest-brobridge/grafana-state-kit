@@ -155,3 +155,9 @@
 - Scope: rust/src/common/browser/session.rs; rust/src/commands/dashboard/inspect_workbench/render_modal_sections/viewer_rows.rs; docs/internal/tui-architecture-roadmap.md
 - Current Update: Added a shared read-only browser wrapped labeled-detail helper and routed dashboard inspect workbench full-detail viewer label/value wrapping through it while keeping logical row mapping local.
 - Result: Dashboard inspect workbench full-detail viewer metadata rows now share browser-level aligned label/value wrapping while existing viewer output and logical row mapping remain stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+
+## 2026-05-25 - Shared status tui shell spans
+- State: Done
+- Scope: rust/src/commands/status/tui/render.rs; docs/internal/tui-architecture-roadmap.md
+- Current Update: Routed status TUI key-chip/plain spans through shared tui_shell helpers instead of local duplicates.
+- Result: Status TUI header rows now share shell-level key-chip/plain span rendering while existing status output remains stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.

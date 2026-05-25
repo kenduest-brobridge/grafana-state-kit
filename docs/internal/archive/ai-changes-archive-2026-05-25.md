@@ -173,3 +173,10 @@
 - Impact: Datasource browse detail panes now share browser-level 18-column Label: value styling while preserving existing datasource detail output. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
 - Rollback/Risk: Low. The change replaces an equivalent local renderer with a shared helper, and focused render/browser tests cover the projected output path.
 - Follow-up: Continue migrating compatible dashboard browse detail rendering onto the same shared info-line helper, preserving its dashboard-specific filters and live-details badge handling.
+
+## 2026-05-25 - Shared dashboard browser info lines
+- Summary: Extended the shared read-only browser info-line projection with filter and special-row hooks, then routed dashboard browse detail rendering through it while preserving dashboard-specific hidden action lines and the live-details badge.
+- Tests: cargo test --quiet shared_browser_info_lines_preserve_dashboard_filters_and_live_badge; cargo test --quiet dashboard_browse; cargo test --quiet datasource_browse; cargo test --quiet interactive_browser; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; make quality-ai-workflow; git diff --check
+- Impact: Dashboard browse and datasource browse now share the same styled Label: value detail projection path while dashboard browse keeps its action filtering and LIVE DETAILS marker. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+- Rollback/Risk: Low. The change replaces an equivalent local renderer with a shared helper variant, and focused tests cover dashboard filtering/badge behavior plus the datasource wrapper path.
+- Follow-up: Continue migrating compatible TUI review/detail renderers onto shared browser projection helpers where their row filtering and special cases can stay explicit.

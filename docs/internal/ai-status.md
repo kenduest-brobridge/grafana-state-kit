@@ -24,6 +24,12 @@ Current AI-maintained status only.
 - Older entries moved to [`ai-status-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-16.md).
 - Older entries moved to [`ai-status-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-25.md).
 
+## 2026-05-25 - Shared datasource browse fixed control lines
+- State: Done
+- Scope: rust/src/common/tui/shell.rs; rust/src/commands/datasource/browse/render.rs; docs/internal/tui-architecture-roadmap.md
+- Current Update: Added a shared fixed-body-width shell control-line helper and routed datasource browse footer rows through it instead of a local control_line renderer.
+- Result: Datasource browse footer rows now share shell-level fixed-width control-line rendering while preserving existing 14-column label spacing. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+
 ## 2026-05-25 - Shared browse boxed shell spans
 - State: Done
 - Scope: rust/src/common/tui/shell.rs; rust/src/commands/dashboard/browse/render_detail.rs; rust/src/commands/datasource/browse/render.rs; docs/internal/tui-architecture-roadmap.md
@@ -53,9 +59,3 @@ Current AI-maintained status only.
 - Scope: rust/src/commands/access/user_browse_render.rs; rust/src/commands/access/team_browse_render.rs; docs/internal/tui-architecture-roadmap.md
 - Current Update: Routed access user/team browse action-row key-chip/plain spans directly through shared tui_shell helpers instead of local delegate wrappers.
 - Result: Access user/team browse action rows now share shell-level key-chip/plain rendering without changing public CLI paths, help text, command contracts, generated docs, Python behavior, or package metadata.
-
-## 2026-05-25 - Shared status tui shell spans
-- State: Done
-- Scope: rust/src/commands/status/tui/render.rs; docs/internal/tui-architecture-roadmap.md
-- Current Update: Routed status TUI key-chip/plain spans through shared tui_shell helpers instead of local duplicates.
-- Result: Status TUI header rows now share shell-level key-chip/plain span rendering while existing status output remains stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.

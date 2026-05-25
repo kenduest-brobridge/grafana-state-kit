@@ -480,51 +480,51 @@ fn build_review_lines(item: &DatasourceBrowseItem) -> Vec<Line<'static>> {
 
 fn control_lines(has_pending_delete: bool, has_pending_edit: bool) -> Vec<Line<'static>> {
     if has_pending_delete {
-        return vec![control_line(&[
-            ("y", Color::Red, "confirm delete"),
-            ("n", Color::Gray, "cancel"),
-            ("Esc", Color::Gray, "cancel"),
-            ("q", Color::Gray, "cancel"),
-        ])];
+        return vec![tui_shell::fixed_body_control_line(
+            &[
+                ("y", Color::Red, "confirm delete"),
+                ("n", Color::Gray, "cancel"),
+                ("Esc", Color::Gray, "cancel"),
+                ("q", Color::Gray, "cancel"),
+            ],
+            14,
+        )];
     }
     if has_pending_edit {
-        return vec![control_line(&[
-            ("Ctrl+S", Color::Green, "save"),
-            ("Esc", Color::Gray, "cancel"),
-            ("Ctrl+X", Color::Gray, "close"),
-            ("Tab", Color::Blue, "next field"),
-            ("Shift+Tab", Color::Blue, "previous field"),
-        ])];
+        return vec![tui_shell::fixed_body_control_line(
+            &[
+                ("Ctrl+S", Color::Green, "save"),
+                ("Esc", Color::Gray, "cancel"),
+                ("Ctrl+X", Color::Gray, "close"),
+                ("Tab", Color::Blue, "next field"),
+                ("Shift+Tab", Color::Blue, "previous field"),
+            ],
+            14,
+        )];
     }
     vec![
-        control_line(&[
-            ("Up/Down", Color::Blue, "move"),
-            ("PgUp/PgDn", Color::Blue, "scroll detail"),
-            ("Tab", Color::Blue, "next pane"),
-            ("e", Color::Green, "edit"),
-            ("d", Color::Red, "delete"),
-        ]),
-        control_line(&[
-            ("Shift+Tab", Color::Blue, "previous pane"),
-            ("/ ?", Color::Yellow, "search"),
-            ("n", Color::Yellow, "next match"),
-            ("l", Color::Cyan, "refresh"),
-            ("Home/End", Color::Blue, "jump"),
-        ]),
-        control_line(&[("Esc/q", Color::Gray, "exit")]),
+        tui_shell::fixed_body_control_line(
+            &[
+                ("Up/Down", Color::Blue, "move"),
+                ("PgUp/PgDn", Color::Blue, "scroll detail"),
+                ("Tab", Color::Blue, "next pane"),
+                ("e", Color::Green, "edit"),
+                ("d", Color::Red, "delete"),
+            ],
+            14,
+        ),
+        tui_shell::fixed_body_control_line(
+            &[
+                ("Shift+Tab", Color::Blue, "previous pane"),
+                ("/ ?", Color::Yellow, "search"),
+                ("n", Color::Yellow, "next match"),
+                ("l", Color::Cyan, "refresh"),
+                ("Home/End", Color::Blue, "jump"),
+            ],
+            14,
+        ),
+        tui_shell::fixed_body_control_line(&[("Esc/q", Color::Gray, "exit")], 14),
     ]
-}
-
-fn control_line(segments: &[(&'static str, Color, &'static str)]) -> Line<'static> {
-    let mut spans = Vec::new();
-    for (index, (key, color, label)) in segments.iter().enumerate() {
-        if index > 0 {
-            spans.push(tui_shell::plain("  "));
-        }
-        spans.push(tui_shell::key_chip(key, *color));
-        spans.push(tui_shell::plain(format!(" {:<14}", label)));
-    }
-    Line::from(spans)
 }
 
 fn render_focusable_lines(
@@ -640,6 +640,17 @@ mod tests {
             !source.contains(&wrapper_signature),
             "datasource browse rendering should call tui_shell::boxed directly instead of \
              carrying a local plain_boxed delegate wrapper"
+        );
+    }
+
+    #[test]
+    fn datasource_browse_render_does_not_wrap_control_line_shell_rows() {
+        let source = include_str!("render.rs");
+        let wrapper_signature = format!("{}{}(", "fn ", "control_line");
+        assert!(
+            !source.contains(&wrapper_signature),
+            "datasource browse rendering should call shared tui_shell control-line helpers directly \
+             instead of carrying a local control_line delegate wrapper"
         );
     }
 

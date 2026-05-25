@@ -154,6 +154,21 @@ pub(crate) fn control_line(items: &[(&str, Color, &str)]) -> Line<'static> {
     build_control_line(items, &vec![(key_width, body_width); items.len()])
 }
 
+pub(crate) fn fixed_body_control_line(
+    items: &[(&str, Color, &str)],
+    body_width: usize,
+) -> Line<'static> {
+    let mut spans = Vec::new();
+    for (index, (key, color, text)) in items.iter().enumerate() {
+        if index > 0 {
+            spans.push(plain("  "));
+        }
+        spans.push(key_chip(key, *color));
+        spans.push(plain(format!(" {text:<body_width$}")));
+    }
+    Line::from(spans)
+}
+
 pub(crate) fn control_grid(rows: &[Vec<(&str, Color, &str)>]) -> Vec<Line<'static>> {
     let column_count = rows.iter().map(Vec::len).max().unwrap_or(0);
     let mut widths = vec![(0usize, 0usize); column_count];

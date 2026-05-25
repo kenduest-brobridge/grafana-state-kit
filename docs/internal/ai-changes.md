@@ -24,6 +24,13 @@ Current AI change log only.
 - Older entries moved to [`ai-changes-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-16.md).
 - Older entries moved to [`ai-changes-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-25.md).
 
+## 2026-05-25 - Shared datasource browse fixed control lines
+- Summary: Added a shared fixed-body-width shell control-line helper and routed datasource browse footer rows through it instead of a local control_line renderer.
+- Tests: cargo test --quiet datasource_browse_render_does_not_wrap_control_line_shell_rows; cargo test --quiet control_lines_surface_consistent_focus_cycle_and_exit_labels; cargo test --quiet datasource_browse; cargo test --quiet interactive_browser; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; make quality-ai-workflow; git diff --check
+- Impact: Datasource browse footer rows now share shell-level fixed-width control-line rendering while preserving existing 14-column label spacing. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+- Rollback/Risk: Low. The shared helper preserves the previous datasource footer layout and focused datasource browse tests cover the control rows.
+- Follow-up: Continue auditing remaining TUI control/detail helpers and then run a completion audit against the roadmap before declaring the TUI design work complete.
+
 ## 2026-05-25 - Shared browse boxed shell spans
 - Summary: Added shared tui_shell::boxed and routed dashboard/datasource browse boxed helper labels through it instead of local plain_boxed helpers.
 - Tests: cargo test --quiet dashboard_browse_render_detail_does_not_wrap_boxed_shell_span; cargo test --quiet datasource_browse_render_does_not_wrap_boxed_shell_span; cargo test --quiet dashboard_browse; cargo test --quiet datasource_browse; cargo test --quiet interactive_browser; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; make quality-ai-workflow; git diff --check
@@ -86,10 +93,3 @@ Current AI change log only.
 - Impact: Datasource browse review panes now share browser-level 24-column Label: value evidence rendering and blocker/required highlighting while preserving existing review output. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
 - Rollback/Risk: Low. The change replaces an equivalent local renderer with a shared helper, and focused tests cover shared review row rendering plus existing datasource review evidence output.
 - Follow-up: Look for other TUI review panes with the same review evidence label/value shape before adding new local renderers.
-
-## 2026-05-25 - Shared dashboard browser info lines
-- Summary: Extended the shared read-only browser info-line projection with filter and special-row hooks, then routed dashboard browse detail rendering through it while preserving dashboard-specific hidden action lines and the live-details badge.
-- Tests: cargo test --quiet shared_browser_info_lines_preserve_dashboard_filters_and_live_badge; cargo test --quiet dashboard_browse; cargo test --quiet datasource_browse; cargo test --quiet interactive_browser; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; make quality-ai-workflow; git diff --check
-- Impact: Dashboard browse and datasource browse now share the same styled Label: value detail projection path while dashboard browse keeps its action filtering and LIVE DETAILS marker. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
-- Rollback/Risk: Low. The change replaces an equivalent local renderer with a shared helper variant, and focused tests cover dashboard filtering/badge behavior plus the datasource wrapper path.
-- Follow-up: Continue migrating compatible TUI review/detail renderers onto shared browser projection helpers where their row filtering and special cases can stay explicit.
