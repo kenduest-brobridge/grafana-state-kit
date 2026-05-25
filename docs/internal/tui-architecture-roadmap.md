@@ -207,6 +207,9 @@ while skipping generated HTML and Cargo build output.
 - Datasource browse review-pane rows now use a shared read-only browser review
   info-line projection for 24-column `Label: value` evidence and
   blocker/required highlighting.
+- Access user/team browse detail rows now share the read-only browser detail
+  info-line helper for 18-column `Label: value` rows with blank-value fallback,
+  removing duplicated detail-line renderers from both specialized browsers.
 - No-default TUI warning noise is narrower: feature-disabled builds no longer
   compile unused imports or large dead-code surfaces for access browse, access
   plan summary lines, shared read-only browser internals, snapshot browser

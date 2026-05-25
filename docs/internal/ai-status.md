@@ -24,6 +24,12 @@ Current AI-maintained status only.
 - Older entries moved to [`ai-status-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-16.md).
 - Older entries moved to [`ai-status-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-25.md).
 
+## 2026-05-25 - Shared access browser detail lines
+- State: Done
+- Scope: rust/src/common/browser/session.rs; rust/src/commands/access/user_browse_render.rs; rust/src/commands/access/team_browse_render.rs; docs/internal/tui-architecture-roadmap.md
+- Current Update: Added a shared read-only browser detail info-line helper and routed access user/team browse detail rows through it instead of duplicate local renderers.
+- Result: Access user/team browse detail rows now share browser-level 18-column Label: value rendering and blank-value fallback while preserving existing detail output. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+
 ## 2026-05-25 - Shared datasource browser review lines
 - State: Done
 - Scope: rust/src/common/browser/session.rs; rust/src/commands/datasource/browse/render.rs; docs/internal/tui-architecture-roadmap.md
@@ -53,9 +59,3 @@ Current AI-maintained status only.
 - Scope: rust/src/common/browser/session.rs; rust/src/commands/dashboard/inspect_workbench/state/detail.rs; docs/internal/tui-architecture-roadmap.md
 - Current Update: Added a shared read-only browser aligned detail fact formatter and routed dashboard inspect workbench full-detail rows through it instead of a local formatter.
 - Result: Dashboard inspect workbench full-detail rows now share browser-level aligned Label: value formatting while existing viewer output remains stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
-
-## 2026-05-25 - Shared browser detail facts
-- State: Done
-- Scope: rust/src/common/browser/session.rs; rust/src/commands/dashboard/inspect_workbench/content.rs; docs/internal/tui-architecture-roadmap.md
-- Current Update: Added a shared read-only browser detail fact formatter and routed dashboard inspect workbench item detail rows through it instead of a local formatter.
-- Result: Dashboard inspect workbench TUI detail rows now share browser-level Label: value formatting while existing item output remains stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.

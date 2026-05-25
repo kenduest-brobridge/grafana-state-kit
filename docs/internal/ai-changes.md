@@ -24,6 +24,13 @@ Current AI change log only.
 - Older entries moved to [`ai-changes-archive-2026-05-16.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-16.md).
 - Older entries moved to [`ai-changes-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-25.md).
 
+## 2026-05-25 - Shared access browser detail lines
+- Summary: Added a shared read-only browser detail info-line helper and routed access user/team browse detail rows through it instead of duplicate local renderers.
+- Tests: cargo test --quiet browser_detail_info_line_formats_label_value_with_fallback; cargo test --quiet access_user_browse; cargo test --quiet interactive_browser; escalated cargo test --quiet access after sandbox denied local mock-server binding; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; make quality-ai-workflow; git diff --check
+- Impact: Access user/team browse detail rows now share browser-level 18-column Label: value rendering and blank-value fallback while preserving existing detail output. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+- Rollback/Risk: Low. The change replaces equivalent local detail-line renderers with a shared helper and focused tests cover fallback formatting plus access browse render paths.
+- Follow-up: Continue scanning specialized TUI browsers for remaining local detail/review row renderers that match shared browser projection helpers.
+
 ## 2026-05-25 - Shared datasource browser review lines
 - Summary: Added a shared read-only browser review info-line projection and routed datasource browse review-pane evidence rows through it instead of a local renderer.
 - Tests: cargo test --quiet shared_browser_review_lines_format_datasource_review_rows; cargo test --quiet review_pane_formats_local_review_evidence_without_secret_values; cargo test --quiet datasource_browse; cargo test --quiet interactive_browser; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; make quality-ai-workflow; git diff --check
@@ -86,10 +93,3 @@ Current AI change log only.
 - Impact: Datasource local list and snapshot review interactive browser rows now share the datasource Review projection directly from details while live datasource browse behavior stays unchanged. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
 - Rollback/Risk: Low. The change removes duplicate adapter objects and preserves existing review line output through focused equivalence coverage.
 - Follow-up: Continue migrating compatible review surfaces onto shared review diff/detail helpers when they expose safe live/desired evidence.
-
-## 2026-05-25 - Shared TUI review changed-field safety
-- Summary: Moved secret-like changed-field filtering into the shared review diff helper and routed sync diff models, datasource/snapshot review evidence, and access plan review detail filtering through the shared predicate.
-- Tests: cargo fmt --check; cargo test --quiet shared_review_changed_field_filter_hides_secret_like_paths; cargo test --quiet review_operation_diff_model_hides_secret_like_changed_fields; cargo test --quiet review_operation_preview_hides_secret_like_changed_fields; cargo test --quiet datasource_inspect_export_browser_items_include_review_evidence; cargo test --quiet datasource_inspect_export; cargo test --quiet snapshot_review_document_preserves_datasource_review_evidence_for_browser_projection; cargo test --quiet snapshot_review_browser_items_reuse_datasource_review_evidence_without_secret_paths; cargo test --quiet access_plan_interactive_shared_diff_preview_hides_secret_like_fields; cargo test --quiet review_diff; cargo test --quiet cli_review_tui_rust_tests; cargo test --quiet access_plan; cargo test --quiet snapshot_review; cargo check --quiet --no-default-features --all-targets; git diff --check
-- Impact: TUI review panes now share the same changed-field redaction policy before rendering field names or side-by-side values. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
-- Rollback/Risk: Low. The change narrows review display output for secret-like fields and keeps existing safe fields visible; rollback would restore duplicated predicates and narrower datasource filtering.
-- Follow-up: Continue migrating compatible review surfaces onto shared review diff/detail helpers when they already expose safe live/desired evidence.

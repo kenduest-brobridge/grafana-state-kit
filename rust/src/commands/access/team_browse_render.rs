@@ -13,6 +13,7 @@ use super::team_browse_dialog::{
 use super::team_browse_state::{row_kind, BrowserState, PaneFocus};
 use super::TeamBrowseArgs;
 use crate::access::render::map_get_text;
+use crate::interactive_browser::browser_detail_info_line;
 
 pub(super) fn render_frame(
     frame: &mut ratatui::Frame,
@@ -405,18 +406,7 @@ fn render_focusable_lines(
 }
 
 fn detail_line(label: &str, value: &str) -> Line<'static> {
-    Line::from(vec![
-        Span::styled(
-            format!("{label:<18}: "),
-            Style::default()
-                .fg(Color::LightBlue)
-                .add_modifier(Modifier::BOLD),
-        ),
-        Span::styled(
-            blank_dash(value).to_string(),
-            Style::default().fg(Color::White),
-        ),
-    ])
+    browser_detail_info_line(label, value, "-")
 }
 
 fn member_action_lines(row: &Map<String, Value>) -> Vec<Line<'static>> {

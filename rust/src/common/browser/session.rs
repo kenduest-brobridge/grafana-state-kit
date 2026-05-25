@@ -104,6 +104,27 @@ pub(crate) fn browser_detail_info_lines(lines: &[String]) -> Vec<Line<'static>> 
 }
 
 #[cfg(feature = "tui")]
+pub(crate) fn browser_detail_info_line(label: &str, value: &str, fallback: &str) -> Line<'static> {
+    Line::from(vec![
+        Span::styled(
+            format!("{label:<18}: "),
+            Style::default()
+                .fg(Color::LightBlue)
+                .add_modifier(Modifier::BOLD),
+        ),
+        Span::styled(
+            value
+                .trim()
+                .is_empty()
+                .then_some(fallback)
+                .unwrap_or_else(|| value.trim())
+                .to_string(),
+            Style::default().fg(Color::White),
+        ),
+    ])
+}
+
+#[cfg(feature = "tui")]
 pub(crate) fn browser_detail_info_lines_with(
     lines: &[String],
     include_line: impl Fn(&str) -> bool,
@@ -1016,6 +1037,19 @@ mod tests {
             "Org: Main Org."
         );
         assert_eq!(browser_detail_fallback_fact("UID", "  ", "-"), "UID: -");
+    }
+
+    #[cfg(feature = "tui")]
+    #[test]
+    fn browser_detail_info_line_formats_label_value_with_fallback() {
+        assert_eq!(
+            super::browser_detail_info_line("Login", "alice", "-").to_string(),
+            "Login             : alice"
+        );
+        assert_eq!(
+            super::browser_detail_info_line("Email", "", "-").to_string(),
+            "Email             : -"
+        );
     }
 
     #[test]

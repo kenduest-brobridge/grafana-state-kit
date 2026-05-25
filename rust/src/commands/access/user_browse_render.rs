@@ -8,6 +8,7 @@ use ratatui::widgets::{Block, Borders, List, ListItem, ListState, Paragraph};
 use serde_json::{Map, Value};
 
 use crate::access::render::{map_get_text, user_scope_text};
+use crate::interactive_browser::browser_detail_info_line;
 
 use super::user_browse_dialog::{render_delete_prompt, render_remove_prompt, render_search_prompt};
 use super::user_browse_state::{row_kind, BrowserState, DisplayMode, PaneFocus};
@@ -641,18 +642,7 @@ fn render_focusable_lines(
 }
 
 fn detail_line(label: &str, value: &str) -> Line<'static> {
-    Line::from(vec![
-        Span::styled(
-            format!("{label:<18}: "),
-            Style::default()
-                .fg(Color::LightBlue)
-                .add_modifier(Modifier::BOLD),
-        ),
-        Span::styled(
-            blank_dash(value).to_string(),
-            Style::default().fg(Color::White),
-        ),
-    ])
+    browser_detail_info_line(label, value, "-")
 }
 
 fn key_chip(label: &'static str, bg: Color) -> Span<'static> {
