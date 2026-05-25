@@ -184,6 +184,68 @@ pub(crate) fn browser_review_info_lines(lines: &[String]) -> Vec<Line<'static>> 
         .collect()
 }
 
+#[cfg(feature = "tui")]
+pub(crate) fn browser_wrapped_labeled_detail_lines(
+    label: &str,
+    value: &str,
+    label_width: usize,
+    width: usize,
+    wrapped: bool,
+) -> Vec<Line<'static>> {
+    let prefix = format!("{label:<label_width$}: ");
+    if !wrapped || width <= prefix.len().saturating_add(1) {
+        return vec![Line::from(vec![
+            Span::styled(
+                prefix,
+                Style::default()
+                    .fg(Color::LightBlue)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(value.to_string(), Style::default().fg(Color::White)),
+        ])];
+    }
+    let first_width = width.saturating_sub(prefix.len()).max(1);
+    let continuation_prefix = " ".repeat(prefix.len());
+    let chunks = wrap_text_chunks(value, first_width);
+    chunks
+        .into_iter()
+        .enumerate()
+        .map(|(index, chunk)| {
+            if index == 0 {
+                Line::from(vec![
+                    Span::styled(
+                        prefix.clone(),
+                        Style::default()
+                            .fg(Color::LightBlue)
+                            .add_modifier(Modifier::BOLD),
+                    ),
+                    Span::styled(chunk, Style::default().fg(Color::White)),
+                ])
+            } else {
+                Line::from(vec![
+                    Span::styled(
+                        continuation_prefix.clone(),
+                        Style::default().fg(Color::DarkGray),
+                    ),
+                    Span::styled(chunk, Style::default().fg(Color::White)),
+                ])
+            }
+        })
+        .collect()
+}
+
+#[cfg(feature = "tui")]
+pub(crate) fn wrap_text_chunks(value: &str, width: usize) -> Vec<String> {
+    if width == 0 || value.is_empty() {
+        return vec![value.to_string()];
+    }
+    let chars = value.chars().collect::<Vec<_>>();
+    chars
+        .chunks(width)
+        .map(|chunk| chunk.iter().collect::<String>())
+        .collect::<Vec<_>>()
+}
+
 #[cfg(any(feature = "tui", test))]
 impl BrowserItem {
     fn matches_query(&self, query: &str) -> bool {
@@ -1049,6 +1111,20 @@ mod tests {
         assert_eq!(
             super::browser_detail_info_line("Email", "", "-").to_string(),
             "Email             : -"
+        );
+    }
+
+    #[cfg(feature = "tui")]
+    #[test]
+    fn browser_wrapped_labeled_detail_lines_preserve_prefix_width() {
+        let lines = super::browser_wrapped_labeled_detail_lines("Summary", "abcdef", 16, 22, true)
+            .into_iter()
+            .map(|line| line.to_string())
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            lines,
+            vec!["Summary         : abcd", "                  ef"]
         );
     }
 

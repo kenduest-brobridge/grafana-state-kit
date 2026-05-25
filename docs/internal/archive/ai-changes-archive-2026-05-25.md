@@ -124,3 +124,10 @@
 - Impact: TUI review panes now share the same changed-field redaction policy before rendering field names or side-by-side values. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
 - Rollback/Risk: Low. The change narrows review display output for secret-like fields and keeps existing safe fields visible; rollback would restore duplicated predicates and narrower datasource filtering.
 - Follow-up: Continue migrating compatible review surfaces onto shared review diff/detail helpers when they already expose safe live/desired evidence.
+
+## 2026-05-25 - Shared datasource TUI review projection
+- Summary: Added a datasource-details review projection helper and routed datasource local interactive rows plus snapshot datasource review rows through it instead of constructing dummy browse items.
+- Tests: cargo test --quiet review_lines_surface_plan_action_evidence_from_details; cargo test --quiet datasource_inspect_export_browser_items_include_review_evidence; cargo test --quiet snapshot_review_browser_items_reuse_datasource_review_evidence_without_secret_paths; cargo test --quiet datasource_inspect_export; cargo test --quiet snapshot_review; cargo test --quiet datasource_browse; cargo fmt --check; cargo check --quiet --no-default-features --all-targets; git diff --check
+- Impact: Datasource local list and snapshot review interactive browser rows now share the datasource Review projection directly from details while live datasource browse behavior stays unchanged. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+- Rollback/Risk: Low. The change removes duplicate adapter objects and preserves existing review line output through focused equivalence coverage.
+- Follow-up: Continue migrating compatible review surfaces onto shared review diff/detail helpers when they expose safe live/desired evidence.

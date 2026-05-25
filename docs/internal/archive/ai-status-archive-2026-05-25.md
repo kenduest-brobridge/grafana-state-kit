@@ -113,3 +113,9 @@
 - Scope: rust/src/common/browser/session.rs; rust/src/commands/dashboard/inspect_workbench/content.rs; docs/internal/tui-architecture-roadmap.md
 - Current Update: Added a shared read-only browser detail fact formatter and routed dashboard inspect workbench item detail rows through it instead of a local formatter.
 - Result: Dashboard inspect workbench TUI detail rows now share browser-level Label: value formatting while existing item output remains stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
+
+## 2026-05-25 - Shared browser aligned detail facts
+- State: Done
+- Scope: rust/src/common/browser/session.rs; rust/src/commands/dashboard/inspect_workbench/state/detail.rs; docs/internal/tui-architecture-roadmap.md
+- Current Update: Added a shared read-only browser aligned detail fact formatter and routed dashboard inspect workbench full-detail rows through it instead of a local formatter.
+- Result: Dashboard inspect workbench full-detail rows now share browser-level aligned Label: value formatting while existing viewer output remains stable. Public CLI paths, help text, command contracts, generated docs, Python behavior, and package metadata are unchanged.
