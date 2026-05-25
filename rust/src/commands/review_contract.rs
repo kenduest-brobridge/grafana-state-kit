@@ -281,6 +281,38 @@ pub(crate) fn build_review_mutation_action_change_detail_lines(
 }
 
 #[cfg(any(feature = "tui", test))]
+pub(crate) fn build_review_mutation_action_target_evidence_lines(
+    action: &ReviewMutationAction,
+) -> Vec<String> {
+    let Some(target) = action.raw.get("target").and_then(Value::as_object) else {
+        return Vec::new();
+    };
+
+    [
+        "id",
+        "uid",
+        "login",
+        "email",
+        "name",
+        "orgRole",
+        "role",
+        "grafanaAdmin",
+        "orgId",
+        "memberCount",
+        "scope",
+        "origin",
+        "disabled",
+    ]
+    .into_iter()
+    .filter_map(|key| {
+        target
+            .get(key)
+            .map(|value| format!("Live target: {key}={}", compact_review_value(value)))
+    })
+    .collect()
+}
+
+#[cfg(any(feature = "tui", test))]
 pub(crate) fn build_review_mutation_action_next_check_lines(
     action: &ReviewMutationAction,
 ) -> Vec<String> {
@@ -953,6 +985,37 @@ mod tests {
         assert!(!rendered.contains("password"));
         assert!(!rendered.contains("new-secret"));
         assert!(!rendered.contains("old-secret"));
+    }
+
+    #[test]
+    fn review_mutation_action_target_evidence_lines_project_known_live_target_fields() {
+        let action = ReviewMutationAction::from(ReviewMutationActionInput {
+            action_id: "access:user:alice".to_string(),
+            action: REVIEW_ACTION_WOULD_UPDATE.to_string(),
+            domain: "access".to_string(),
+            resource_kind: "user".to_string(),
+            identity: "alice".to_string(),
+            status: REVIEW_STATUS_BLOCKED.to_string(),
+            blocked_reason: Some("externally synced user".to_string()),
+            details: Some("fields=orgRole".to_string()),
+            review_hints: Vec::new(),
+            raw: json!({
+                "target": {
+                    "login": "alice",
+                    "orgRole": "Viewer",
+                    "isExternal": false,
+                    "ignored": "not shown"
+                }
+            }),
+        });
+
+        assert_eq!(
+            build_review_mutation_action_target_evidence_lines(&action),
+            vec![
+                "Live target: login=alice".to_string(),
+                "Live target: orgRole=Viewer".to_string(),
+            ]
+        );
     }
 
     #[test]

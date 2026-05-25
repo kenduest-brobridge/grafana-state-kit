@@ -190,6 +190,8 @@ still look like possible shared-helper follow-up work.
 - Access plan change-detail rows now also come from the shared review-contract
   action projection, keeping `Change: field bundle=... live=...` rows and
   secret-like field filtering reusable across mutation review panes.
+- Access plan live-target evidence rows now use shared review-contract action
+  projection for the known target fields rendered as `Live target: key=value`.
 - Access plan interactive reviews now also use shared review-contract next-check
   projection for action hints and default follow-up guidance, reducing another
   per-surface review pane shaping rule.

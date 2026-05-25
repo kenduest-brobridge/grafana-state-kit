@@ -5,7 +5,8 @@ use crate::common::Result;
 use crate::review_contract::{
     append_review_evidence_section, build_review_mutation_action_change_detail_lines,
     build_review_mutation_action_detail_lines, build_review_mutation_action_diff_preview_lines,
-    build_review_mutation_action_next_check_lines, REVIEW_ACTION_BLOCKED,
+    build_review_mutation_action_next_check_lines,
+    build_review_mutation_action_target_evidence_lines, REVIEW_ACTION_BLOCKED,
     REVIEW_ACTION_EXTRA_REMOTE, REVIEW_ACTION_SAME, REVIEW_ACTION_UNMANAGED,
     REVIEW_ACTION_WOULD_CREATE, REVIEW_ACTION_WOULD_DELETE, REVIEW_ACTION_WOULD_UPDATE,
     REVIEW_STATUS_BLOCKED, REVIEW_STATUS_WARNING,
@@ -228,36 +229,6 @@ fn blocked_or_warning_context(
 }
 
 #[cfg(any(feature = "tui", test))]
-fn target_evidence_lines(raw: &Value) -> Vec<String> {
-    let Some(target) = raw_target(raw) else {
-        return Vec::new();
-    };
-
-    [
-        "id",
-        "uid",
-        "login",
-        "email",
-        "name",
-        "orgRole",
-        "role",
-        "grafanaAdmin",
-        "orgId",
-        "memberCount",
-        "scope",
-        "origin",
-        "disabled",
-    ]
-    .into_iter()
-    .filter_map(|key| {
-        target
-            .get(key)
-            .map(|value| format!("Live target: {key}={}", compact_value(value)))
-    })
-    .collect()
-}
-
-#[cfg(any(feature = "tui", test))]
 fn resource_focus_line(resource: &super::AccessPlanResourceReport) -> Option<String> {
     let detail = if resource.blocked > 0 {
         Some(format!(
@@ -351,7 +322,7 @@ pub(crate) fn build_access_plan_browser_items(document: &AccessPlanDocument) -> 
         }
         details.extend(build_review_mutation_action_change_detail_lines(&action));
         details.extend(build_review_mutation_action_diff_preview_lines(&action));
-        details.extend(target_evidence_lines(&action.raw));
+        details.extend(build_review_mutation_action_target_evidence_lines(&action));
         details.extend(blocked_or_warning_context(&action));
         details.extend(
             action
