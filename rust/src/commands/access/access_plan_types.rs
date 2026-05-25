@@ -79,9 +79,6 @@ pub struct AccessPlanDocument {
     pub actions: Vec<AccessPlanAction>,
 }
 
-#[cfg(any(feature = "tui", test))]
-pub(crate) type AccessPlanReviewActionProjection = ReviewMutationAction;
-
 #[derive(Debug, Clone)]
 pub(crate) struct AccessPlanReviewProjection {
     pub domains: Vec<&'static str>,

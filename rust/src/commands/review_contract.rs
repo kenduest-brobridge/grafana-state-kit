@@ -264,6 +264,76 @@ fn review_raw_string_array(raw: &Value, key: &str) -> Vec<String> {
 }
 
 #[cfg(any(feature = "tui", test))]
+pub(crate) fn build_review_mutation_action_narrative_line(action: &ReviewMutationAction) -> String {
+    let resource_kind = action.resource_kind.replace('-', " ");
+    let narrative = match action.action.as_str() {
+        REVIEW_ACTION_WOULD_CREATE => {
+            format!("creates this {resource_kind} in Grafana from the reviewed bundle")
+        }
+        REVIEW_ACTION_WOULD_UPDATE => {
+            format!("changes this live {resource_kind} so it matches the reviewed bundle")
+        }
+        REVIEW_ACTION_WOULD_DELETE => {
+            format!("removes this live-only {resource_kind} because prune review marked it for deletion")
+        }
+        REVIEW_ACTION_SAME => {
+            format!("found no drift for this {resource_kind}; live and bundle already agree")
+        }
+        REVIEW_ACTION_EXTRA_REMOTE => {
+            format!("found a live-only {resource_kind} that is outside the reviewed bundle")
+        }
+        REVIEW_ACTION_BLOCKED | REVIEW_ACTION_UNMANAGED => {
+            format!("found drift for this {resource_kind}, but Grafana should not apply it yet")
+        }
+        _ => format!("records this {resource_kind} review action for operator follow-up"),
+    };
+    format!("Narrative: {narrative}.")
+}
+
+#[cfg(any(feature = "tui", test))]
+pub(crate) fn build_review_mutation_action_impact_line(
+    action: &ReviewMutationAction,
+) -> Option<String> {
+    let changed_fields = review_raw_string_array(&action.raw, "changedFields");
+    let fields = changed_fields
+        .iter()
+        .map(String::as_str)
+        .collect::<Vec<_>>();
+    let impact = if fields
+        .iter()
+        .any(|field| matches!(*field, "orgRole" | "grafanaAdmin" | "role"))
+    {
+        Some("permission or administrative reach would change".to_string())
+    } else if fields
+        .iter()
+        .any(|field| matches!(*field, "users" | "members" | "admins" | "teams"))
+    {
+        Some("membership or group reach would change".to_string())
+    } else if fields
+        .iter()
+        .any(|field| matches!(*field, "login" | "email" | "name" | "uid"))
+    {
+        Some("identity matching and ownership tracking would change".to_string())
+    } else if fields
+        .iter()
+        .any(|field| matches!(*field, "disabled" | "tokens"))
+    {
+        Some("runtime access or automation credentials would change".to_string())
+    } else if action.action == REVIEW_ACTION_WOULD_DELETE {
+        Some("the live record would disappear after apply".to_string())
+    } else if action.action == REVIEW_ACTION_WOULD_CREATE {
+        Some("Grafana would gain a new managed access record".to_string())
+    } else if action.status == REVIEW_STATUS_BLOCKED {
+        Some("the requested drift stays unresolved until the blocker is cleared".to_string())
+    } else if action.status == REVIEW_STATUS_WARNING {
+        Some("the change needs operator confirmation before it is safe to approve".to_string())
+    } else {
+        None
+    }?;
+    Some(format!("Why this matters: {impact}."))
+}
+
+#[cfg(any(feature = "tui", test))]
 pub(crate) fn build_review_mutation_action_change_detail_lines(
     action: &ReviewMutationAction,
 ) -> Vec<String> {
@@ -1133,6 +1203,53 @@ mod tests {
             vec![
                 "Warning context: verify bundle fields orgRole against the live target before approving.".to_string(),
             ]
+        );
+    }
+
+    #[test]
+    fn review_mutation_action_narrative_and_impact_lines_project_action_guidance() {
+        let update = ReviewMutationAction::from(ReviewMutationActionInput {
+            action_id: "access:user:alice".to_string(),
+            action: REVIEW_ACTION_WOULD_UPDATE.to_string(),
+            domain: "access".to_string(),
+            resource_kind: "user".to_string(),
+            identity: "alice".to_string(),
+            status: REVIEW_STATUS_WARNING.to_string(),
+            blocked_reason: None,
+            details: Some("fields=orgRole".to_string()),
+            review_hints: Vec::new(),
+            raw: json!({
+                "changedFields": ["orgRole", "password"]
+            }),
+        });
+        let delete = ReviewMutationAction::from(ReviewMutationActionInput {
+            action_id: "access:user:bob".to_string(),
+            action: REVIEW_ACTION_WOULD_DELETE.to_string(),
+            domain: "access".to_string(),
+            resource_kind: "user".to_string(),
+            identity: "bob".to_string(),
+            status: REVIEW_STATUS_WARNING.to_string(),
+            blocked_reason: None,
+            details: None,
+            review_hints: Vec::new(),
+            raw: json!({}),
+        });
+
+        assert_eq!(
+            build_review_mutation_action_narrative_line(&update),
+            "Narrative: changes this live user so it matches the reviewed bundle."
+        );
+        assert_eq!(
+            build_review_mutation_action_impact_line(&update),
+            Some("Why this matters: permission or administrative reach would change.".to_string())
+        );
+        assert_eq!(
+            build_review_mutation_action_narrative_line(&delete),
+            "Narrative: removes this live-only user because prune review marked it for deletion."
+        );
+        assert_eq!(
+            build_review_mutation_action_impact_line(&delete),
+            Some("Why this matters: the live record would disappear after apply.".to_string())
         );
     }
 

@@ -195,6 +195,9 @@ still look like possible shared-helper follow-up work.
 - Access plan warning/blocker context rows now use shared review-contract action
   projection for blocked reasons, safe warning changed fields, and blocked live
   target flags.
+- Access plan narrative and impact rows now use shared review-contract action
+  projection, leaving the access TUI renderer to assemble sections instead of
+  owning generic action/status/changed-field guidance text.
 - Access plan interactive reviews now also use shared review-contract next-check
   projection for action hints and default follow-up guidance, reducing another
   per-surface review pane shaping rule.

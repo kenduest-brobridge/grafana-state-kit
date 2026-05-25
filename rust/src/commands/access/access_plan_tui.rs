@@ -5,19 +5,15 @@ use crate::common::Result;
 use crate::review_contract::{
     append_review_evidence_section, build_review_mutation_action_change_detail_lines,
     build_review_mutation_action_context_lines, build_review_mutation_action_detail_lines,
-    build_review_mutation_action_diff_preview_lines, build_review_mutation_action_next_check_lines,
-    build_review_mutation_action_target_evidence_lines, REVIEW_ACTION_BLOCKED,
-    REVIEW_ACTION_EXTRA_REMOTE, REVIEW_ACTION_SAME, REVIEW_ACTION_UNMANAGED,
-    REVIEW_ACTION_WOULD_CREATE, REVIEW_ACTION_WOULD_DELETE, REVIEW_ACTION_WOULD_UPDATE,
-    REVIEW_STATUS_BLOCKED, REVIEW_STATUS_WARNING,
+    build_review_mutation_action_diff_preview_lines, build_review_mutation_action_impact_line,
+    build_review_mutation_action_narrative_line, build_review_mutation_action_next_check_lines,
+    build_review_mutation_action_target_evidence_lines,
 };
 
 #[cfg(feature = "tui")]
 use crate::interactive_browser::run_interactive_browser;
 #[cfg(any(feature = "tui", test))]
 use crate::interactive_browser::BrowserItem;
-#[cfg(any(feature = "tui", test))]
-use serde_json::Value;
 
 use super::AccessPlanDocument;
 
@@ -52,89 +48,6 @@ fn build_access_plan_summary_lines(document: &AccessPlanDocument) -> Vec<String>
         ));
     }
     lines
-}
-
-#[cfg(any(feature = "tui", test))]
-fn raw_string_array(raw: &Value, key: &str) -> Vec<String> {
-    raw.get(key)
-        .and_then(Value::as_array)
-        .into_iter()
-        .flatten()
-        .filter_map(Value::as_str)
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .map(str::to_string)
-        .collect()
-}
-
-#[cfg(any(feature = "tui", test))]
-fn narrative_line(action: &super::access_plan_types::AccessPlanReviewActionProjection) -> String {
-    let resource_kind = action.resource_kind.replace('-', " ");
-    let narrative = match action.action.as_str() {
-        REVIEW_ACTION_WOULD_CREATE => {
-            format!("creates this {resource_kind} in Grafana from the reviewed bundle")
-        }
-        REVIEW_ACTION_WOULD_UPDATE => {
-            format!("changes this live {resource_kind} so it matches the reviewed bundle")
-        }
-        REVIEW_ACTION_WOULD_DELETE => {
-            format!("removes this live-only {resource_kind} because prune review marked it for deletion")
-        }
-        REVIEW_ACTION_SAME => {
-            format!("found no drift for this {resource_kind}; live and bundle already agree")
-        }
-        REVIEW_ACTION_EXTRA_REMOTE => {
-            format!("found a live-only {resource_kind} that is outside the reviewed bundle")
-        }
-        REVIEW_ACTION_BLOCKED | REVIEW_ACTION_UNMANAGED => {
-            format!("found drift for this {resource_kind}, but Grafana should not apply it yet")
-        }
-        _ => format!("records this {resource_kind} review action for operator follow-up"),
-    };
-    format!("Narrative: {narrative}.")
-}
-
-#[cfg(any(feature = "tui", test))]
-fn impact_line(
-    action: &super::access_plan_types::AccessPlanReviewActionProjection,
-) -> Option<String> {
-    let changed_fields = raw_string_array(&action.raw, "changedFields");
-    let fields = changed_fields
-        .iter()
-        .map(String::as_str)
-        .collect::<Vec<_>>();
-    let impact = if fields
-        .iter()
-        .any(|field| matches!(*field, "orgRole" | "grafanaAdmin" | "role"))
-    {
-        Some("permission or administrative reach would change".to_string())
-    } else if fields
-        .iter()
-        .any(|field| matches!(*field, "users" | "members" | "admins" | "teams"))
-    {
-        Some("membership or group reach would change".to_string())
-    } else if fields
-        .iter()
-        .any(|field| matches!(*field, "login" | "email" | "name" | "uid"))
-    {
-        Some("identity matching and ownership tracking would change".to_string())
-    } else if fields
-        .iter()
-        .any(|field| matches!(*field, "disabled" | "tokens"))
-    {
-        Some("runtime access or automation credentials would change".to_string())
-    } else if action.action == REVIEW_ACTION_WOULD_DELETE {
-        Some("the live record would disappear after apply".to_string())
-    } else if action.action == REVIEW_ACTION_WOULD_CREATE {
-        Some("Grafana would gain a new managed access record".to_string())
-    } else if action.status == REVIEW_STATUS_BLOCKED {
-        Some("the requested drift stays unresolved until the blocker is cleared".to_string())
-    } else if action.status == REVIEW_STATUS_WARNING {
-        Some("the change needs operator confirmation before it is safe to approve".to_string())
-    } else {
-        None
-    }?;
-    Some(format!("Why this matters: {impact}."))
 }
 
 #[cfg(any(feature = "tui", test))]
@@ -215,11 +128,11 @@ pub(crate) fn build_access_plan_browser_items(document: &AccessPlanDocument) -> 
             .get("scope")
             .and_then(serde_json::Value::as_str)
             .unwrap_or_default();
-        let mut details = vec![narrative_line(&action)];
+        let mut details = vec![build_review_mutation_action_narrative_line(&action)];
         if !scope.is_empty() {
             details.push(format!("Scope: {}", scope));
         }
-        if let Some(impact) = impact_line(&action) {
+        if let Some(impact) = build_review_mutation_action_impact_line(&action) {
             details.push(impact);
         }
         append_review_evidence_section(
