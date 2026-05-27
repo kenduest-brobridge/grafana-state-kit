@@ -351,16 +351,22 @@ where
     }
     let raw_lines = build_raw_diff_lines(&remote_payload, payload)?;
     let diff_model = Some(build_interactive_import_review_diff_model(
-        uid,
-        &remote_title,
-        &local_title,
-        &remote_folder_uid,
-        local_folder_uid,
-        &remote_tags,
-        &local_tags,
-        remote_panels,
-        local_panels,
-        action,
+        InteractiveImportReviewDiffInput {
+            uid,
+            live: InteractiveImportReviewSnapshot {
+                title: &remote_title,
+                folder_uid: &remote_folder_uid,
+                tags: &remote_tags,
+                panels: remote_panels,
+            },
+            desired: InteractiveImportReviewSnapshot {
+                title: &local_title,
+                folder_uid: local_folder_uid,
+                tags: &local_tags,
+                panels: local_panels,
+            },
+            action,
+        },
     )?);
 
     if summary_lines.is_empty() {
@@ -484,16 +490,22 @@ fn build_interactive_import_diff_summary_with_client(
     }
     let raw_lines = build_raw_diff_lines(&remote_payload, payload)?;
     let diff_model = Some(build_interactive_import_review_diff_model(
-        uid,
-        &remote_title,
-        &local_title,
-        &remote_folder_uid,
-        local_folder_uid,
-        &remote_tags,
-        &local_tags,
-        remote_panels,
-        local_panels,
-        action,
+        InteractiveImportReviewDiffInput {
+            uid,
+            live: InteractiveImportReviewSnapshot {
+                title: &remote_title,
+                folder_uid: &remote_folder_uid,
+                tags: &remote_tags,
+                panels: remote_panels,
+            },
+            desired: InteractiveImportReviewSnapshot {
+                title: &local_title,
+                folder_uid: local_folder_uid,
+                tags: &local_tags,
+                panels: local_panels,
+            },
+            action,
+        },
     )?);
 
     if summary_lines.is_empty() {
@@ -517,53 +529,70 @@ fn build_interactive_import_diff_summary_with_client(
     }
 }
 
+struct InteractiveImportReviewSnapshot<'a> {
+    title: &'a str,
+    folder_uid: &'a str,
+    tags: &'a str,
+    panels: usize,
+}
+
+struct InteractiveImportReviewDiffInput<'a> {
+    uid: &'a str,
+    live: InteractiveImportReviewSnapshot<'a>,
+    desired: InteractiveImportReviewSnapshot<'a>,
+    action: &'a str,
+}
+
 fn build_interactive_import_review_diff_model(
-    uid: &str,
-    remote_title: &str,
-    local_title: &str,
-    remote_folder_uid: &str,
-    local_folder_uid: &str,
-    remote_tags: &str,
-    local_tags: &str,
-    remote_panels: usize,
-    local_panels: usize,
-    action: &str,
+    input: InteractiveImportReviewDiffInput<'_>,
 ) -> Result<crate::review_diff::ReviewDiffModel> {
     let mut live = Map::new();
-    live.insert("title".to_string(), Value::String(remote_title.to_string()));
+    live.insert(
+        "title".to_string(),
+        Value::String(input.live.title.to_string()),
+    );
     live.insert(
         "folderUid".to_string(),
-        Value::String(remote_folder_uid.to_string()),
+        Value::String(input.live.folder_uid.to_string()),
     );
-    live.insert("tags".to_string(), Value::String(remote_tags.to_string()));
-    live.insert("panels".to_string(), Value::from(remote_panels));
+    live.insert(
+        "tags".to_string(),
+        Value::String(input.live.tags.to_string()),
+    );
+    live.insert("panels".to_string(), Value::from(input.live.panels));
 
     let mut desired = Map::new();
-    desired.insert("title".to_string(), Value::String(local_title.to_string()));
+    desired.insert(
+        "title".to_string(),
+        Value::String(input.desired.title.to_string()),
+    );
     desired.insert(
         "folderUid".to_string(),
-        Value::String(local_folder_uid.to_string()),
+        Value::String(input.desired.folder_uid.to_string()),
     );
-    desired.insert("tags".to_string(), Value::String(local_tags.to_string()));
-    desired.insert("panels".to_string(), Value::from(local_panels));
+    desired.insert(
+        "tags".to_string(),
+        Value::String(input.desired.tags.to_string()),
+    );
+    desired.insert("panels".to_string(), Value::from(input.desired.panels));
 
     let mut changed_fields = Vec::new();
-    if remote_title != local_title {
+    if input.live.title != input.desired.title {
         changed_fields.push("title".to_string());
     }
-    if remote_folder_uid != local_folder_uid {
+    if input.live.folder_uid != input.desired.folder_uid {
         changed_fields.push("folderUid".to_string());
     }
-    if remote_tags != local_tags {
+    if input.live.tags != input.desired.tags {
         changed_fields.push("tags".to_string());
     }
-    if remote_panels != local_panels {
+    if input.live.panels != input.desired.panels {
         changed_fields.push("panels".to_string());
     }
 
     crate::review_diff::build_review_diff_model(crate::review_diff::ReviewDiffInput {
-        title: format!("dashboard {uid}"),
-        action: action.to_string(),
+        title: format!("dashboard {}", input.uid),
+        action: input.action.to_string(),
         live: Some(&live),
         desired: Some(&desired),
         changed_fields,
@@ -640,16 +669,22 @@ mod tests {
     #[test]
     fn interactive_import_review_diff_model_uses_shared_changed_field_projection() {
         let model = super::build_interactive_import_review_diff_model(
-            "cpu-main",
-            "CPU Old",
-            "CPU Main",
-            "ops",
-            "infra",
-            "gold, ops",
-            "",
-            2,
-            1,
-            "would-update",
+            super::InteractiveImportReviewDiffInput {
+                uid: "cpu-main",
+                live: super::InteractiveImportReviewSnapshot {
+                    title: "CPU Old",
+                    folder_uid: "ops",
+                    tags: "gold, ops",
+                    panels: 2,
+                },
+                desired: super::InteractiveImportReviewSnapshot {
+                    title: "CPU Main",
+                    folder_uid: "infra",
+                    tags: "",
+                    panels: 1,
+                },
+                action: "would-update",
+            },
         )
         .unwrap();
 

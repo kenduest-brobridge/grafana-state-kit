@@ -113,12 +113,11 @@ pub(crate) fn browser_detail_info_line(label: &str, value: &str, fallback: &str)
                 .add_modifier(Modifier::BOLD),
         ),
         Span::styled(
-            value
-                .trim()
-                .is_empty()
-                .then_some(fallback)
-                .unwrap_or_else(|| value.trim())
-                .to_string(),
+            if value.trim().is_empty() {
+                fallback.to_string()
+            } else {
+                value.trim().to_string()
+            },
             Style::default().fg(Color::White),
         ),
     ])

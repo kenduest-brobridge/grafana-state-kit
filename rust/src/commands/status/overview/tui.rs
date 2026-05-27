@@ -909,9 +909,8 @@ mod tests {
         assert_eq!(state.focus, OverviewPane::Items);
         assert_eq!(state.item_state.selected(), Some(0));
 
-        match state.focus {
-            OverviewPane::Items => state.move_item_selection(1),
-            _ => {}
+        if state.focus == OverviewPane::Items {
+            state.move_item_selection(1);
         }
 
         assert_eq!(state.item_state.selected(), Some(1));
