@@ -1,30 +1,19 @@
-"""YAML compatibility helpers with an optional PyYAML dependency."""
+"""YAML compatibility helpers backed by the required PyYAML runtime."""
 
 from __future__ import annotations
 
-import json
 from typing import Any
 
-try:  # pragma: no cover - exercised only when PyYAML is available.
-    import yaml as _yaml  # type: ignore
-except Exception:  # pragma: no cover - fallback is covered by tests.
-    _yaml = None
+import yaml
 
 
 def safe_load(text: str) -> Any:
-    """Load YAML when PyYAML is available, otherwise accept JSON-compatible YAML."""
+    """Load a YAML document with safe constructors."""
 
-    if _yaml is not None:  # pragma: no branch - tiny shim.
-        return _yaml.safe_load(text)
-    stripped = text.strip()
-    if not stripped:
-        return None
-    return json.loads(stripped)
+    return yaml.safe_load(text)
 
 
 def safe_dump(data: Any) -> str:
-    """Dump YAML when PyYAML is available, otherwise emit JSON-compatible YAML."""
+    """Dump a YAML document while preserving insertion order."""
 
-    if _yaml is not None:  # pragma: no branch - tiny shim.
-        return _yaml.safe_dump(data, sort_keys=False, default_flow_style=False)
-    return json.dumps(data, indent=2, sort_keys=False)
+    return yaml.safe_dump(data, sort_keys=False, default_flow_style=False)

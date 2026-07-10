@@ -64,7 +64,7 @@ the existing block on direct mutation of Git Sync-managed resources.
 
 ## Acceptance Checks
 
-- [ ] Poetry installs PyYAML and all 1,226 Python tests pass with two skips.
+- [x] Poetry installs PyYAML and all 1,227 Python tests pass with two skips.
 - [ ] Nonnumeric datasource UID 404 makes no numeric-ID fallback request.
 - [ ] TUI registry includes access user/team browse and exact parser/test paths.
 - [ ] Dashboard v2 and `all` export tests pass, including unsupported-lane skip.
@@ -93,16 +93,32 @@ the existing block on direct mutation of Git Sync-managed resources.
 - Modify: `docs/internal/maintainer-quickstart.md`
 - Modify: `docs/internal/maintainer-role-map.md`
 
-- [ ] Write a failing test that loads `root:\n  lane: dashboards` and asserts
+- [x] Write a failing test that loads `root:\n  lane: dashboards` and asserts
       `safe_dump` emits `lane: dashboards` rather than JSON braces.
-- [ ] Run
+- [x] Run
       `cd python && PYTHONPATH=. poetry run python -m unittest -v tests.test_python_yaml_compat`
       and confirm the current JSON fallback fails.
-- [ ] Add `PyYAML>=6,<7`, import it directly in `yaml_compat.py`, update the lock,
+- [x] Add `PyYAML>=6,<7`, import it directly in `yaml_compat.py`, update the lock,
       install, and rerun the focused test green.
-- [ ] Change `poetry-test` and maintainer commands to
+- [x] Add `types-PyYAML` to the development environment and verify MyPy accepts
+      both the adapter and its test.
+- [x] Change `poetry-test` and maintainer commands to
       `python -m unittest discover -s tests -v`.
-- [ ] Run `make poetry-test` and record 1,226 passing tests with two skips.
+- [x] Run `make poetry-test` and record 1,227 passing tests with two skips.
+
+### Task 1B: Restore the Python formatter quality gate
+
+**Files**
+
+- Format mechanically: `python/grafana_utils/**/*.py`
+- Format mechanically: `python/tests/**/*.py`
+
+- [ ] Record the pre-existing Black 25.11.0 baseline and confirm Task 1 files
+      pass in isolation.
+- [ ] Run the locked Black formatter over `grafana_utils` and `tests` as a
+      separate mechanical change with no behavior edits.
+- [ ] Rerun `make poetry-test` and `make poetry-quality-python`.
+- [ ] Commit the formatter-only change separately from functional work.
 
 ### Task 2: Stop invalid datasource numeric-ID fallback
 
@@ -306,3 +322,11 @@ impl AppPlatformResourceClient<'_> {
 - 2026-07-10: Rust baseline passed 1,882 tests with one ignored test.
 - 2026-07-10: After `poetry install`, Poetry ran 1,226 tests and reproduced
   exactly one failure and seven errors from the JSON-only YAML fallback.
+- 2026-07-10: Task 1 red test observed JSON output instead of YAML, then passed
+  after declaring PyYAML. `make poetry-test` discovered and passed 1,227 tests
+  with two skips.
+- 2026-07-10: The broader Python quality target found a pre-existing Black
+  25.11.0 drift across 96 files. The same Black version is present in the
+  baseline lock, while the two Task 1 files pass Black and Ruff in isolation;
+  a formatter-only Task 1B was added instead of mixing 96 mechanical rewrites
+  into the YAML fix.

@@ -180,7 +180,7 @@ make quality-ai-workflow
 make man-check
 make html-check
 cd rust && cargo test --quiet
-cd python && PYTHONPATH=. poetry run python -m unittest -v tests
+cd python && PYTHONPATH=. poetry run python -m unittest discover -s tests -v
 ```
 
 For generated docs work:

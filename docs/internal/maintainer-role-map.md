@@ -29,7 +29,7 @@ Typical triggers:
   - shared runtime helpers that affect more than one surface
 - Validation commands:
   - `cd rust && cargo test --quiet`
-  - `cd python && PYTHONPATH=. poetry run python -m unittest -v tests`
+  - `cd python && PYTHONPATH=. poetry run python -m unittest discover -s tests -v`
   - targeted command tests for the touched surface when available
 
 ## Docs / Docs-Generator Maintainer
@@ -92,7 +92,7 @@ Typical triggers:
 - Validation commands:
   - the narrowest unit or CLI tests for the affected contract area
   - `cd rust && cargo test --quiet`
-  - `cd python && PYTHONPATH=. poetry run python -m unittest -v tests`
+  - `cd python && PYTHONPATH=. poetry run python -m unittest discover -s tests -v`
 
 ## Build / Release Maintainer
 

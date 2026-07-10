@@ -174,7 +174,7 @@ poetry-lock:
 	$(POETRY) --directory $(PYTHON_DIR) lock
 
 poetry-test:
-	$(PYTHON_POETRY_RUN) env PYTHONPATH=. $(PYTHON) -m unittest -v tests
+	$(PYTHON_POETRY_RUN) env PYTHONPATH=. $(PYTHON) -m unittest discover -s tests -v
 
 poetry-quality-python:
 	$(PYTHON_POETRY_RUN) env PYTHON=python PYTHONPATH=. ../scripts/check-python-quality.sh

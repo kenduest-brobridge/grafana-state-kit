@@ -12,6 +12,7 @@ license = "Apache-2.0"
 authors = [{ name = "kenduest" }]
 dependencies = [
   "Pillow>=10,<13",
+  "PyYAML>=6,<7",
   "requests>=2.27,<3",
 ]
 
@@ -35,6 +36,7 @@ build = ">=1.2,<2"
 mypy = ">=1.10,<2"
 ruff = ">=0.11,<1"
 setuptools = ">=59"
+types-PyYAML = ">=6,<7"
 wheel = ">=0.45,<1"
 
 [tool.setuptools]
