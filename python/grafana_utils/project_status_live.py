@@ -1,7 +1,11 @@
 """Live project-status coordinator."""
 
 from typing import Any, List, Optional
-from .project_status import ProjectDomainStatus, ProjectStatusFreshness, build_project_status
+from .project_status import (
+    ProjectDomainStatus,
+    ProjectStatusFreshness,
+    build_project_status,
+)
 from .alerts.project_status import build_alert_live_project_status_domain
 from .datasource.project_status import build_datasource_live_project_status
 from .dashboards.project_status import build_live_dashboard_domain_status
@@ -31,7 +35,9 @@ def stamp_live_domain_freshness(
     samples: List[ProjectStatusFreshnessSample],
 ) -> ProjectDomainStatus:
     if not samples:
-        domain.freshness = build_live_project_status_freshness_from_source_count(len(domain.source_kinds))
+        domain.freshness = build_live_project_status_freshness_from_source_count(
+            len(domain.source_kinds)
+        )
     else:
         domain.freshness = build_live_project_status_freshness_from_samples(samples)
     return domain
@@ -49,30 +55,38 @@ def project_status_severity_rank(status: str) -> int:
 
 def merge_project_status_findings(findings: List[Any]) -> List[Any]:
     from .project_status import ProjectStatusFinding
+
     merged = {}
     for f in findings:
         key = (f.kind, f.source)
         merged[key] = merged.get(key, 0) + f.count
-    
-    return [ProjectStatusFinding(kind=k, source=s, count=c) for (k, s), c in merged.items()]
+
+    return [
+        ProjectStatusFinding(kind=k, source=s, count=c) for (k, s), c in merged.items()
+    ]
 
 
-def merge_live_domain_statuses(statuses: List[ProjectDomainStatus]) -> Optional[ProjectDomainStatus]:
+def merge_live_domain_statuses(
+    statuses: List[ProjectDomainStatus],
+) -> Optional[ProjectDomainStatus]:
     if not statuses:
         return None
-    
+
     from .status_model import StatusReading, StatusRecordCount
-    
+
     # Pick the "worst" status as the baseline for id/scope/etc
-    aggregate = min(statuses, key=lambda s: (
-        project_status_severity_rank(s.status),
-        -s.blocker_count,
-        -s.warning_count,
-    ))
+    aggregate = min(
+        statuses,
+        key=lambda s: (
+            project_status_severity_rank(s.status),
+            -s.blocker_count,
+            -s.warning_count,
+        ),
+    )
 
     blockers = merge_project_status_findings([f for s in statuses for f in s.blockers])
     warnings = merge_project_status_findings([f for s in statuses for f in s.warnings])
-    
+
     # Calculate freshness across all
     ages = []
     total_source_count = 0
@@ -87,7 +101,7 @@ def merge_live_domain_statuses(statuses: List[ProjectDomainStatus]) -> Optional[
     reason_code = aggregate.reason_code
     if not all(s.reason_code == aggregate.reason_code for s in statuses):
         reason_code = "multi-org-aggregate"
-    
+
     mode = aggregate.mode
     if all(s.mode == aggregate.mode for s in statuses):
         mode = f"{aggregate.mode}-all-orgs"
@@ -96,7 +110,7 @@ def merge_live_domain_statuses(statuses: List[ProjectDomainStatus]) -> Optional[
 
     source_kinds = sorted(list(set(k for s in statuses for k in s.source_kinds)))
     signal_keys = sorted(list(set(k for s in statuses for k in s.signal_keys)))
-    
+
     next_actions = []
     for s in statuses:
         for a in s.next_actions:
@@ -165,7 +179,9 @@ def _scope_clients(
     datasource_client: GrafanaDatasourceClient,
     alert_client: GrafanaAlertClient,
     access_client: GrafanaAccessClient,
-) -> tuple[GrafanaClient, GrafanaDatasourceClient, GrafanaAlertClient, GrafanaAccessClient]:
+) -> tuple[
+    GrafanaClient, GrafanaDatasourceClient, GrafanaAlertClient, GrafanaAccessClient
+]:
     if not org_id:
         return dashboard_client, datasource_client, alert_client, access_client
     return (
@@ -350,9 +366,17 @@ def build_live_project_status(
         if sync_status:
             samples = []
             if sync_summary_file:
-                samples.append(ProjectStatusFreshnessSample.from_path("sync-summary", Path(sync_summary_file)))
+                samples.append(
+                    ProjectStatusFreshnessSample.from_path(
+                        "sync-summary", Path(sync_summary_file)
+                    )
+                )
             if bundle_preflight_file:
-                samples.append(ProjectStatusFreshnessSample.from_path("bundle-preflight", Path(bundle_preflight_file)))
+                samples.append(
+                    ProjectStatusFreshnessSample.from_path(
+                        "bundle-preflight", Path(bundle_preflight_file)
+                    )
+                )
             sync_status = stamp_live_domain_freshness(sync_status, samples)
             domains.append(sync_status)
     except Exception:
@@ -371,11 +395,23 @@ def build_live_project_status(
         if promotion_status:
             samples = []
             if promotion_summary_file:
-                samples.append(ProjectStatusFreshnessSample.from_path("promotion-summary", Path(promotion_summary_file)))
+                samples.append(
+                    ProjectStatusFreshnessSample.from_path(
+                        "promotion-summary", Path(promotion_summary_file)
+                    )
+                )
             if promotion_mapping_file:
-                samples.append(ProjectStatusFreshnessSample.from_path("promotion-mapping", Path(promotion_mapping_file)))
+                samples.append(
+                    ProjectStatusFreshnessSample.from_path(
+                        "promotion-mapping", Path(promotion_mapping_file)
+                    )
+                )
             if availability_file:
-                samples.append(ProjectStatusFreshnessSample.from_path("availability", Path(availability_file)))
+                samples.append(
+                    ProjectStatusFreshnessSample.from_path(
+                        "availability", Path(availability_file)
+                    )
+                )
             promotion_status = stamp_live_domain_freshness(promotion_status, samples)
             domains.append(promotion_status)
     except Exception:
@@ -389,7 +425,7 @@ def build_live_project_status(
             ages.append(d.freshness.newest_age_seconds)
         if d.freshness.oldest_age_seconds is not None:
             ages.append(d.freshness.oldest_age_seconds)
-    
+
     overall_freshness = build_live_project_status_freshness(total_source_count, ages)
 
     status = build_project_status(
@@ -408,7 +444,7 @@ def build_live_project_status(
                 "instance": {
                     "source": "api-health",
                     "status": "available",
-                    "health": health
+                    "health": health,
                 }
             }
         else:
@@ -417,7 +453,7 @@ def build_live_project_status(
                     "instance": {
                         "source": "api-health",
                         "status": "unavailable",
-                        "error": "Grafana /api/health returned no body."
+                        "error": "Grafana /api/health returned no body.",
                     }
                 }
             else:
@@ -435,7 +471,7 @@ def build_live_project_status(
                     "instance": {
                         "source": "api-health",
                         "status": "unavailable",
-                        "error": f"Grafana /api/health returned {detail} instead of an object."
+                        "error": f"Grafana /api/health returned {detail} instead of an object.",
                     }
                 }
     except Exception as e:
@@ -443,8 +479,8 @@ def build_live_project_status(
             "instance": {
                 "source": "api-health",
                 "status": "unavailable",
-                "error": str(e)
+                "error": str(e),
             }
         }
-        
+
     return status

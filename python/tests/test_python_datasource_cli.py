@@ -19,7 +19,10 @@ SUPPORTED_DATASOURCE_TYPES_FIXTURE_PATH = (
     REPO_ROOT / "tests" / "fixtures" / "datasource_supported_types_catalog.json"
 )
 PRESET_PROFILE_PAYLOAD_FIXTURE_PATH = (
-    REPO_ROOT / "tests" / "fixtures" / "datasource_preset_profile_add_payload_cases.json"
+    REPO_ROOT
+    / "tests"
+    / "fixtures"
+    / "datasource_preset_profile_add_payload_cases.json"
 )
 NESTED_JSONDATA_MERGE_FIXTURE_PATH = (
     REPO_ROOT / "tests" / "fixtures" / "datasource_nested_json_data_merge_cases.json"
@@ -116,7 +119,9 @@ class DatasourceCliTests(unittest.TestCase):
         )
 
     def _load_nested_json_data_merge_cases(self):
-        return json.loads(NESTED_JSONDATA_MERGE_FIXTURE_PATH.read_text(encoding="utf-8"))
+        return json.loads(
+            NESTED_JSONDATA_MERGE_FIXTURE_PATH.read_text(encoding="utf-8")
+        )
 
     def _load_preset_profile_payload_cases(self):
         return json.loads(
@@ -380,9 +385,7 @@ class DatasourceCliTests(unittest.TestCase):
         )
         client = FakeDatasourceClient(datasources=[])
 
-        with mock.patch.object(
-            datasource_cli, "build_client", return_value=client
-        ):
+        with mock.patch.object(datasource_cli, "build_client", return_value=client):
             stdout = io.StringIO()
             with redirect_stdout(stdout):
                 result = datasource_cli.add_datasource(args)
@@ -480,7 +483,9 @@ class DatasourceCliTests(unittest.TestCase):
         self.assertEqual(payload["access"], "proxy")
         self.assertEqual(payload["jsonData"], {"timeField": "@timestamp"})
 
-    def test_datasource_add_with_supported_defaults_applies_influxdb_family_preset(self):
+    def test_datasource_add_with_supported_defaults_applies_influxdb_family_preset(
+        self,
+    ):
         args = datasource_cli.parse_args(
             [
                 "add",
@@ -515,7 +520,9 @@ class DatasourceCliTests(unittest.TestCase):
             },
         )
 
-    def test_datasource_add_with_supported_defaults_applies_graphite_family_preset(self):
+    def test_datasource_add_with_supported_defaults_applies_graphite_family_preset(
+        self,
+    ):
         args = datasource_cli.parse_args(
             [
                 "add",
@@ -602,8 +609,12 @@ class DatasourceCliTests(unittest.TestCase):
 
         self.assertEqual(result, 0)
         payload = client.imported_payloads[0]["payload"]
-        self.assertEqual(payload["jsonData"]["derivedFields"][0]["name"], "custom_trace")
-        self.assertEqual(payload["jsonData"]["derivedFields"][0]["datasourceUid"], "tempo-alt")
+        self.assertEqual(
+            payload["jsonData"]["derivedFields"][0]["name"], "custom_trace"
+        )
+        self.assertEqual(
+            payload["jsonData"]["derivedFields"][0]["datasourceUid"], "tempo-alt"
+        )
 
     def test_datasource_add_with_supported_defaults_applies_tempo_family_preset(self):
         args = datasource_cli.parse_args(
@@ -666,7 +677,9 @@ class DatasourceCliTests(unittest.TestCase):
 
         self.assertEqual(result, 0)
         payload = client.imported_payloads[0]["payload"]
-        self.assertEqual(payload["jsonData"]["serviceMap"]["datasourceUid"], "prometheus")
+        self.assertEqual(
+            payload["jsonData"]["serviceMap"]["datasourceUid"], "prometheus"
+        )
         self.assertEqual(payload["jsonData"]["tracesToLogsV2"]["datasourceUid"], "loki")
         self.assertEqual(
             payload["jsonData"]["tracesToMetrics"]["datasourceUid"], "prometheus"
@@ -788,7 +801,9 @@ class DatasourceCliTests(unittest.TestCase):
             },
         )
 
-    def test_datasource_add_with_full_preset_profile_allows_explicit_json_override(self):
+    def test_datasource_add_with_full_preset_profile_allows_explicit_json_override(
+        self,
+    ):
         args = datasource_cli.parse_args(
             [
                 "add",
@@ -1597,7 +1612,9 @@ class DatasourceCliTests(unittest.TestCase):
 
         self.assertEqual(result, 0)
         output = stdout.getvalue()
-        self.assertIn("prom_org1 | Prometheus Main | prometheus | org=Main Org.", output)
+        self.assertIn(
+            "prom_org1 | Prometheus Main | prometheus | org=Main Org.", output
+        )
         self.assertIn("loki_org2 | Loki Org Two | loki | org=Org Two", output)
 
     def test_datasource_browse_edit_updates_selected_datasource(self):
@@ -1703,7 +1720,14 @@ class DatasourceCliTests(unittest.TestCase):
 
     def test_datasource_list_datasources_from_local_input_dir_renders_table(self):
         args = datasource_cli.parse_args(
-            ["list", "--input-dir", "./datasources", "--table", "--output-columns", "uid,name"]
+            [
+                "list",
+                "--input-dir",
+                "./datasources",
+                "--table",
+                "--output-columns",
+                "uid,name",
+            ]
         )
         with tempfile.TemporaryDirectory() as tmpdir:
             self._write_datasource_bundle(
@@ -1736,7 +1760,9 @@ class DatasourceCliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             config_path = root / "grafana-util.yaml"
-            config_path.write_text("artifact_root: artifacts\nprofiles: {}\n", encoding="utf-8")
+            config_path.write_text(
+                "artifact_root: artifacts\nprofiles: {}\n", encoding="utf-8"
+            )
             lane = root / "artifacts" / "default" / "runs" / "run-1" / "datasources"
             lane.mkdir(parents=True)
             self._write_datasource_bundle(
@@ -1755,7 +1781,9 @@ class DatasourceCliTests(unittest.TestCase):
                 ["list", "--local", "--run-id", "run-1", "--json"]
             )
             with (
-                mock.patch.dict("os.environ", {"GRAFANA_UTIL_CONFIG": str(config_path)}),
+                mock.patch.dict(
+                    "os.environ", {"GRAFANA_UTIL_CONFIG": str(config_path)}
+                ),
                 mock.patch.object(
                     datasource_cli.datasource_workflows,
                     "build_client",
@@ -1867,7 +1895,14 @@ class DatasourceCliTests(unittest.TestCase):
 
     def test_datasource_list_datasources_accepts_provisioning_input_format(self):
         args = datasource_cli.parse_args(
-            ["list", "--input-dir", "./provisioning", "--input-format", "provisioning", "--json"]
+            [
+                "list",
+                "--input-dir",
+                "./provisioning",
+                "--input-format",
+                "provisioning",
+                "--json",
+            ]
         )
         with tempfile.TemporaryDirectory() as tmpdir:
             provisioning_dir = Path(tmpdir) / "provisioning"
@@ -1906,11 +1941,11 @@ class DatasourceCliTests(unittest.TestCase):
         args = datasource_cli.parse_args(["delete", "--uid", "prom-main"])
 
         with mock.patch.object(
-            datasource_cli, "build_client", return_value=FakeDatasourceClient(datasources=[])
+            datasource_cli,
+            "build_client",
+            return_value=FakeDatasourceClient(datasources=[]),
         ):
-            with self.assertRaisesRegex(
-                datasource_cli.GrafanaError, "requires --yes"
-            ):
+            with self.assertRaisesRegex(datasource_cli.GrafanaError, "requires --yes"):
                 datasource_cli.delete_datasource(args)
 
     def test_datasource_add_supports_secure_json_data_placeholders_and_secret_values(
@@ -2307,7 +2342,9 @@ class DatasourceCliTests(unittest.TestCase):
         self.assertIn("fields=basicAuthPassword", output)
         self.assertEqual(client.imported_payloads, [])
 
-    def test_datasource_import_datasources_dry_run_renders_secret_contract_signals(self):
+    def test_datasource_import_datasources_dry_run_renders_secret_contract_signals(
+        self,
+    ):
         args = datasource_cli.parse_args(
             [
                 "import",
@@ -2372,13 +2409,17 @@ class DatasourceCliTests(unittest.TestCase):
 
         self.assertEqual(result, 0)
         document = json.loads(stdout.getvalue())
-        self.assertEqual(document["datasources"][0]["secretFields"], ["basicAuthPassword"])
+        self.assertEqual(
+            document["datasources"][0]["secretFields"], ["basicAuthPassword"]
+        )
         self.assertEqual(
             document["datasources"][0]["secretPlaceholderNames"],
             ["loki-basic-auth"],
         )
         self.assertEqual(document["datasources"][0]["providerNames"], ["vault"])
-        self.assertIn("fields=basicAuthPassword", document["datasources"][0]["secretSummary"])
+        self.assertIn(
+            "fields=basicAuthPassword", document["datasources"][0]["secretSummary"]
+        )
 
     def test_datasource_import_datasources_dry_run_renders_secret_contract_table(self):
         args = datasource_cli.parse_args(
@@ -2860,12 +2901,8 @@ class DatasourceCliTests(unittest.TestCase):
                 ).read_text(encoding="utf-8")
             )
             self.assertEqual(provisioning_document["apiVersion"], 1)
-            self.assertEqual(
-                provisioning_document["datasources"][0]["uid"], "prom_uid"
-            )
-            self.assertEqual(
-                provisioning_document["datasources"][0]["orgId"], 2
-            )
+            self.assertEqual(provisioning_document["datasources"][0]["uid"], "prom_uid")
+            self.assertEqual(provisioning_document["datasources"][0]["orgId"], 2)
             self.assertFalse(provisioning_document["datasources"][0]["editable"])
 
     def test_datasource_export_datasources_can_skip_provisioning_file(self):

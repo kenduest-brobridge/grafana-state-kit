@@ -47,11 +47,20 @@ class ResourceCliTests(unittest.TestCase):
             url="http://127.0.0.1:3000",
         )
 
-        with mock.patch.object(
-            resource_cli,
-            "build_live_clients",
-            return_value=(None, dashboard_client, datasource_client, alert_client, access_client),
-        ), mock.patch.object(resource_cli, "dump_document"):
+        with (
+            mock.patch.object(
+                resource_cli,
+                "build_live_clients",
+                return_value=(
+                    None,
+                    dashboard_client,
+                    datasource_client,
+                    alert_client,
+                    access_client,
+                ),
+            ),
+            mock.patch.object(resource_cli, "dump_document"),
+        ):
             resource_cli.list_command(args)
 
         self.assertEqual(len(dashboard_client.calls), 1)
@@ -74,11 +83,20 @@ class ResourceCliTests(unittest.TestCase):
             url="http://127.0.0.1:3000",
         )
 
-        with mock.patch.object(
-            resource_cli,
-            "build_live_clients",
-            return_value=(None, dashboard_client, datasource_client, alert_client, access_client),
-        ), mock.patch.object(resource_cli, "dump_document"):
+        with (
+            mock.patch.object(
+                resource_cli,
+                "build_live_clients",
+                return_value=(
+                    None,
+                    dashboard_client,
+                    datasource_client,
+                    alert_client,
+                    access_client,
+                ),
+            ),
+            mock.patch.object(resource_cli, "dump_document"),
+        ):
             resource_cli.get_command(args)
 
         self.assertEqual(len(dashboard_client.calls), 1)
@@ -101,11 +119,20 @@ class ResourceCliTests(unittest.TestCase):
             url="http://127.0.0.1:3000",
         )
 
-        with mock.patch.object(
-            resource_cli,
-            "build_live_clients",
-            return_value=(None, dashboard_client, datasource_client, alert_client, access_client),
-        ), mock.patch.object(resource_cli, "dump_document"):
+        with (
+            mock.patch.object(
+                resource_cli,
+                "build_live_clients",
+                return_value=(
+                    None,
+                    dashboard_client,
+                    datasource_client,
+                    alert_client,
+                    access_client,
+                ),
+            ),
+            mock.patch.object(resource_cli, "dump_document"),
+        ):
             resource_cli.list_command(args)
 
         self.assertEqual(len(access_client.calls), 1)
@@ -128,11 +155,20 @@ class ResourceCliTests(unittest.TestCase):
             url="http://127.0.0.1:3000",
         )
 
-        with mock.patch.object(
-            resource_cli,
-            "build_live_clients",
-            return_value=(None, dashboard_client, datasource_client, alert_client, access_client),
-        ), mock.patch.object(resource_cli, "dump_document"):
+        with (
+            mock.patch.object(
+                resource_cli,
+                "build_live_clients",
+                return_value=(
+                    None,
+                    dashboard_client,
+                    datasource_client,
+                    alert_client,
+                    access_client,
+                ),
+            ),
+            mock.patch.object(resource_cli, "dump_document"),
+        ):
             resource_cli.get_command(args)
 
         self.assertEqual(len(access_client.calls), 1)
@@ -155,11 +191,20 @@ class ResourceCliTests(unittest.TestCase):
             url="http://127.0.0.1:3000",
         )
 
-        with mock.patch.object(
-            resource_cli,
-            "build_live_clients",
-            return_value=(None, dashboard_client, datasource_client, alert_client, access_client),
-        ), mock.patch.object(resource_cli, "dump_document"):
+        with (
+            mock.patch.object(
+                resource_cli,
+                "build_live_clients",
+                return_value=(
+                    None,
+                    dashboard_client,
+                    datasource_client,
+                    alert_client,
+                    access_client,
+                ),
+            ),
+            mock.patch.object(resource_cli, "dump_document"),
+        ):
             resource_cli.get_command(args)
 
         self.assertEqual(len(datasource_client.calls), 1)

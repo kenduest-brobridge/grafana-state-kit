@@ -100,9 +100,7 @@ def _collect_dashboard_alert_dependency_refs(
             elif key == "datasourceUids" and isinstance(value, (list, tuple, set)):
                 for item in value:
                     datasource_uid = _normalize_dependency_text(item)
-                    if datasource_uid and not is_builtin_datasource_ref(
-                        datasource_uid
-                    ):
+                    if datasource_uid and not is_builtin_datasource_ref(datasource_uid):
                         alert_datasource_uids.add(datasource_uid)
             elif key == "datasourceName":
                 datasource_name = _normalize_dependency_text(value)
@@ -413,7 +411,9 @@ def load_json_file(path: Path) -> dict[str, Any]:
     return raw
 
 
-def extract_dashboard_object(document: dict[str, Any], error_message: str) -> dict[str, Any]:
+def extract_dashboard_object(
+    document: dict[str, Any], error_message: str
+) -> dict[str, Any]:
     """Return the dashboard object from either the wrapped or plain export shape."""
     dashboard = document.get("dashboard", document)
     if not isinstance(dashboard, dict):
@@ -546,7 +546,9 @@ def serialize_compare_document(document: dict[str, Any]) -> str:
     #   Upstream callers: 無
     #   Downstream callees: 無
 
-    return json.dumps(document, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return json.dumps(
+        document, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+    )
 
 
 def build_compare_diff_lines(
@@ -750,7 +752,9 @@ def parse_dashboard_import_dry_run_columns(
     return columns
 
 
-def _render_table(headers: list[str], rows: list[list[str]], include_header: bool) -> list[str]:
+def _render_table(
+    headers: list[str], rows: list[list[str]], include_header: bool
+) -> list[str]:
     """Internal helper for render table."""
     widths = [len(header) for header in headers]
     for row in rows:
@@ -768,7 +772,9 @@ def _render_table(headers: list[str], rows: list[list[str]], include_header: boo
 
     lines = []
     if include_header:
-        lines.extend([format_row(headers), format_row(["-" * width for width in widths])])
+        lines.extend(
+            [format_row(headers), format_row(["-" * width for width in widths])]
+        )
     lines.extend(format_row(row) for row in rows)
     return lines
 
@@ -845,10 +851,18 @@ def render_dashboard_import_dry_run_json(
             "importDir": str(import_dir),
             "folderCount": len(folder_records),
             "missingFolders": len(
-                [record for record in folder_records if record.get("status") == "missing"]
+                [
+                    record
+                    for record in folder_records
+                    if record.get("status") == "missing"
+                ]
             ),
             "mismatchedFolders": len(
-                [record for record in folder_records if record.get("status") == "mismatch"]
+                [
+                    record
+                    for record in folder_records
+                    if record.get("status") == "mismatch"
+                ]
             ),
             "dashboardCount": len(dashboard_records),
             "missingDashboards": len(

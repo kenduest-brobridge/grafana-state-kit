@@ -162,48 +162,93 @@ def build_parser(prog: Optional[str] = None) -> argparse.ArgumentParser:
 
 def build_overview_artifacts(args: argparse.Namespace) -> List[OverviewArtifact]:
     from .project_status_staged import load_json
+
     artifacts: List[OverviewArtifact] = []
 
     if args.dashboard_export_dir:
         path = Path(args.dashboard_export_dir)
         doc = load_json(str(path / "inspect-summary.json"))
         if doc:
-            artifacts.append(OverviewArtifact("dashboard-export", "Dashboard export", [OverviewInputField("exportDir", str(path))], doc))
+            artifacts.append(
+                OverviewArtifact(
+                    "dashboard-export",
+                    "Dashboard export",
+                    [OverviewInputField("exportDir", str(path))],
+                    doc,
+                )
+            )
 
     if args.dashboard_provisioning_dir:
         path = Path(args.dashboard_provisioning_dir)
         doc = load_json(str(path / "inspect-summary.json"))
         if doc:
-            artifacts.append(OverviewArtifact("dashboard-export", "Dashboard provisioning", [OverviewInputField("dashboardProvisioningDir", str(path))], doc))
+            artifacts.append(
+                OverviewArtifact(
+                    "dashboard-export",
+                    "Dashboard provisioning",
+                    [OverviewInputField("dashboardProvisioningDir", str(path))],
+                    doc,
+                )
+            )
 
     if args.datasource_export_dir:
         path = Path(args.datasource_export_dir)
         doc = load_json(str(path / "datasource-export-summary.json"))
         if doc:
-            artifacts.append(OverviewArtifact("datasource-export", "Datasource export", [OverviewInputField("exportDir", str(path))], doc))
+            artifacts.append(
+                OverviewArtifact(
+                    "datasource-export",
+                    "Datasource export",
+                    [OverviewInputField("exportDir", str(path))],
+                    doc,
+                )
+            )
 
     if args.alert_export_dir:
         path = Path(args.alert_export_dir)
         doc = load_json(str(path / "alert-export-summary.json"))
         if doc:
-            artifacts.append(OverviewArtifact("alert-export", "Alert export", [OverviewInputField("exportDir", str(path))], doc))
+            artifacts.append(
+                OverviewArtifact(
+                    "alert-export",
+                    "Alert export",
+                    [OverviewInputField("exportDir", str(path))],
+                    doc,
+                )
+            )
 
     if args.access_user_export_dir:
         path = Path(args.access_user_export_dir)
         doc = load_json(str(path / "users.json"))
         if doc:
-            artifacts.append(OverviewArtifact("grafana-utils-access-user-export-index", "Access user export", [OverviewInputField("exportDir", str(path))], doc))
+            artifacts.append(
+                OverviewArtifact(
+                    "grafana-utils-access-user-export-index",
+                    "Access user export",
+                    [OverviewInputField("exportDir", str(path))],
+                    doc,
+                )
+            )
 
     if args.desired_file:
         path = Path(args.desired_file)
-        doc = load_json(str(path)) # In Rust this builds a summary from raw specs
+        doc = load_json(str(path))  # In Rust this builds a summary from raw specs
         if doc:
-            artifacts.append(OverviewArtifact("sync-summary", "Sync summary", [OverviewInputField("desiredFile", str(path))], doc))
+            artifacts.append(
+                OverviewArtifact(
+                    "sync-summary",
+                    "Sync summary",
+                    [OverviewInputField("desiredFile", str(path))],
+                    doc,
+                )
+            )
 
     return artifacts
 
 
-def build_overview_summary_from_artifacts(artifacts: List[OverviewArtifact]) -> OverviewSummary:
+def build_overview_summary_from_artifacts(
+    artifacts: List[OverviewArtifact],
+) -> OverviewSummary:
     summary = OverviewSummary(artifact_count=len(artifacts))
     for a in artifacts:
         if a.kind == "dashboard-export":
@@ -248,7 +293,9 @@ def build_overview_document(args: argparse.Namespace) -> OverviewDocument:
 def render_project_status_decision_order(status: ProjectStatus) -> List[str]:
     lines = []
     for domain in status.domains:
-        lines.append(f"  - {domain.id}: status={domain.status} reason={domain.reason_code}")
+        lines.append(
+            f"  - {domain.id}: status={domain.status} reason={domain.reason_code}"
+        )
     return lines
 
 
@@ -290,7 +337,9 @@ def render_overview_text(doc: OverviewDocument) -> List[str]:
 
 
 def live_command(args: argparse.Namespace) -> int:
-    _, dashboard_client, datasource_client, alert_client, access_client = build_live_clients(args)
+    _, dashboard_client, datasource_client, alert_client, access_client = (
+        build_live_clients(args)
+    )
     status = build_live_project_status(
         dashboard_client=dashboard_client,
         datasource_client=datasource_client,

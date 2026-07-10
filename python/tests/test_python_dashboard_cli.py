@@ -894,7 +894,9 @@ class ExporterTests(unittest.TestCase):
         help_text = stream.getvalue()
         self.assertIn("raw/ export directory explicitly", help_text)
         self.assertIn("Examples:", help_text)
-        self.assertIn("Show full inspect help with extended report examples:", help_text)
+        self.assertIn(
+            "Show full inspect help with extended report examples:", help_text
+        )
         self.assertIn("grafana-util dashboard summary", help_text)
         self.assertIn("--output-format report-tree-table", help_text)
         self.assertIn("--report-filter-datasource prom-main", help_text)
@@ -956,7 +958,9 @@ class ExporterTests(unittest.TestCase):
         help_text = stream.getvalue()
         self.assertIn("--url", help_text)
         self.assertIn("Examples:", help_text)
-        self.assertIn("Show full inspect help with extended report examples:", help_text)
+        self.assertIn(
+            "Show full inspect help with extended report examples:", help_text
+        )
         self.assertIn("grafana-util dashboard summary", help_text)
         self.assertIn('--token "$GRAFANA_API_TOKEN"', help_text)
         self.assertIn("--output-format report-tree", help_text)
@@ -1070,8 +1074,12 @@ class ExporterTests(unittest.TestCase):
         self.assertEqual(mocked.call_args.args[0].command, "policy")
 
     def test_dashboard_main_dispatches_topology_mode(self):
-        with mock.patch.object(exporter, "topology_dashboards", return_value=17) as mocked:
-            result = exporter.main(["dependencies", "--governance", "./governance.json"])
+        with mock.patch.object(
+            exporter, "topology_dashboards", return_value=17
+        ) as mocked:
+            result = exporter.main(
+                ["dependencies", "--governance", "./governance.json"]
+            )
 
         self.assertEqual(result, 17)
         mocked.assert_called_once()
@@ -1085,9 +1093,7 @@ class ExporterTests(unittest.TestCase):
         stream = io.StringIO()
 
         with redirect_stderr(stream):
-            result = exporter.main(
-                ["import", "--import-dir", "dashboards/raw"]
-            )
+            result = exporter.main(["import", "--import-dir", "dashboards/raw"])
 
         self.assertEqual(result, 1)
         self.assertIn("requires --approve", stream.getvalue())
@@ -1292,7 +1298,9 @@ class ExporterTests(unittest.TestCase):
             mock.patch.object(exporter.sys.stdin, "isatty", return_value=False),
             mock.patch.object(exporter.sys.stdout, "isatty", return_value=False),
         ):
-            with self.assertRaisesRegex(exporter.GrafanaError, "requires an interactive terminal"):
+            with self.assertRaisesRegex(
+                exporter.GrafanaError, "requires an interactive terminal"
+            ):
                 exporter.browse_command(args)
 
     def test_dashboard_browse_command_lists_local_input(self):
@@ -1472,9 +1480,7 @@ class ExporterTests(unittest.TestCase):
 
     def test_dashboard_parse_args_rejects_list_output_format_with_legacy_flags(self):
         with self.assertRaises(SystemExit):
-            exporter.parse_args(
-                ["list", "--output-format", "table", "--json"]
-            )
+            exporter.parse_args(["list", "--output-format", "table", "--json"])
 
     def test_dashboard_parse_args_supports_diff_mode(self):
         args = exporter.parse_args(
@@ -1878,7 +1884,9 @@ class ExporterTests(unittest.TestCase):
         self.assertFalse(args.json)
         self.assertFalse(args.table)
 
-    def test_dashboard_parse_args_supports_inspect_export_output_format_queries_json(self):
+    def test_dashboard_parse_args_supports_inspect_export_output_format_queries_json(
+        self,
+    ):
         args = exporter.parse_args(
             [
                 "summary",
@@ -2213,7 +2221,9 @@ class ExporterTests(unittest.TestCase):
         self.assertEqual(analysis["measurements"], [])
         self.assertEqual(analysis["buckets"], [])
 
-    def test_dashboard_build_query_field_and_text_synthesizes_influx_builder_query(self):
+    def test_dashboard_build_query_field_and_text_synthesizes_influx_builder_query(
+        self,
+    ):
         contract = importlib.import_module(
             "grafana_utils.dashboards.inspection_analyzers.contract"
         )
@@ -2246,9 +2256,7 @@ class ExporterTests(unittest.TestCase):
     def test_dashboard_build_panel_report_context_distinguishes_target_count_from_query_count(
         self,
     ):
-        report = importlib.import_module(
-            "grafana_utils.dashboards.inspection_report"
-        )
+        report = importlib.import_module("grafana_utils.dashboards.inspection_report")
 
         context = report.build_panel_report_context(
             panel={"datasource": {"type": "prometheus", "uid": "prom-main"}},
@@ -4892,9 +4900,7 @@ class ExporterTests(unittest.TestCase):
                 (Path(tmpdir) / "export-metadata.json").read_text(encoding="utf-8")
             )
             raw_metadata = json.loads(
-                (Path(tmpdir) / "raw/export-metadata.json").read_text(
-                    encoding="utf-8"
-                )
+                (Path(tmpdir) / "raw/export-metadata.json").read_text(encoding="utf-8")
             )
             self.assertEqual(len(root_index["items"]), 2)
             self.assertEqual(
@@ -4906,12 +4912,8 @@ class ExporterTests(unittest.TestCase):
                 sorted(item["orgId"] for item in root_metadata["orgs"]),
                 ["1", "2"],
             )
-            self.assertTrue(
-                all("exportDir" in item for item in root_metadata["orgs"])
-            )
-            metadata_by_org = {
-                item["orgId"]: item for item in root_metadata["orgs"]
-            }
+            self.assertTrue(all("exportDir" in item for item in root_metadata["orgs"]))
+            metadata_by_org = {item["orgId"]: item for item in root_metadata["orgs"]}
             self.assertEqual(metadata_by_org["1"]["usedDatasourceCount"], 1)
             self.assertEqual(
                 metadata_by_org["1"]["usedDatasources"][0]["uid"], "prom-1"
@@ -5789,7 +5791,14 @@ class ExporterTests(unittest.TestCase):
                 import_dir / "cpu__abc.json",
             )
             exporter.write_json_document(
-                {"dashboard": {"id": None, "uid": "xyz", "title": "Memory", "panels": []}},
+                {
+                    "dashboard": {
+                        "id": None,
+                        "uid": "xyz",
+                        "title": "Memory",
+                        "panels": [],
+                    }
+                },
                 import_dir / "memory__xyz.json",
             )
             args = exporter.parse_args(
@@ -5816,7 +5825,7 @@ class ExporterTests(unittest.TestCase):
 
             self.assertEqual(result, 0)
             output = stdout.getvalue()
-            document = json.loads(output[output.find("{"):])
+            document = json.loads(output[output.find("{") :])
             self.assertEqual(document["summary"]["dashboardCount"], 1)
 
     def test_dashboard_import_dashboards_live_preflights_dependencies_before_import(
@@ -5863,9 +5872,7 @@ class ExporterTests(unittest.TestCase):
                     ],
                 },
             )
-            args = exporter.parse_args(
-                ["import", "--import-dir", str(import_dir)]
-            )
+            args = exporter.parse_args(["import", "--import-dir", str(import_dir)])
 
             with mock.patch.object(exporter, "build_client", return_value=client):
                 result = exporter.import_dashboards(args)
@@ -5917,9 +5924,7 @@ class ExporterTests(unittest.TestCase):
                     ],
                 },
             )
-            args = exporter.parse_args(
-                ["import", "--import-dir", str(import_dir)]
-            )
+            args = exporter.parse_args(["import", "--import-dir", str(import_dir)])
 
             with mock.patch.object(exporter, "build_client", return_value=client):
                 with self.assertRaisesRegex(
@@ -5974,9 +5979,7 @@ class ExporterTests(unittest.TestCase):
                     ],
                 },
             )
-            args = exporter.parse_args(
-                ["import", "--import-dir", str(import_dir)]
-            )
+            args = exporter.parse_args(["import", "--import-dir", str(import_dir)])
 
             with mock.patch.object(exporter, "build_client", return_value=client):
                 with self.assertRaisesRegex(
@@ -6031,9 +6034,7 @@ class ExporterTests(unittest.TestCase):
                     ],
                 },
             )
-            args = exporter.parse_args(
-                ["import", "--import-dir", str(import_dir)]
-            )
+            args = exporter.parse_args(["import", "--import-dir", str(import_dir)])
 
             with mock.patch.object(exporter, "build_client", return_value=client):
                 with self.assertRaisesRegex(
@@ -7721,9 +7722,7 @@ class ExporterTests(unittest.TestCase):
                 {"dashboard": {"id": None, "uid": "abc", "title": "CPU", "panels": []}},
                 import_dir / "cpu__abc.json",
             )
-            args = exporter.parse_args(
-                ["import", "--import-dir", str(import_dir)]
-            )
+            args = exporter.parse_args(["import", "--import-dir", str(import_dir)])
 
             with mock.patch.object(exporter, "build_client", return_value=client):
                 with self.assertRaises(exporter.GrafanaError):
@@ -8533,7 +8532,9 @@ class ExporterTests(unittest.TestCase):
         self.assertEqual(client.deleted_dashboards, ["cpu-main"])
         self.assertEqual(client.deleted_folders, [])
         self.assertTrue(
-            any("Dry-run dashboard delete uid=cpu-main" in line for line in output_lines)
+            any(
+                "Dry-run dashboard delete uid=cpu-main" in line for line in output_lines
+            )
         )
 
     def test_dashboard_delete_dashboards_interactive_requires_tty(self):
@@ -8683,7 +8684,9 @@ class ExporterTests(unittest.TestCase):
                 encoding="utf-8",
             )
             scoped_client = FakeDashboardWorkflowClient(
-                dashboards={"cpu-main": {"dashboard": {"uid": "cpu-main", "title": "Old"}}}
+                dashboards={
+                    "cpu-main": {"dashboard": {"uid": "cpu-main", "title": "Old"}}
+                }
             )
             base_client = FakeDashboardWorkflowClient(
                 orgs=[{"id": 1, "name": "Main Org"}],
@@ -8728,7 +8731,9 @@ class ExporterTests(unittest.TestCase):
                 json.dumps({"uid": "ops-main", "title": "Ops Main"}),
                 encoding="utf-8",
             )
-            base_client = FakeDashboardWorkflowClient(orgs=[{"id": 1, "name": "Main Org"}])
+            base_client = FakeDashboardWorkflowClient(
+                orgs=[{"id": 1, "name": "Main Org"}]
+            )
             args = exporter.parse_args(
                 [
                     "plan",

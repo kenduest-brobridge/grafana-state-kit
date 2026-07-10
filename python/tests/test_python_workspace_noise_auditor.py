@@ -13,7 +13,9 @@ SCRIPT_PATH = REPO_ROOT / "scripts" / "workspace_noise_auditor.py"
 
 
 def load_module():
-    spec = importlib.util.spec_from_file_location("workspace_noise_auditor", SCRIPT_PATH)
+    spec = importlib.util.spec_from_file_location(
+        "workspace_noise_auditor", SCRIPT_PATH
+    )
     module = importlib.util.module_from_spec(spec)
     sys.modules.setdefault("workspace_noise_auditor", module)
     assert spec.loader is not None
@@ -66,7 +68,9 @@ class WorkspaceNoiseAuditorTests(unittest.TestCase):
             root = Path(tmpdir)
             template_dir = root / "scripts" / "templates"
             template_dir.mkdir(parents=True)
-            (template_dir / "base.html.tmpl").write_text("{{ content }}\n", encoding="utf-8")
+            (template_dir / "base.html.tmpl").write_text(
+                "{{ content }}\n", encoding="utf-8"
+            )
 
             items = module.discover_noise_paths(root)
 

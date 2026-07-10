@@ -52,7 +52,15 @@ DASHBOARD_LIST_COLUMN_ALIASES = {
     "source_uids": "sourceUids",
     "sourceUids": "sourceUids",
 }
-DEFAULT_DASHBOARD_LIST_COLUMNS = ["uid", "name", "folder", "folderUid", "path", "org", "orgId"]
+DEFAULT_DASHBOARD_LIST_COLUMNS = [
+    "uid",
+    "name",
+    "folder",
+    "folderUid",
+    "path",
+    "org",
+    "orgId",
+]
 
 
 def format_dashboard_summary_line(summary: dict[str, Any]) -> str:
@@ -369,7 +377,9 @@ def render_dashboard_summary_table(
 
     lines = []
     if include_header:
-        lines.extend([format_row(headers), format_row(["-" * width for width in widths])])
+        lines.extend(
+            [format_row(headers), format_row(["-" * width for width in widths])]
+        )
     lines.extend(format_row(row) for row in rows)
     return lines
 
@@ -413,7 +423,9 @@ def render_dashboard_summary_yaml(
     selected_columns: Optional[list[str]] = None,
 ) -> str:
     """Render dashboard summaries as YAML."""
-    return yaml.safe_dump(json.loads(render_dashboard_summary_json(summaries, selected_columns)))
+    return yaml.safe_dump(
+        json.loads(render_dashboard_summary_json(summaries, selected_columns))
+    )
 
 
 def render_dashboard_summary_text(
@@ -425,7 +437,9 @@ def render_dashboard_summary_text(
     lines = []
     for summary in summaries:
         record = build_dashboard_summary_record(summary)
-        lines.append(" ".join("%s=%s" % (column, record.get(column, "")) for column in columns))
+        lines.append(
+            " ".join("%s=%s" % (column, record.get(column, "")) for column in columns)
+        )
     return lines
 
 
@@ -447,7 +461,9 @@ def parse_dashboard_list_output_columns(value: Optional[str]) -> Optional[list[s
         if column not in columns:
             columns.append(column)
     if not columns:
-        raise GrafanaError("--output-columns must name at least one dashboard list column.")
+        raise GrafanaError(
+            "--output-columns must name at least one dashboard list column."
+        )
     return columns
 
 
@@ -499,7 +515,9 @@ def list_dashboards(
             or bool(getattr(args, "with_sources", False))
             or bool(
                 selected_columns
-                and any(column in ("sources", "sourceUids") for column in selected_columns)
+                and any(
+                    column in ("sources", "sourceUids") for column in selected_columns
+                )
             )
         )
         if needs_sources:
@@ -535,10 +553,12 @@ def list_dashboards(
     ):
         print(line)
     print("")
-    print("Listed {count} dashboard summaries from {url}".format(
-        count=len(summaries),
-        url=args.url,
-    ))
+    print(
+        "Listed {count} dashboard summaries from {url}".format(
+            count=len(summaries),
+            url=args.url,
+        )
+    )
     return 0
 
 
@@ -549,9 +569,9 @@ def format_data_source_line(datasource: dict[str, Any]) -> str:
     #   Downstream callees: 448
 
     record = build_data_source_record(datasource)
-    return (
-        "uid={uid} name={name} type={type} url={url} isDefault={isDefault}"
-    ).format(**record)
+    return ("uid={uid} name={name} type={type} url={url} isDefault={isDefault}").format(
+        **record
+    )
 
 
 def build_data_source_record(datasource: dict[str, Any]) -> dict[str, str]:
@@ -594,7 +614,9 @@ def build_datasource_inventory_record(
     if not isinstance(json_data, dict):
         json_data = {}
     record["access"] = str(datasource.get("access") or "")
-    record["database"] = str(datasource.get("database") or json_data.get("dbName") or "")
+    record["database"] = str(
+        datasource.get("database") or json_data.get("dbName") or ""
+    )
     record["defaultBucket"] = str(json_data.get("defaultBucket") or "")
     record["organization"] = str(json_data.get("organization") or "")
     record["indexPattern"] = str(
@@ -646,7 +668,9 @@ def render_data_source_table(
 
     lines = []
     if include_header:
-        lines.extend([format_row(headers), format_row(["-" * width for width in widths])])
+        lines.extend(
+            [format_row(headers), format_row(["-" * width for width in widths])]
+        )
     lines.extend(format_row(row) for row in rows)
     return lines
 
@@ -699,8 +723,10 @@ def list_data_sources(
     ):
         print(line)
     print("")
-    print("Listed {count} data source(s) from {url}".format(
-        count=len(datasources),
-        url=args.url,
-    ))
+    print(
+        "Listed {count} data source(s) from {url}".format(
+            count=len(datasources),
+            url=args.url,
+        )
+    )
     return 0

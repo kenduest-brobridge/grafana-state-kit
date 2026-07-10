@@ -236,9 +236,13 @@ def _validate_datasource_org_routing_args(args, parser):
         if getattr(args, "only_org_id", None) and not use_export_org:
             parser.error("--only-org-id requires --use-export-org for datasource plan.")
         if bool(getattr(args, "create_missing_orgs", False)) and not use_export_org:
-            parser.error("--create-missing-orgs requires --use-export-org for datasource plan.")
+            parser.error(
+                "--create-missing-orgs requires --use-export-org for datasource plan."
+            )
         if use_export_org and getattr(args, "org_id", None):
-            parser.error("--use-export-org cannot be combined with --org-id for datasource plan.")
+            parser.error(
+                "--use-export-org cannot be combined with --org-id for datasource plan."
+            )
         return
     if command != "import":
         return

@@ -30,7 +30,9 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
 
 
 def live_command(args: argparse.Namespace) -> int:
-    _, dashboard_client, datasource_client, alert_client, access_client = build_live_clients(args)
+    _, dashboard_client, datasource_client, alert_client, access_client = (
+        build_live_clients(args)
+    )
     status = build_live_project_status(
         dashboard_client=dashboard_client,
         datasource_client=datasource_client,

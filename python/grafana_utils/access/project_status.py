@@ -20,7 +20,9 @@ ACCESS_REASON_PARTIAL_MISSING_BUNDLES = "partial-missing-bundles"
 ACCESS_EXPORT_KIND_USERS = "grafana-utils-access-user-export-index"
 ACCESS_EXPORT_KIND_TEAMS = "grafana-utils-access-team-export-index"
 ACCESS_EXPORT_KIND_ORGS = "grafana-utils-access-org-export-index"
-ACCESS_EXPORT_KIND_SERVICE_ACCOUNTS = "grafana-utils-access-service-account-export-index"
+ACCESS_EXPORT_KIND_SERVICE_ACCOUNTS = (
+    "grafana-utils-access-service-account-export-index"
+)
 
 ACCESS_SIGNAL_KEYS = [
     "summary.users.recordCount",
@@ -53,10 +55,20 @@ class AccessBundleSpec:
 
 
 ACCESS_BUNDLE_SPECS = [
-    AccessBundleSpec(ACCESS_EXPORT_KIND_USERS, "summary.users.recordCount", ACCESS_EXPORT_USERS_LABEL),
-    AccessBundleSpec(ACCESS_EXPORT_KIND_TEAMS, "summary.teams.recordCount", ACCESS_EXPORT_TEAMS_LABEL),
-    AccessBundleSpec(ACCESS_EXPORT_KIND_ORGS, "summary.orgs.recordCount", ACCESS_EXPORT_ORGS_LABEL),
-    AccessBundleSpec(ACCESS_EXPORT_KIND_SERVICE_ACCOUNTS, "summary.serviceAccounts.recordCount", ACCESS_EXPORT_SERVICE_ACCOUNTS_LABEL),
+    AccessBundleSpec(
+        ACCESS_EXPORT_KIND_USERS, "summary.users.recordCount", ACCESS_EXPORT_USERS_LABEL
+    ),
+    AccessBundleSpec(
+        ACCESS_EXPORT_KIND_TEAMS, "summary.teams.recordCount", ACCESS_EXPORT_TEAMS_LABEL
+    ),
+    AccessBundleSpec(
+        ACCESS_EXPORT_KIND_ORGS, "summary.orgs.recordCount", ACCESS_EXPORT_ORGS_LABEL
+    ),
+    AccessBundleSpec(
+        ACCESS_EXPORT_KIND_SERVICE_ACCOUNTS,
+        "summary.serviceAccounts.recordCount",
+        ACCESS_EXPORT_SERVICE_ACCOUNTS_LABEL,
+    ),
 ]
 
 
@@ -97,13 +109,17 @@ def build_access_domain_status(
             total_records += summary_number(document, "recordCount")
         else:
             missing_labels.append(spec.label)
-            warnings.append(StatusRecordCount(ACCESS_MISSING_BUNDLE_KIND, 1, spec.signal_key))
+            warnings.append(
+                StatusRecordCount(ACCESS_MISSING_BUNDLE_KIND, 1, spec.signal_key)
+            )
 
     if not source_kinds:
         return None
 
     if missing_labels:
-        next_actions = [f"export the missing access bundle kinds: {', '.join(missing_labels)}"]
+        next_actions = [
+            f"export the missing access bundle kinds: {', '.join(missing_labels)}"
+        ]
         next_actions.extend(ACCESS_MIXED_WORKSPACE_REVIEW_ACTIONS)
         status = PROJECT_STATUS_PARTIAL
         reason_code = ACCESS_REASON_PARTIAL_MISSING_BUNDLES

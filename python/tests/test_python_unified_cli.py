@@ -76,7 +76,9 @@ class UnifiedCliTests(unittest.TestCase):
         self.assertIn("ci", help_text)
         self.assertIn("apply", help_text)
 
-    def test_unified_parse_args_workspace_without_subcommand_prints_workspace_help(self):
+    def test_unified_parse_args_workspace_without_subcommand_prints_workspace_help(
+        self,
+    ):
         stdout = io.StringIO()
         with redirect_stdout(stdout):
             with self.assertRaises(SystemExit) as exc:
@@ -154,7 +156,9 @@ class UnifiedCliTests(unittest.TestCase):
         self.assertEqual(exc.exception.code, 0)
         help_text = stdout.getvalue()
         self.assertIn("grafana-util datasource", help_text)
-        self.assertIn("{types,list,export,import,diff,plan,browse,add,modify,delete}", help_text)
+        self.assertIn(
+            "{types,list,export,import,diff,plan,browse,add,modify,delete}", help_text
+        )
 
     def test_unified_build_parser_registers_datasource_modify_subcommand(self):
         parser = unified_cli.build_parser()
@@ -238,7 +242,9 @@ class UnifiedCliTests(unittest.TestCase):
         )
 
     def test_unified_parse_args_supports_dashboard_list_vars_namespace(self):
-        args = unified_cli.parse_args(["dashboard", "variables", "--dashboard-uid", "cpu-main"])
+        args = unified_cli.parse_args(
+            ["dashboard", "variables", "--dashboard-uid", "cpu-main"]
+        )
 
         self.assertEqual(args.entrypoint, "dashboard")
         self.assertEqual(
@@ -248,7 +254,9 @@ class UnifiedCliTests(unittest.TestCase):
 
     def test_unified_parse_args_rejects_legacy_dashboard_inspect_vars_alias(self):
         with self.assertRaises(SystemExit):
-            unified_cli.parse_args(["dashboard", "inspect-vars", "--dashboard-uid", "cpu-main"])
+            unified_cli.parse_args(
+                ["dashboard", "inspect-vars", "--dashboard-uid", "cpu-main"]
+            )
 
     def test_unified_parse_args_supports_dashboard_governance_gate_namespace(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -483,9 +491,7 @@ class UnifiedCliTests(unittest.TestCase):
         )
 
     def test_unified_parse_args_supports_change_namespace(self):
-        args = unified_cli.parse_args(
-            ["change", "preview", "--workspace", "."]
-        )
+        args = unified_cli.parse_args(["change", "preview", "--workspace", "."])
 
         self.assertEqual(args.entrypoint, "change")
         self.assertEqual(args.forwarded_argv, ["preview", "--workspace", "."])
@@ -509,13 +515,19 @@ class UnifiedCliTests(unittest.TestCase):
         self.assertEqual(args.forwarded_argv, ["live", "--profile", "prod"])
 
     def test_unified_parse_args_supports_status_namespace(self):
-        args = unified_cli.parse_args(["status", "staged", "--desired-file", "./desired.json"])
+        args = unified_cli.parse_args(
+            ["status", "staged", "--desired-file", "./desired.json"]
+        )
 
         self.assertEqual(args.entrypoint, "status")
-        self.assertEqual(args.forwarded_argv, ["staged", "--desired-file", "./desired.json"])
+        self.assertEqual(
+            args.forwarded_argv, ["staged", "--desired-file", "./desired.json"]
+        )
 
     def test_unified_parse_args_supports_snapshot_namespace(self):
-        args = unified_cli.parse_args(["snapshot", "review", "--input-dir", "./snapshot"])
+        args = unified_cli.parse_args(
+            ["snapshot", "review", "--input-dir", "./snapshot"]
+        )
 
         self.assertEqual(args.entrypoint, "snapshot")
         self.assertEqual(args.forwarded_argv, ["review", "--input-dir", "./snapshot"])
@@ -556,7 +568,9 @@ class UnifiedCliTests(unittest.TestCase):
         with mock.patch.object(
             unified_cli.dashboard_cli, "main", return_value=13
         ) as mocked:
-            result = unified_cli.main(["dashboard", "browse", "--input", "./dashboards/raw"])
+            result = unified_cli.main(
+                ["dashboard", "browse", "--input", "./dashboards/raw"]
+            )
 
         self.assertEqual(result, 13)
         mocked.assert_called_once_with(["browse", "--input", "./dashboards/raw"])
@@ -704,43 +718,59 @@ class UnifiedCliTests(unittest.TestCase):
         )
 
     def test_unified_main_dispatches_change_passthrough(self):
-        with mock.patch.object(unified_cli.change_cli, "main", return_value=6) as mocked:
+        with mock.patch.object(
+            unified_cli.change_cli, "main", return_value=6
+        ) as mocked:
             result = unified_cli.main(["change", "inspect", "--workspace", "."])
 
         self.assertEqual(result, 6)
         mocked.assert_called_once_with(["inspect", "--workspace", "."])
 
     def test_unified_main_dispatches_profile_passthrough(self):
-        with mock.patch.object(unified_cli.profile_cli, "main", return_value=7) as mocked:
+        with mock.patch.object(
+            unified_cli.profile_cli, "main", return_value=7
+        ) as mocked:
             result = unified_cli.main(["profile", "list"])
 
         self.assertEqual(result, 7)
         mocked.assert_called_once_with(["list"])
 
     def test_unified_main_dispatches_resource_passthrough(self):
-        with mock.patch.object(unified_cli.resource_cli, "main", return_value=8) as mocked:
+        with mock.patch.object(
+            unified_cli.resource_cli, "main", return_value=8
+        ) as mocked:
             result = unified_cli.main(["resource", "kinds"])
 
         self.assertEqual(result, 8)
         mocked.assert_called_once_with(["kinds"])
 
     def test_unified_main_dispatches_overview_passthrough(self):
-        with mock.patch.object(unified_cli.overview_cli, "main", return_value=9) as mocked:
+        with mock.patch.object(
+            unified_cli.overview_cli, "main", return_value=9
+        ) as mocked:
             result = unified_cli.main(["overview", "live", "--profile", "prod"])
 
         self.assertEqual(result, 9)
         mocked.assert_called_once_with(["live", "--profile", "prod"])
 
     def test_unified_main_dispatches_status_passthrough(self):
-        with mock.patch.object(unified_cli.status_cli, "main", return_value=10) as mocked:
-            result = unified_cli.main(["status", "staged", "--desired-file", "./desired.json"])
+        with mock.patch.object(
+            unified_cli.status_cli, "main", return_value=10
+        ) as mocked:
+            result = unified_cli.main(
+                ["status", "staged", "--desired-file", "./desired.json"]
+            )
 
         self.assertEqual(result, 10)
         mocked.assert_called_once_with(["staged", "--desired-file", "./desired.json"])
 
     def test_unified_main_dispatches_snapshot_passthrough(self):
-        with mock.patch.object(unified_cli.snapshot_cli, "main", return_value=11) as mocked:
-            result = unified_cli.main(["snapshot", "review", "--input-dir", "./snapshot"])
+        with mock.patch.object(
+            unified_cli.snapshot_cli, "main", return_value=11
+        ) as mocked:
+            result = unified_cli.main(
+                ["snapshot", "review", "--input-dir", "./snapshot"]
+            )
 
         self.assertEqual(result, 11)
         mocked.assert_called_once_with(["review", "--input-dir", "./snapshot"])

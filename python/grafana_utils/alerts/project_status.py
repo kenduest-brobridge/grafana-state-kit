@@ -72,6 +72,7 @@ def value_to_string(value: Any) -> str:
     if isinstance(value, str):
         return value
     import json
+
     return json.dumps(value)
 
 
@@ -109,7 +110,9 @@ def rule_linkage_panel_counts(document: Any) -> Tuple[int, int, int]:
         if not isinstance(annotations, dict):
             continue
 
-        has_dashboard_uid = bool(value_to_string(annotations.get("__dashboardUid__")).strip())
+        has_dashboard_uid = bool(
+            value_to_string(annotations.get("__dashboardUid__")).strip()
+        )
         if not has_dashboard_uid:
             continue
 
@@ -162,9 +165,7 @@ def add_missing_panel_link_signal(
         )
 
 
-ALERT_REEXPORT_AFTER_CHANGES_ACTIONS = [
-    "re-run alert export after alerting changes"
-]
+ALERT_REEXPORT_AFTER_CHANGES_ACTIONS = ["re-run alert export after alerting changes"]
 ALERT_MISSING_POLICIES_ACTIONS = [
     "capture at least one notification policy before promotion handoff so routing drift stays reviewable"
 ]
@@ -194,6 +195,7 @@ def add_missing_supporting_surface_signal(
 ):
     if primary_count > 0 and count == 0:
         from ..status_model import StatusRecordCount
+
         warnings.append(StatusRecordCount(warning_kind, 1, source_key))
         push_next_actions(next_actions, action)
 
@@ -287,7 +289,9 @@ def build_alert_live_project_status_domain(
     templates_document: Optional[Any] = None,
 ) -> Optional[ProjectDomainStatus]:
     rules = array_count(rules_document)
-    linked_rules, panel_linked_rules, rule_count = rule_linkage_panel_counts(rules_document)
+    linked_rules, panel_linked_rules, rule_count = rule_linkage_panel_counts(
+        rules_document
+    )
     contact_points = array_count(contact_points_document)
     mute_timings = array_count(mute_timings_document)
     policies = object_count(policies_document)

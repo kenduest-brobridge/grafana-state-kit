@@ -50,7 +50,11 @@ from typing import Any, Optional
 
 from .clients.dashboard_client import GrafanaClient
 from .auth_staging import AuthConfigError, resolve_cli_auth_from_namespace
-from .cli_shared import add_live_connection_args, build_connection_details, dump_document
+from .cli_shared import (
+    add_live_connection_args,
+    build_connection_details,
+    dump_document,
+)
 from .dashboards.common import (
     DEFAULT_DASHBOARD_TITLE,
     DEFAULT_FOLDER_UID,
@@ -351,6 +355,7 @@ IMPACT_OUTPUT_FORMAT_CHOICES = ("text", "json", "yaml")
 
 def _load_raw_to_prompt_datasource_catalog(source_path: Path, args: argparse.Namespace):
     """Load datasource lookup data for raw-to-prompt conversion."""
+
     def _records_from_document(document: Any) -> list[dict[str, Any]]:
         if isinstance(document, list):
             return [item for item in document if isinstance(item, dict)]
@@ -456,7 +461,9 @@ def _build_raw_to_prompt_index_item(
         uid = uid[: -len(".prompt")]
     return {
         "uid": uid,
-        "title": _normalize_document_text(dashboard.get("title"), DEFAULT_DASHBOARD_TITLE),
+        "title": _normalize_document_text(
+            dashboard.get("title"), DEFAULT_DASHBOARD_TITLE
+        ),
         "folder": folder_title,
         "org": _normalize_document_text(org_name, DEFAULT_ORG_NAME),
         "orgId": _normalize_document_text(org_id, DEFAULT_ORG_ID),
@@ -2400,7 +2407,8 @@ def _dashboard_browse_local_items(args: argparse.Namespace) -> list[dict[str, An
     serve_args = argparse.Namespace(
         **{
             **vars(args),
-            "input": getattr(args, "input_dir", None) or getattr(args, "workspace", None),
+            "input": getattr(args, "input_dir", None)
+            or getattr(args, "workspace", None),
             "script": None,
             "script_format": "json",
             "open_browser": False,
@@ -2409,18 +2417,32 @@ def _dashboard_browse_local_items(args: argparse.Namespace) -> list[dict[str, An
     items = []
     for item in load_dashboard_serve_items(serve_args):
         document = item.get("dashboard") if isinstance(item, dict) else None
-        dashboard = extract_dashboard_object(document or {}, "Dashboard browse item must contain a dashboard object.")
+        dashboard = extract_dashboard_object(
+            document or {}, "Dashboard browse item must contain a dashboard object."
+        )
         folder = (
             str((document.get("meta") or {}).get("folderTitle") or "").strip()
             if isinstance(document, dict)
             else ""
         )
         folder_uid = (
-            str((document.get("meta") or {}).get("folderUid") or dashboard.get("folderUid") or DEFAULT_FOLDER_UID)
+            str(
+                (document.get("meta") or {}).get("folderUid")
+                or dashboard.get("folderUid")
+                or DEFAULT_FOLDER_UID
+            )
             if isinstance(document, dict)
             else DEFAULT_FOLDER_UID
         )
-        path = str((document.get("meta") or {}).get("folderPath") or folder or DEFAULT_FOLDER_TITLE) if isinstance(document, dict) else DEFAULT_FOLDER_TITLE
+        path = (
+            str(
+                (document.get("meta") or {}).get("folderPath")
+                or folder
+                or DEFAULT_FOLDER_TITLE
+            )
+            if isinstance(document, dict)
+            else DEFAULT_FOLDER_TITLE
+        )
         summary = {
             "uid": dashboard.get("uid") or item.get("uid"),
             "title": dashboard.get("title") or item.get("title"),
@@ -2442,7 +2464,9 @@ def _dashboard_browse_local_items(args: argparse.Namespace) -> list[dict[str, An
 def _dashboard_browse_live_items(args: argparse.Namespace) -> list[dict[str, Any]]:
     client = build_client(args)
     auth_header = client.headers.get("Authorization", "")
-    if (getattr(args, "all_orgs", False) or getattr(args, "org_id", None)) and not auth_header.startswith("Basic "):
+    if (
+        getattr(args, "all_orgs", False) or getattr(args, "org_id", None)
+    ) and not auth_header.startswith("Basic "):
         raise GrafanaError(
             "Dashboard org switching does not support API token auth. Use Grafana username/password login with --basic-user and --basic-password."
         )
@@ -2488,7 +2512,9 @@ def _run_dashboard_browse_loop(
     filtered = list(items)
 
     def render_rows(rows: list[dict[str, Any]]) -> None:
-        output_writer("Dashboard browse: enter a number to view JSON, /text to filter, r to reset, q to quit.")
+        output_writer(
+            "Dashboard browse: enter a number to view JSON, /text to filter, r to reset, q to quit."
+        )
         for index, item in enumerate(rows, 1):
             record = item["_record"]
             output_writer(
@@ -2536,11 +2562,15 @@ def browse_command(args: argparse.Namespace) -> int:
         raise GrafanaError("Choose either --workspace or --input-dir, not both.")
     if getattr(args, "org_id", None) or bool(getattr(args, "all_orgs", False)):
         if getattr(args, "workspace", None) or getattr(args, "input_dir", None):
-            raise GrafanaError("Dashboard browse local mode does not support --org-id or --all-orgs.")
+            raise GrafanaError(
+                "Dashboard browse local mode does not support --org-id or --all-orgs."
+            )
     if bool(getattr(args, "open_browser", False)) and (
         getattr(args, "workspace", None) or getattr(args, "input_dir", None)
     ):
-        args.input = getattr(args, "input_dir", None) or getattr(args, "workspace", None)
+        args.input = getattr(args, "input_dir", None) or getattr(
+            args, "workspace", None
+        )
         return run_dashboard_serve(args)
     if not sys.stdin.isatty() or not sys.stdout.isatty():
         raise GrafanaError("Dashboard browse requires an interactive terminal (TTY).")
@@ -2548,7 +2578,9 @@ def browse_command(args: argparse.Namespace) -> int:
         items = _dashboard_browse_local_items(args)
     else:
         items = _dashboard_browse_live_items(args)
-    return _run_dashboard_browse_loop(args, items, input_reader=input, output_writer=print)
+    return _run_dashboard_browse_loop(
+        args, items, input_reader=input, output_writer=print
+    )
 
 
 def edit_live_dashboard_command(args: argparse.Namespace) -> int:
@@ -2617,7 +2649,9 @@ def publish_command(args: argparse.Namespace) -> int:
         dump_document(preview, getattr(args, "output_format", "text"))
         return 0
     if not bool(getattr(args, "approve", False)):
-        raise GrafanaError("Dashboard publish requires --approve unless --dry-run is active.")
+        raise GrafanaError(
+            "Dashboard publish requires --approve unless --dry-run is active."
+        )
     response = publish_dashboard_document(
         client,
         document,
@@ -2715,7 +2749,9 @@ def history_list_command(args: argparse.Namespace) -> int:
         artifacts = load_history_artifacts(Path(args.input_dir))
         if getattr(args, "dashboard_uid", None):
             artifacts = [
-                item for item in artifacts if item[1].get("dashboardUid") == args.dashboard_uid
+                item
+                for item in artifacts
+                if item[1].get("dashboardUid") == args.dashboard_uid
             ]
         document = build_history_inventory_document(Path(args.input_dir), artifacts)
         dump_document(document, getattr(args, "output_format", "text"))
@@ -2775,7 +2811,9 @@ def history_restore_command(args: argparse.Namespace) -> int:
         dump_document(preview, getattr(args, "output_format", "text"))
         return 0
     if not bool(getattr(args, "yes", False)):
-        raise GrafanaError("Dashboard history restore requires --yes unless --dry-run is set.")
+        raise GrafanaError(
+            "Dashboard history restore requires --yes unless --dry-run is set."
+        )
     document = restore_dashboard_history_version(
         client,
         args.dashboard_uid,
@@ -2814,7 +2852,9 @@ def _parse_plan_columns(args: argparse.Namespace) -> list[str]:
     return columns
 
 
-def _render_plan_table(document: dict[str, Any], columns: list[str], no_header: bool) -> list[str]:
+def _render_plan_table(
+    document: dict[str, Any], columns: list[str], no_header: bool
+) -> list[str]:
     rows = document.get("items") or []
     output: list[str] = []
     if not no_header:
@@ -2839,7 +2879,9 @@ class _DashboardPlanBlockedClient:
         raise GrafanaError(self.reason)
 
 
-def _annotate_dashboard_plan_document(document: dict[str, Any], target: dict[str, Any]) -> None:
+def _annotate_dashboard_plan_document(
+    document: dict[str, Any], target: dict[str, Any]
+) -> None:
     for item in document.get("items") or []:
         item["sourceOrgId"] = target["source_org_id"]
         item["sourceOrgName"] = target["source_org_name"]
@@ -2860,7 +2902,9 @@ def _build_dashboard_multi_org_plan_document(
     routed_args = argparse.Namespace(**vars(args))
     routed_args.import_dir = args.input_dir
     routed_args.dry_run = True
-    targets = _resolve_multi_org_targets(routed_args, _build_import_workflow_deps(), client)
+    targets = _resolve_multi_org_targets(
+        routed_args, _build_import_workflow_deps(), client
+    )
     documents: list[dict[str, Any]] = []
     org_entries: list[dict[str, Any]] = []
     all_items: list[dict[str, Any]] = []
@@ -2919,16 +2963,26 @@ def _build_dashboard_multi_org_plan_document(
 
 def dashboard_plan_command(args: argparse.Namespace) -> int:
     """Build a dashboard import review plan."""
-    if bool(getattr(args, "create_missing_orgs", False)) and not bool(getattr(args, "use_export_org", False)):
-        raise GrafanaError("Dashboard plan --create-missing-orgs requires --use-export-org.")
-    if getattr(args, "only_org_id", None) and not bool(getattr(args, "use_export_org", False)):
+    if bool(getattr(args, "create_missing_orgs", False)) and not bool(
+        getattr(args, "use_export_org", False)
+    ):
+        raise GrafanaError(
+            "Dashboard plan --create-missing-orgs requires --use-export-org."
+        )
+    if getattr(args, "only_org_id", None) and not bool(
+        getattr(args, "use_export_org", False)
+    ):
         raise GrafanaError("Dashboard plan --only-org-id requires --use-export-org.")
     columns = _parse_plan_columns(args)
     if bool(getattr(args, "list_columns", False)):
         print("\n".join(PLAN_COLUMNS))
         return 0
-    if (getattr(args, "output_columns", None) or bool(getattr(args, "no_header", False))) and getattr(args, "output_format", "text") != "table":
-        raise GrafanaError("--output-columns and --no-header are only supported with --output-format table for dashboard plan.")
+    if (
+        getattr(args, "output_columns", None) or bool(getattr(args, "no_header", False))
+    ) and getattr(args, "output_format", "text") != "table":
+        raise GrafanaError(
+            "--output-columns and --no-header are only supported with --output-format table for dashboard plan."
+        )
     client = build_client(args)
     if getattr(args, "org_id", None):
         client = client.with_org_id(args.org_id)
@@ -2947,7 +3001,9 @@ def dashboard_plan_command(args: argparse.Namespace) -> int:
         dump_document(
             document,
             "text",
-            text_lines=_render_plan_table(document, columns, bool(getattr(args, "no_header", False))),
+            text_lines=_render_plan_table(
+                document, columns, bool(getattr(args, "no_header", False))
+            ),
         )
     else:
         dump_document(document, output_format)
@@ -2976,7 +3032,9 @@ def history_diff_command(args: argparse.Namespace) -> int:
         lines = [
             "Dashboard history diff: %s status=%s base-version=%s new-version=%s"
             % (
-                document["base"].get("dashboardUid") or document["new"].get("dashboardUid") or "-",
+                document["base"].get("dashboardUid")
+                or document["new"].get("dashboardUid")
+                or "-",
                 document.get("status") or "-",
                 document["base"].get("version") or "-",
                 document["new"].get("version") or "-",
@@ -3269,15 +3327,27 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
             or getattr(args, "run_id", None)
         )
         if args.import_dir and artifact_selected:
-            parser.error("--input-dir cannot be combined with --local, --run, or --run-id.")
+            parser.error(
+                "--input-dir cannot be combined with --local, --run, or --run-id."
+            )
         if getattr(args, "run", None) and getattr(args, "run_id", None):
             parser.error("--run cannot be combined with --run-id.")
-        if getattr(args, "also_stdout", False) and not getattr(args, "output_file", None):
+        if getattr(args, "also_stdout", False) and not getattr(
+            args, "output_file", None
+        ):
             parser.error("--also-stdout requires --output-file.")
-        if args.import_dir and (getattr(args, "org_id", None) or getattr(args, "all_orgs", False)):
-            parser.error("--org-id and --all-orgs are only supported when summary reads live Grafana.")
-        if artifact_selected and (getattr(args, "org_id", None) or getattr(args, "all_orgs", False)):
-            parser.error("--org-id and --all-orgs are only supported when summary reads live Grafana.")
+        if args.import_dir and (
+            getattr(args, "org_id", None) or getattr(args, "all_orgs", False)
+        ):
+            parser.error(
+                "--org-id and --all-orgs are only supported when summary reads live Grafana."
+            )
+        if artifact_selected and (
+            getattr(args, "org_id", None) or getattr(args, "all_orgs", False)
+        ):
+            parser.error(
+                "--org-id and --all-orgs are only supported when summary reads live Grafana."
+            )
         if getattr(args, "org_id", None) and getattr(args, "all_orgs", False):
             parser.error("--org-id cannot be combined with --all-orgs.")
     if getattr(args, "command", None) == "analyze":
@@ -3287,15 +3357,21 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
             or getattr(args, "run_id", None)
         )
         if getattr(args, "input_dir", None) and artifact_selected:
-            parser.error("--input-dir cannot be combined with --local, --run, or --run-id.")
+            parser.error(
+                "--input-dir cannot be combined with --local, --run, or --run-id."
+            )
         if getattr(args, "run", None) and getattr(args, "run_id", None):
             parser.error("--run cannot be combined with --run-id.")
-        if getattr(args, "also_stdout", False) and not getattr(args, "output_file", None):
+        if getattr(args, "also_stdout", False) and not getattr(
+            args, "output_file", None
+        ):
             parser.error("--also-stdout requires --output-file.")
         if (getattr(args, "input_dir", None) or artifact_selected) and (
             getattr(args, "org_id", None) or getattr(args, "all_orgs", False)
         ):
-            parser.error("--org-id and --all-orgs are only supported when analyze reads live Grafana.")
+            parser.error(
+                "--org-id and --all-orgs are only supported when analyze reads live Grafana."
+            )
         if getattr(args, "org_id", None) and getattr(args, "all_orgs", False):
             parser.error("--org-id cannot be combined with --all-orgs.")
     _normalize_output_format_args(args, parser)
@@ -3532,13 +3608,9 @@ def _validate_import_routing_args(
     if only_org_ids and not use_export_org:
         parser.error("--only-org-id requires --use-export-org for import.")
     if bool(getattr(args, "create_missing_orgs", False)) and not use_export_org:
-        parser.error(
-            "--create-missing-orgs requires --use-export-org for import."
-        )
+        parser.error("--create-missing-orgs requires --use-export-org for import.")
     if use_export_org and getattr(args, "org_id", None):
-        parser.error(
-            "--use-export-org cannot be combined with --org-id for import."
-        )
+        parser.error("--use-export-org cannot be combined with --org-id for import.")
     if use_export_org and bool(getattr(args, "require_matching_export_org", False)):
         parser.error(
             "--use-export-org cannot be combined with --require-matching-export-org for import."
@@ -3773,7 +3845,9 @@ def raw_to_prompt_command(args: argparse.Namespace) -> int:
                 if bool(getattr(args, "verbose", False)):
                     print(f"Converted raw-to-prompt: {input_path} -> {output_path}")
                 elif bool(getattr(args, "progress", False)):
-                    print(f"Converted prompt {scanned}/{len(dashboard_files)}: {input_path}")
+                    print(
+                        f"Converted prompt {scanned}/{len(dashboard_files)}: {input_path}"
+                    )
                 output_items[-1]["uid"] = index_item["uid"]
                 output_items[-1]["title"] = index_item["title"]
             except Exception as exc:  # noqa: BLE001 - report per-file failures.
@@ -3832,9 +3906,11 @@ def raw_to_prompt_command(args: argparse.Namespace) -> int:
                         format_name="grafana-web-import-with-datasource-inputs",
                         org_name=org_name,
                         org_id=org_id,
-                        orgs=(source_metadata or {}).get("orgs")
-                        if isinstance(source_metadata, dict)
-                        else None,
+                        orgs=(
+                            (source_metadata or {}).get("orgs")
+                            if isinstance(source_metadata, dict)
+                            else None
+                        ),
                     ),
                     output_root / EXPORT_METADATA_FILENAME,
                 )
@@ -3857,9 +3933,11 @@ def raw_to_prompt_command(args: argparse.Namespace) -> int:
             summary_document,
             getattr(args, "output_format", "text"),
             text_lines=[
-                "raw-to-prompt completed"
-                if failed == 0
-                else "raw-to-prompt completed with failures",
+                (
+                    "raw-to-prompt completed"
+                    if failed == 0
+                    else "raw-to-prompt completed with failures"
+                ),
                 f"  scanned: {scanned}",
                 f"  converted: {converted}",
                 f"  failed: {failed}",
@@ -3964,16 +4042,20 @@ def raw_to_prompt_command(args: argparse.Namespace) -> int:
         summary_document,
         getattr(args, "output_format", "text"),
         text_lines=[
-            "raw-to-prompt completed"
-            if failed == 0
-            else "raw-to-prompt completed with failures",
+            (
+                "raw-to-prompt completed"
+                if failed == 0
+                else "raw-to-prompt completed with failures"
+            ),
             f"  scanned: {scanned}",
             f"  converted: {converted}",
             f"  failed: {failed}",
         ],
     )
     if failed:
-        raise GrafanaError(f"dashboard raw-to-prompt completed with {failed} failure(s).")
+        raise GrafanaError(
+            f"dashboard raw-to-prompt completed with {failed} failure(s)."
+        )
     return 0
 
 

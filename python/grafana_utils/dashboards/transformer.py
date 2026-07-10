@@ -73,7 +73,9 @@ def is_generated_input_placeholder(value: str) -> bool:
 def is_builtin_datasource_ref(value: Any) -> bool:
     """Is builtin datasource ref implementation."""
     if isinstance(value, str):
-        return value in BUILTIN_DATASOURCE_NAMES or is_generated_input_placeholder(value)
+        return value in BUILTIN_DATASOURCE_NAMES or is_generated_input_placeholder(
+            value
+        )
     if isinstance(value, dict):
         uid = value.get("uid")
         name = value.get("name")
@@ -494,7 +496,10 @@ def rewrite_panel_datasources_to_template_variable(
     for panel in panels:
         datasource = panel.get("datasource")
         if isinstance(datasource, str):
-            if datasource in placeholder_names or datasource in {"$datasource", "${datasource}"}:
+            if datasource in placeholder_names or datasource in {
+                "$datasource",
+                "${datasource}",
+            }:
                 panel["datasource"] = {"uid": "$datasource"}
         elif isinstance(datasource, dict):
             uid = datasource.get("uid")
@@ -701,7 +706,9 @@ def build_input_definitions(
             "pluginId": mapping.ds_type,
             "pluginName": mapping.plugin_name,
         }
-        for _, mapping in sorted(ref_mapping.items(), key=lambda item: item[1].input_name)
+        for _, mapping in sorted(
+            ref_mapping.items(), key=lambda item: item[1].input_name
+        )
     ]
 
 
@@ -726,7 +733,9 @@ def build_requires_block(
             "name": plugin_name,
             "version": plugin_version,
         }
-        for plugin_id, (plugin_name, plugin_version) in sorted(datasource_plugins.items())
+        for plugin_id, (plugin_name, plugin_version) in sorted(
+            datasource_plugins.items()
+        )
     )
     requires.extend(
         {

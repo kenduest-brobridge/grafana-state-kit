@@ -37,7 +37,9 @@ class OutputContractTests(unittest.TestCase):
         registry["contracts"][0]["minimumItems"] = {"operations": 1}
         registry["contracts"][0]["arrayItemTypes"] = {"operations": "object"}
         registry["contracts"][0]["enumValues"] = {"operations[*].kind": ["folder"]}
-        registry["contracts"][0]["pathTypes"] = {"operations[*].kind": "non-empty-string"}
+        registry["contracts"][0]["pathTypes"] = {
+            "operations[*].kind": "non-empty-string"
+        }
 
         self.assertEqual(output_contracts.validate_registry(registry), [])
 
@@ -49,7 +51,9 @@ class OutputContractTests(unittest.TestCase):
             ]
         }
 
-        values, errors = output_contracts.values_for_path(document, "operations[*].kind")
+        values, errors = output_contracts.values_for_path(
+            document, "operations[*].kind"
+        )
 
         self.assertEqual(errors, [])
         self.assertEqual(values, ["folder", "plugin"])
@@ -74,7 +78,9 @@ class OutputContractTests(unittest.TestCase):
             errors,
         )
 
-    def test_check_output_contracts_reports_enum_value_failures_for_wildcard_paths(self):
+    def test_check_output_contracts_reports_enum_value_failures_for_wildcard_paths(
+        self,
+    ):
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_root = Path(temp_dir)
             temp_registry_path = temp_root / "output-contracts.json"
@@ -83,7 +89,9 @@ class OutputContractTests(unittest.TestCase):
 
             registry = copy.deepcopy(self.registry)
             registry["contracts"][0]["fixture"] = "output-fixtures/sync-plan.json"
-            registry["contracts"][0]["pathTypes"] = {"operations[*].action": "non-empty-string"}
+            registry["contracts"][0]["pathTypes"] = {
+                "operations[*].action": "non-empty-string"
+            }
             temp_fixture_path = temp_fixture_dir / "sync-plan.json"
             fixture = json.loads(
                 (REGISTRY_PATH.parent / "output-fixtures" / "sync-plan.json").read_text(
@@ -91,7 +99,9 @@ class OutputContractTests(unittest.TestCase):
                 )
             )
             fixture["operations"][0]["kind"] = {"name": "folder"}
-            temp_fixture_path.write_text(json.dumps(fixture, indent=2) + "\n", encoding="utf-8")
+            temp_fixture_path.write_text(
+                json.dumps(fixture, indent=2) + "\n", encoding="utf-8"
+            )
             temp_registry_path.write_text(
                 json.dumps(registry, indent=2) + "\n",
                 encoding="utf-8",
@@ -101,8 +111,7 @@ class OutputContractTests(unittest.TestCase):
 
         self.assertTrue(
             any(
-                "operations[0].kind" in error
-                and "expected one of" in error
+                "operations[0].kind" in error and "expected one of" in error
                 for error in errors
             ),
             errors,
@@ -124,7 +133,9 @@ class OutputContractTests(unittest.TestCase):
                 )
             )
             fixture["operations"][0]["kind"] = "dashboard"
-            temp_fixture_path.write_text(json.dumps(fixture, indent=2) + "\n", encoding="utf-8")
+            temp_fixture_path.write_text(
+                json.dumps(fixture, indent=2) + "\n", encoding="utf-8"
+            )
             temp_registry_path.write_text(
                 json.dumps(registry, indent=2) + "\n",
                 encoding="utf-8",
@@ -133,7 +144,10 @@ class OutputContractTests(unittest.TestCase):
             errors = output_contracts.check_output_contracts(temp_registry_path)
 
         self.assertTrue(
-            any("operations[0].kind" in error and "expected one of" in error for error in errors),
+            any(
+                "operations[0].kind" in error and "expected one of" in error
+                for error in errors
+            ),
             errors,
         )
 
@@ -148,12 +162,14 @@ class OutputContractTests(unittest.TestCase):
             registry["contracts"][1]["fixture"] = "output-fixtures/sync-preflight.json"
             temp_fixture_path = temp_fixture_dir / "sync-preflight.json"
             fixture = json.loads(
-                (REGISTRY_PATH.parent / "output-fixtures" / "sync-preflight.json").read_text(
-                    encoding="utf-8"
-                )
+                (
+                    REGISTRY_PATH.parent / "output-fixtures" / "sync-preflight.json"
+                ).read_text(encoding="utf-8")
             )
             fixture["checks"] = fixture["checks"][:1]
-            temp_fixture_path.write_text(json.dumps(fixture, indent=2) + "\n", encoding="utf-8")
+            temp_fixture_path.write_text(
+                json.dumps(fixture, indent=2) + "\n", encoding="utf-8"
+            )
             temp_registry_path.write_text(
                 json.dumps(registry, indent=2) + "\n",
                 encoding="utf-8",
@@ -162,7 +178,10 @@ class OutputContractTests(unittest.TestCase):
             errors = output_contracts.check_output_contracts(temp_registry_path)
 
         self.assertTrue(
-            any("checks" in error and "expected at least 2 items" in error for error in errors),
+            any(
+                "checks" in error and "expected at least 2 items" in error
+                for error in errors
+            ),
             errors,
         )
 

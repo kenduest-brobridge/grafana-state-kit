@@ -98,7 +98,9 @@ def summary_number(document: Dict[str, Any], key: str) -> int:
     return int(val) if isinstance(val, (int, float)) else 0
 
 
-def detail_source_key(document_key: str, item: Dict[str, Any], index: int, fields: List[str]) -> str:
+def detail_source_key(
+    document_key: str, item: Dict[str, Any], index: int, fields: List[str]
+) -> str:
     for field in fields:
         val = item.get(field)
         if isinstance(val, str) and val.strip():
@@ -168,7 +170,9 @@ def build_dashboard_domain_status(
     orphaned = summary_number(summary_document, "orphanedDatasourceCount")
     mixed = summary_number(summary_document, "mixedDatasourceDashboardCount")
     risk_records = summary_number(summary_document, "riskRecordCount")
-    high_blast_radius_datasources = summary_number(summary_document, "highBlastRadiusDatasourceCount")
+    high_blast_radius_datasources = summary_number(
+        summary_document, "highBlastRadiusDatasourceCount"
+    )
     query_audits = summary_number(summary_document, "queryAuditCount")
     dashboard_audits = summary_number(summary_document, "dashboardAuditCount")
 
@@ -183,38 +187,78 @@ def build_dashboard_domain_status(
     signal_keys = set(DASHBOARD_SIGNAL_KEYS_STAGED)
 
     push_detail_findings(
-        blockers, signal_keys, DASHBOARD_BLOCKER_ORPHANED_DATASOURCES,
-        DASHBOARD_ORPHANED_DATASOURCES_KEY, orphaned_items, ["uid", "name"],
-        orphaned, "summary.orphanedDatasourceCount"
+        blockers,
+        signal_keys,
+        DASHBOARD_BLOCKER_ORPHANED_DATASOURCES,
+        DASHBOARD_ORPHANED_DATASOURCES_KEY,
+        orphaned_items,
+        ["uid", "name"],
+        orphaned,
+        "summary.orphanedDatasourceCount",
     )
     push_detail_findings(
-        blockers, signal_keys, DASHBOARD_BLOCKER_MIXED_DASHBOARDS,
-        DASHBOARD_MIXED_DASHBOARDS_KEY, mixed_items, ["uid", "title"],
-        mixed, "summary.mixedDatasourceDashboardCount"
+        blockers,
+        signal_keys,
+        DASHBOARD_BLOCKER_MIXED_DASHBOARDS,
+        DASHBOARD_MIXED_DASHBOARDS_KEY,
+        mixed_items,
+        ["uid", "title"],
+        mixed,
+        "summary.mixedDatasourceDashboardCount",
     )
     push_detail_findings_with_count(
-        warnings, signal_keys, DASHBOARD_WARNING_RISK_RECORDS,
-        DASHBOARD_DASHBOARD_GOVERNANCE_KEY, dashboard_gov_items, ["dashboardUid", "dashboardTitle"],
-        risk_records, "summary.riskRecordCount", "riskCount"
+        warnings,
+        signal_keys,
+        DASHBOARD_WARNING_RISK_RECORDS,
+        DASHBOARD_DASHBOARD_GOVERNANCE_KEY,
+        dashboard_gov_items,
+        ["dashboardUid", "dashboardTitle"],
+        risk_records,
+        "summary.riskRecordCount",
+        "riskCount",
     )
 
     if high_blast_radius_datasources > 0:
-        warnings.append(StatusRecordCount(DASHBOARD_WARNING_HIGH_BLAST_RADIUS_DATASOURCES, high_blast_radius_datasources, "summary.highBlastRadiusDatasourceCount"))
+        warnings.append(
+            StatusRecordCount(
+                DASHBOARD_WARNING_HIGH_BLAST_RADIUS_DATASOURCES,
+                high_blast_radius_datasources,
+                "summary.highBlastRadiusDatasourceCount",
+            )
+        )
         signal_keys.add("summary.highBlastRadiusDatasourceCount")
 
     if query_audits > 0:
-        warnings.append(StatusRecordCount(DASHBOARD_WARNING_QUERY_AUDITS, query_audits, "summary.queryAuditCount"))
+        warnings.append(
+            StatusRecordCount(
+                DASHBOARD_WARNING_QUERY_AUDITS, query_audits, "summary.queryAuditCount"
+            )
+        )
         signal_keys.add("summary.queryAuditCount")
 
     if dashboard_audits > 0:
-        warnings.append(StatusRecordCount(DASHBOARD_WARNING_DASHBOARD_AUDITS, dashboard_audits, "summary.dashboardAuditCount"))
+        warnings.append(
+            StatusRecordCount(
+                DASHBOARD_WARNING_DASHBOARD_AUDITS,
+                dashboard_audits,
+                "summary.dashboardAuditCount",
+            )
+        )
         signal_keys.add("summary.dashboardAuditCount")
 
     if dependency_items:
-        import_ready_count = sum(1 for d in dependency_items if d.get("file", "").strip())
+        import_ready_count = sum(
+            1 for d in dependency_items if d.get("file", "").strip()
+        )
         gap = max(0, dashboards - import_ready_count)
         if gap > 0:
-            warnings.append(StatusRecordCount(DASHBOARD_WARNING_IMPORT_READINESS_GAPS, gap, DASHBOARD_DASHBOARD_DEPENDENCIES_KEY))
+            warnings.append(
+                StatusRecordCount(
+                    DASHBOARD_WARNING_IMPORT_READINESS_GAPS,
+                    gap,
+                    DASHBOARD_DASHBOARD_DEPENDENCIES_KEY,
+                )
+            )
 
     if blockers:
         status = PROJECT_STATUS_BLOCKED
@@ -255,18 +299,27 @@ def build_live_dashboard_domain_status(
         val = d.get(k, "")
         return str(val) if val is not None else ""
 
-    dashboard_uids = {get_str(s, "uid") for s in dashboard_summaries if get_str(s, "uid")}
+    dashboard_uids = {
+        get_str(s, "uid") for s in dashboard_summaries if get_str(s, "uid")
+    }
     dashboard_count = len(dashboard_uids)
     root_count = sum(1 for s in dashboard_summaries if not get_str(s, "folderUid"))
-    folder_uids = {get_str(s, "folderUid") for s in dashboard_summaries if get_str(s, "folderUid")}
+    folder_uids = {
+        get_str(s, "folderUid") for s in dashboard_summaries if get_str(s, "folderUid")
+    }
     folder_count = len(folder_uids)
     title_gap = sum(1 for s in dashboard_summaries if not get_str(s, "title").strip())
-    folder_title_gap = sum(1 for s in dashboard_summaries if get_str(s, "folderUid").strip() and not get_str(s, "folderTitle").strip())
-    
+    folder_title_gap = sum(
+        1
+        for s in dashboard_summaries
+        if get_str(s, "folderUid").strip() and not get_str(s, "folderTitle").strip()
+    )
+
     import_ready_uids = set()
     for s in dashboard_summaries:
         uid = get_str(s, "uid")
-        if not uid: continue
+        if not uid:
+            continue
         title = get_str(s, "title")
         folder_uid = get_str(s, "folderUid")
         folder_title = get_str(s, "folderTitle")
@@ -282,33 +335,75 @@ def build_live_dashboard_domain_status(
     warnings = []
 
     if dashboard_count > 0 and datasource_count == 0:
-        warnings.append(StatusRecordCount(DASHBOARD_WARNING_KIND_EMPTY_DATASOURCE_INVENTORY, 1, DASHBOARD_DATASOURCE_EMPTY_SIGNAL_KEY))
+        warnings.append(
+            StatusRecordCount(
+                DASHBOARD_WARNING_KIND_EMPTY_DATASOURCE_INVENTORY,
+                1,
+                DASHBOARD_DATASOURCE_EMPTY_SIGNAL_KEY,
+            )
+        )
         signal_keys.add(DASHBOARD_DATASOURCE_EMPTY_SIGNAL_KEY)
     else:
         drift = max(0, raw_datasource_count - datasource_count)
         if drift > 0:
-            warnings.append(StatusRecordCount(DASHBOARD_WARNING_KIND_DATASOURCE_DRIFT, drift, DASHBOARD_DATASOURCE_DRIFT_SIGNAL_KEY))
+            warnings.append(
+                StatusRecordCount(
+                    DASHBOARD_WARNING_KIND_DATASOURCE_DRIFT,
+                    drift,
+                    DASHBOARD_DATASOURCE_DRIFT_SIGNAL_KEY,
+                )
+            )
             signal_keys.add(DASHBOARD_DATASOURCE_DRIFT_SIGNAL_KEY)
-        
+
         if folder_count > 1:
-            warnings.append(StatusRecordCount(DASHBOARD_WARNING_KIND_FOLDER_SPREAD, folder_count - 1, DASHBOARD_FOLDER_SPREAD_SIGNAL_KEY))
+            warnings.append(
+                StatusRecordCount(
+                    DASHBOARD_WARNING_KIND_FOLDER_SPREAD,
+                    folder_count - 1,
+                    DASHBOARD_FOLDER_SPREAD_SIGNAL_KEY,
+                )
+            )
             signal_keys.add(DASHBOARD_FOLDER_SPREAD_SIGNAL_KEY)
-        
+
         if folder_count > 0 and root_count > 0:
-            warnings.append(StatusRecordCount(DASHBOARD_WARNING_KIND_ROOT_SCOPE, root_count, DASHBOARD_ROOT_SCOPE_SIGNAL_KEY))
+            warnings.append(
+                StatusRecordCount(
+                    DASHBOARD_WARNING_KIND_ROOT_SCOPE,
+                    root_count,
+                    DASHBOARD_ROOT_SCOPE_SIGNAL_KEY,
+                )
+            )
             signal_keys.add(DASHBOARD_ROOT_SCOPE_SIGNAL_KEY)
-            
+
         if title_gap > 0:
-            warnings.append(StatusRecordCount(DASHBOARD_WARNING_KIND_TITLE_GAP, title_gap, DASHBOARD_TITLE_GAP_SIGNAL_KEY))
+            warnings.append(
+                StatusRecordCount(
+                    DASHBOARD_WARNING_KIND_TITLE_GAP,
+                    title_gap,
+                    DASHBOARD_TITLE_GAP_SIGNAL_KEY,
+                )
+            )
             signal_keys.add(DASHBOARD_TITLE_GAP_SIGNAL_KEY)
-            
+
         if folder_title_gap > 0:
-            warnings.append(StatusRecordCount(DASHBOARD_WARNING_KIND_FOLDER_TITLE_GAP, folder_title_gap, DASHBOARD_FOLDER_TITLE_GAP_SIGNAL_KEY))
+            warnings.append(
+                StatusRecordCount(
+                    DASHBOARD_WARNING_KIND_FOLDER_TITLE_GAP,
+                    folder_title_gap,
+                    DASHBOARD_FOLDER_TITLE_GAP_SIGNAL_KEY,
+                )
+            )
             signal_keys.add(DASHBOARD_FOLDER_TITLE_GAP_SIGNAL_KEY)
-            
+
         ready_gap = max(0, dashboard_count - import_ready_count)
         if ready_gap > 0:
-            warnings.append(StatusRecordCount("live-dashboard-import-ready-gap", ready_gap, DASHBOARD_IMPORT_READY_SIGNAL_KEY))
+            warnings.append(
+                StatusRecordCount(
+                    "live-dashboard-import-ready-gap",
+                    ready_gap,
+                    DASHBOARD_IMPORT_READY_SIGNAL_KEY,
+                )
+            )
             signal_keys.add(DASHBOARD_IMPORT_READY_SIGNAL_KEY)
 
     if dashboard_count == 0:

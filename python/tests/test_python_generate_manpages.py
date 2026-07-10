@@ -40,12 +40,19 @@ class GenerateManpagesTests(unittest.TestCase):
         screenshot_manpage = generated["grafana-util-dashboard-screenshot.1"]
 
         self.assertIn(".SH SYNOPSIS", screenshot_manpage)
-        self.assertIn(".B grafana-util dashboard screenshot [\\fIOPTIONS\\fR]", screenshot_manpage)
+        self.assertIn(
+            ".B grafana-util dashboard screenshot [\\fIOPTIONS\\fR]", screenshot_manpage
+        )
         self.assertIn(".SH DESCRIPTION", screenshot_manpage)
-        self.assertIn("Open one dashboard in a headless browser and capture image or PDF output.", screenshot_manpage)
+        self.assertIn(
+            "Open one dashboard in a headless browser and capture image or PDF output.",
+            screenshot_manpage,
+        )
         self.assertIn(".SH EXAMPLES", screenshot_manpage)
 
-    def test_subcommand_manpage_projects_before_after_success_and_failure_sections(self):
+    def test_subcommand_manpage_projects_before_after_success_and_failure_sections(
+        self,
+    ):
         module = load_module()
 
         generated = module.generate_manpages()
@@ -54,7 +61,9 @@ class GenerateManpagesTests(unittest.TestCase):
         self.assertIn(".SH BEFORE / AFTER", impact_manpage)
         self.assertIn("one impact run tells you which dashboards", impact_manpage)
         self.assertIn(".SH SUCCESS CRITERIA", impact_manpage)
-        self.assertIn("you can name the dashboards affected by one datasource", impact_manpage)
+        self.assertIn(
+            "you can name the dashboards affected by one datasource", impact_manpage
+        )
         self.assertIn(".SH FAILURE CHECKS", impact_manpage)
         self.assertIn("if the result is empty", impact_manpage)
 
@@ -80,9 +89,15 @@ class GenerateManpagesTests(unittest.TestCase):
         dashboard_manpage = generated["grafana-util-dashboard.1"]
 
         self.assertIn(".SH COMMAND GROUPS", dashboard_manpage)
-        self.assertIn("Browse & Inspect: find, read, or inspect dashboards", dashboard_manpage)
-        self.assertIn("Edit & Publish: create or change one local draft", dashboard_manpage)
-        self.assertIn("Choose this page when the task is dashboard work", dashboard_manpage)
+        self.assertIn(
+            "Browse & Inspect: find, read, or inspect dashboards", dashboard_manpage
+        )
+        self.assertIn(
+            "Edit & Publish: create or change one local draft", dashboard_manpage
+        )
+        self.assertIn(
+            "Choose this page when the task is dashboard work", dashboard_manpage
+        )
         self.assertIn(".SH BEFORE / AFTER", dashboard_manpage)
         self.assertIn(".SH SUCCESS CRITERIA", dashboard_manpage)
         self.assertIn(".SH FAILURE CHECKS", dashboard_manpage)
@@ -97,9 +112,18 @@ class GenerateManpagesTests(unittest.TestCase):
             ".B access\nAccess workflows: manage users, orgs, teams, service accounts, and service\\-account tokens. See grafana\\-util\\-access(1).",
             top_level_manpage,
         )
-        self.assertIn("Each entry below is a command family, not the full workflow reference.", top_level_manpage)
-        self.assertNotIn("Run the access\\-management command surface for users, orgs, teams, and service accounts. Use when:", top_level_manpage)
-        self.assertNotIn("Export local alert bundles from Grafana.; Import or diff alert bundles", top_level_manpage)
+        self.assertIn(
+            "Each entry below is a command family, not the full workflow reference.",
+            top_level_manpage,
+        )
+        self.assertNotIn(
+            "Run the access\\-management command surface for users, orgs, teams, and service accounts. Use when:",
+            top_level_manpage,
+        )
+        self.assertNotIn(
+            "Export local alert bundles from Grafana.; Import or diff alert bundles",
+            top_level_manpage,
+        )
 
     def test_top_level_manpage_lists_subcommand_manpages(self):
         module = load_module()
@@ -109,11 +133,22 @@ class GenerateManpagesTests(unittest.TestCase):
 
         self.assertIn(".SH SUBCOMMAND MANPAGES", top_level_manpage)
         self.assertIn(".SS dashboard", top_level_manpage)
-        self.assertIn(".B grafana\\-util\\-dashboard\\-screenshot(1)", top_level_manpage)
-        self.assertIn("Open one dashboard in a headless browser and capture image or PDF output.", top_level_manpage)
-        self.assertNotIn("especially for docs, incident notes, or visual debugging", top_level_manpage)
+        self.assertIn(
+            ".B grafana\\-util\\-dashboard\\-screenshot(1)", top_level_manpage
+        )
+        self.assertIn(
+            "Open one dashboard in a headless browser and capture image or PDF output.",
+            top_level_manpage,
+        )
+        self.assertNotIn(
+            "especially for docs, incident notes, or visual debugging",
+            top_level_manpage,
+        )
         self.assertIn(".SS access", top_level_manpage)
-        self.assertIn(".B grafana\\-util\\-access\\-service\\-account\\-token(1)", top_level_manpage)
+        self.assertIn(
+            ".B grafana\\-util\\-access\\-service\\-account\\-token(1)",
+            top_level_manpage,
+        )
 
     def test_top_level_manpage_points_sync_workflows_to_workspace_family(self):
         module = load_module()
@@ -122,16 +157,23 @@ class GenerateManpagesTests(unittest.TestCase):
         top_level_manpage = generated["grafana-util.1"]
 
         self.assertIn(".B workspace", top_level_manpage)
-        self.assertIn("Workspace review and apply workflows for local Grafana artifacts.", top_level_manpage)
+        self.assertIn(
+            "Workspace review and apply workflows for local Grafana artifacts.",
+            top_level_manpage,
+        )
         self.assertIn(
             "public CLI surface and generated manpages live under grafana-util workspace",
             top_level_manpage,
         )
         self.assertIn("grafana-util-workspace*(1) pages.", top_level_manpage)
-        self.assertNotIn("does not yet carry a generated sync namespace manpage", top_level_manpage)
+        self.assertNotIn(
+            "does not yet carry a generated sync namespace manpage", top_level_manpage
+        )
         self.assertNotIn("grafana-util observe --profile prod", top_level_manpage)
         self.assertNotIn("grafana-util overview live --url", top_level_manpage)
-        self.assertIn("grafana-util status live --profile prod --output yaml", top_level_manpage)
+        self.assertIn(
+            "grafana-util status live --profile prod --output yaml", top_level_manpage
+        )
         self.assertIn("grafana-util status overview live --url", top_level_manpage)
 
     def test_removed_root_migration_pages_do_not_generate_outputs(self):

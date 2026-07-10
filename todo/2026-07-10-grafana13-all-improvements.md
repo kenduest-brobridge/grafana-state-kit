@@ -113,12 +113,29 @@ the existing block on direct mutation of Git Sync-managed resources.
 - Format mechanically: `python/grafana_utils/**/*.py`
 - Format mechanically: `python/tests/**/*.py`
 
-- [ ] Record the pre-existing Black 25.11.0 baseline and confirm Task 1 files
+- [x] Record the pre-existing Black 25.11.0 baseline and confirm Task 1 files
       pass in isolation.
-- [ ] Run the locked Black formatter over `grafana_utils` and `tests` as a
+- [x] Run the locked Black formatter over `grafana_utils` and `tests` as a
       separate mechanical change with no behavior edits.
-- [ ] Rerun `make poetry-test` and `make poetry-quality-python`.
+- [x] Rerun `make poetry-test` and the project Black check. The full quality
+      target now reaches Ruff/MyPy and exposes a separate pre-existing lint and
+      type backlog tracked in Task 1C.
 - [ ] Commit the formatter-only change separately from functional work.
+
+### Task 1C: Restore the Python Ruff and MyPy quality gates
+
+**Files**
+
+- Modify/test: the 17 Python modules reported by MyPy
+- Modify/test: the Python modules/tests reported by Ruff
+
+- [ ] Capture and group the current 55 Ruff and 56 MyPy errors by root cause.
+- [ ] Apply Ruff safe fixes, review every changed import, and rerun Ruff.
+- [ ] Fix remaining lint findings without behavior changes.
+- [ ] Fix MyPy findings by correcting real API/name defects first, then adding
+      precise annotations and narrow casts where runtime validation exists.
+- [ ] Run `make poetry-test` and `make poetry-quality-python` green.
+- [ ] Commit lint/type repairs separately from formatter and Grafana features.
 
 ### Task 2: Stop invalid datasource numeric-ID fallback
 
@@ -330,3 +347,7 @@ impl AppPlatformResourceClient<'_> {
   baseline lock, while the two Task 1 files pass Black and Ruff in isolation;
   a formatter-only Task 1B was added instead of mixing 96 mechanical rewrites
   into the YAML fix.
+- 2026-07-10: Formatting with the quality script's exact Python 3.9 target made
+  all 173 files Black-clean and the 1,227-test suite remained green. The next
+  quality stages exposed an independent baseline of 55 Ruff and 56 MyPy errors;
+  these are isolated as Task 1C instead of being hidden by the formatter fix.

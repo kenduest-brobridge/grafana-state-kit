@@ -25,7 +25,9 @@ class BuildPagesSiteTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.portal_contract = json.loads(
-            (REPO_ROOT / "scripts" / "contracts" / "versioned-docs-portal.json").read_text(encoding="utf-8")
+            (
+                REPO_ROOT / "scripts" / "contracts" / "versioned-docs-portal.json"
+            ).read_text(encoding="utf-8")
         )
 
     def test_parse_semver_tag_accepts_release_tags_only(self):
@@ -69,7 +71,9 @@ class BuildPagesSiteTests(unittest.TestCase):
         self.assertEqual(links[2].target_rel, "dev/index.html")
         self.assertEqual(links[3].target_rel, "v0.7/index.html")
 
-    def test_render_version_portal_uses_landing_locale_switch_and_dual_language_copy(self):
+    def test_render_version_portal_uses_landing_locale_switch_and_dual_language_copy(
+        self,
+    ):
         module = load_module()
         en = self.portal_contract["locales"]["en"]
         zh = self.portal_contract["locales"]["zh-TW"]
@@ -87,7 +91,9 @@ class BuildPagesSiteTests(unittest.TestCase):
         self.assertIn(zh["hero_title"], rendered)
         self.assertIn(en["jump_prompt"], rendered)
         self.assertIn(zh["jump_prompt"], rendered)
-        self.assertIn(en["lane_labels"]["latest_release"].format(latest_lane="v0.7"), rendered)
+        self.assertIn(
+            en["lane_labels"]["latest_release"].format(latest_lane="v0.7"), rendered
+        )
         self.assertIn(zh["lane_labels"]["dev_preview"], rendered)
         self.assertNotIn('value="v0.7/index.html"', rendered)
         self.assertIn('value="v0.6/index.html"', rendered)
@@ -123,12 +129,12 @@ class BuildPagesSiteTests(unittest.TestCase):
         self.assertIn('href="dev/handbook/en/index.html"', rendered)
         self.assertIn('href="dev/commands/en/index.html"', rendered)
         self.assertIn('href="dev/man/index.html"', rendered)
-        self.assertIn('latest/handbook/zh-TW/index.html', rendered)
-        self.assertIn('latest/commands/zh-TW/index.html', rendered)
-        self.assertIn('dev/handbook/zh-TW/index.html', rendered)
+        self.assertIn("latest/handbook/zh-TW/index.html", rendered)
+        self.assertIn("latest/commands/zh-TW/index.html", rendered)
+        self.assertIn("dev/handbook/zh-TW/index.html", rendered)
         self.assertNotIn('href="#outputs"', rendered)
-        self.assertNotIn('Open a docs lane first', rendered)
-        self.assertNotIn('先開啟任一版本線', rendered)
+        self.assertNotIn("Open a docs lane first", rendered)
+        self.assertNotIn("先開啟任一版本線", rendered)
 
     def test_add_legacy_root_manpage_redirects_keeps_stale_lane_link_working(self):
         module = load_module()
@@ -141,9 +147,17 @@ class BuildPagesSiteTests(unittest.TestCase):
 
         self.assertIn("latest/html/man/grafana-util.html", outputs)
         self.assertNotIn("latest/html/man/grafana-util-dashboard.html", outputs)
-        self.assertIn('url=../../man/grafana-util.html', outputs["latest/html/man/grafana-util.html"])
-        self.assertIn('href="../../man/grafana-util.html"', outputs["latest/html/man/grafana-util.html"])
-        self.assertEqual("<html>manpage</html>", outputs["latest/man/grafana-util.html"])
+        self.assertIn(
+            "url=../../man/grafana-util.html",
+            outputs["latest/html/man/grafana-util.html"],
+        )
+        self.assertIn(
+            'href="../../man/grafana-util.html"',
+            outputs["latest/html/man/grafana-util.html"],
+        )
+        self.assertEqual(
+            "<html>manpage</html>", outputs["latest/man/grafana-util.html"]
+        )
 
 
 if __name__ == "__main__":

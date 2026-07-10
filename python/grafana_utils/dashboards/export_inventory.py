@@ -50,7 +50,9 @@ def discover_dashboard_files(
     return files
 
 
-def discover_org_raw_export_dirs(import_dir: Path, raw_export_subdir: str) -> list[Path]:
+def discover_org_raw_export_dirs(
+    import_dir: Path, raw_export_subdir: str
+) -> list[Path]:
     """Find per-org raw export directories under one combined multi-org export root."""
     # Call graph: see callers/callees.
     #   Upstream callers: 無
@@ -103,7 +105,9 @@ def load_folder_inventory(
     records = []
     for item in raw:
         if not isinstance(item, dict):
-            raise GrafanaError("Folder inventory entry must be a JSON object: %s" % path)
+            raise GrafanaError(
+                "Folder inventory entry must be a JSON object: %s" % path
+            )
         records.append(
             {
                 "uid": str(item.get("uid") or ""),
@@ -158,23 +162,43 @@ def load_datasource_inventory(
                 "url": str(item.get("url") or ""),
                 "database": str(
                     item.get("database")
-                    or ((item.get("jsonData") or {}).get("dbName") if isinstance(item.get("jsonData"), dict) else "")
+                    or (
+                        (item.get("jsonData") or {}).get("dbName")
+                        if isinstance(item.get("jsonData"), dict)
+                        else ""
+                    )
                     or ""
                 ),
                 "defaultBucket": str(
                     item.get("defaultBucket")
-                    or ((item.get("jsonData") or {}).get("defaultBucket") if isinstance(item.get("jsonData"), dict) else "")
+                    or (
+                        (item.get("jsonData") or {}).get("defaultBucket")
+                        if isinstance(item.get("jsonData"), dict)
+                        else ""
+                    )
                     or ""
                 ),
                 "organization": str(
                     item.get("organization")
-                    or ((item.get("jsonData") or {}).get("organization") if isinstance(item.get("jsonData"), dict) else "")
+                    or (
+                        (item.get("jsonData") or {}).get("organization")
+                        if isinstance(item.get("jsonData"), dict)
+                        else ""
+                    )
                     or ""
                 ),
                 "indexPattern": str(
                     item.get("indexPattern")
-                    or ((item.get("jsonData") or {}).get("indexPattern") if isinstance(item.get("jsonData"), dict) else "")
-                    or ((item.get("jsonData") or {}).get("index") if isinstance(item.get("jsonData"), dict) else "")
+                    or (
+                        (item.get("jsonData") or {}).get("indexPattern")
+                        if isinstance(item.get("jsonData"), dict)
+                        else ""
+                    )
+                    or (
+                        (item.get("jsonData") or {}).get("index")
+                        if isinstance(item.get("jsonData"), dict)
+                        else ""
+                    )
                     or ""
                 ),
                 "isDefault": str(item.get("isDefault") or "false"),

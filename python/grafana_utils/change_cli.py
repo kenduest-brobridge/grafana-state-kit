@@ -82,7 +82,9 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
         raise SystemExit(0)
     if argv[0] not in CHANGE_COMMAND_HELP:
         parser.parse_args(argv)
-        raise AssertionError("argparse should have exited for unsupported change command")
+        raise AssertionError(
+            "argparse should have exited for unsupported change command"
+        )
     if len(argv) == 1 or argv[1] in ("-h", "--help"):
         if argv[0] == "advanced":
             sync_cli.build_parser(prog="grafana-util change advanced").print_help()
@@ -95,12 +97,17 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
         return argparse.Namespace(
             entrypoint="change",
             command=argv[0],
-            workspace=argv[argv.index("--workspace") + 1]
-            if argv.index("--workspace") + 1 < len(argv)
-            else None,
-            output_format=argv[argv.index("--output-format") + 1]
-            if "--output-format" in argv and argv.index("--output-format") + 1 < len(argv)
-            else "text",
+            workspace=(
+                argv[argv.index("--workspace") + 1]
+                if argv.index("--workspace") + 1 < len(argv)
+                else None
+            ),
+            output_format=(
+                argv[argv.index("--output-format") + 1]
+                if "--output-format" in argv
+                and argv.index("--output-format") + 1 < len(argv)
+                else "text"
+            ),
             forwarded_argv=[],
         )
     translated = CHANGE_TO_SYNC_COMMAND[argv[0]]

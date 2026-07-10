@@ -182,9 +182,13 @@ class GrafanaClient:
 
     def fetch_folder_permissions(self, uid: str) -> list[dict[str, Any]]:
         """Fetch folder ACL rows for one folder UID."""
-        data = self.request_json("/api/folders/%s/permissions" % parse.quote(uid, safe=""))
+        data = self.request_json(
+            "/api/folders/%s/permissions" % parse.quote(uid, safe="")
+        )
         if not isinstance(data, list):
-            raise GrafanaError("Unexpected folder permissions payload for UID %s." % uid)
+            raise GrafanaError(
+                "Unexpected folder permissions payload for UID %s." % uid
+            )
         return [item for item in data if isinstance(item, dict)]
 
     def import_dashboard(self, payload: dict[str, Any]) -> dict[str, Any]:

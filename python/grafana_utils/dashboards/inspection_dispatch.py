@@ -63,13 +63,9 @@ def resolve_inspect_dispatch_args(args, deps, grafana_error):
     if report_format and (table_output or json_output):
         raise grafana_error("--report cannot be combined with --table or --json.")
     if table_output and json_output:
-        raise grafana_error(
-            "--table and --json are mutually exclusive for summary."
-        )
+        raise grafana_error("--table and --json are mutually exclusive for summary.")
 
-    report_columns = deps["parse_report_columns"](
-        getattr(args, "report_columns", None)
-    )
+    report_columns = deps["parse_report_columns"](getattr(args, "report_columns", None))
     report_filter_datasource = getattr(args, "report_filter_datasource", None)
     report_filter_panel_id = getattr(args, "report_filter_panel_id", None)
     no_header = bool(getattr(args, "no_header", False))
@@ -99,10 +95,11 @@ def resolve_inspect_dispatch_args(args, deps, grafana_error):
             "--report-filter-panel-id is only supported together with table, csv, tree-table, dependency, dependency-json, governance, governance-json, or queries-json output."
         )
     if report_columns is not None and report_format in GOVERNANCE_REPORT_FORMATS:
-        raise grafana_error(
-            "--report-columns is not supported with governance output."
-        )
-    if report_columns is not None and report_format not in REPORT_FORMATS_WITH_COLUMN_SUPPORT:
+        raise grafana_error("--report-columns is not supported with governance output.")
+    if (
+        report_columns is not None
+        and report_format not in REPORT_FORMATS_WITH_COLUMN_SUPPORT
+    ):
         raise grafana_error(
             "--report-columns is only supported with table, csv, or tree-table output."
         )
@@ -224,10 +221,7 @@ def _render_report_output(import_dir, deps, settings):
         payload = {"kind": "grafana-utils-dashboard-dependency-contract"}
         payload.update(dependency_report)
         payload.update(dependency_report.get("summary", {}))
-        return (
-            json.dumps(payload, indent=2, sort_keys=False, ensure_ascii=False)
-            + "\n"
-        )
+        return json.dumps(payload, indent=2, sort_keys=False, ensure_ascii=False) + "\n"
 
     report_document = build_filtered_report_document(import_dir, deps, settings)
     governance_document = deps["build_export_inspection_governance_document"](
@@ -244,12 +238,15 @@ def _render_report_output(import_dir, deps, settings):
             )
             + "\n"
         )
-    return "\n".join(
-        deps["render_export_inspection_governance_tables"](
-            governance_document,
-            import_dir,
+    return (
+        "\n".join(
+            deps["render_export_inspection_governance_tables"](
+                governance_document,
+                import_dir,
+            )
         )
-    ) + "\n"
+        + "\n"
+    )
 
 
 def _build_summary_output_rows(document: dict[str, Any]) -> list[list[str]]:
@@ -257,17 +254,63 @@ def _build_summary_output_rows(document: dict[str, Any]) -> list[list[str]]:
 
     summary = document.get("summary") or {}
     summary_rows = [
-        ["export_org", str(summary.get("exportOrg") or summary.get("export_org") or "")],
-        ["export_org_id", str(summary.get("exportOrgId") or summary.get("export_org_id") or "")],
-        ["dashboard_count", str(int(summary.get("dashboardCount") or summary.get("dashboard_count") or 0))],
-        ["folder_count", str(int(summary.get("folderCount") or summary.get("folder_count") or 0))],
-        ["panel_count", str(int(summary.get("panelCount") or summary.get("panel_count") or 0))],
-        ["query_count", str(int(summary.get("queryCount") or summary.get("query_count") or 0))],
-        ["datasource_inventory_count", str(int(summary.get("datasourceInventoryCount") or summary.get("datasource_inventory_count") or 0))],
-        ["orphaned_datasource_count", str(int(summary.get("orphanedDatasourceCount") or summary.get("orphaned_datasource_count") or 0))],
+        [
+            "export_org",
+            str(summary.get("exportOrg") or summary.get("export_org") or ""),
+        ],
+        [
+            "export_org_id",
+            str(summary.get("exportOrgId") or summary.get("export_org_id") or ""),
+        ],
+        [
+            "dashboard_count",
+            str(
+                int(
+                    summary.get("dashboardCount") or summary.get("dashboard_count") or 0
+                )
+            ),
+        ],
+        [
+            "folder_count",
+            str(int(summary.get("folderCount") or summary.get("folder_count") or 0)),
+        ],
+        [
+            "panel_count",
+            str(int(summary.get("panelCount") or summary.get("panel_count") or 0)),
+        ],
+        [
+            "query_count",
+            str(int(summary.get("queryCount") or summary.get("query_count") or 0)),
+        ],
+        [
+            "datasource_inventory_count",
+            str(
+                int(
+                    summary.get("datasourceInventoryCount")
+                    or summary.get("datasource_inventory_count")
+                    or 0
+                )
+            ),
+        ],
+        [
+            "orphaned_datasource_count",
+            str(
+                int(
+                    summary.get("orphanedDatasourceCount")
+                    or summary.get("orphaned_datasource_count")
+                    or 0
+                )
+            ),
+        ],
         [
             "mixed_datasource_dashboard_count",
-            str(int(summary.get("mixedDatasourceDashboardCount") or summary.get("mixed_datasource_dashboard_count") or 0)),
+            str(
+                int(
+                    summary.get("mixedDatasourceDashboardCount")
+                    or summary.get("mixed_datasource_dashboard_count")
+                    or 0
+                )
+            ),
         ],
     ]
     return summary_rows
@@ -316,8 +359,7 @@ def _render_summary_output(import_dir, deps, settings):
     document = deps["build_export_inspection_document"](import_dir)
     if settings["json_output"]:
         return (
-            json.dumps(document, indent=2, sort_keys=False, ensure_ascii=False)
-            + "\n"
+            json.dumps(document, indent=2, sort_keys=False, ensure_ascii=False) + "\n"
         )
     if settings["output_format"] == "csv":
         output = io.StringIO()
@@ -328,14 +370,19 @@ def _render_summary_output(import_dir, deps, settings):
     if settings["output_format"] == "yaml":
         return _render_simple_yaml(document) + "\n"
     if settings["table_output"]:
-        return "\n".join(
-            deps["render_export_inspection_tables"](
-                document,
-                import_dir,
-                include_header=not settings["no_header"],
+        return (
+            "\n".join(
+                deps["render_export_inspection_tables"](
+                    document,
+                    import_dir,
+                    include_header=not settings["no_header"],
+                )
             )
-        ) + "\n"
-    return "\n".join(deps["render_export_inspection_summary"](document, import_dir)) + "\n"
+            + "\n"
+        )
+    return (
+        "\n".join(deps["render_export_inspection_summary"](document, import_dir)) + "\n"
+    )
 
 
 def run_inspection_dispatch(import_dir, deps, settings):

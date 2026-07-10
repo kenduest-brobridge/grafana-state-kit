@@ -275,9 +275,7 @@ class GitopsSyncTests(unittest.TestCase):
         self.assertEqual(
             intent["schemaVersion"], gitops_sync.SYNC_APPLY_INTENT_SCHEMA_VERSION
         )
-        actions = {
-            operation.action for operation in intent["operations"]
-        }
+        actions = {operation.action for operation in intent["operations"]}
         self.assertEqual(actions, {"would-create"})
         self.assertEqual(len(actions), 1)
 

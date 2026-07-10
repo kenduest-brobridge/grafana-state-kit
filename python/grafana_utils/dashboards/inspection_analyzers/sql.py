@@ -88,7 +88,9 @@ def extract_sql_query_shape_hints(query: str) -> list[str]:
     return unique_strings(hints)
 
 
-def analyze_query(panel: dict[str, Any], target: dict[str, Any], query_field: str, query_text: str) -> dict[str, Any]:
+def analyze_query(
+    panel: dict[str, Any], target: dict[str, Any], query_field: str, query_text: str
+) -> dict[str, Any]:
     """Build normalized analysis output for an SQL query."""
     # Call graph: see callers/callees.
     #   Upstream callers: 無

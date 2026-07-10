@@ -43,14 +43,21 @@ def build_overview_args(
     discovered_mapping_file: Optional[Path] = None,
 ) -> Dict[str, Any]:
     return {
-        "dashboard_export_dir": inputs.dashboard_export_dir or discovered_dashboard_export_dir,
-        "dashboard_provisioning_dir": inputs.dashboard_provisioning_dir or discovered_dashboard_provisioning_dir,
+        "dashboard_export_dir": inputs.dashboard_export_dir
+        or discovered_dashboard_export_dir,
+        "dashboard_provisioning_dir": inputs.dashboard_provisioning_dir
+        or discovered_dashboard_provisioning_dir,
         "datasource_export_dir": None,
-        "datasource_provisioning_file": inputs.datasource_provisioning_file or discovered_datasource_provisioning_file,
-        "access_user_export_dir": inputs.access_user_export_dir or discovered_access_user_export_dir,
-        "access_team_export_dir": inputs.access_team_export_dir or discovered_access_team_export_dir,
-        "access_org_export_dir": inputs.access_org_export_dir or discovered_access_org_export_dir,
-        "access_service_account_export_dir": inputs.access_service_account_export_dir or discovered_access_service_account_export_dir,
+        "datasource_provisioning_file": inputs.datasource_provisioning_file
+        or discovered_datasource_provisioning_file,
+        "access_user_export_dir": inputs.access_user_export_dir
+        or discovered_access_user_export_dir,
+        "access_team_export_dir": inputs.access_team_export_dir
+        or discovered_access_team_export_dir,
+        "access_org_export_dir": inputs.access_org_export_dir
+        or discovered_access_org_export_dir,
+        "access_service_account_export_dir": inputs.access_service_account_export_dir
+        or discovered_access_service_account_export_dir,
         "desired_file": inputs.desired_file or discovered_desired_file,
         "source_bundle": inputs.source_bundle or discovered_source_bundle,
         "target_inventory": discovered_target_inventory,
@@ -82,14 +89,21 @@ def build_status_args(
     discovered_mapping_file: Optional[Path] = None,
 ) -> Dict[str, Any]:
     return {
-        "dashboard_export_dir": inputs.dashboard_export_dir or discovered_dashboard_export_dir,
-        "dashboard_provisioning_dir": inputs.dashboard_provisioning_dir or discovered_dashboard_provisioning_dir,
+        "dashboard_export_dir": inputs.dashboard_export_dir
+        or discovered_dashboard_export_dir,
+        "dashboard_provisioning_dir": inputs.dashboard_provisioning_dir
+        or discovered_dashboard_provisioning_dir,
         "datasource_export_dir": None,
-        "datasource_provisioning_file": inputs.datasource_provisioning_file or discovered_datasource_provisioning_file,
-        "access_user_export_dir": inputs.access_user_export_dir or discovered_access_user_export_dir,
-        "access_team_export_dir": inputs.access_team_export_dir or discovered_access_team_export_dir,
-        "access_org_export_dir": inputs.access_org_export_dir or discovered_access_org_export_dir,
-        "access_service_account_export_dir": inputs.access_service_account_export_dir or discovered_access_service_account_export_dir,
+        "datasource_provisioning_file": inputs.datasource_provisioning_file
+        or discovered_datasource_provisioning_file,
+        "access_user_export_dir": inputs.access_user_export_dir
+        or discovered_access_user_export_dir,
+        "access_team_export_dir": inputs.access_team_export_dir
+        or discovered_access_team_export_dir,
+        "access_org_export_dir": inputs.access_org_export_dir
+        or discovered_access_org_export_dir,
+        "access_service_account_export_dir": inputs.access_service_account_export_dir
+        or discovered_access_service_account_export_dir,
         "desired_file": inputs.desired_file or discovered_desired_file,
         "source_bundle": inputs.source_bundle or discovered_source_bundle,
         "target_inventory": target_inventory or discovered_target_inventory,
@@ -130,7 +144,7 @@ def build_change_bundle_specs(
     # We will just return None or raise an error if needed, but for now we follow the porting logic.
     # Since I don't have the implementation of load_sync_bundle_input_artifacts in Python,
     # I'll keep the function signature and a placeholder or basic logic if possible.
-    
+
     # For now, let's just return None to indicate we can't build it without the other loaders.
     return None
 
@@ -145,12 +159,12 @@ def load_preview_desired_specs(
     discovered_datasource_provisioning_file: Optional[Path] = None,
 ) -> List[Dict[str, Any]]:
     import json
-    
+
     path = inputs.desired_file or discovered_desired_file
     if path:
         with open(path, "r") as f:
             return json.load(f)
-            
+
     path = inputs.source_bundle or discovered_source_bundle
     if path:
         with open(path, "r") as f:
@@ -162,7 +176,7 @@ def load_preview_desired_specs(
                 if key in source_bundle and isinstance(source_bundle[key], list):
                     desired_specs.extend(source_bundle[key])
             return desired_specs
-            
+
     specs = build_change_bundle_specs(
         inputs,
         dashboard_export_dir,
@@ -172,7 +186,7 @@ def load_preview_desired_specs(
     )
     if specs is not None:
         return specs
-        
+
     raise ValueError(
         "Workspace preview could not find a staged desired file, workspace package, or staged export/provisioning inputs."
     )

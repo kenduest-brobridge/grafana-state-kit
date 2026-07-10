@@ -101,7 +101,9 @@ class TestProjectStatus(unittest.TestCase):
         self.assertEqual(merged.mode, "live-list-surfaces-all-orgs")
         self.assertEqual(merged.freshness.source_count, 2)
 
-    def test_build_live_project_status_health_request_uses_path_as_first_arg(self) -> None:
+    def test_build_live_project_status_health_request_uses_path_as_first_arg(
+        self,
+    ) -> None:
         dashboard_client = mock.Mock()
         datasource_client = mock.Mock()
         alert_client = mock.Mock()
@@ -129,7 +131,9 @@ class TestProjectStatus(unittest.TestCase):
         self.assertEqual(status.discovery["instance"]["source"], "api-health")
         self.assertEqual(status.discovery["instance"]["status"], "available")
 
-    def test_build_live_project_status_health_request_errors_mark_discovery_unavailable(self) -> None:
+    def test_build_live_project_status_health_request_errors_mark_discovery_unavailable(
+        self,
+    ) -> None:
         dashboard_client = mock.Mock()
         datasource_client = mock.Mock()
         alert_client = mock.Mock()
@@ -155,7 +159,9 @@ class TestProjectStatus(unittest.TestCase):
         self.assertIn("error", status.discovery["instance"])
         self.assertIn("boom", status.discovery["instance"]["error"])
 
-    def test_build_live_project_status_health_non_dict_marks_discovery_unavailable(self) -> None:
+    def test_build_live_project_status_health_non_dict_marks_discovery_unavailable(
+        self,
+    ) -> None:
         dashboard_client = mock.Mock()
         datasource_client = mock.Mock()
         alert_client = mock.Mock()
@@ -178,7 +184,9 @@ class TestProjectStatus(unittest.TestCase):
         self.assertEqual(status.discovery["instance"]["status"], "unavailable")
         self.assertIn("instead of an object", status.discovery["instance"]["error"])
 
-    def test_build_live_project_status_health_bool_marks_discovery_unavailable_with_boolean_message(self) -> None:
+    def test_build_live_project_status_health_bool_marks_discovery_unavailable_with_boolean_message(
+        self,
+    ) -> None:
         dashboard_client = mock.Mock()
         datasource_client = mock.Mock()
         alert_client = mock.Mock()
@@ -204,7 +212,9 @@ class TestProjectStatus(unittest.TestCase):
             status.discovery["instance"]["error"],
         )
 
-    def test_build_live_project_status_health_float_marks_discovery_unavailable_with_number_message(self) -> None:
+    def test_build_live_project_status_health_float_marks_discovery_unavailable_with_number_message(
+        self,
+    ) -> None:
         dashboard_client = mock.Mock()
         datasource_client = mock.Mock()
         alert_client = mock.Mock()
@@ -230,7 +240,9 @@ class TestProjectStatus(unittest.TestCase):
             status.discovery["instance"]["error"],
         )
 
-    def test_build_live_project_status_health_none_marks_discovery_unavailable(self) -> None:
+    def test_build_live_project_status_health_none_marks_discovery_unavailable(
+        self,
+    ) -> None:
         dashboard_client = mock.Mock()
         datasource_client = mock.Mock()
         alert_client = mock.Mock()
@@ -253,7 +265,7 @@ class TestProjectStatus(unittest.TestCase):
         self.assertEqual(status.discovery["instance"]["status"], "unavailable")
         self.assertEqual(
             status.discovery["instance"]["error"],
-            "Grafana /api/health returned no body."
+            "Grafana /api/health returned no body.",
         )
 
 

@@ -413,7 +413,9 @@ class SyncCliTests(unittest.TestCase):
                 )
             stdout = io.StringIO()
             with redirect_stdout(stdout):
-                result = sync_cli.main(["ci", "mark-reviewed", "--plan-file", str(plan_path)])
+                result = sync_cli.main(
+                    ["ci", "mark-reviewed", "--plan-file", str(plan_path)]
+                )
 
             self.assertEqual(result, 0)
             self.assertIn("Sync plan", stdout.getvalue())
@@ -596,7 +598,12 @@ class SyncCliTests(unittest.TestCase):
 
     def test_sync_ci_audit_requires_live_or_fetch_live(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            lock = {"kind": "grafana-utils-sync-lock", "schemaVersion": 1, "summary": {}, "resources": []}
+            lock = {
+                "kind": "grafana-utils-sync-lock",
+                "schemaVersion": 1,
+                "summary": {},
+                "resources": [],
+            }
             lock_path = Path(tmpdir) / "lock.json"
             lock_path.write_text(json.dumps(lock), encoding="utf-8")
 
@@ -690,17 +697,16 @@ class SyncCliTests(unittest.TestCase):
                 int(document["summary"]["missingMappingCount"]),
                 2,
             )
-            expected_blocking_count = int(
-                document["summary"]["blockingCount"]
-            )
+            expected_blocking_count = int(document["summary"]["blockingCount"])
             bundle_summary = document["bundlePreflight"]["summary"]
-            expected_by_source = int(len(document["blockingChecks"])) + int(
-                bundle_summary.get("syncBlockingCount", 0)
-            ) + int(bundle_summary.get("providerBlockingCount", 0)) + int(
-                bundle_summary.get("secretBlockingCount", 0)
-            ) + int(
-                bundle_summary.get("secretPlaceholderBlockingCount", 0)
-            ) + int(bundle_summary.get("alertBlockedCount", 0))
+            expected_by_source = (
+                int(len(document["blockingChecks"]))
+                + int(bundle_summary.get("syncBlockingCount", 0))
+                + int(bundle_summary.get("providerBlockingCount", 0))
+                + int(bundle_summary.get("secretBlockingCount", 0))
+                + int(bundle_summary.get("secretPlaceholderBlockingCount", 0))
+                + int(bundle_summary.get("alertBlockedCount", 0))
+            )
             self.assertEqual(expected_blocking_count, expected_by_source)
             self.assertEqual(int(document["summary"]["resourceCount"]), 2)
             self.assertEqual(len(document["resolvedChecks"]), 2)
@@ -881,7 +887,9 @@ class SyncCliTests(unittest.TestCase):
             self.assertEqual(result, 0)
             output = stdout.getvalue()
             self.assertIn("Sync plan", output)
-            self.assertIn("Summary: create=1 update=0 delete=0 noop=0 unmanaged=0", output)
+            self.assertIn(
+                "Summary: create=1 update=0 delete=0 noop=0 unmanaged=0", output
+            )
 
     def test_sync_plan_can_fetch_live_state_from_grafana(self):
         desired = [
@@ -2480,7 +2488,9 @@ class SyncCliTests(unittest.TestCase):
 
             stderr = io.StringIO()
             with redirect_stderr(stderr):
-                result = sync_cli.main(["apply", "--plan-file", str(plan_path), "--approve"])
+                result = sync_cli.main(
+                    ["apply", "--plan-file", str(plan_path), "--approve"]
+                )
 
             self.assertEqual(result, 1)
             self.assertIn("unexpected lineage parentTraceId", stderr.getvalue())

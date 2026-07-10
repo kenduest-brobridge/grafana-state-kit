@@ -82,20 +82,14 @@ def parse_var_assignment(raw_value):
     """Parse one NAME=VALUE assignment used by screenshot URL builders."""
     text = str(raw_value or "").strip()
     if not text or "=" not in text:
-        raise GrafanaError(
-            "Invalid --var value %r. Use NAME=VALUE." % raw_value
-        )
+        raise GrafanaError("Invalid --var value %r. Use NAME=VALUE." % raw_value)
     name, value = text.split("=", 1)
     name = name.strip()
     value = value.strip()
     if not name:
-        raise GrafanaError(
-            "Invalid --var value %r. Use NAME=VALUE." % raw_value
-        )
+        raise GrafanaError("Invalid --var value %r. Use NAME=VALUE." % raw_value)
     if not value:
-        raise GrafanaError(
-            "Invalid --var value %r. VALUE cannot be empty." % raw_value
-        )
+        raise GrafanaError("Invalid --var value %r. VALUE cannot be empty." % raw_value)
     return name, value
 
 
@@ -182,7 +176,9 @@ def validate_screenshot_args(args):
         getattr(args, "output", None),
         getattr(args, "output_format", None),
     )
-    full_page_output = str(getattr(args, "full_page_output", "single") or "single").strip().lower()
+    full_page_output = (
+        str(getattr(args, "full_page_output", "single") or "single").strip().lower()
+    )
     if full_page_output not in SUPPORTED_FULL_PAGE_OUTPUTS:
         raise GrafanaError(
             "Unsupported --full-page-output value %r. Use single, tiles, or manifest."
@@ -195,7 +191,9 @@ def validate_screenshot_args(args):
     if full_page_output != "single" and not bool(getattr(args, "full_page", False)):
         raise GrafanaError("--full-page-output tiles or manifest requires --full-page.")
     if full_page_output != "single" and output_format == "pdf":
-        raise GrafanaError("PDF output does not support --full-page-output tiles or manifest.")
+        raise GrafanaError(
+            "PDF output does not support --full-page-output tiles or manifest."
+        )
     return args
 
 
@@ -273,7 +271,11 @@ def build_dashboard_capture_url(args):
         raise GrafanaError(
             "Unable to determine dashboard UID. Pass --dashboard-uid or a Grafana dashboard URL."
         )
-    slug = str(getattr(args, "slug", "") or "").strip() or path_state["slug"] or dashboard_uid
+    slug = (
+        str(getattr(args, "slug", "") or "").strip()
+        or path_state["slug"]
+        or dashboard_uid
+    )
     panel_id = getattr(args, "panel_id", None)
     if panel_id in (None, ""):
         panel_id = path_state["panel_id"]
@@ -287,7 +289,9 @@ def build_dashboard_capture_url(args):
     if org_id in (None, ""):
         org_id = path_state["org_id"]
     org_id = str(org_id).strip() if org_id not in (None, "") else None
-    from_value = str(getattr(args, "from_value", None) or getattr(args, "from_", None) or "").strip()
+    from_value = str(
+        getattr(args, "from_value", None) or getattr(args, "from_", None) or ""
+    ).strip()
     if not from_value:
         for key, value in fragment_state["passthrough_pairs"]:
             if key == "from":
@@ -303,17 +307,23 @@ def build_dashboard_capture_url(args):
                 break
     if not to_value:
         to_value = path_state["to_value"] or ""
-    theme = str(getattr(args, "theme", DEFAULT_SCREENSHOT_THEME) or DEFAULT_SCREENSHOT_THEME).strip().lower()
+    theme = (
+        str(
+            getattr(args, "theme", DEFAULT_SCREENSHOT_THEME) or DEFAULT_SCREENSHOT_THEME
+        )
+        .strip()
+        .lower()
+    )
     if theme not in ("dark", "light"):
-        raise GrafanaError("Unsupported screenshot theme %r. Use dark or light." % theme)
+        raise GrafanaError(
+            "Unsupported screenshot theme %r. Use dark or light." % theme
+        )
 
     passthrough_pairs = list(path_state["passthrough_pairs"])
     for key, value in fragment_state["passthrough_pairs"]:
         if key in ("panelId", "orgId", "from", "to", "viewPanel", "kiosk", "theme"):
             continue
-        passthrough_pairs = [
-            pair for pair in passthrough_pairs if pair[0] != key
-        ]
+        passthrough_pairs = [pair for pair in passthrough_pairs if pair[0] != key]
         passthrough_pairs.append((key, value))
 
     merged_vars = list(path_state["vars"])
@@ -377,9 +387,13 @@ def build_capture_request(args):
         "height": int(getattr(args, "height")),
         "device_scale_factor": float(getattr(args, "device_scale_factor", 1.0) or 1.0),
         "full_page": bool(getattr(args, "full_page", False)),
-        "full_page_output": str(getattr(args, "full_page_output", "single") or "single").strip().lower(),
+        "full_page_output": str(getattr(args, "full_page_output", "single") or "single")
+        .strip()
+        .lower(),
         "wait_ms": int(getattr(args, "wait_ms", 0) or 0),
-        "theme": str(getattr(args, "theme", DEFAULT_SCREENSHOT_THEME) or DEFAULT_SCREENSHOT_THEME),
+        "theme": str(
+            getattr(args, "theme", DEFAULT_SCREENSHOT_THEME) or DEFAULT_SCREENSHOT_THEME
+        ),
         "print_capture_url": bool(getattr(args, "print_capture_url", False)),
         "header_title": getattr(args, "header_title", None),
         "header_url": getattr(args, "header_url", None),
@@ -399,7 +413,9 @@ def _resolve_capture_metadata(args, client):
     if dashboard_url:
         with contextlib.suppress(Exception):
             parsed_url = parse.urlsplit(dashboard_url)
-            segments = [segment for segment in (parsed_url.path or "").split("/") if segment]
+            segments = [
+                segment for segment in (parsed_url.path or "").split("/") if segment
+            ]
             if len(segments) >= 3 and segments[0] in ("d", "d-solo"):
                 slug_text = str(segments[2] or "").strip()
                 if slug_text:
@@ -432,7 +448,9 @@ def _resolve_capture_metadata(args, client):
         "payload": payload,
         "dashboard_uid": resolved_uid,
         "dashboard_title": str((dashboard or {}).get("title") or "").strip(),
-        "panel_title": _find_panel_title(dashboard or {}, getattr(args, "panel_id", None)),
+        "panel_title": _find_panel_title(
+            dashboard or {}, getattr(args, "panel_id", None)
+        ),
     }
 
 
@@ -550,13 +568,23 @@ def _compose_header_image(image, request, metadata):
     rendered_lines = []
     content_width = max(width - (margin_x * 2), 120)
     for line_type, text in header_lines:
-        font = title_font if line_type == "title" else meta_font if line_type == "meta" else body_font
+        font = (
+            title_font
+            if line_type == "title"
+            else meta_font if line_type == "meta" else body_font
+        )
         wrapped = _wrap_header_text(text, font, content_width, measure)
         for item in wrapped:
             box = measure.textbbox((0, 0), item, font=font)
             rendered_lines.append((line_type, item, font, box[3] - box[1]))
-    header_height = (margin_y * 2) + sum(item[3] for item in rendered_lines) + (line_gap * max(len(rendered_lines) - 1, 0))
-    header_image = Image.new("RGBA", (width, header_height + base.height), (17, 18, 23, 255))
+    header_height = (
+        (margin_y * 2)
+        + sum(item[3] for item in rendered_lines)
+        + (line_gap * max(len(rendered_lines) - 1, 0))
+    )
+    header_image = Image.new(
+        "RGBA", (width, header_height + base.height), (17, 18, 23, 255)
+    )
     draw = ImageDraw.Draw(header_image)
     palette = {
         "title": (240, 244, 252, 255),
@@ -623,9 +651,7 @@ def build_render_url(args):
     if bool(getattr(args, "full_page", False)):
         query_pairs.append(("autofitpanels", "1"))
     query_text = parse.urlencode(query_pairs, doseq=True)
-    return parse.urlunsplit(
-        (parsed.scheme, parsed.netloc, render_path, query_text, "")
-    )
+    return parse.urlunsplit((parsed.scheme, parsed.netloc, render_path, query_text, ""))
 
 
 def _capture_with_grafana_render(request, client, http_get=None):
@@ -682,9 +708,7 @@ def _strip_hop_by_hop_headers(headers):
         "content-length",
     }
     return {
-        key: value
-        for key, value in headers.items()
-        if str(key).lower() not in blocked
+        key: value for key, value in headers.items() if str(key).lower() not in blocked
     }
 
 
@@ -693,7 +717,7 @@ def _rewrite_location(location, remote_base_url, proxy_base_url):
     if not location:
         return location
     if location.startswith(remote_base_url):
-        return proxy_base_url + location[len(remote_base_url):]
+        return proxy_base_url + location[len(remote_base_url) :]
     return location
 
 
@@ -764,7 +788,12 @@ def run_auth_proxy(client):
             proxy_base_url = "http://%s:%s" % self.server.server_address
             for key, value in response.headers.items():
                 lower = key.lower()
-                if lower in ("transfer-encoding", "content-length", "content-encoding", "connection"):
+                if lower in (
+                    "transfer-encoding",
+                    "content-length",
+                    "content-encoding",
+                    "connection",
+                ):
                     continue
                 if lower == "location":
                     value = _rewrite_location(value, remote_base_url, proxy_base_url)
@@ -855,12 +884,18 @@ class _DevtoolsClient(object):
         self._socket.sendall("\r\n".join(request_lines).encode("ascii"))
         response = self._recv_http_response()
         if " 101 " not in response.splitlines()[0]:
-            raise GrafanaError("DevTools websocket handshake failed: %s" % response.splitlines()[0])
+            raise GrafanaError(
+                "DevTools websocket handshake failed: %s" % response.splitlines()[0]
+            )
         expected = base64.b64encode(
-            hashlib.sha1((key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").encode("ascii")).digest()
+            hashlib.sha1(
+                (key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").encode("ascii")
+            ).digest()
         ).decode("ascii")
         if ("sec-websocket-accept: %s" % expected).lower() not in response.lower():
-            raise GrafanaError("DevTools websocket handshake returned an unexpected accept key.")
+            raise GrafanaError(
+                "DevTools websocket handshake returned an unexpected accept key."
+            )
 
     def _recv_http_response(self):
         # Purpose: implementation note.
@@ -980,7 +1015,8 @@ class _DevtoolsClient(object):
                 continue
             if "error" in message:
                 raise GrafanaError(
-                    "DevTools command %s failed: %s" % (method, message["error"].get("message", message["error"]))
+                    "DevTools command %s failed: %s"
+                    % (method, message["error"].get("message", message["error"]))
                 )
             return message.get("result", {})
 
@@ -1037,7 +1073,9 @@ def _launch_devtools_browser(browser_path, request):
                 stderr = process.stderr.read() if process.stderr else ""
                 raise GrafanaError("Browser failed to start: %s" % stderr.strip())
             with contextlib.suppress(Exception):
-                version = _read_json_url("http://127.0.0.1:%s/json/version" % debug_port, 1)
+                version = _read_json_url(
+                    "http://127.0.0.1:%s/json/version" % debug_port, 1
+                )
                 if version:
                     break
             threading.Event().wait(0.1)
@@ -1106,7 +1144,9 @@ def _wait_for_ready_state(devtools, session_id, wait_ms):
                 sleeper.wait(float(wait_ms) / 1000.0)
             return
         sleeper.wait(0.25)
-    raise GrafanaError("Dashboard page did not become ready before the browser wait timeout elapsed.")
+    raise GrafanaError(
+        "Dashboard page did not become ready before the browser wait timeout elapsed."
+    )
 
 
 def _evaluate_expression(devtools, session_id, expression):
@@ -1331,7 +1371,8 @@ Math.max(
   window.scrollTo({ top: target, left: 0, behavior: 'instant' });
   return window.scrollY;
 })()
-            """.strip() % height,
+            """.strip()
+            % height,
         )
         threading.Event().wait(1.8)
         next_height = _read_numeric_expression(
@@ -1385,7 +1426,11 @@ Math.max(
     crop_top = int(max(float(capture_offsets.get("hidden_top_height") or 0.0), 0.0))
     crop_left = int(max(float(capture_offsets.get("hidden_left_width") or 0.0), 0.0))
     target_width = max(viewport_width - crop_left, 1)
-    step = max(viewport_height - max(float(capture_offsets.get("hidden_top_height") or 0.0), 0.0), 200.0)
+    step = max(
+        viewport_height
+        - max(float(capture_offsets.get("hidden_top_height") or 0.0), 0.0),
+        200.0,
+    )
     stitched = Image.new("RGBA", (target_width, max(int(total_height), 1)))
     destination_y = 0
     current_y = 0.0
@@ -1394,7 +1439,8 @@ Math.max(
         _evaluate_expression(
             devtools,
             session_id,
-            "window.scrollTo({ top: %s, left: 0, behavior: 'instant' });" % int(current_y),
+            "window.scrollTo({ top: %s, left: 0, behavior: 'instant' });"
+            % int(current_y),
         )
         threading.Event().wait(0.9)
         capture_params = {
@@ -1408,7 +1454,9 @@ Math.max(
             capture_params,
             session_id=session_id,
         )
-        segment = Image.open(io.BytesIO(base64.b64decode(captured["data"]))).convert("RGBA")
+        segment = Image.open(io.BytesIO(base64.b64decode(captured["data"]))).convert(
+            "RGBA"
+        )
         source_left = min(crop_left, max(segment.width - 1, 0))
         source_top = 0 if current_y <= 0.0 else min(crop_top, segment.height)
         remaining_height = max(stitched.height - destination_y, 0)
@@ -1420,7 +1468,14 @@ Math.max(
         copy_width = min(available_segment_width, target_width)
         if copy_height == 0 or copy_width == 0:
             break
-        cropped = segment.crop((source_left, source_top, source_left + copy_width, source_top + copy_height))
+        cropped = segment.crop(
+            (
+                source_left,
+                source_top,
+                source_left + copy_width,
+                source_top + copy_height,
+            )
+        )
         stitched.paste(cropped, (0, destination_y))
         destination_y += copy_height
         if destination_y >= stitched.height:
@@ -1454,7 +1509,11 @@ Math.max(
     crop_top = int(max(float(capture_offsets.get("hidden_top_height") or 0.0), 0.0))
     crop_left = int(max(float(capture_offsets.get("hidden_left_width") or 0.0), 0.0))
     target_width = max(viewport_width - crop_left, 1)
-    step = max(viewport_height - max(float(capture_offsets.get("hidden_top_height") or 0.0), 0.0), 200.0)
+    step = max(
+        viewport_height
+        - max(float(capture_offsets.get("hidden_top_height") or 0.0), 0.0),
+        200.0,
+    )
     format_name = "jpeg" if request["output_format"] == "jpeg" else "png"
     segments = []
     destination_y = 0
@@ -1463,7 +1522,8 @@ Math.max(
         _evaluate_expression(
             devtools,
             session_id,
-            "window.scrollTo({ top: %s, left: 0, behavior: 'instant' });" % int(current_y),
+            "window.scrollTo({ top: %s, left: 0, behavior: 'instant' });"
+            % int(current_y),
         )
         threading.Event().wait(0.9)
         capture_params = {
@@ -1477,7 +1537,9 @@ Math.max(
             capture_params,
             session_id=session_id,
         )
-        segment = Image.open(io.BytesIO(base64.b64decode(captured["data"]))).convert("RGBA")
+        segment = Image.open(io.BytesIO(base64.b64decode(captured["data"]))).convert(
+            "RGBA"
+        )
         source_left = min(crop_left, max(segment.width - 1, 0))
         source_top = 0 if current_y <= 0.0 else min(crop_top, segment.height)
         available_segment_height = max(segment.height - source_top, 0)
@@ -1485,7 +1547,9 @@ Math.max(
         copy_width = min(available_segment_width, target_width)
         if available_segment_height == 0 or copy_width == 0:
             break
-        cropped = segment.crop((source_left, source_top, source_left + copy_width, segment.height))
+        cropped = segment.crop(
+            (source_left, source_top, source_left + copy_width, segment.height)
+        )
         segments.append(
             {
                 "index": len(segments),
@@ -1565,18 +1629,24 @@ def _write_full_page_output(request, metadata, capture):
 
     output_format = request["output_format"]
     if request["full_page_output"] == "single":
-        stitched = Image.new("RGBA", (capture["target_width"], max(capture["total_height"], 1)))
+        stitched = Image.new(
+            "RGBA", (capture["target_width"], max(capture["total_height"], 1))
+        )
         destination_y = 0
         for segment in capture["segments"]:
             image = segment["image"]
             stitched.paste(image, (0, destination_y))
             destination_y += image.height
-        final_image = stitched.crop((0, 0, capture["target_width"], max(destination_y, 1)))
+        final_image = stitched.crop(
+            (0, 0, capture["target_width"], max(destination_y, 1))
+        )
         _write_raster_output(final_image, request, metadata)
         return
 
     if output_format == "pdf":
-        raise GrafanaError("PDF output does not support --full-page-output tiles or manifest.")
+        raise GrafanaError(
+            "PDF output does not support --full-page-output tiles or manifest."
+        )
     output_dir = _build_segment_output_dir(request["output"])
     os.makedirs(str(output_dir), exist_ok=True)
     extension = "jpg" if output_format == "jpeg" else "png"
@@ -1600,13 +1670,21 @@ def _write_full_page_output(request, metadata, capture):
                 "sourceTop": segment["source_top"],
                 "width": segment["image"].width,
                 "height": segment["image"].height,
-                "headerApplied": bool(segment["index"] == 0 and _build_header_lines(request, metadata)),
+                "headerApplied": bool(
+                    segment["index"] == 0 and _build_header_lines(request, metadata)
+                ),
             }
         )
     if request["full_page_output"] == "manifest":
         manifest_path = output_dir / "manifest.json"
         manifest_path.write_text(
-            json.dumps(_build_full_page_manifest(request, metadata, capture, manifest_segments), indent=2, sort_keys=True),
+            json.dumps(
+                _build_full_page_manifest(
+                    request, metadata, capture, manifest_segments
+                ),
+                indent=2,
+                sort_keys=True,
+            ),
             encoding="utf-8",
         )
 
@@ -1621,7 +1699,9 @@ def _capture_via_devtools(browser_path, request, extra_headers, timeout):
         Image, *_ = _pil_modules()
         devtools = _DevtoolsClient(websocket_url, timeout)
         try:
-            created = devtools.call("Target.createTarget", {"url": "about:blank", "newWindow": False})
+            created = devtools.call(
+                "Target.createTarget", {"url": "about:blank", "newWindow": False}
+            )
             target_id = created.get("targetId")
             attached = devtools.call(
                 "Target.attachToTarget",
@@ -1641,12 +1721,16 @@ def _capture_via_devtools(browser_path, request, extra_headers, timeout):
                 {
                     "width": int(request["width"]),
                     "height": int(request["height"]),
-                    "deviceScaleFactor": float(request.get("device_scale_factor", 1.0) or 1.0),
+                    "deviceScaleFactor": float(
+                        request.get("device_scale_factor", 1.0) or 1.0
+                    ),
                     "mobile": False,
                 },
                 session_id=session_id,
             )
-            devtools.call("Page.navigate", {"url": request["url"]}, session_id=session_id)
+            devtools.call(
+                "Page.navigate", {"url": request["url"]}, session_id=session_id
+            )
             _wait_for_ready_state(devtools, session_id, int(request["wait_ms"]))
             _collapse_sidebar_if_present(devtools, session_id)
             capture_offsets = _prepare_dashboard_capture_dom(devtools, session_id)
@@ -1655,14 +1739,20 @@ def _capture_via_devtools(browser_path, request, extra_headers, timeout):
             if request["output_format"] == "pdf":
                 pdf = devtools.call(
                     "Page.printToPDF",
-                    {"printBackground": True, "preferCSSPageSize": True, "displayHeaderFooter": False},
+                    {
+                        "printBackground": True,
+                        "preferCSSPageSize": True,
+                        "displayHeaderFooter": False,
+                    },
                     session_id=session_id,
                 )
                 request["output"].write_bytes(base64.b64decode(pdf["data"]))
                 return
 
             if request["full_page"]:
-                capture = _capture_full_page_segments(devtools, session_id, request, capture_offsets)
+                capture = _capture_full_page_segments(
+                    devtools, session_id, request, capture_offsets
+                )
                 _write_full_page_output(request, request.get("metadata"), capture)
                 return
 
@@ -1680,8 +1770,12 @@ def _capture_via_devtools(browser_path, request, extra_headers, timeout):
             }
             if format_name == "jpeg":
                 capture_params["quality"] = 90
-            captured = devtools.call("Page.captureScreenshot", capture_params, session_id=session_id)
-            image = Image.open(io.BytesIO(base64.b64decode(captured["data"]))).convert("RGBA")
+            captured = devtools.call(
+                "Page.captureScreenshot", capture_params, session_id=session_id
+            )
+            image = Image.open(io.BytesIO(base64.b64decode(captured["data"]))).convert(
+                "RGBA"
+            )
             _write_raster_output(image, request, request.get("metadata"))
         finally:
             devtools.close()
@@ -1753,7 +1847,9 @@ def capture_dashboard_screenshot(args, backend=None, client=None):
                 "Dashboard screenshot capture requires a browser backend or a configured Grafana client."
             )
         client.browser_path = getattr(args, "browser_path", None)
-        backend = lambda capture_request: _capture_with_browser_cli(capture_request, client)
+        backend = lambda capture_request: _capture_with_browser_cli(
+            capture_request, client
+        )
     result = backend(request)
     return result
 

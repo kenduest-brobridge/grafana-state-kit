@@ -104,28 +104,78 @@ def build_live_sync_domain_status(
 
         resources = summary_number(bundle_preflight_document, "resourceCount")
         sync_blocking = summary_number(bundle_preflight_document, "syncBlockingCount")
-        provider_blocking = summary_number(bundle_preflight_document, "providerBlockingCount")
-        secret_blocking = summary_number(bundle_preflight_document, "secretPlaceholderBlockingCount")
-        alert_blocking = summary_number(bundle_preflight_document, "alertArtifactBlockedCount")
-        alert_plan_only = summary_number(bundle_preflight_document, "alertArtifactPlanOnlyCount")
+        provider_blocking = summary_number(
+            bundle_preflight_document, "providerBlockingCount"
+        )
+        secret_blocking = summary_number(
+            bundle_preflight_document, "secretPlaceholderBlockingCount"
+        )
+        alert_blocking = summary_number(
+            bundle_preflight_document, "alertArtifactBlockedCount"
+        )
+        alert_plan_only = summary_number(
+            bundle_preflight_document, "alertArtifactPlanOnlyCount"
+        )
         bundle_blocking = summary_number(bundle_preflight_document, "blockedCount")
         bundle_plan_only = summary_number(bundle_preflight_document, "planOnlyCount")
 
         if sync_blocking > 0:
-            blockers.append(StatusRecordCount(SYNC_BLOCKER_SYNC_BLOCKING, sync_blocking, "summary.syncBlockingCount"))
+            blockers.append(
+                StatusRecordCount(
+                    SYNC_BLOCKER_SYNC_BLOCKING,
+                    sync_blocking,
+                    "summary.syncBlockingCount",
+                )
+            )
         if provider_blocking > 0:
-            blockers.append(StatusRecordCount(SYNC_BLOCKER_PROVIDER_BLOCKING, provider_blocking, "summary.providerBlockingCount"))
+            blockers.append(
+                StatusRecordCount(
+                    SYNC_BLOCKER_PROVIDER_BLOCKING,
+                    provider_blocking,
+                    "summary.providerBlockingCount",
+                )
+            )
         if secret_blocking > 0:
-            blockers.append(StatusRecordCount(SYNC_BLOCKER_SECRET_PLACEHOLDER_BLOCKING, secret_blocking, "summary.secretPlaceholderBlockingCount"))
+            blockers.append(
+                StatusRecordCount(
+                    SYNC_BLOCKER_SECRET_PLACEHOLDER_BLOCKING,
+                    secret_blocking,
+                    "summary.secretPlaceholderBlockingCount",
+                )
+            )
         if alert_blocking > 0:
-            blockers.append(StatusRecordCount(SYNC_BLOCKER_ALERT_ARTIFACT_BLOCKING, alert_blocking, "summary.alertArtifactBlockedCount"))
+            blockers.append(
+                StatusRecordCount(
+                    SYNC_BLOCKER_ALERT_ARTIFACT_BLOCKING,
+                    alert_blocking,
+                    "summary.alertArtifactBlockedCount",
+                )
+            )
         if not blockers and bundle_blocking > 0:
-            blockers.append(StatusRecordCount(SYNC_BLOCKER_BUNDLE_BLOCKING, bundle_blocking, "summary.blockedCount"))
+            blockers.append(
+                StatusRecordCount(
+                    SYNC_BLOCKER_BUNDLE_BLOCKING,
+                    bundle_blocking,
+                    "summary.blockedCount",
+                )
+            )
 
         if alert_plan_only > 0:
-            warnings.append(StatusRecordCount(SYNC_WARNING_ALERT_ARTIFACT_PLAN_ONLY, alert_plan_only, "summary.alertArtifactPlanOnlyCount"))
+            warnings.append(
+                StatusRecordCount(
+                    SYNC_WARNING_ALERT_ARTIFACT_PLAN_ONLY,
+                    alert_plan_only,
+                    "summary.alertArtifactPlanOnlyCount",
+                )
+            )
         elif bundle_plan_only > 0:
-            warnings.append(StatusRecordCount(SYNC_WARNING_BUNDLE_PLAN_ONLY, bundle_plan_only, "summary.planOnlyCount"))
+            warnings.append(
+                StatusRecordCount(
+                    SYNC_WARNING_BUNDLE_PLAN_ONLY,
+                    bundle_plan_only,
+                    "summary.planOnlyCount",
+                )
+            )
 
         has_blockers = len(blockers) > 0
         has_warnings = len(warnings) > 0
@@ -142,11 +192,17 @@ def build_live_sync_domain_status(
             status = PROJECT_STATUS_READY
             reason_code = SYNC_REASON_READY
     else:
-        resources = summary_number(summary_document, "resourceCount") if summary_document else 0
+        resources = (
+            summary_number(summary_document, "resourceCount") if summary_document else 0
+        )
         signal_keys.extend(SYNC_SIGNAL_KEYS_SUMMARY)
         next_actions = next_actions_for_partial(resources, False)
         status = PROJECT_STATUS_PARTIAL
-        reason_code = SYNC_REASON_PARTIAL_NO_DATA if resources == 0 else SYASON_PARTIAL_MISSING_SURFACES
+        reason_code = (
+            SYNC_REASON_PARTIAL_NO_DATA
+            if resources == 0
+            else SYASON_PARTIAL_MISSING_SURFACES
+        )
         if resources > 0:
             reason_code = SYNC_REASON_PARTIAL_MISSING_SURFACES
 

@@ -37,7 +37,9 @@ class ProfileConfigTests(unittest.TestCase):
         self.assertEqual(loaded["version"], 1)
         self.assertEqual(loaded["defaultProfile"], "prod")
         self.assertIn("prod", loaded["profiles"])
-        self.assertEqual(loaded["profiles"]["prod"]["url"], "https://grafana.example.com")
+        self.assertEqual(
+            loaded["profiles"]["prod"]["url"], "https://grafana.example.com"
+        )
 
     def test_profile_example_document_includes_multiple_profiles(self):
         document = profile_config.build_profile_example_document("full")

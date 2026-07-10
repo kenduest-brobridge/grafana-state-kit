@@ -453,46 +453,51 @@ def render_sync_plan_text(document):
     summary = document.get("summary")
     if not isinstance(summary, Mapping):
         raise GrafanaError("Sync plan document is missing summary.")
-    return [
-        "Sync plan",
-        "Trace: %s" % _normalize_text(document.get("traceId") or "missing"),
-        "Lineage: stage=%s step=%s parent=%s"
-        % (
-            _normalize_text(document.get("stage") or "missing"),
-            _strict_int(document.get("stepIndex")),
-            _normalize_text(document.get("parentTraceId") or "none"),
-        ),
-        "Summary: create=%s update=%s delete=%s noop=%s unmanaged=%s"
-        % (
-            _strict_int(summary.get("would_create")),
-            _strict_int(summary.get("would_update")),
-            _strict_int(summary.get("would_delete")),
-            _strict_int(summary.get("noop")),
-            _strict_int(summary.get("unmanaged")),
-        ),
-        "Alerts: candidate=%s plan-only=%s blocked=%s"
-        % (
-            _strict_int(summary.get("alert_candidate")),
-            _strict_int(summary.get("alert_plan_only")),
-            _strict_int(summary.get("alert_blocked")),
-        ),
-        "Review: required=%s reviewed=%s"
-        % (
-            "true" if bool(document.get("reviewRequired")) else "false",
-            "true" if bool(document.get("reviewed")) else "false",
-        ),
-    ] + (
-        ["Reviewed by: %s" % _normalize_text(document.get("reviewedBy"))]
-        if _normalize_text(document.get("reviewedBy"))
-        else []
-    ) + (
-        ["Reviewed at: %s" % _normalize_text(document.get("reviewedAt"))]
-        if _normalize_text(document.get("reviewedAt"))
-        else []
-    ) + (
-        ["Review note: %s" % _normalize_text(document.get("reviewNote"))]
-        if _normalize_text(document.get("reviewNote"))
-        else []
+    return (
+        [
+            "Sync plan",
+            "Trace: %s" % _normalize_text(document.get("traceId") or "missing"),
+            "Lineage: stage=%s step=%s parent=%s"
+            % (
+                _normalize_text(document.get("stage") or "missing"),
+                _strict_int(document.get("stepIndex")),
+                _normalize_text(document.get("parentTraceId") or "none"),
+            ),
+            "Summary: create=%s update=%s delete=%s noop=%s unmanaged=%s"
+            % (
+                _strict_int(summary.get("would_create")),
+                _strict_int(summary.get("would_update")),
+                _strict_int(summary.get("would_delete")),
+                _strict_int(summary.get("noop")),
+                _strict_int(summary.get("unmanaged")),
+            ),
+            "Alerts: candidate=%s plan-only=%s blocked=%s"
+            % (
+                _strict_int(summary.get("alert_candidate")),
+                _strict_int(summary.get("alert_plan_only")),
+                _strict_int(summary.get("alert_blocked")),
+            ),
+            "Review: required=%s reviewed=%s"
+            % (
+                "true" if bool(document.get("reviewRequired")) else "false",
+                "true" if bool(document.get("reviewed")) else "false",
+            ),
+        ]
+        + (
+            ["Reviewed by: %s" % _normalize_text(document.get("reviewedBy"))]
+            if _normalize_text(document.get("reviewedBy"))
+            else []
+        )
+        + (
+            ["Reviewed at: %s" % _normalize_text(document.get("reviewedAt"))]
+            if _normalize_text(document.get("reviewedAt"))
+            else []
+        )
+        + (
+            ["Review note: %s" % _normalize_text(document.get("reviewNote"))]
+            if _normalize_text(document.get("reviewNote"))
+            else []
+        )
     )
 
 

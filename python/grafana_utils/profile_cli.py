@@ -308,7 +308,9 @@ def _profile_summary_document(
     show_secrets: bool = False,
 ) -> dict[str, object]:
     name, profile = _resolve_selected_profile(args)
-    return profile_config.build_profile_summary(name, profile, show_secrets=show_secrets)
+    return profile_config.build_profile_summary(
+        name, profile, show_secrets=show_secrets
+    )
 
 
 def _as_profile_document(details) -> dict[str, object]:
@@ -356,7 +358,9 @@ def validate_profile(args: argparse.Namespace) -> int:
     return 0
 
 
-def _maybe_prompt_secret(value: Optional[str], prompt: str, enabled: bool) -> Optional[str]:
+def _maybe_prompt_secret(
+    value: Optional[str], prompt: str, enabled: bool
+) -> Optional[str]:
     if value:
         return value
     if not enabled:

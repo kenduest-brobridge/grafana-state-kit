@@ -21,9 +21,13 @@ def _load_json_array_file(path, error_cls, error_context):
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
     except OSError as exc:
-        raise error_cls("Failed to read %s %s: %s" % (error_context, path, exc)) from exc
+        raise error_cls(
+            "Failed to read %s %s: %s" % (error_context, path, exc)
+        ) from exc
     except json.JSONDecodeError as exc:
-        raise error_cls("Invalid JSON in %s %s: %s" % (error_context, path, exc)) from exc
+        raise error_cls(
+            "Invalid JSON in %s %s: %s" % (error_context, path, exc)
+        ) from exc
     if not isinstance(raw, list):
         raise error_cls("%s must be a JSON array: %s" % (error_context, path))
     return raw
@@ -228,11 +232,15 @@ def run_inspect_live(args, deps):
                 materialize_live_inspection_export(
                     scoped_client,
                     page_size=int(args.page_size),
-                    raw_dir=temp_root / ("org_%s_%s" % (org_id, org_name)) / deps["RAW_EXPORT_SUBDIR"],
+                    raw_dir=temp_root
+                    / ("org_%s_%s" % (org_id, org_name))
+                    / deps["RAW_EXPORT_SUBDIR"],
                     deps=deps,
                     args=args,
                 )
-            raw_dir = _merge_multi_org_export_root(temp_root, temp_root / "merged", deps)
+            raw_dir = _merge_multi_org_export_root(
+                temp_root, temp_root / "merged", deps
+            )
         else:
             raw_dir = materialize_live_inspection_export(
                 clients[0],
@@ -276,7 +284,9 @@ def _discover_plain_dashboard_files(input_dir, deps):
         deps["FOLDER_INVENTORY_FILENAME"],
         deps["DATASOURCE_INVENTORY_FILENAME"],
     }
-    return sorted(path for path in input_dir.rglob("*.json") if path.name not in ignored)
+    return sorted(
+        path for path in input_dir.rglob("*.json") if path.name not in ignored
+    )
 
 
 def _resolve_git_sync_dashboard_root(input_dir):
@@ -313,7 +323,11 @@ def _stage_plain_dashboard_tree(input_dir, temp_root, deps):
             {
                 "uid": uid,
                 "title": title,
-                "folder": str(Path(*relative_path.parts[:-1])) if len(relative_path.parts) > 1 else "General",
+                "folder": (
+                    str(Path(*relative_path.parts[:-1]))
+                    if len(relative_path.parts) > 1
+                    else "General"
+                ),
                 "path": str(relative_path),
                 "raw_path": str(target_path),
                 "format": "grafana-web-import-preserve-uid",
@@ -350,7 +364,8 @@ def _resolve_inspect_import_dir(import_dir, settings, temp_root, deps):
     if input_format == "provisioning":
         provisioning_root = (
             import_dir / "dashboards"
-            if import_dir.name == "provisioning" and (import_dir / "dashboards").is_dir()
+            if import_dir.name == "provisioning"
+            and (import_dir / "dashboards").is_dir()
             else import_dir
         )
         return _stage_plain_dashboard_tree(provisioning_root, temp_root, deps)
@@ -403,7 +418,9 @@ def run_inspect_export(args, deps):
     )
     import_dir = _resolve_local_artifact_import_dir(args, deps)
     if import_dir is None:
-        raise deps["GrafanaError"]("Dashboard summary requires --input-dir or --local for local inspection.")
+        raise deps["GrafanaError"](
+            "Dashboard summary requires --input-dir or --local for local inspection."
+        )
     with tempfile.TemporaryDirectory(prefix="grafana-utils-inspect-export-") as tmpdir:
         resolved_import_dir = _resolve_inspect_import_dir(
             import_dir,
@@ -415,7 +432,9 @@ def run_inspect_export(args, deps):
             raise deps["GrafanaError"](
                 "Dashboard summary interactive mode is not implemented in Python yet."
             )
-        metadata = deps["load_export_metadata"](resolved_import_dir, expected_variant=None)
+        metadata = deps["load_export_metadata"](
+            resolved_import_dir, expected_variant=None
+        )
         if isinstance(metadata, dict) and str(metadata.get("variant") or "") == "root":
             merged_raw_dir = _merge_multi_org_export_root(
                 resolved_import_dir,

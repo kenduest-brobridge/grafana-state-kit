@@ -9,9 +9,7 @@ from .import_support import extract_dashboard_object
 from .variable_inspection import extract_dashboard_variables
 
 
-DATASOURCE_VARIABLE_PATTERN = re.compile(
-    r"^\$(?:\{)?([A-Za-z0-9_:-]+)(?:\})?$"
-)
+DATASOURCE_VARIABLE_PATTERN = re.compile(r"^\$(?:\{)?([A-Za-z0-9_:-]+)(?:\})?$")
 
 
 def _iter_dashboard_panels(panels: Any) -> list[dict[str, Any]]:
@@ -43,7 +41,7 @@ def _unique_strings(values: Iterable[Any]) -> list[str]:
 
 
 def _resolve_datasource_inventory(
-    summary_document: dict[str, Any]
+    summary_document: dict[str, Any],
 ) -> tuple[dict[str, dict[str, Any]], dict[str, dict[str, Any]]]:
     """Internal helper for resolve datasource inventory."""
     by_uid: dict[str, dict[str, Any]] = {}
@@ -210,7 +208,8 @@ def build_datasource_family_coverage_records(
         record["datasourceNames"].add(datasource_name)
         record["dashboardUids"].add(str(query.get("dashboardUid") or ""))
         record["panelKeys"].add(
-            "%s:%s" % (str(query.get("dashboardUid") or ""), str(query.get("panelId") or ""))
+            "%s:%s"
+            % (str(query.get("dashboardUid") or ""), str(query.get("panelId") or ""))
         )
         record["queryCount"] = int(record.get("queryCount") or 0) + 1
 
@@ -222,8 +221,12 @@ def build_datasource_family_coverage_records(
                 "family": family,
                 "datasourceTypes": _unique_strings(record["datasourceTypes"]),
                 "datasourceCount": len(record["datasourceUids"]),
-                "dashboardCount": len([item for item in record["dashboardUids"] if item]),
-                "panelCount": len([item for item in record["panelKeys"] if item != ":"]),
+                "dashboardCount": len(
+                    [item for item in record["dashboardUids"] if item]
+                ),
+                "panelCount": len(
+                    [item for item in record["panelKeys"] if item != ":"]
+                ),
                 "queryCount": int(record["queryCount"] or 0),
             }
         )
@@ -286,7 +289,8 @@ def build_datasource_coverage_records(
         record["queryFields"].add(str(query.get("queryField") or ""))
         record["dashboardUids"].add(str(query.get("dashboardUid") or ""))
         record["panelKeys"].add(
-            "%s:%s" % (str(query.get("dashboardUid") or ""), str(query.get("panelId") or ""))
+            "%s:%s"
+            % (str(query.get("dashboardUid") or ""), str(query.get("panelId") or ""))
         )
         record["queryCount"] = int(record.get("queryCount") or 0) + 1
         record["orphaned"] = False
@@ -300,8 +304,12 @@ def build_datasource_coverage_records(
                 "datasource": record["datasource"],
                 "family": record["family"],
                 "queryCount": int(record["queryCount"] or 0),
-                "dashboardCount": len([item for item in record["dashboardUids"] if item]),
-                "panelCount": len([item for item in record["panelKeys"] if item != ":"]),
+                "dashboardCount": len(
+                    [item for item in record["dashboardUids"] if item]
+                ),
+                "panelCount": len(
+                    [item for item in record["panelKeys"] if item != ":"]
+                ),
                 "queryFields": _unique_strings(record["queryFields"]),
                 "orphaned": bool(record.get("orphaned")),
             }
@@ -407,7 +415,9 @@ def build_dashboard_dependency_records(
                     variable_name = _extract_datasource_variable_name(target_datasource)
                     if variable_name:
                         datasource_variable_refs.add(variable_name)
-        report_record = dashboard_report_index.get(str(dashboard.get("uid") or "").strip()) or {}
+        report_record = (
+            dashboard_report_index.get(str(dashboard.get("uid") or "").strip()) or {}
+        )
         rows.append(
             {
                 "dashboardUid": str(dashboard.get("uid") or ""),
@@ -554,7 +564,9 @@ def build_export_inspection_governance_document(
         "summary": {
             "dashboardCount": int(summary.get("dashboardCount") or 0),
             "queryRecordCount": int(report_summary.get("queryRecordCount") or 0),
-            "datasourceInventoryCount": int(summary.get("datasourceInventoryCount") or 0),
+            "datasourceInventoryCount": int(
+                summary.get("datasourceInventoryCount") or 0
+            ),
             "datasourceFamilyCount": len(family_records),
             "datasourceCoverageCount": len(datasource_records),
             "mixedDatasourceDashboardCount": int(

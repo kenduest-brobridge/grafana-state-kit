@@ -14,9 +14,7 @@ def run_dashboard_delete_interactive(
     output_writer: Callable[[str], None] = deps.get("output_writer") or print
     is_tty = deps.get("is_tty")
     if is_tty is not None and not is_tty():
-        raise deps["GrafanaError"](
-            "Dashboard delete interactive mode requires a TTY."
-        )
+        raise deps["GrafanaError"]("Dashboard delete interactive mode requires a TTY.")
 
     working_args = clone_args(args)
     uid = str(getattr(working_args, "uid", "") or "").strip()
@@ -24,7 +22,9 @@ def run_dashboard_delete_interactive(
     if not uid and not path:
         mode = input_reader("Delete by uid or path? [uid/path]: ").strip().lower()
         if mode not in ("uid", "path"):
-            raise deps["GrafanaError"]("Interactive dashboard delete expected uid or path.")
+            raise deps["GrafanaError"](
+                "Interactive dashboard delete expected uid or path."
+            )
         if mode == "uid":
             working_args.uid = input_reader("Dashboard UID: ").strip()
         else:

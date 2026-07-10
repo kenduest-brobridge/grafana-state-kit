@@ -197,7 +197,9 @@ def render_export_inspection_grouped_report(
             for panel in list(dashboard.get("panels") or []):
                 datasource_text = ",".join(panel.get("datasources") or []) or "-"
                 query_rows = list(panel.get("queries") or [])
-                target_count = int(panel.get("panelTargetCount") or 0) or len(query_rows)
+                target_count = int(panel.get("panelTargetCount") or 0) or len(
+                    query_rows
+                )
                 query_count = int(
                     panel.get("panelQueryCount") or panel.get("queryCount") or 0
                 ) or len(query_rows)
@@ -303,7 +305,9 @@ def render_export_inspection_tree_tables(
                 family_text = ",".join(panel.get("datasourceFamilies") or []) or "-"
                 field_text = ",".join(panel.get("queryFields") or []) or "-"
                 query_records = list(panel.get("queries") or [])
-                target_count = int(panel.get("panelTargetCount") or 0) or len(query_records)
+                target_count = int(panel.get("panelTargetCount") or 0) or len(
+                    query_records
+                )
                 query_count = int(
                     panel.get("panelQueryCount") or panel.get("queryCount") or 0
                 ) or len(query_records)

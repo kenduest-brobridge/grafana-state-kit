@@ -64,7 +64,9 @@ class UnifiedDashboardCaptureCliTests(unittest.TestCase):
         self,
     ):
         with self.assertRaises(SystemExit):
-            unified_cli.parse_args(["dashboard", "inspect-vars", "--dashboard-uid", "cpu-main"])
+            unified_cli.parse_args(
+                ["dashboard", "inspect-vars", "--dashboard-uid", "cpu-main"]
+            )
 
     def test_unified_cli_dashboard_capture_parse_args_supports_dashboard_screenshot_namespace(
         self,

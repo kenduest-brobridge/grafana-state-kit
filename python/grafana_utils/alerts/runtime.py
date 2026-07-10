@@ -204,7 +204,9 @@ def build_plan_row(
     }
 
 
-def build_alert_plan_document(rows: list[dict[str, Any]], allow_prune: bool) -> dict[str, Any]:
+def build_alert_plan_document(
+    rows: list[dict[str, Any]], allow_prune: bool
+) -> dict[str, Any]:
     """Build the full alert plan document."""
     return {
         "kind": ALERT_PLAN_KIND,
@@ -356,9 +358,7 @@ def execute_alert_plan(
             if not isinstance(desired, dict):
                 raise GrafanaError("Alert plan row is missing desired.")
             if kind == RULE_KIND:
-                response = client.create_alert_rule(
-                    build_rule_import_payload(desired)
-                )
+                response = client.create_alert_rule(build_rule_import_payload(desired))
             elif kind == CONTACT_POINT_KIND:
                 response = client.create_contact_point(
                     build_contact_point_import_payload(desired)
@@ -389,7 +389,9 @@ def execute_alert_plan(
                 payload = build_rule_import_payload(desired)
                 if not payload.get("uid") and identity:
                     payload["uid"] = str(identity)
-                response = client.update_alert_rule(str(payload.get("uid", "") or ""), payload)
+                response = client.update_alert_rule(
+                    str(payload.get("uid", "") or ""), payload
+                )
             elif kind == CONTACT_POINT_KIND:
                 payload = build_contact_point_import_payload(desired)
                 if not payload.get("uid") and identity:
@@ -426,9 +428,13 @@ def execute_alert_plan(
                 )
         elif action == "delete":
             if kind == RULE_KIND:
-                response = client.request_json(f"/api/v1/provisioning/alert-rules/{identity}", method="DELETE")
+                response = client.request_json(
+                    f"/api/v1/provisioning/alert-rules/{identity}", method="DELETE"
+                )
             elif kind == CONTACT_POINT_KIND:
-                response = client.request_json(f"/api/v1/provisioning/contact-points/{identity}", method="DELETE")
+                response = client.request_json(
+                    f"/api/v1/provisioning/contact-points/{identity}", method="DELETE"
+                )
             elif kind == MUTE_TIMING_KIND:
                 response = client.request_json(
                     f"/api/v1/provisioning/mute-timings/{identity}",

@@ -42,9 +42,13 @@ def validate_delete_args(args: Any) -> None:
     if delete_folders and not path:
         raise GrafanaError("--delete-folders requires --path for dashboard delete.")
     if table and not dry_run:
-        raise GrafanaError("--table is only supported with --dry-run for dashboard delete.")
+        raise GrafanaError(
+            "--table is only supported with --dry-run for dashboard delete."
+        )
     if json_output and not dry_run:
-        raise GrafanaError("--json is only supported with --dry-run for dashboard delete.")
+        raise GrafanaError(
+            "--json is only supported with --dry-run for dashboard delete."
+        )
     if getattr(args, "no_header", False) and not table:
         raise GrafanaError(
             "--no-header is only supported with --dry-run --table for dashboard delete."
@@ -56,7 +60,9 @@ def validate_delete_args(args: Any) -> None:
             )
         return
     if not uid and not path:
-        raise GrafanaError("Dashboard delete requires --uid or --path unless --interactive is used.")
+        raise GrafanaError(
+            "Dashboard delete requires --uid or --path unless --interactive is used."
+        )
     if not dry_run and not bool(getattr(args, "yes", False)):
         raise GrafanaError("Dashboard delete requires --yes unless --dry-run is set.")
 
@@ -103,7 +109,9 @@ def build_delete_plan(client: Any, args: Any) -> dict[str, Any]:
             if _folder_path_matches(summary.get("folderPath"), root_path)
         ]
         if not matched_dashboards:
-            raise GrafanaError("Dashboard folder path did not match any dashboards: %s" % root_path)
+            raise GrafanaError(
+                "Dashboard folder path did not match any dashboards: %s" % root_path
+            )
     else:
         raise GrafanaError("Dashboard delete plan requires a selector.")
 
@@ -137,7 +145,11 @@ def build_delete_plan(client: Any, args: Any) -> dict[str, Any]:
             "dashboard",
             str(item.get("uid") or ""),
             str(item.get("title") or DEFAULT_DASHBOARD_TITLE),
-            str(item.get("folderPath") or item.get("folderTitle") or DEFAULT_FOLDER_TITLE),
+            str(
+                item.get("folderPath")
+                or item.get("folderTitle")
+                or DEFAULT_FOLDER_TITLE
+            ),
             "delete",
         )
         for item in matched_dashboards

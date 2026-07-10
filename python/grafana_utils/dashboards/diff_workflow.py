@@ -14,7 +14,14 @@ def _discover_provisioning_dashboard_files(input_dir):
     return sorted(
         path
         for path in root.rglob("*.json")
-        if path.name not in {"export-metadata.json", "index.json", "folders.json", "datasources.json", "permissions.json"}
+        if path.name
+        not in {
+            "export-metadata.json",
+            "index.json",
+            "folders.json",
+            "datasources.json",
+            "permissions.json",
+        }
     )
 
 
@@ -29,7 +36,9 @@ def run_diff_dashboards(args, deps):
     if getattr(args, "input_format", "raw") == "provisioning":
         dashboard_files = _discover_provisioning_dashboard_files(import_dir)
     else:
-        deps["load_export_metadata"](import_dir, expected_variant=deps["RAW_EXPORT_SUBDIR"])
+        deps["load_export_metadata"](
+            import_dir, expected_variant=deps["RAW_EXPORT_SUBDIR"]
+        )
         dashboard_files = deps["discover_dashboard_files"](import_dir)
     differences = 0
     records = []

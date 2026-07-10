@@ -82,25 +82,44 @@ def build_parser(prog: Optional[str] = None) -> argparse.ArgumentParser:
 
     # kinds
     kinds_parser = subparsers.add_parser("kinds", help="List supported resource kinds.")
-    kinds_parser.add_argument("--output-format", choices=OUTPUT_FORMAT_CHOICES, default="table")
+    kinds_parser.add_argument(
+        "--output-format", choices=OUTPUT_FORMAT_CHOICES, default="table"
+    )
 
     # describe
-    describe_parser = subparsers.add_parser("describe", help="Describe supported resource kinds.")
-    describe_parser.add_argument("kind", nargs="?", choices=SUPPORTED_KINDS, default=None)
-    describe_parser.add_argument("--output-format", choices=OUTPUT_FORMAT_CHOICES, default="table")
+    describe_parser = subparsers.add_parser(
+        "describe", help="Describe supported resource kinds."
+    )
+    describe_parser.add_argument(
+        "kind", nargs="?", choices=SUPPORTED_KINDS, default=None
+    )
+    describe_parser.add_argument(
+        "--output-format", choices=OUTPUT_FORMAT_CHOICES, default="table"
+    )
 
     # list
-    list_parser = subparsers.add_parser("list", help="List resources of a specific kind.")
+    list_parser = subparsers.add_parser(
+        "list", help="List resources of a specific kind."
+    )
     list_parser.add_argument("kind", choices=SUPPORTED_KINDS)
     from .cli_shared import add_live_connection_args
+
     add_live_connection_args(list_parser)
-    list_parser.add_argument("--output-format", choices=OUTPUT_FORMAT_CHOICES, default="table")
+    list_parser.add_argument(
+        "--output-format", choices=OUTPUT_FORMAT_CHOICES, default="table"
+    )
 
     # get
-    get_parser = subparsers.add_parser("get", help="Fetch a single resource by selector.")
-    get_parser.add_argument("selector", help="<kind>/<identity>, e.g. dashboards/cpu-main")
+    get_parser = subparsers.add_parser(
+        "get", help="Fetch a single resource by selector."
+    )
+    get_parser.add_argument(
+        "selector", help="<kind>/<identity>, e.g. dashboards/cpu-main"
+    )
     add_live_connection_args(get_parser)
-    get_parser.add_argument("--output-format", choices=OUTPUT_FORMAT_CHOICES, default="json")
+    get_parser.add_argument(
+        "--output-format", choices=OUTPUT_FORMAT_CHOICES, default="json"
+    )
 
     return parser
 
@@ -115,8 +134,10 @@ def parse_selector(selector: str):
 
 
 def list_command(args: argparse.Namespace) -> int:
-    _, dashboard_client, datasource_client, alert_client, access_client = build_live_clients(args)
-    
+    _, dashboard_client, datasource_client, alert_client, access_client = (
+        build_live_clients(args)
+    )
+
     items = []
     if args.kind == ResourceKind.DASHBOARDS:
         items = alert_client.search_dashboards("")
@@ -128,33 +149,49 @@ def list_command(args: argparse.Namespace) -> int:
         items = alert_client.list_alert_rules()
     elif args.kind == ResourceKind.ORGS:
         items = access_client.request_json("/api/orgs", method="GET")
-    
-    document = {
-        "kind": args.kind,
-        "count": len(items),
-        "items": items
-    }
-    
+
+    document = {"kind": args.kind, "count": len(items), "items": items}
+
     if args.output_format == "table":
         headers = []
         rows = []
         if args.kind == ResourceKind.DASHBOARDS:
             headers = ["uid", "title", "folder"]
-            rows = [[item.get("uid", ""), item.get("title", item.get("name", "")), item.get("folderTitle", "")] for item in items]
+            rows = [
+                [
+                    item.get("uid", ""),
+                    item.get("title", item.get("name", "")),
+                    item.get("folderTitle", ""),
+                ]
+                for item in items
+            ]
         elif args.kind == ResourceKind.FOLDERS:
             headers = ["uid", "title", "parent_uid"]
-            rows = [[item.get("uid", ""), item.get("title", ""), item.get("parentUid", "")] for item in items]
+            rows = [
+                [item.get("uid", ""), item.get("title", ""), item.get("parentUid", "")]
+                for item in items
+            ]
         elif args.kind == ResourceKind.DATASOURCES:
             headers = ["uid", "name", "type"]
-            rows = [[item.get("uid", ""), item.get("name", ""), item.get("type", "")] for item in items]
+            rows = [
+                [item.get("uid", ""), item.get("name", ""), item.get("type", "")]
+                for item in items
+            ]
         elif args.kind == ResourceKind.ALERT_RULES:
             headers = ["uid", "title", "folder_uid"]
-            rows = [[item.get("uid", ""), item.get("title", ""), item.get("folderUID", "")] for item in items]
+            rows = [
+                [item.get("uid", ""), item.get("title", ""), item.get("folderUID", "")]
+                for item in items
+            ]
         elif args.kind == ResourceKind.ORGS:
             headers = ["id", "name", "address"]
-            rows = [[str(item.get("id", "")), item.get("name", ""), item.get("address", "")] for item in items]
-        
+            rows = [
+                [str(item.get("id", "")), item.get("name", ""), item.get("address", "")]
+                for item in items
+            ]
+
         from .tabular_output import render_table
+
         for line in render_table(headers, rows):
             print(line)
         return 0
@@ -167,25 +204,41 @@ def describe_command(args: argparse.Namespace) -> int:
     kinds = [args.kind] if args.kind else SUPPORTED_KINDS
     records = []
     for kind in kinds:
-        records.append({
-            "kind": kind,
-            "singular": ResourceKind.singular_label(kind),
-            "selector": ResourceKind.selector_pattern(kind),
-            "list_endpoint": ResourceKind.list_endpoint(kind),
-            "get_endpoint": ResourceKind.get_endpoint(kind),
-            "description": ResourceKind.description(kind),
-        })
-    
-    document = {
-        "kind": args.kind,
-        "count": len(records),
-        "items": records
-    }
+        records.append(
+            {
+                "kind": kind,
+                "singular": ResourceKind.singular_label(kind),
+                "selector": ResourceKind.selector_pattern(kind),
+                "list_endpoint": ResourceKind.list_endpoint(kind),
+                "get_endpoint": ResourceKind.get_endpoint(kind),
+                "description": ResourceKind.description(kind),
+            }
+        )
+
+    document = {"kind": args.kind, "count": len(records), "items": records}
 
     if args.output_format == "table":
-        headers = ["kind", "singular", "selector", "list_endpoint", "get_endpoint", "description"]
-        rows = [[r["kind"], r["singular"], r["selector"], r["list_endpoint"], r["get_endpoint"], r["description"]] for r in records]
+        headers = [
+            "kind",
+            "singular",
+            "selector",
+            "list_endpoint",
+            "get_endpoint",
+            "description",
+        ]
+        rows = [
+            [
+                r["kind"],
+                r["singular"],
+                r["selector"],
+                r["list_endpoint"],
+                r["get_endpoint"],
+                r["description"],
+            ]
+            for r in records
+        ]
         from .tabular_output import render_table
+
         for line in render_table(headers, rows):
             print(line)
         return 0
@@ -196,8 +249,10 @@ def describe_command(args: argparse.Namespace) -> int:
 
 def get_command(args: argparse.Namespace) -> int:
     kind, identity = parse_selector(args.selector)
-    _, dashboard_client, datasource_client, alert_client, access_client = build_live_clients(args)
-    
+    _, dashboard_client, datasource_client, alert_client, access_client = (
+        build_live_clients(args)
+    )
+
     item = None
     if kind == ResourceKind.DASHBOARDS:
         item = dashboard_client.get_dashboard(identity)
@@ -212,7 +267,7 @@ def get_command(args: argparse.Namespace) -> int:
         item = alert_client.get_alert_rule(identity)
     elif kind == ResourceKind.ORGS:
         item = access_client.request_json(f"/api/orgs/{identity}", method="GET")
-    
+
     dump_document(item, args.output_format)
     return 0
 
@@ -224,15 +279,18 @@ def main(argv: Optional[list[str]] = None) -> int:
         if args.command == "kinds":
             records = []
             for kind in SUPPORTED_KINDS:
-                records.append({
-                    "kind": kind,
-                    "singular": ResourceKind.singular_label(kind),
-                    "description": ResourceKind.description(kind),
-                })
+                records.append(
+                    {
+                        "kind": kind,
+                        "singular": ResourceKind.singular_label(kind),
+                        "description": ResourceKind.description(kind),
+                    }
+                )
             if args.output_format == "table":
                 headers = ["kind", "singular", "description"]
                 rows = [[r["kind"], r["singular"], r["description"]] for r in records]
                 from .tabular_output import render_table
+
                 for line in render_table(headers, rows):
                     print(line)
                 return 0

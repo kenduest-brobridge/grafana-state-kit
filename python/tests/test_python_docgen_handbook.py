@@ -14,13 +14,17 @@ from docgen_handbook import HANDBOOK_NAV_GROUPS, HANDBOOK_NAV_TITLES, HANDBOOK_O
 
 class DocgenHandbookTests(unittest.TestCase):
     def test_handbook_nav_contract_covers_order_once(self):
-        grouped = [filename for group in HANDBOOK_NAV_GROUPS for filename in group.files]
+        grouped = [
+            filename for group in HANDBOOK_NAV_GROUPS for filename in group.files
+        ]
         self.assertEqual(set(grouped), set(HANDBOOK_ORDER))
         self.assertEqual(len(grouped), len(HANDBOOK_ORDER))
 
     def test_handbook_nav_contract_exposes_short_nav_titles(self):
         self.assertEqual(HANDBOOK_NAV_TITLES["zh-TW"]["dashboard"], "Dashboard")
-        self.assertEqual(HANDBOOK_NAV_TITLES["zh-TW"]["status-workspace"], "Status / Workspace")
+        self.assertEqual(
+            HANDBOOK_NAV_TITLES["zh-TW"]["status-workspace"], "Status / Workspace"
+        )
         self.assertEqual(HANDBOOK_NAV_TITLES["en"]["architecture"], "Design Principles")
 
 

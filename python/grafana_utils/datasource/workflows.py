@@ -324,12 +324,16 @@ def build_datasource_provisioning_document(records):
 
 def load_secret_value_map(args):
     """Load secret values from CLI arguments."""
-    inline = load_json_object_argument(getattr(args, "secret_values", None), "--secret-values")
+    inline = load_json_object_argument(
+        getattr(args, "secret_values", None), "--secret-values"
+    )
     file_map = load_json_object_file(
         getattr(args, "secret_values_file", None), "--secret-values-file"
     )
     if inline is not None and file_map is not None:
-        raise GrafanaError("Choose either --secret-values or --secret-values-file, not both.")
+        raise GrafanaError(
+            "Choose either --secret-values or --secret-values-file, not both."
+        )
     return inline if inline is not None else file_map
 
 
@@ -392,8 +396,7 @@ def resolve_datasource_provisioning_file(input_path):
         if candidate.is_file():
             return candidate
     raise GrafanaError(
-        "Datasource provisioning import did not find datasources.yaml under %s."
-        % path
+        "Datasource provisioning import did not find datasources.yaml under %s." % path
     )
 
 
@@ -470,7 +473,9 @@ def parse_output_columns(value, aliases, headers):
         if column:
             columns.append(aliases.get(column, column))
     if not columns:
-        raise GrafanaError("Output columns requires one or more comma-separated values.")
+        raise GrafanaError(
+            "Output columns requires one or more comma-separated values."
+        )
     if columns == ["all"]:
         return list(headers.keys())
     unsupported = [column for column in columns if column not in headers]
@@ -484,7 +489,9 @@ def parse_output_columns(value, aliases, headers):
 
 def render_datasource_list_table(records, include_header=True, selected_columns=None):
     """Render datasource list table with optional column selection."""
-    columns = list(selected_columns or ["uid", "name", "type", "access", "url", "isDefault"])
+    columns = list(
+        selected_columns or ["uid", "name", "type", "access", "url", "isDefault"]
+    )
     headers = [LIST_OUTPUT_COLUMN_HEADERS[column] for column in columns]
     rows = [[str(item.get(column) or "") for column in columns] for item in records]
     widths = [len(value) for value in headers]
@@ -493,7 +500,9 @@ def render_datasource_list_table(records, include_header=True, selected_columns=
             widths[index] = max(widths[index], len(value))
 
     def render_row(values):
-        return "  ".join(values[index].ljust(widths[index]) for index in range(len(values)))
+        return "  ".join(
+            values[index].ljust(widths[index]) for index in range(len(values))
+        )
 
     lines = []
     if include_header:
@@ -520,7 +529,9 @@ def project_datasource_records(records, selected_columns=None):
 
 def render_datasource_list_csv(records, selected_columns=None):
     """Render datasource summaries as CSV with optional selected columns."""
-    columns = list(selected_columns or ["uid", "name", "type", "access", "url", "isDefault"])
+    columns = list(
+        selected_columns or ["uid", "name", "type", "access", "url", "isDefault"]
+    )
     output = StringIO()
     writer = csv.DictWriter(output, fieldnames=columns)
     writer.writeheader()
@@ -533,7 +544,9 @@ def render_datasource_list_text(records, selected_columns=None):
     """Render datasource summaries as key=value text lines."""
     columns = list(selected_columns or ["uid", "name", "type", "access", "url"])
     return [
-        " ".join("%s=%s" % (column, str(record.get(column) or "")) for column in columns)
+        " ".join(
+            "%s=%s" % (column, str(record.get(column) or "")) for column in columns
+        )
         for record in records
     ]
 
@@ -685,11 +698,15 @@ def load_import_bundle(import_dir):
                 % (
                     datasources_path,
                     ", ".join(extra_fields),
-                    ", ".join(list(DATASOURCE_CONTRACT_FIELDS) + sorted(allowed_secret_fields)),
+                    ", ".join(
+                        list(DATASOURCE_CONTRACT_FIELDS) + sorted(allowed_secret_fields)
+                    ),
                 )
             )
         contract_item = {
-            key: value for key, value in item.items() if key in DATASOURCE_CONTRACT_FIELDS
+            key: value
+            for key, value in item.items()
+            if key in DATASOURCE_CONTRACT_FIELDS
         }
         try:
             validate_datasource_contract_record(
@@ -808,8 +825,7 @@ def load_import_bundle_preview(import_dir):
                     datasources_path,
                     ", ".join(extra_fields),
                     ", ".join(
-                        list(DATASOURCE_CONTRACT_FIELDS)
-                        + sorted(allowed_secret_fields)
+                        list(DATASOURCE_CONTRACT_FIELDS) + sorted(allowed_secret_fields)
                     ),
                 )
             )
@@ -1260,7 +1276,9 @@ def build_add_datasource_spec(args):
         "type": normalized_type,
     }
     preset_profile = getattr(args, "preset_profile", None)
-    if preset_profile is None and bool(getattr(args, "apply_supported_defaults", False)):
+    if preset_profile is None and bool(
+        getattr(args, "apply_supported_defaults", False)
+    ):
         preset_profile = "starter"
     if preset_profile is not None:
         defaults = build_add_defaults_for_supported_type(
@@ -1686,7 +1704,9 @@ def modify_datasource(args):
 def delete_datasource(args):
     """Delete datasource implementation."""
     _validate_live_mutation_dry_run_args(args, "delete")
-    if not bool(getattr(args, "dry_run", False)) and not bool(getattr(args, "yes", False)):
+    if not bool(getattr(args, "dry_run", False)) and not bool(
+        getattr(args, "yes", False)
+    ):
         raise GrafanaError("Datasource delete requires --yes unless --dry-run is set.")
     client = build_client(args)
     result = delete_live_datasource(
@@ -1744,10 +1764,16 @@ def list_datasources(args):
     input_dir = _resolve_datasource_local_input_dir(args, "input_dir")
     if input_dir:
         if getattr(args, "org_id", None) or bool(getattr(args, "all_orgs", False)):
-            raise GrafanaError("Datasource list with --input-dir does not support --org-id or --all-orgs.")
+            raise GrafanaError(
+                "Datasource list with --input-dir does not support --org-id or --all-orgs."
+            )
         if bool(getattr(args, "interactive", False)):
-            raise GrafanaError("Datasource list interactive mode is not implemented in Python yet.")
-        bundle = load_local_datasource_bundle(input_dir, getattr(args, "input_format", "inventory"))
+            raise GrafanaError(
+                "Datasource list interactive mode is not implemented in Python yet."
+            )
+        bundle = load_local_datasource_bundle(
+            input_dir, getattr(args, "input_format", "inventory")
+        )
         records = bundle["records"]
         if getattr(args, "list_columns", False):
             for column in LIST_OUTPUT_COLUMN_HEADERS:
@@ -1851,7 +1877,9 @@ def list_datasources(args):
         for line in render_datasource_list_text(datasources, selected_columns):
             print(line)
         return 0
-    table_renderer = render_datasource_list_table if selected_columns else render_data_source_table
+    table_renderer = (
+        render_datasource_list_table if selected_columns else render_data_source_table
+    )
     table_kwargs = {"selected_columns": selected_columns} if selected_columns else {}
     for line in table_renderer(
         datasources,
@@ -1868,7 +1896,9 @@ def _resolve_datasource_local_input_dir(args, attr_name):
     """Resolve one datasource input directory from explicit path or artifact lane."""
     explicit = getattr(args, attr_name, None)
     if explicit and getattr(args, "local", False):
-        raise GrafanaError("--%s and --local cannot be combined." % attr_name.replace("_", "-"))
+        raise GrafanaError(
+            "--%s and --local cannot be combined." % attr_name.replace("_", "-")
+        )
     if explicit:
         return Path(explicit)
     if not getattr(args, "local", False):
@@ -1986,9 +2016,13 @@ def _browse_edit_selected(base_client, record, input_reader, output_writer):
         if value and value != str(current):
             updates[key] = value
     current_default = bool(existing.get("isDefault"))
-    default_value = input_reader(
-        "Default datasource? [%s]: " % ("yes" if current_default else "no")
-    ).strip().lower()
+    default_value = (
+        input_reader(
+            "Default datasource? [%s]: " % ("yes" if current_default else "no")
+        )
+        .strip()
+        .lower()
+    )
     if default_value in {"yes", "y", "true", "1"} and not current_default:
         updates["isDefault"] = True
     elif default_value in {"no", "n", "false", "0"} and current_default:
@@ -2022,7 +2056,9 @@ def browse_datasources(args, input_reader=input, output_writer=print, is_tty=Non
     filtered = list(records)
 
     def render_rows(rows):
-        output_writer("Datasource browse: number=view JSON, e N=edit, d N=delete, /text=filter, r=reset, q=quit.")
+        output_writer(
+            "Datasource browse: number=view JSON, e N=edit, d N=delete, /text=filter, r=reset, q=quit."
+        )
         for index, record in enumerate(rows, 1):
             output_writer(
                 "%d. %s | %s | %s | org=%s"
@@ -2054,7 +2090,9 @@ def browse_datasources(args, input_reader=input, output_writer=print, is_tty=Non
             render_rows(filtered)
             continue
         if choice.lower().startswith("e "):
-            selected, error = _browse_selected_record(filtered, choice.split(None, 1)[1])
+            selected, error = _browse_selected_record(
+                filtered, choice.split(None, 1)[1]
+            )
             if error:
                 output_writer(error)
                 continue
@@ -2064,7 +2102,9 @@ def browse_datasources(args, input_reader=input, output_writer=print, is_tty=Non
                 render_rows(filtered)
             continue
         if choice.lower().startswith("d "):
-            selected, error = _browse_selected_record(filtered, choice.split(None, 1)[1])
+            selected, error = _browse_selected_record(
+                filtered, choice.split(None, 1)[1]
+            )
             if error:
                 output_writer(error)
                 continue
@@ -2261,7 +2301,9 @@ def diff_datasources(args):
     diff_dir = _resolve_datasource_local_input_dir(args, "diff_dir")
     if diff_dir is None:
         raise GrafanaError("Datasource diff requires --diff-dir or --local.")
-    bundle = load_local_datasource_bundle(diff_dir, getattr(args, "input_format", "inventory"))
+    bundle = load_local_datasource_bundle(
+        diff_dir, getattr(args, "input_format", "inventory")
+    )
     live_records = build_live_datasource_diff_records(client)
     report = compare_datasource_bundle_to_live(bundle, live_records)
 
@@ -2334,13 +2376,23 @@ def _datasource_plan_action(item, prune):
     if status == "missing-live":
         return "would-create", "pending", ""
     if status == "extra-live":
-        return ("would-delete", "pending", "") if prune else ("remote-only", "blocked", "use --prune to include as delete candidate")
+        return (
+            ("would-delete", "pending", "")
+            if prune
+            else (
+                "remote-only",
+                "blocked",
+                "use --prune to include as delete candidate",
+            )
+        )
     if status in ("ambiguous-live-uid", "ambiguous-live-name"):
         return "blocked", "blocked", status
     return "blocked", "blocked", str(status or "unknown")
 
 
-def _build_datasource_plan_rows(bundle, live_records, prune=False, source_org_id="", target_org_id=""):
+def _build_datasource_plan_rows(
+    bundle, live_records, prune=False, source_org_id="", target_org_id=""
+):
     report = compare_datasource_bundle_to_live(bundle, live_records)
     rows = []
     for index, item in enumerate(report["items"], 1):
@@ -2377,9 +2429,15 @@ def _build_datasource_plan_rows(bundle, live_records, prune=False, source_org_id
 def _datasource_plan_summary(rows):
     return {
         "actionCount": len(rows),
-        "wouldCreateCount": len([row for row in rows if row["action"] == "would-create"]),
-        "wouldUpdateCount": len([row for row in rows if row["action"] == "would-update"]),
-        "wouldDeleteCount": len([row for row in rows if row["action"] == "would-delete"]),
+        "wouldCreateCount": len(
+            [row for row in rows if row["action"] == "would-create"]
+        ),
+        "wouldUpdateCount": len(
+            [row for row in rows if row["action"] == "would-update"]
+        ),
+        "wouldDeleteCount": len(
+            [row for row in rows if row["action"] == "would-delete"]
+        ),
         "sameCount": len([row for row in rows if row["action"] == "same"]),
         "blockedCount": len([row for row in rows if row["status"] == "blocked"]),
     }
@@ -2405,7 +2463,9 @@ def _project_plan_row(row, selected_columns):
 
 def _render_datasource_plan_table(rows, include_header=True, selected_columns=None):
     columns = selected_columns or list(PLAN_OUTPUT_COLUMN_HEADERS.keys())
-    headers = [PLAN_OUTPUT_COLUMN_HEADERS.get(column, column.upper()) for column in columns]
+    headers = [
+        PLAN_OUTPUT_COLUMN_HEADERS.get(column, column.upper()) for column in columns
+    ]
     values = []
     for row in rows:
         current = []
@@ -2421,7 +2481,9 @@ def _render_datasource_plan_table(rows, include_header=True, selected_columns=No
             widths[index] = max(widths[index], len(value))
 
     def render_row(parts):
-        return "  ".join("%-*s" % (widths[index], value) for index, value in enumerate(parts))
+        return "  ".join(
+            "%-*s" % (widths[index], value) for index, value in enumerate(parts)
+        )
 
     lines = []
     if include_header:
@@ -2438,7 +2500,9 @@ def _load_plan_bundle(args, input_dir):
     return load_import_bundle_preview(input_dir)
 
 
-def _run_datasource_plan_single(args, client, input_dir, source_org_id="", target_org_id=""):
+def _run_datasource_plan_single(
+    args, client, input_dir, source_org_id="", target_org_id=""
+):
     bundle = _load_plan_bundle(args, input_dir)
     live_records = build_live_datasource_diff_records(client)
     return _build_datasource_plan_rows(
@@ -2810,10 +2874,14 @@ def _run_import_datasources_for_single_org(args):
     args.local = False
     if getattr(args, "input_format", "inventory") == "provisioning":
         if getattr(args, "use_export_org", False):
-            raise GrafanaError("--use-export-org is only supported with inventory datasource import.")
+            raise GrafanaError(
+                "--use-export-org is only supported with inventory datasource import."
+            )
         bundle = load_provisioning_datasource_bundle(input_dir)
     else:
-        bundle_loader = load_import_bundle_preview if args.dry_run else load_import_bundle
+        bundle_loader = (
+            load_import_bundle_preview if args.dry_run else load_import_bundle
+        )
         bundle = bundle_loader(input_dir)
     secret_values = load_secret_value_map(args)
     if secret_values is not None:

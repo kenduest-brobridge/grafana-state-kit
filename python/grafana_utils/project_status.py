@@ -35,7 +35,9 @@ class ProjectStatusFreshnessSample:
         return cls(source=source, age_seconds=age_seconds)
 
     @classmethod
-    def from_rfc3339(cls, source: str, observed_at: str) -> "ProjectStatusFreshnessSample":
+    def from_rfc3339(
+        cls, source: str, observed_at: str
+    ) -> "ProjectStatusFreshnessSample":
         return cls(source=source, observed_at_rfc3339=observed_at)
 
     @classmethod
@@ -52,13 +54,19 @@ def age_seconds_from_rfc3339(now: float, observed_at: str) -> Optional[int]:
         return None
 
 
-def freshness_from_ages(ages: List[int]) -> Optional[tuple[str, Optional[int], Optional[int]]]:
+def freshness_from_ages(
+    ages: List[int],
+) -> Optional[tuple[str, Optional[int], Optional[int]]]:
     if not ages:
         return None
 
     newest = min(ages)
     oldest = max(ages)
-    status = PROJECT_STATUS_FRESHNESS_STALE if oldest > PROJECT_STATUS_STALE_AGE_SECONDS else PROJECT_STATUS_FRESHNESS_CURRENT
+    status = (
+        PROJECT_STATUS_FRESHNESS_STALE
+        if oldest > PROJECT_STATUS_STALE_AGE_SECONDS
+        else PROJECT_STATUS_FRESHNESS_CURRENT
+    )
     return status, newest, oldest
 
 
@@ -68,7 +76,9 @@ def build_live_project_status_freshness(
 ) -> ProjectStatusFreshness:
     effective_count = source_count if source_count > 0 else len(ages)
     if effective_count == 0:
-        return ProjectStatusFreshness(status=PROJECT_STATUS_FRESHNESS_UNKNOWN, source_count=0)
+        return ProjectStatusFreshness(
+            status=PROJECT_STATUS_FRESHNESS_UNKNOWN, source_count=0
+        )
 
     res = freshness_from_ages(ages)
     if res:
@@ -80,7 +90,9 @@ def build_live_project_status_freshness(
             oldest_age_seconds=oldest,
         )
 
-    return ProjectStatusFreshness(status=PROJECT_STATUS_FRESHNESS_CURRENT, source_count=effective_count)
+    return ProjectStatusFreshness(
+        status=PROJECT_STATUS_FRESHNESS_CURRENT, source_count=effective_count
+    )
 
 
 def build_live_project_status_freshness_from_samples(
@@ -89,7 +101,9 @@ def build_live_project_status_freshness_from_samples(
     source_names = {s.source for s in samples}
     effective_count = len(source_names)
     if effective_count == 0:
-        return ProjectStatusFreshness(status=PROJECT_STATUS_FRESHNESS_UNKNOWN, source_count=0)
+        return ProjectStatusFreshness(
+            status=PROJECT_STATUS_FRESHNESS_UNKNOWN, source_count=0
+        )
 
     now = time.time()
     ages = []
@@ -103,7 +117,7 @@ def build_live_project_status_freshness_from_samples(
             age = max(0, int(now - s.observed_at_timestamp))
         elif s.path is not None and s.path.exists():
             age = max(0, int(now - s.path.stat().st_mtime))
-        
+
         if age is not None:
             ages.append(age)
 
@@ -117,10 +131,14 @@ def build_live_project_status_freshness_from_samples(
             oldest_age_seconds=oldest,
         )
 
-    return ProjectStatusFreshness(status=PROJECT_STATUS_FRESHNESS_CURRENT, source_count=effective_count)
+    return ProjectStatusFreshness(
+        status=PROJECT_STATUS_FRESHNESS_CURRENT, source_count=effective_count
+    )
 
 
-def build_live_project_status_freshness_from_source_count(source_count: int) -> ProjectStatusFreshness:
+def build_live_project_status_freshness_from_source_count(
+    source_count: int,
+) -> ProjectStatusFreshness:
     return build_live_project_status_freshness(source_count, [])
 
 
@@ -276,7 +294,9 @@ def status_finding(kind: str, count: int, source: str) -> ProjectStatusFinding:
     return ProjectStatusFinding(kind=kind, count=count, source=source)
 
 
-def render_domain_finding_summary(findings: List[ProjectStatusFinding]) -> Optional[str]:
+def render_domain_finding_summary(
+    findings: List[ProjectStatusFinding],
+) -> Optional[str]:
     if not findings:
         return None
     return ",".join(f"{f.kind}:{f.count}" for f in findings)
@@ -290,13 +310,15 @@ def render_project_status_decision_order(status: ProjectStatus) -> Optional[List
     for action in status.next_actions:
         if action.domain not in ordered_domains:
             ordered_domains.append(action.domain)
-    
+
     if not ordered_domains:
         return None
 
     lines = []
     for index, domain_id in enumerate(ordered_domains):
-        blockers = [f"{b.kind}:{b.count}" for b in status.top_blockers if b.domain == domain_id]
+        blockers = [
+            f"{b.kind}:{b.count}" for b in status.top_blockers if b.domain == domain_id
+        ]
         actions = [a.action for a in status.next_actions if a.domain == domain_id]
         line = f"{index + 1}. {domain_id}"
         if blockers:
@@ -310,14 +332,17 @@ def render_project_status_decision_order(status: ProjectStatus) -> Optional[List
 def render_project_status_signal_summary(status: ProjectStatus) -> Optional[str]:
     fragments = []
     for domain in status.domains:
-        has_sync_signals = any(k in ("sync-summary", "bundle-preflight", "promotion-preflight") for k in domain.source_kinds)
+        has_sync_signals = any(
+            k in ("sync-summary", "bundle-preflight", "promotion-preflight")
+            for k in domain.source_kinds
+        )
         should_render = has_sync_signals or len(domain.source_kinds) > 1
         if not should_render or not domain.source_kinds:
             continue
         fragments.append(
             f"{domain.id} sources={','.join(domain.source_kinds)} signalKeys={len(domain.signal_keys)} blockers={domain.blocker_count} warnings={domain.warning_count}"
         )
-    
+
     if not fragments:
         return None
     return f"Signals: {'; '.join(fragments)}"

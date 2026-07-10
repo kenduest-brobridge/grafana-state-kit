@@ -76,19 +76,28 @@ class AiTraceTests(unittest.TestCase):
             )
 
             self.assertEqual(result, 0)
-            status_text = (root / "docs/internal/ai-status.md").read_text(encoding="utf-8")
-            changes_text = (root / "docs/internal/ai-changes.md").read_text(encoding="utf-8")
+            status_text = (root / "docs/internal/ai-status.md").read_text(
+                encoding="utf-8"
+            )
+            changes_text = (root / "docs/internal/ai-changes.md").read_text(
+                encoding="utf-8"
+            )
             self.assertLess(
                 status_text.index("## 2026-04-12 - Trace Tool"),
                 status_text.index("## 2026-04-01 - Status 1"),
             )
             self.assertIn("- State: Done", status_text)
-            self.assertIn("- Current Update: Added structured trace helper", status_text)
+            self.assertIn(
+                "- Current Update: Added structured trace helper", status_text
+            )
             self.assertLess(
                 changes_text.index("## 2026-04-12 - Trace Tool"),
                 changes_text.index("## 2026-04-01 - Change 1"),
             )
-            self.assertIn("- Tests: python3 -m unittest -v python.tests.test_python_ai_trace", changes_text)
+            self.assertIn(
+                "- Tests: python3 -m unittest -v python.tests.test_python_ai_trace",
+                changes_text,
+            )
             self.assertIn("- Rollback/Risk: Internal helper only", changes_text)
 
     def test_compact_keeps_recent_entries_and_appends_archive(self):
@@ -98,7 +107,9 @@ class AiTraceTests(unittest.TestCase):
             write_trace_files(root, status_entries=3, change_entries=4)
             archive = root / "docs/internal/archive/ai-status-archive-2026-04-12.md"
             archive.parent.mkdir(parents=True, exist_ok=True)
-            archive.write_text("# existing archive\n\nExisting content\n", encoding="utf-8")
+            archive.write_text(
+                "# existing archive\n\nExisting content\n", encoding="utf-8"
+            )
 
             result = module.main(
                 [
@@ -115,8 +126,12 @@ class AiTraceTests(unittest.TestCase):
             )
 
             self.assertEqual(result, 0)
-            status_text = (root / "docs/internal/ai-status.md").read_text(encoding="utf-8")
-            changes_text = (root / "docs/internal/ai-changes.md").read_text(encoding="utf-8")
+            status_text = (root / "docs/internal/ai-status.md").read_text(
+                encoding="utf-8"
+            )
+            changes_text = (root / "docs/internal/ai-changes.md").read_text(
+                encoding="utf-8"
+            )
             self.assertIn("## 2026-04-03 - Status 3", status_text)
             self.assertNotIn("## 2026-04-02 - Status 2", status_text)
             self.assertIn("ai-status-archive-2026-04-12.md", status_text)
@@ -128,8 +143,12 @@ class AiTraceTests(unittest.TestCase):
             self.assertIn("Existing content", archive_text)
             self.assertIn("## 2026-04-02 - Status 2", archive_text)
             self.assertIn("- Result: ok\n\n## ", archive_text)
-            change_archive = root / "docs/internal/archive/ai-changes-archive-2026-04-12.md"
-            self.assertIn("## 2026-04-02 - Change 2", change_archive.read_text(encoding="utf-8"))
+            change_archive = (
+                root / "docs/internal/archive/ai-changes-archive-2026-04-12.md"
+            )
+            self.assertIn(
+                "## 2026-04-02 - Change 2", change_archive.read_text(encoding="utf-8")
+            )
 
     def test_check_size_reports_over_limit_files(self):
         module = load_module()

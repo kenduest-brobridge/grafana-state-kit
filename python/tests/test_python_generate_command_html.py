@@ -36,10 +36,18 @@ class GenerateCommandHtmlTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.doc_ui = load_json(REPO_ROOT / "scripts" / "contracts" / "doc-ui.json")
-        cls.command_taxonomy = load_json(REPO_ROOT / "scripts" / "contracts" / "command-taxonomy.json")
-        cls.command_index = load_json(REPO_ROOT / "scripts" / "contracts" / "command-reference-index.json")
-        cls.handbook_nav = load_json(REPO_ROOT / "scripts" / "contracts" / "handbook-nav.json")
-        cls.handbook_render = load_json(REPO_ROOT / "scripts" / "contracts" / "handbook-render.json")
+        cls.command_taxonomy = load_json(
+            REPO_ROOT / "scripts" / "contracts" / "command-taxonomy.json"
+        )
+        cls.command_index = load_json(
+            REPO_ROOT / "scripts" / "contracts" / "command-reference-index.json"
+        )
+        cls.handbook_nav = load_json(
+            REPO_ROOT / "scripts" / "contracts" / "handbook-nav.json"
+        )
+        cls.handbook_render = load_json(
+            REPO_ROOT / "scripts" / "contracts" / "handbook-render.json"
+        )
 
     def locale_ui(self, locale: str) -> dict:
         return self.doc_ui["locales"][locale]
@@ -128,13 +136,17 @@ class GenerateCommandHtmlTests(unittest.TestCase):
         self.assertIn(">Version<", rendered)
         self.assertIn("Version switching is secondary here.", rendered)
 
-    def test_render_landing_page_labels_local_checkout_when_no_version_switch_exists(self):
+    def test_render_landing_page_labels_local_checkout_when_no_version_switch_exists(
+        self,
+    ):
         module = load_module()
 
         rendered = module.render_landing_page(module.HtmlBuildConfig(version="9.9.0"))
 
         self.assertIn(">Current version<", rendered)
-        self.assertIn("This local docs build reflects the current checkout only.", rendered)
+        self.assertIn(
+            "This local docs build reflects the current checkout only.", rendered
+        )
         self.assertNotIn("Version switching is secondary here.", rendered)
 
     def test_generate_outputs_includes_developer_page(self):
@@ -189,7 +201,11 @@ class GenerateCommandHtmlTests(unittest.TestCase):
             "grafana-util-test.1",
             roff,
             config,
-            manpage_names=("grafana-util.1", "grafana-util-dashboard-list.1", "grafana-util-test.1"),
+            manpage_names=(
+                "grafana-util.1",
+                "grafana-util-dashboard-list.1",
+                "grafana-util-test.1",
+            ),
         )
 
         self.assertIn('<div class="manpage-rendered">', rendered)
@@ -199,15 +215,37 @@ class GenerateCommandHtmlTests(unittest.TestCase):
         self.assertIn('<dl class="man-definitions">', rendered)
         self.assertIn('<h3 class="man-subsection">More Commands</h3>', rendered)
         self.assertNotIn(".SS More Commands", rendered)
-        self.assertIn('<section class="man-section man-section-subcommand-index"><h2 id="subcommand-manpages">SUBCOMMAND MANPAGES</h2>', rendered)
-        self.assertIn('<details class="man-subcommand-group"><summary>Dashboard</summary>', rendered)
-        self.assertIn('class="manpage-ref" href="grafana-util-dashboard.html"', rendered)
-        self.assertIn('class="manpage-ref" href="grafana-util-dashboard-list.html"', rendered)
-        self.assertIn('<strong><a class="manpage-ref" href="grafana-util-alert.html">grafana-util-alert(1)</a></strong>', rendered)
+        self.assertIn(
+            '<section class="man-section man-section-subcommand-index"><h2 id="subcommand-manpages">SUBCOMMAND MANPAGES</h2>',
+            rendered,
+        )
+        self.assertIn(
+            '<details class="man-subcommand-group"><summary>Dashboard</summary>',
+            rendered,
+        )
+        self.assertIn(
+            'class="manpage-ref" href="grafana-util-dashboard.html"', rendered
+        )
+        self.assertIn(
+            'class="manpage-ref" href="grafana-util-dashboard-list.html"', rendered
+        )
+        self.assertIn(
+            '<strong><a class="manpage-ref" href="grafana-util-alert.html">grafana-util-alert(1)</a></strong>',
+            rendered,
+        )
         self.assertIn("<strong>man</strong>(1)", rendered)
-        self.assertNotIn('<h3 class="man-subsection">Dashboard</h3><dl class="man-definitions">', rendered)
-        self.assertIn('<pre class="man-example"><code>grafana-util status snapshot review --input-dir ./snapshot --output-format json</code></pre>', rendered)
-        self.assertIn('<pre class="man-example"><code>grafana-util test --flag</code></pre>', rendered)
+        self.assertNotIn(
+            '<h3 class="man-subsection">Dashboard</h3><dl class="man-definitions">',
+            rendered,
+        )
+        self.assertIn(
+            '<pre class="man-example"><code>grafana-util status snapshot review --input-dir ./snapshot --output-format json</code></pre>',
+            rendered,
+        )
+        self.assertIn(
+            '<pre class="man-example"><code>grafana-util test --flag</code></pre>',
+            rendered,
+        )
         self.assertNotIn('<pre class="manpage">', rendered)
         self.assertIn(">Manual Pages<", rendered)
         self.assertIn(">Documentation<", rendered)
@@ -216,12 +254,21 @@ class GenerateCommandHtmlTests(unittest.TestCase):
         self.assertIn('>test <span class="nav-manpage-count">1</span>', rendered)
         self.assertIn('class="nav-command-entry nav-manpage-current active"', rendered)
         self.assertIn(">grafana-util-test(1)<", rendered)
-        self.assertIn("<title>grafana-util-test(1) · Grafana Documentation</title>", rendered)
-        self.assertIn('<span class="hero-title-main">grafana-util-test(1)</span>', rendered)
+        self.assertIn(
+            "<title>grafana-util-test(1) · Grafana Documentation</title>", rendered
+        )
+        self.assertIn(
+            '<span class="hero-title-main">grafana-util-test(1)</span>', rendered
+        )
         self.assertIn("/ grafana-util-test(1)</div>", rendered)
-        self.assertNotIn('<span class="hero-title-main">grafana-util-test.1</span>', rendered)
+        self.assertNotIn(
+            '<span class="hero-title-main">grafana-util-test.1</span>', rendered
+        )
         self.assertIn("CLI manual page.", rendered)
-        self.assertIn("This page keeps the terminal manpage format available in the browser.", rendered)
+        self.assertIn(
+            "This page keeps the terminal manpage format available in the browser.",
+            rendered,
+        )
         self.assertNotIn("Generated manpage mirror.", rendered)
         self.assertIn('class="nav-item nav-manpage-item">list(1)</a>', rendered)
         self.assertIn('href="#description"', rendered)
@@ -238,7 +285,9 @@ class GenerateCommandHtmlTests(unittest.TestCase):
     def test_split_display_title_separates_english_subtitle_for_mixed_heading(self):
         module = load_module()
 
-        main, secondary = module.split_display_title("📖 維運導引手冊 (Operator Handbook)")
+        main, secondary = module.split_display_title(
+            "📖 維運導引手冊 (Operator Handbook)"
+        )
 
         self.assertEqual(main, "維運導引手冊")
         self.assertEqual(secondary, "Operator Handbook")
@@ -246,7 +295,9 @@ class GenerateCommandHtmlTests(unittest.TestCase):
     def test_strip_heading_decorations_removes_leading_emoji_from_heading_html(self):
         module = load_module()
 
-        rendered = module.strip_heading_decorations('<h2 id="quick-start">⚡ 30 秒快速上手 (Quick Start)</h2><p>Body</p>')
+        rendered = module.strip_heading_decorations(
+            '<h2 id="quick-start">⚡ 30 秒快速上手 (Quick Start)</h2><p>Body</p>'
+        )
 
         self.assertIn(">30 秒快速上手 (Quick Start)<", rendered)
         self.assertNotIn("⚡", rendered)
@@ -254,15 +305,21 @@ class GenerateCommandHtmlTests(unittest.TestCase):
     def test_strip_heading_decorations_preserves_inline_code_in_heading_html(self):
         module = load_module()
 
-        rendered = module.strip_heading_decorations('<h3 id="status-live">1. <code>status live</code> 入口</h3>')
+        rendered = module.strip_heading_decorations(
+            '<h3 id="status-live">1. <code>status live</code> 入口</h3>'
+        )
 
         self.assertIn("<code>status live</code>", rendered)
         self.assertNotIn("&lt;code&gt;status live&lt;/code&gt;", rendered)
 
-    def test_strip_heading_decorations_preserves_other_inline_markup_in_heading_html(self):
+    def test_strip_heading_decorations_preserves_other_inline_markup_in_heading_html(
+        self,
+    ):
         module = load_module()
 
-        rendered = module.strip_heading_decorations('<h3 id="jq">1. Filtering with <em>jq</em></h3>')
+        rendered = module.strip_heading_decorations(
+            '<h3 id="jq">1. Filtering with <em>jq</em></h3>'
+        )
 
         self.assertIn("<em>jq</em>", rendered)
         self.assertNotIn("&lt;em&gt;jq&lt;/em&gt;", rendered)
@@ -271,15 +328,19 @@ class GenerateCommandHtmlTests(unittest.TestCase):
         module = load_module()
 
         headings = (
-            module.RenderedHeading(level=2, text="⚡ 30 秒快速上手 (Quick Start)", anchor="quick-start"),
-            module.RenderedHeading(level=3, text="安裝 (全域 Binary)", anchor="install"),
+            module.RenderedHeading(
+                level=2, text="⚡ 30 秒快速上手 (Quick Start)", anchor="quick-start"
+            ),
+            module.RenderedHeading(
+                level=3, text="安裝 (全域 Binary)", anchor="install"
+            ),
         )
 
         rendered = module.render_toc(headings)
 
         self.assertIn('class="toc-level-2"', rendered)
         self.assertIn('class="toc-level-3"', rendered)
-        self.assertIn('30 秒快速上手 (Quick Start)', rendered)
+        self.assertIn("30 秒快速上手 (Quick Start)", rendered)
         self.assertIn('href="#install"', rendered)
         self.assertNotIn("⚡", rendered)
 
@@ -293,27 +354,38 @@ class GenerateCommandHtmlTests(unittest.TestCase):
             module.RenderedHeading(level=2, text="成功判準", anchor="success"),
         )
 
-        rendered = module.render_section_index(headings, title="章節索引", variant="list", min_entries=4)
+        rendered = module.render_section_index(
+            headings, title="章節索引", variant="list", min_entries=4
+        )
 
         self.assertIn('class="section-index-list layout-list"', rendered)
         self.assertIn('href="#audience"', rendered)
         self.assertIn(">主要目標<", rendered)
 
-        suppressed = module.render_section_index(headings[:3], title="章節索引", variant="list", min_entries=4)
+        suppressed = module.render_section_index(
+            headings[:3], title="章節索引", variant="list", min_entries=4
+        )
         self.assertEqual("", suppressed)
 
     def test_theme_script_copies_full_code_blocks_without_filtering_comments(self):
         module = load_module()
 
         self.assertIn("navigator.clipboard.writeText(raw)", module.THEME_SCRIPT)
-        self.assertNotIn("filter(l => l.trim() && !l.trim().startsWith(\"#\"))", module.THEME_SCRIPT)
+        self.assertNotIn(
+            'filter(l => l.trim() && !l.trim().startsWith("#"))', module.THEME_SCRIPT
+        )
 
     def test_page_style_keeps_unwrapped_code_blocks_inside_content_column(self):
         module = load_module()
 
-        self.assertIn("pre { position: relative; max-width: 100%; box-sizing: border-box;", module.PAGE_STYLE)
+        self.assertIn(
+            "pre { position: relative; max-width: 100%; box-sizing: border-box;",
+            module.PAGE_STYLE,
+        )
         self.assertIn(".article { min-width: 0;", module.PAGE_STYLE)
-        self.assertIn(".sidebar { position: sticky; top: 12px; min-width: 0;", module.PAGE_STYLE)
+        self.assertIn(
+            ".sidebar { position: sticky; top: 12px; min-width: 0;", module.PAGE_STYLE
+        )
 
     def test_page_style_uses_fixed_topbar_control_widths(self):
         module = load_module()
@@ -332,7 +404,9 @@ class GenerateCommandHtmlTests(unittest.TestCase):
             version="9.9.0",
         )
 
-        rendered = module.render_global_nav("handbook/zh-TW/index.html", "zh-TW", config)
+        rendered = module.render_global_nav(
+            "handbook/zh-TW/index.html", "zh-TW", config
+        )
 
         for label in self.handbook_group_labels("zh-TW"):
             if label == "第 4 部 · 設計原則":
@@ -358,7 +432,9 @@ class GenerateCommandHtmlTests(unittest.TestCase):
             version="9.9.0",
         )
 
-        rendered = module.render_global_nav("commands/zh-TW/datasource.html", "zh-TW", config)
+        rendered = module.render_global_nav(
+            "commands/zh-TW/datasource.html", "zh-TW", config
+        )
 
         self.assertIn(f'>{ui_text["open_command_reference_label"]}<', rendered)
         self.assertIn(f'>{ui_text["command_reference_label"]}<', rendered)
@@ -368,7 +444,9 @@ class GenerateCommandHtmlTests(unittest.TestCase):
         self.assertIn(">Dashboard<", rendered)
         self.assertNotIn("Grafana-util-datasource", rendered)
 
-    def test_render_command_map_nav_compacts_dashboard_commands_without_cli_prefix(self):
+    def test_render_command_map_nav_compacts_dashboard_commands_without_cli_prefix(
+        self,
+    ):
         module = load_module()
 
         config = module.HtmlBuildConfig(
@@ -378,7 +456,9 @@ class GenerateCommandHtmlTests(unittest.TestCase):
             version="9.9.0",
         )
 
-        rendered = module.render_command_map_nav("handbook/zh-TW/dashboard.html", "zh-TW", "dashboard", config)
+        rendered = module.render_command_map_nav(
+            "handbook/zh-TW/dashboard.html", "zh-TW", "dashboard", config
+        )
 
         self.assertIn(">dashboard<", rendered)
         self.assertIn(">browse<", rendered)
@@ -397,7 +477,9 @@ class GenerateCommandHtmlTests(unittest.TestCase):
             version="9.9.0",
         )
 
-        rendered = module.render_command_map_nav("handbook/zh-TW/architecture.html", "zh-TW", "architecture", config)
+        rendered = module.render_command_map_nav(
+            "handbook/zh-TW/architecture.html", "zh-TW", "architecture", config
+        )
 
         self.assertIn(ui_text["command_relationships_title"], rendered)
         self.assertIn("唯讀檢查", rendered)
@@ -405,7 +487,9 @@ class GenerateCommandHtmlTests(unittest.TestCase):
         self.assertIn(">resource<", rendered)
         self.assertIn(">snapshot<", rendered)
 
-    def test_render_command_page_adds_parent_breadcrumb_and_related_links_for_profile(self):
+    def test_render_command_page_adds_parent_breadcrumb_and_related_links_for_profile(
+        self,
+    ):
         module = load_module()
         ui_text = self.locale_ui("zh-TW")
 
@@ -423,7 +507,9 @@ class GenerateCommandHtmlTests(unittest.TestCase):
             config,
         )
 
-        self.assertIn('href="config.html">config</a> / grafana-util config profile', rendered)
+        self.assertIn(
+            'href="config.html">config</a> / grafana-util config profile', rendered
+        )
         self.assertIn(f'{ui_text["parent_command_label"]}: config', rendered)
         self.assertIn("對應手冊章節", rendered)
 
@@ -466,20 +552,28 @@ class GenerateCommandHtmlTests(unittest.TestCase):
             config,
         )
 
-        self.assertIn(f'href="index.html">{ui_text["command_reference_label"]}</a>', rendered)
+        self.assertIn(
+            f'href="index.html">{ui_text["command_reference_label"]}</a>', rendered
+        )
 
     def test_command_taxonomy_contract_drives_audience_and_handbook_mapping(self):
         module = load_module()
         expected_handbook = self.command_taxonomy["handbook_context_by_page"]["profile"]
-        expected_hint = self.command_taxonomy["audience_hints_by_root"]["config"]["zh-TW"]
+        expected_hint = self.command_taxonomy["audience_hints_by_root"]["config"][
+            "zh-TW"
+        ]
 
         self.assertEqual(
             expected_handbook,
-            module.command_handbook_stem(REPO_ROOT / "docs" / "commands" / "zh-TW" / "profile.md"),
+            module.command_handbook_stem(
+                REPO_ROOT / "docs" / "commands" / "zh-TW" / "profile.md"
+            ),
         )
         self.assertIn(
             expected_hint,
-            module.command_audience_hint("zh-TW", REPO_ROOT / "docs" / "commands" / "zh-TW" / "config.md"),
+            module.command_audience_hint(
+                "zh-TW", REPO_ROOT / "docs" / "commands" / "zh-TW" / "config.md"
+            ),
         )
 
     def test_render_command_reference_index_uses_structured_contract_content(self):
@@ -505,11 +599,21 @@ class GenerateCommandHtmlTests(unittest.TestCase):
             self.assertIn(title, rendered)
         self.assertIn('href="dashboard.html"', rendered)
 
-    def test_render_command_reference_index_uses_removed_roots_section_from_contract(self):
+    def test_render_command_reference_index_uses_removed_roots_section_from_contract(
+        self,
+    ):
         module = load_module()
         command_index = self.command_index["locales"]["en"]
-        selector_title = next(section["title"] for section in command_index["sections"] if section["title"] == "Which command should I use?")
-        output_title = next(section["title"] for section in command_index["sections"] if section["title"] == "Output Selector Conventions")
+        selector_title = next(
+            section["title"]
+            for section in command_index["sections"]
+            if section["title"] == "Which command should I use?"
+        )
+        output_title = next(
+            section["title"]
+            for section in command_index["sections"]
+            if section["title"] == "Output Selector Conventions"
+        )
 
         config = module.HtmlBuildConfig(
             source_root=REPO_ROOT,
@@ -541,7 +645,13 @@ class GenerateCommandHtmlTests(unittest.TestCase):
             handbook_root=REPO_ROOT / "docs" / "user-guide",
             version="9.9.0",
         )
-        page = next(p for p in module.build_handbook_pages("zh-TW", handbook_root=config.handbook_root) if p.stem == "index")
+        page = next(
+            p
+            for p in module.build_handbook_pages(
+                "zh-TW", handbook_root=config.handbook_root
+            )
+            if p.stem == "index"
+        )
 
         rendered = module.render_handbook_page(page, config)
 
@@ -564,7 +674,13 @@ class GenerateCommandHtmlTests(unittest.TestCase):
             handbook_root=REPO_ROOT / "docs" / "user-guide",
             version="9.9.0",
         )
-        page = next(p for p in module.build_handbook_pages("zh-TW", handbook_root=config.handbook_root) if p.stem == "dashboard")
+        page = next(
+            p
+            for p in module.build_handbook_pages(
+                "zh-TW", handbook_root=config.handbook_root
+            )
+            if p.stem == "dashboard"
+        )
 
         rendered = module.render_handbook_page(page, config)
 
@@ -584,12 +700,18 @@ class GenerateCommandHtmlTests(unittest.TestCase):
             handbook_root=REPO_ROOT / "docs" / "user-guide",
             version="9.9.0",
         )
-        page = next(p for p in module.build_handbook_pages("zh-TW", handbook_root=config.handbook_root) if p.stem == "role-automation-ci")
+        page = next(
+            p
+            for p in module.build_handbook_pages(
+                "zh-TW", handbook_root=config.handbook_root
+            )
+            if p.stem == "role-automation-ci"
+        )
 
         rendered = module.render_handbook_page(page, config)
 
         self.assertIn("/ 手冊 /", rendered)
-        self.assertIn(f'>{nav_title}<', rendered)
+        self.assertIn(f">{nav_title}<", rendered)
         self.assertIn('class="hero-subtitle">自動化 / CI 角色導讀</p>', rendered)
         self.assertIn(role_paths_label, rendered)
 
@@ -603,7 +725,13 @@ class GenerateCommandHtmlTests(unittest.TestCase):
             handbook_root=REPO_ROOT / "docs" / "user-guide",
             version="9.9.0",
         )
-        page = next(p for p in module.build_handbook_pages("zh-TW", handbook_root=config.handbook_root) if p.stem == "architecture")
+        page = next(
+            p
+            for p in module.build_handbook_pages(
+                "zh-TW", handbook_root=config.handbook_root
+            )
+            if p.stem == "architecture"
+        )
 
         rendered = module.render_handbook_page(page, config)
 
@@ -624,7 +752,13 @@ class GenerateCommandHtmlTests(unittest.TestCase):
             version="9.9.0",
         )
 
-        rendered = module.render_command_map_nav("handbook/zh-TW/architecture.html", "zh-TW", "architecture", config, compact=False)
+        rendered = module.render_command_map_nav(
+            "handbook/zh-TW/architecture.html",
+            "zh-TW",
+            "architecture",
+            config,
+            compact=False,
+        )
 
         self.assertIn('class="nav-section nav-command-section collapsed"', rendered)
         self.assertIn('class="nav-command-root-link"', rendered)
@@ -633,7 +767,9 @@ class GenerateCommandHtmlTests(unittest.TestCase):
 
     def test_render_command_page_includes_intro_panel_from_command_doc_metadata(self):
         module = load_module()
-        labels = load_script_module("docsite_html_command_pages").command_intro_labels("en")
+        labels = load_script_module("docsite_html_command_pages").command_intro_labels(
+            "en"
+        )
 
         config = module.HtmlBuildConfig(
             source_root=REPO_ROOT,
@@ -643,16 +779,23 @@ class GenerateCommandHtmlTests(unittest.TestCase):
         )
         source = REPO_ROOT / "docs" / "commands" / "en" / "dashboard-screenshot.md"
 
-        rendered = module.render_command_page("en", source, "commands/en/dashboard-screenshot.html", config)
+        rendered = module.render_command_page(
+            "en", source, "commands/en/dashboard-screenshot.html", config
+        )
 
         self.assertIn(labels["what"], rendered)
         self.assertIn(labels["when"], rendered)
         self.assertIn(labels["who"], rendered)
-        self.assertIn("Open one dashboard in a headless browser and capture image or PDF output.", rendered)
+        self.assertIn(
+            "Open one dashboard in a headless browser and capture image or PDF output.",
+            rendered,
+        )
 
     def test_render_command_page_includes_intro_panel_for_zh_tw_command_docs(self):
         module = load_module()
-        labels = load_script_module("docsite_html_command_pages").command_intro_labels("zh-TW")
+        labels = load_script_module("docsite_html_command_pages").command_intro_labels(
+            "zh-TW"
+        )
 
         config = module.HtmlBuildConfig(
             source_root=REPO_ROOT,
@@ -662,7 +805,9 @@ class GenerateCommandHtmlTests(unittest.TestCase):
         )
         source = REPO_ROOT / "docs" / "commands" / "zh-TW" / "dashboard-screenshot.md"
 
-        rendered = module.render_command_page("zh-TW", source, "commands/zh-TW/dashboard-screenshot.html", config)
+        rendered = module.render_command_page(
+            "zh-TW", source, "commands/zh-TW/dashboard-screenshot.html", config
+        )
 
         self.assertIn(labels["what"], rendered)
         self.assertIn(labels["when"], rendered)
@@ -702,7 +847,9 @@ class GenerateCommandHtmlTests(unittest.TestCase):
                 for source in source_dir.glob("*.md"):
                     if source.name == "what-is-grafana-util.md":
                         continue
-                    target_dir.joinpath(source.name).write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
+                    target_dir.joinpath(source.name).write_text(
+                        source.read_text(encoding="utf-8"), encoding="utf-8"
+                    )
 
             pages = module.build_handbook_pages("en", handbook_root=root)
             stems = [page.stem for page in pages]

@@ -127,7 +127,7 @@ def _slug_for_mermaid(value: str) -> str:
 
 
 def _escape_label(value: str) -> str:
-    return value.replace("\\", "\\\\").replace('"', "\\\"")
+    return value.replace("\\", "\\\\").replace('"', '\\"')
 
 
 def build_topology_document(
@@ -284,11 +284,11 @@ def build_topology_document(
                 if source_kind == "alert-rule" and (
                     f"datasource:{datasource_uid}" in nodes
                 ):
-                    edges.add((f"datasource:{datasource_uid}", source_node, "alerts-on"))
+                    edges.add(
+                        (f"datasource:{datasource_uid}", source_node, "alerts-on")
+                    )
 
-                if source_kind == "alert-rule" and (
-                    f"dashboard:{reference}" in nodes
-                ):
+                if source_kind == "alert-rule" and (f"dashboard:{reference}" in nodes):
                     edges.add((f"dashboard:{reference}", source_node, "backs"))
 
     node_list = _sort_nodes(list(nodes.values()))
@@ -300,10 +300,16 @@ def build_topology_document(
     summary = {
         "nodeCount": len(node_list),
         "edgeCount": len(edge_list),
-        "datasourceCount": len([node for node in node_list if node["kind"] == "datasource"]),
-        "dashboardCount": len([node for node in node_list if node["kind"] == "dashboard"]),
+        "datasourceCount": len(
+            [node for node in node_list if node["kind"] == "datasource"]
+        ),
+        "dashboardCount": len(
+            [node for node in node_list if node["kind"] == "dashboard"]
+        ),
         "panelCount": len([node for node in node_list if node["kind"] == "panel"]),
-        "variableCount": len([node for node in node_list if node["kind"] == "variable"]),
+        "variableCount": len(
+            [node for node in node_list if node["kind"] == "variable"]
+        ),
         "alertResourceCount": alert_resource_count,
         "alertRuleCount": len(
             [node for node in node_list if node["kind"] == "alert-rule"]
@@ -317,7 +323,9 @@ def build_topology_document(
         "notificationPolicyCount": len(
             [node for node in node_list if node["kind"] == "notification-policy"]
         ),
-        "templateCount": len([node for node in node_list if node["kind"] == "template"]),
+        "templateCount": len(
+            [node for node in node_list if node["kind"] == "template"]
+        ),
     }
 
     return {
@@ -334,9 +342,7 @@ def render_topology_text(document: dict[str, Any]) -> str:
         )
     ]
     for edge in document["edges"]:
-        lines.append(
-            f"  {edge['from']} --{edge['relation']}--> {edge['to']}"
-        )
+        lines.append(f"  {edge['from']} --{edge['relation']}--> {edge['to']}")
     return "\n".join(lines)
 
 
@@ -456,7 +462,8 @@ def run_topology_interactive_loop(
                 related = [
                     edge
                     for edge in document.get("edges") or []
-                    if edge.get("from") == node.get("id") or edge.get("to") == node.get("id")
+                    if edge.get("from") == node.get("id")
+                    or edge.get("to") == node.get("id")
                 ]
                 output_writer(
                     "Node %s: %s (%s)\nRelated edges: %s"

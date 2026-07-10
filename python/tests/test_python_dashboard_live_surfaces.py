@@ -117,8 +117,12 @@ class DashboardLiveSurfaceTests(unittest.TestCase):
         self.assertEqual(review["documentKind"], "wrapped")
         self.assertFalse(review["dashboardIdIsNull"])
         self.assertIn("dashboard.id must stay null", " ".join(review["blockingIssues"]))
-        self.assertIn("edited draft changed dashboard.uid", " ".join(review["blockingIssues"]))
-        self.assertEqual(review["suggestedNextAction"], "fix blocking issues, then publish --dry-run")
+        self.assertIn(
+            "edited draft changed dashboard.uid", " ".join(review["blockingIssues"])
+        )
+        self.assertEqual(
+            review["suggestedNextAction"], "fix blocking issues, then publish --dry-run"
+        )
 
     def test_load_dashboard_serve_items_from_directory(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -142,7 +146,9 @@ class DashboardLiveSurfaceTests(unittest.TestCase):
                 },
                 root / "subdir" / "cpu-secondary.yaml",
             )
-            args = SimpleNamespace(input=str(root), script=None, script_format="json", watch=None)
+            args = SimpleNamespace(
+                input=str(root), script=None, script_format="json", watch=None
+            )
 
             items = dashboard_authoring.load_dashboard_serve_items(args)
 
@@ -155,13 +161,18 @@ class DashboardLiveSurfaceTests(unittest.TestCase):
     def test_load_dashboard_serve_items_from_script_json(self):
         args = SimpleNamespace(
             input=None,
-            script="printf '[{\"dashboard\":{\"id\":null,\"uid\":\"cpu-main\",\"title\":\"CPU Main\"}}]'",
+            script='printf \'[{"dashboard":{"id":null,"uid":"cpu-main","title":"CPU Main"}}]\'',
             script_format="json",
             watch=None,
         )
-        completed = SimpleNamespace(returncode=0, stdout='[{"dashboard":{"id":null,"uid":"cpu-main","title":"CPU Main"}}]')
+        completed = SimpleNamespace(
+            returncode=0,
+            stdout='[{"dashboard":{"id":null,"uid":"cpu-main","title":"CPU Main"}}]',
+        )
 
-        with mock.patch.object(dashboard_authoring.subprocess, "run", return_value=completed):
+        with mock.patch.object(
+            dashboard_authoring.subprocess, "run", return_value=completed
+        ):
             items = dashboard_authoring.load_dashboard_serve_items(args)
 
         self.assertEqual(len(items), 1)
@@ -211,14 +222,18 @@ class DashboardLiveSurfaceTests(unittest.TestCase):
         self.assertEqual(payload["dashboard"]["id"], None)
         self.assertEqual(payload["folderUid"], "infra")
         self.assertEqual(payload["message"], "Keep current")
-        self.assertIn("Applied edited dashboard cpu-main back to Grafana.", stdout.getvalue())
+        self.assertIn(
+            "Applied edited dashboard cpu-main back to Grafana.", stdout.getvalue()
+        )
 
     def test_browse_command_reuses_preview_server(self):
         args = dashboard_cli.parse_args(
             ["browse", "--input", "./dashboards/raw", "--open-browser"]
         )
 
-        with mock.patch.object(dashboard_cli, "run_dashboard_serve", return_value=0) as mocked:
+        with mock.patch.object(
+            dashboard_cli, "run_dashboard_serve", return_value=0
+        ) as mocked:
             result = dashboard_cli.browse_command(args)
 
         self.assertEqual(result, 0)

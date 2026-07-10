@@ -48,6 +48,7 @@ def value_to_string(value: any) -> str:
         return str(value).lower()
     return str(value)
 
+
 RESOURCE_SUBDIR_BY_KIND = {
     RULE_KIND: RULES_SUBDIR,
     CONTACT_POINT_KIND: CONTACT_POINTS_SUBDIR,

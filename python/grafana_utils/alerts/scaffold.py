@@ -209,9 +209,7 @@ def normalize_route_matchers(route: dict[str, Any], route_name: str) -> None:
     matchers = route_matcher_entries(route)
     # Remove existing managed label if present
     matchers = [
-        m
-        for m in matchers
-        if not (m[0] == MANAGED_ROUTE_LABEL_KEY and m[1] == "=")
+        m for m in matchers if not (m[0] == MANAGED_ROUTE_LABEL_KEY and m[1] == "=")
     ]
     matchers.append([MANAGED_ROUTE_LABEL_KEY, "=", managed_value])
     # Sort and dedup

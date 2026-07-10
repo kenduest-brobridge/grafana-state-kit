@@ -165,21 +165,21 @@ def build_parser() -> argparse.ArgumentParser:
         ),
         epilog=(
             "Examples:\n\n"
-    "  grafana-util dashboard export --url http://localhost:3000 --export-dir ./dashboards\n"
-    "  grafana-util dashboard raw-to-prompt --input-dir ./dashboards/raw --output-dir ./dashboards/prompt\n"
-    "  grafana-util dashboard browse --input ./dashboards/raw --open-browser\n"
-    "  grafana-util dashboard edit-live --url http://localhost:3000 --basic-user admin --basic-password admin --dashboard-uid cpu-main\n"
-    "  grafana-util alert export --url http://localhost:3000 --output-dir ./alerts\n"
-    '  grafana-util access user list --url http://localhost:3000 --token "$GRAFANA_API_TOKEN"\n'
-    "  grafana-util datasource export --url http://localhost:3000 --export-dir ./datasources\n"
-    "  grafana-util dashboard serve --input ./dashboards/raw --open-browser\n"
+            "  grafana-util dashboard export --url http://localhost:3000 --export-dir ./dashboards\n"
+            "  grafana-util dashboard raw-to-prompt --input-dir ./dashboards/raw --output-dir ./dashboards/prompt\n"
+            "  grafana-util dashboard browse --input ./dashboards/raw --open-browser\n"
+            "  grafana-util dashboard edit-live --url http://localhost:3000 --basic-user admin --basic-password admin --dashboard-uid cpu-main\n"
+            "  grafana-util alert export --url http://localhost:3000 --output-dir ./alerts\n"
+            '  grafana-util access user list --url http://localhost:3000 --token "$GRAFANA_API_TOKEN"\n'
+            "  grafana-util datasource export --url http://localhost:3000 --export-dir ./datasources\n"
+            "  grafana-util dashboard serve --input ./dashboards/raw --open-browser\n"
             "  grafana-util profile list\n"
             "  grafana-util change preview --workspace .\n"
             "  grafana-util overview live --profile prod\n"
             "  grafana-util status staged --desired-file ./desired.json\n"
             "  grafana-util snapshot review --input-dir ./snapshot\n"
             "  grafana-util resource kinds\n"
-            "  grafana-util dashboard variables --dashboard-uid cpu-main --token \"$GRAFANA_API_TOKEN\"\n"
+            '  grafana-util dashboard variables --dashboard-uid cpu-main --token "$GRAFANA_API_TOKEN"\n'
             "  grafana-util workspace plan --desired-file ./desired.json --live-file ./live.json"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,

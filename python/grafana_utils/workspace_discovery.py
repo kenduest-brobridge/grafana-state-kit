@@ -88,7 +88,9 @@ class ChangeDiscoveryDocument:
         if self.is_empty() or not self.workspace_root:
             return None
         sorted_items = sorted(self.inputs.items(), key=lambda x: x[0].summary_label)
-        sources = ", ".join(f"{kind.summary_label}={path}" for kind, path in sorted_items)
+        sources = ", ".join(
+            f"{kind.summary_label}={path}" for kind, path in sorted_items
+        )
         return f"Discovered change workspace root {self.workspace_root} from {sources}."
 
     def to_dict(self) -> Dict[str, Any]:
@@ -181,7 +183,9 @@ def _infer_dashboard_workspace_root_fallback(input_dir: Path) -> Path:
             grandparent = parent.parent
             great_grandparent = grandparent.parent
             if parent.name == "provisioning" and grandparent.name == "datasources":
-                return great_grandparent if great_grandparent != grandparent else input_dir
+                return (
+                    great_grandparent if great_grandparent != grandparent else input_dir
+                )
         return input_dir.parent if input_dir.parent != input_dir else input_dir
 
     parent = input_dir.parent
@@ -195,7 +199,9 @@ def _infer_dashboard_workspace_root_fallback(input_dir: Path) -> Path:
             return input_dir
     if name in ["raw", "provisioning"]:
         if parent.name == "git-sync":
-            return grandparent.parent if grandparent.parent != grandparent else input_dir
+            return (
+                grandparent.parent if grandparent.parent != grandparent else input_dir
+            )
         if parent.name in ["dashboards", "alerts", "datasources"]:
             return grandparent if grandparent != parent else input_dir
 
@@ -206,7 +212,9 @@ def discover_from_workspace_root(base_dir: Path) -> DiscoveredChangeInputs:
     datasources_dir = base_dir / "datasources"
     alerts_dir = base_dir / "alerts"
 
-    dashboard_export_dir, dashboard_provisioning_dir = _dashboard_workspace_roots(base_dir)
+    dashboard_export_dir, dashboard_provisioning_dir = _dashboard_workspace_roots(
+        base_dir
+    )
 
     (
         access_user_export_dir,
@@ -260,7 +268,9 @@ def _first_existing(paths: List[Path]) -> Optional[Path]:
 
 
 def _dashboard_workspace_roots(base_dir: Path) -> Tuple[Optional[Path], Optional[Path]]:
-    dashboards_dir = base_dir if base_dir.name == "dashboards" else base_dir / "dashboards"
+    dashboards_dir = (
+        base_dir if base_dir.name == "dashboards" else base_dir / "dashboards"
+    )
 
     raw_dir = _resolve_dashboard_workspace_dir(
         dashboards_dir, "raw", "git-sync"
@@ -297,7 +307,9 @@ def _access_workspace_dirs(
     )
 
 
-def discover_change_staged_inputs(base_dir: Optional[Path] = None) -> DiscoveredChangeInputs:
+def discover_change_staged_inputs(
+    base_dir: Optional[Path] = None,
+) -> DiscoveredChangeInputs:
     if base_dir is None:
         base_dir = Path.cwd()
 
@@ -307,7 +319,9 @@ def discover_change_staged_inputs(base_dir: Optional[Path] = None) -> Discovered
     return discovered
 
 
-def overlay_direct_workspace_input(discovered: DiscoveredChangeInputs, base_dir: Path) -> None:
+def overlay_direct_workspace_input(
+    discovered: DiscoveredChangeInputs, base_dir: Path
+) -> None:
     name = base_dir.name
     if not name:
         return
@@ -378,7 +392,9 @@ def _overlay_direct_workspace_dir(
     elif parent.name == "alerts" and name == "raw":
         discovered.alert_export_dir = base_dir
     elif parent.name == "datasources" and name == "provisioning":
-        discovered.datasource_provisioning_file = _first_existing([base_dir / "datasources.yaml"])
+        discovered.datasource_provisioning_file = _first_existing(
+            [base_dir / "datasources.yaml"]
+        )
     elif name == "alerts":
         discovered.alert_export_dir = _first_existing([base_dir / "raw", base_dir])
     elif name == "datasources":
@@ -387,7 +403,9 @@ def _overlay_direct_workspace_dir(
         )
 
 
-def build_change_discovery(discovered: DiscoveredChangeInputs) -> Optional[ChangeDiscoveryDocument]:
+def build_change_discovery(
+    discovered: DiscoveredChangeInputs,
+) -> Optional[ChangeDiscoveryDocument]:
     if not discovered.workspace_root:
         return None
 
@@ -427,6 +445,8 @@ def render_discovery_summary(discovered: DiscoveredChangeInputs) -> Optional[str
     return doc.summary_line() if doc else None
 
 
-def build_discovery_document(discovered: DiscoveredChangeInputs) -> Optional[Dict[str, Any]]:
+def build_discovery_document(
+    discovered: DiscoveredChangeInputs,
+) -> Optional[Dict[str, Any]]:
     doc = build_change_discovery(discovered)
     return doc.to_dict() if doc else None

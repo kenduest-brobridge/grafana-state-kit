@@ -37,7 +37,9 @@ def render_dashboard_delete_table(
         lines.append(render_row(["-" * width for width in widths]))
     for item in records:
         lines.append(
-            render_row([str(item.get(key) or "") for key, _header in DELETE_TABLE_HEADERS])
+            render_row(
+                [str(item.get(key) or "") for key, _header in DELETE_TABLE_HEADERS]
+            )
         )
     return lines
 

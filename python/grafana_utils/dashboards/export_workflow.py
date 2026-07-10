@@ -65,7 +65,9 @@ def run_export_dashboards(args, deps):
         if not summaries:
             continue
         total_dashboards += len(summaries)
-        folder_inventory = deps["collect_folder_inventory"](scoped_client, org, summaries)
+        folder_inventory = deps["collect_folder_inventory"](
+            scoped_client, org, summaries
+        )
         org_exports.append(
             (
                 org,
@@ -193,7 +195,9 @@ def run_export_dashboards(args, deps):
                         dry_run=True,
                     )
                 else:
-                    deps["write_dashboard"](prompt_document, prompt_path, args.overwrite)
+                    deps["write_dashboard"](
+                        prompt_document, prompt_path, args.overwrite
+                    )
                     deps["print_dashboard_export_progress"](
                         args,
                         processed_dashboards,

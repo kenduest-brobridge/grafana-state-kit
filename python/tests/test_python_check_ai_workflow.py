@@ -132,7 +132,9 @@ class CheckAiWorkflowTests(unittest.TestCase):
 
         self.assertTrue(module.is_workspace_noise_path("notes/local-review.md"))
         self.assertTrue(module.is_workspace_noise_path(".codex/task-brief.md"))
-        self.assertFalse(module.is_workspace_noise_path("docs/internal/ai-workflow-note.md"))
+        self.assertFalse(
+            module.is_workspace_noise_path("docs/internal/ai-workflow-note.md")
+        )
 
     def test_trace_size_check_rejects_long_trace_files(self):
         module = load_module()

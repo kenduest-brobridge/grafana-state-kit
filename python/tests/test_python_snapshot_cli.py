@@ -21,7 +21,9 @@ class SnapshotCliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             config_path = root / "grafana-util.yaml"
-            config_path.write_text("artifact_root: artifacts\nprofiles: {}\n", encoding="utf-8")
+            config_path.write_text(
+                "artifact_root: artifacts\nprofiles: {}\n", encoding="utf-8"
+            )
             scope = root / "artifacts" / "default"
             scope.mkdir(parents=True)
             (scope / "latest-run.json").write_text(
@@ -38,12 +40,18 @@ class SnapshotCliTests(unittest.TestCase):
             }
             stdout = io.StringIO()
             with (
-                mock.patch.dict("os.environ", {"GRAFANA_UTIL_CONFIG": str(config_path)}),
-                mock.patch.object(snapshot_cli, "_snapshot_bundle", return_value=payload),
+                mock.patch.dict(
+                    "os.environ", {"GRAFANA_UTIL_CONFIG": str(config_path)}
+                ),
+                mock.patch.object(
+                    snapshot_cli, "_snapshot_bundle", return_value=payload
+                ),
                 redirect_stdout(stdout),
             ):
                 result = snapshot_cli.export_command(args)
-                output_file = root / "artifacts" / "default" / "runs" / "run-3" / "snapshot.json"
+                output_file = (
+                    root / "artifacts" / "default" / "runs" / "run-3" / "snapshot.json"
+                )
                 self.assertTrue(output_file.exists())
                 self.assertEqual(
                     json.loads(output_file.read_text(encoding="utf-8"))["kind"],
@@ -56,7 +64,9 @@ class SnapshotCliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             config_path = root / "grafana-util.yaml"
-            config_path.write_text("artifact_root: artifacts\nprofiles: {}\n", encoding="utf-8")
+            config_path.write_text(
+                "artifact_root: artifacts\nprofiles: {}\n", encoding="utf-8"
+            )
             args = snapshot_cli.parse_args(
                 ["export", "--run", "timestamp", "--output-format", "json"]
             )
@@ -65,25 +75,35 @@ class SnapshotCliTests(unittest.TestCase):
                 "summary": {"dashboardCount": 0},
             }
             with (
-                mock.patch.dict("os.environ", {"GRAFANA_UTIL_CONFIG": str(config_path)}),
-                mock.patch.object(snapshot_cli, "_snapshot_bundle", return_value=payload),
+                mock.patch.dict(
+                    "os.environ", {"GRAFANA_UTIL_CONFIG": str(config_path)}
+                ),
+                mock.patch.object(
+                    snapshot_cli, "_snapshot_bundle", return_value=payload
+                ),
                 redirect_stdout(io.StringIO()),
             ):
                 result = snapshot_cli.export_command(args)
 
             scope = root / "artifacts" / "default"
-            pointer = json.loads((scope / "latest-run.json").read_text(encoding="utf-8"))
+            pointer = json.loads(
+                (scope / "latest-run.json").read_text(encoding="utf-8")
+            )
             output_file = scope / "runs" / pointer["runId"] / "snapshot.json"
             output_exists = output_file.exists()
 
         self.assertEqual(result, 0)
         self.assertTrue(output_exists)
 
-    def test_snapshot_review_local_counts_lane_files_when_snapshot_json_is_missing(self):
+    def test_snapshot_review_local_counts_lane_files_when_snapshot_json_is_missing(
+        self,
+    ):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             config_path = root / "grafana-util.yaml"
-            config_path.write_text("artifact_root: artifacts\nprofiles: {}\n", encoding="utf-8")
+            config_path.write_text(
+                "artifact_root: artifacts\nprofiles: {}\n", encoding="utf-8"
+            )
             scope = root / "artifacts" / "default"
             scope.mkdir(parents=True)
             run_root = scope / "runs" / "run-9"
@@ -105,11 +125,15 @@ class SnapshotCliTests(unittest.TestCase):
                 file_path.parent.mkdir(parents=True, exist_ok=True)
                 file_path.write_text("{}", encoding="utf-8")
 
-            args = snapshot_cli.parse_args(["review", "--local", "--output-format", "json"])
+            args = snapshot_cli.parse_args(
+                ["review", "--local", "--output-format", "json"]
+            )
 
             stdout = io.StringIO()
             with (
-                mock.patch.dict("os.environ", {"GRAFANA_UTIL_CONFIG": str(config_path)}),
+                mock.patch.dict(
+                    "os.environ", {"GRAFANA_UTIL_CONFIG": str(config_path)}
+                ),
                 redirect_stdout(stdout),
             ):
                 result = snapshot_cli.review_command(args)
@@ -126,7 +150,14 @@ class SnapshotCliTests(unittest.TestCase):
 
     def test_snapshot_review_rejects_local_with_explicit_input_dir(self):
         args = snapshot_cli.parse_args(
-            ["review", "--local", "--input-dir", "./snapshot", "--output-format", "json"]
+            [
+                "review",
+                "--local",
+                "--input-dir",
+                "./snapshot",
+                "--output-format",
+                "json",
+            ]
         )
 
         with self.assertRaises(ValueError):

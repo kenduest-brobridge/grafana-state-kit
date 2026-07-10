@@ -16,7 +16,9 @@ def build_parser(prog: Optional[str] = None) -> argparse.ArgumentParser:
     subparsers.required = True
 
     # profile
-    profile_parser = subparsers.add_parser("profile", help="Manage Grafana connection profiles.")
+    profile_parser = subparsers.add_parser(
+        "profile", help="Manage Grafana connection profiles."
+    )
     profile_sub = profile_parser.add_subparsers(dest="subcommand")
     profile_sub.required = True
 
@@ -26,21 +28,35 @@ def build_parser(prog: Optional[str] = None) -> argparse.ArgumentParser:
     # show
     show_parser = profile_sub.add_parser("show", help="Show the selected profile.")
     show_parser.add_argument("name", nargs="?", help="Profile name.")
-    show_parser.add_argument("--show-secrets", action="store_true", help="Reveal secrets.")
-    show_parser.add_argument("--output-format", choices=OUTPUT_FORMAT_CHOICES, default="text")
+    show_parser.add_argument(
+        "--show-secrets", action="store_true", help="Reveal secrets."
+    )
+    show_parser.add_argument(
+        "--output-format", choices=OUTPUT_FORMAT_CHOICES, default="text"
+    )
 
     # current
-    current_parser = profile_sub.add_parser("current", help="Show the currently selected profile.")
-    current_parser.add_argument("--output-format", choices=OUTPUT_FORMAT_CHOICES, default="text")
+    current_parser = profile_sub.add_parser(
+        "current", help="Show the currently selected profile."
+    )
+    current_parser.add_argument(
+        "--output-format", choices=OUTPUT_FORMAT_CHOICES, default="text"
+    )
 
     # example
-    example_parser = profile_sub.add_parser("example", help="Render a profile config example.")
+    example_parser = profile_sub.add_parser(
+        "example", help="Render a profile config example."
+    )
     example_parser.add_argument("--mode", choices=["basic", "full"], default="full")
-    example_parser.add_argument("--output-format", choices=OUTPUT_FORMAT_CHOICES, default="yaml")
+    example_parser.add_argument(
+        "--output-format", choices=OUTPUT_FORMAT_CHOICES, default="yaml"
+    )
 
     # init
     init_parser = profile_sub.add_parser("init", help="Initialize grafana-util.yaml.")
-    init_parser.add_argument("--overwrite", action="store_true", help="Allow overwrite.")
+    init_parser.add_argument(
+        "--overwrite", action="store_true", help="Allow overwrite."
+    )
 
     return parser
 
@@ -57,7 +73,9 @@ def show_command(args: argparse.Namespace) -> int:
     doc = pc.load_profile_document()
     try:
         name, profile = pc.select_profile(doc, args.name)
-        summary = pc.build_profile_summary(name, profile, show_secrets=args.show_secrets)
+        summary = pc.build_profile_summary(
+            name, profile, show_secrets=args.show_secrets
+        )
         if args.output_format == "text":
             print("\n".join(pc.render_profile_summary_text(summary)))
         else:
@@ -94,7 +112,10 @@ def example_command(args: argparse.Namespace) -> int:
 def init_command(args: argparse.Namespace) -> int:
     path = pc.resolve_config_path()
     if path.exists() and not args.overwrite:
-        print(f"Error: {path} already exists. Use --overwrite to replace it.", file=sys.stderr)
+        print(
+            f"Error: {path} already exists. Use --overwrite to replace it.",
+            file=sys.stderr,
+        )
         return 1
     doc = pc.build_profile_example_document(mode="full")
     pc.save_profile_document(doc)

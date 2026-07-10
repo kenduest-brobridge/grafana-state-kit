@@ -1686,7 +1686,9 @@ def diff_orgs_with_client(args, client):
         changed = _record_diff_fields(local_payload, live_map[key]["payload"])
         if changed:
             differences += 1
-            print("Diff different org %s fields=%s" % (local_identity, ",".join(changed)))
+            print(
+                "Diff different org %s fields=%s" % (local_identity, ",".join(changed))
+            )
         else:
             print("Diff same org %s" % local_identity)
 
@@ -1698,7 +1700,9 @@ def diff_orgs_with_client(args, client):
         print("Diff extra-live org %s" % live_map[key]["identity"])
 
     if differences:
-        print("Diff checked %s org(s); %s difference(s) found." % (checked, differences))
+        print(
+            "Diff checked %s org(s); %s difference(s) found." % (checked, differences)
+        )
     else:
         print("No org differences across %s org(s)." % checked)
     return differences
@@ -1734,7 +1738,14 @@ def _normalize_access_plan_output_columns(raw_columns):
         if column not in ACCESS_PLAN_SUPPORTED_COLUMNS:
             raise GrafanaError(
                 "Unsupported --output-columns value '%s'. Supported values: all, %s."
-                % (column, ", ".join(value for value in ACCESS_PLAN_SUPPORTED_COLUMNS if value != "all"))
+                % (
+                    column,
+                    ", ".join(
+                        value
+                        for value in ACCESS_PLAN_SUPPORTED_COLUMNS
+                        if value != "all"
+                    ),
+                )
             )
         if column not in normalized:
             normalized.append(column)
@@ -1786,7 +1797,9 @@ def _plan_build_table(rows, columns, no_header=False):
             widths[index] = max(widths[index], len(value))
 
     def _format(items):
-        return "  ".join(items[index].ljust(widths[index]) for index in range(len(items)))
+        return "  ".join(
+            items[index].ljust(widths[index]) for index in range(len(items))
+        )
 
     lines = []
     if not no_header:
@@ -1946,16 +1959,12 @@ def _plan_load_bundle_for_resource(args, resource_kind):
         raw_records = [item for item in bundle["records"] if isinstance(item, dict)]
         metadata_scope = str((bundle.get("metadata") or {}).get("scope") or "").lower()
         if metadata_scope == "global" or any(
-            str(record.get("scope") or "").lower() == "global"
-            for record in raw_records
+            str(record.get("scope") or "").lower() == "global" for record in raw_records
         ):
             scope = "global"
         else:
             scope = "org"
-        local_records = [
-            _normalize_user_record(item)
-            for item in raw_records
-        ]
+        local_records = [_normalize_user_record(item) for item in raw_records]
         for record in local_records:
             record["scope"] = scope
         include_teams = any(bool(record.get("teams")) for record in local_records)
@@ -2026,16 +2035,16 @@ def _plan_load_bundle_for_resource(args, resource_kind):
             "--input-dir",
         )
         bundle = _build_org_import_records(input_dir)
-        local_records = [
-            item for item in bundle["records"] if isinstance(item, dict)
-        ]
+        local_records = [item for item in bundle["records"] if isinstance(item, dict)]
         include_users = any(bool(record.get("users")) for record in local_records)
         local_map = _build_org_diff_map(
             local_records,
             bundle["bundle_path"],
             include_users=include_users,
         )
-        live_records = [_normalize_org_record(item) for item in args.client.list_organizations()]
+        live_records = [
+            _normalize_org_record(item) for item in args.client.list_organizations()
+        ]
         if include_users:
             for record in live_records:
                 org_id = record.get("id") or ""
@@ -2195,7 +2204,9 @@ def plan_access_with_client(args, client):
         ),
     )
     document["actions"] = rows
-    columns = _normalize_access_plan_output_columns(getattr(args, "output_columns", None))
+    columns = _normalize_access_plan_output_columns(
+        getattr(args, "output_columns", None)
+    )
     if not getattr(args, "show_same", False):
         rows = [row for row in rows if row.get("action") != "same"]
     if args.output_format == "json":
@@ -2204,7 +2215,9 @@ def plan_access_with_client(args, client):
     if args.output_format == "table":
         if args.interactive:
             print("mode: interactive")
-        for line in _plan_build_table(rows, columns, no_header=bool(getattr(args, "no_header", False))):
+        for line in _plan_build_table(
+            rows, columns, no_header=bool(getattr(args, "no_header", False))
+        ):
             print(line)
         return 0
     if args.interactive:
@@ -2243,8 +2256,7 @@ def plan_access_with_client(args, client):
         )
     for row in rows:
         parts = [
-            "%s=%s" % (column, _plan_render_cell(row.get(column)))
-            for column in columns
+            "%s=%s" % (column, _plan_render_cell(row.get(column))) for column in columns
         ]
         print(" ".join(parts))
     return 0
@@ -2527,9 +2539,7 @@ def import_service_accounts_with_client(args, client):
         "--import-dir",
     )
     if import_dir is None:
-        raise GrafanaError(
-            "Service-account import requires --import-dir or --local."
-        )
+        raise GrafanaError("Service-account import requires --import-dir or --local.")
     bundle = _build_service_account_import_records(import_dir)
     raw_records = bundle.get("records") or []
     records = []
@@ -3137,7 +3147,10 @@ def list_users_with_client(args, client):
             user["scope"] = str(getattr(args, "scope", "") or "org")
         users = [user for user in users if user_matches_filters(user, args)]
         users.sort(
-            key=lambda item: (str(item.get("login") or ""), str(item.get("email") or ""))
+            key=lambda item: (
+                str(item.get("login") or ""),
+                str(item.get("email") or ""),
+            )
         )
         users = paginate_users(users, args.page, args.per_page)
         if args.csv:
@@ -3177,7 +3190,9 @@ def list_users_with_client(args, client):
     return 0
 
 
-def _resolve_access_artifact_dir(args, lane_path, explicit_dir_attr, explicit_flag_name):
+def _resolve_access_artifact_dir(
+    args, lane_path, explicit_dir_attr, explicit_flag_name
+):
     """Resolve an explicit or local access artifact directory."""
     explicit_dir = getattr(args, explicit_dir_attr, None)
     local = bool(getattr(args, "local", False))
@@ -3231,13 +3246,13 @@ def browse_users_with_client(args, client):
     input_dir = _resolve_access_local_input_dir(args, "access/users")
     if input_dir:
         bundle = _build_user_import_records(input_dir)
-        users = [
-            _normalize_user_record(record)
-            for record in bundle["records"]
-        ]
+        users = [_normalize_user_record(record) for record in bundle["records"]]
         users = [user for user in users if user_matches_filters(user, args)]
         users.sort(
-            key=lambda item: (str(item.get("login") or ""), str(item.get("email") or ""))
+            key=lambda item: (
+                str(item.get("login") or ""),
+                str(item.get("email") or ""),
+            )
         )
         users = paginate_users(users, args.page, args.per_page)
         return _render_browsed_users(args, users, input_dir)
@@ -3249,10 +3264,7 @@ def list_service_accounts_with_client(args, client):
     input_dir = _resolve_access_local_input_dir(args, "access/service-accounts")
     if input_dir:
         bundle = _build_service_account_import_records(input_dir)
-        rows = [
-            _normalize_service_account_record(item)
-            for item in bundle["records"]
-        ]
+        rows = [_normalize_service_account_record(item) for item in bundle["records"]]
         if args.query:
             rows = [
                 row for row in rows if service_account_matches_query(row, args.query)
@@ -3371,10 +3383,7 @@ def browse_teams_with_client(args, client):
     input_dir = _resolve_access_local_input_dir(args, "access/teams")
     if input_dir:
         bundle = _build_team_import_records(input_dir)
-        teams = [
-            _normalize_team_record(record)
-            for record in bundle["records"]
-        ]
+        teams = [_normalize_team_record(record) for record in bundle["records"]]
         teams = [team for team in teams if team_matches_filters(team, args)]
         teams.sort(
             key=lambda item: (str(item.get("name") or ""), str(item.get("email") or ""))

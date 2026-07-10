@@ -28,9 +28,7 @@ class DashboardTopologyTests(unittest.TestCase):
             )
 
     def test_build_topology_document_rejects_missing_governance_array(self):
-        with self.assertRaisesRegex(
-            common.GrafanaError, "dashboardGovernance array"
-        ):
+        with self.assertRaisesRegex(common.GrafanaError, "dashboardGovernance array"):
             dashboard_topology.build_topology_document(
                 {"dashboardDatasourceEdges": []},
                 alert_contract_document=None,

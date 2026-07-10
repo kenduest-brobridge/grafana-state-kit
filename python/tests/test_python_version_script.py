@@ -18,28 +18,34 @@ class SetVersionScriptTests(unittest.TestCase):
         (root / "rust").mkdir()
         (root / "VERSION").write_text("0.2.17\n", encoding="utf-8")
         (root / "python" / "pyproject.toml").write_text(
-            textwrap.dedent("""
+            textwrap.dedent(
+                """
                 [project]
                 version = "0.2.17"
-                """).lstrip(),
+                """
+            ).lstrip(),
             encoding="utf-8",
         )
         (root / "rust" / "Cargo.toml").write_text(
-            textwrap.dedent("""
+            textwrap.dedent(
+                """
                 [package]
                 name = "grafana-utils-rust"
                 version = "0.2.17"
-                """).lstrip(),
+                """
+            ).lstrip(),
             encoding="utf-8",
         )
         (root / "rust" / "Cargo.lock").write_text(
-            textwrap.dedent("""
+            textwrap.dedent(
+                """
                 version = 4
 
                 [[package]]
                 name = "grafana-utils-rust"
                 version = "0.2.17"
-                """).lstrip(),
+                """
+            ).lstrip(),
             encoding="utf-8",
         )
         return temp_dir, root

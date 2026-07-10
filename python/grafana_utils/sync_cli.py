@@ -781,7 +781,8 @@ def _canonicalize_json(value):
     """Canonicalize JSON value for deterministic checksum calculation."""
     if isinstance(value, dict):
         return {
-            str(key): _canonicalize_json(value[key]) for key in sorted(value.keys(), key=str)
+            str(key): _canonicalize_json(value[key])
+            for key in sorted(value.keys(), key=str)
         }
     if isinstance(value, list):
         return [_canonicalize_json(item) for item in value]
@@ -892,7 +893,9 @@ def _load_source_mapping_from_promotion_file(mapping_file):
     if not mapping_file:
         return ({}, {}, {}, {}, {})
 
-    mapping = _require_object(load_json_document(mapping_file), "Sync promotion mapping input")
+    mapping = _require_object(
+        load_json_document(mapping_file), "Sync promotion mapping input"
+    )
     kind = _normalize_optional_text(mapping.get("kind"))
     if kind and kind != "grafana-utils-sync-promotion-mapping":
         raise GrafanaError("Sync promotion mapping input kind is not supported.")
@@ -900,7 +903,9 @@ def _load_source_mapping_from_promotion_file(mapping_file):
     if schema_version is not None and schema_version != 1:
         raise GrafanaError("Sync promotion mapping schemaVersion must be 1.")
 
-    folders = _coerce_string_map(mapping.get("folders"), "Sync promotion folder mapping")
+    folders = _coerce_string_map(
+        mapping.get("folders"), "Sync promotion folder mapping"
+    )
     datasource_uids = _coerce_string_map(
         (mapping.get("datasources") or {}).get("uids"),
         "Sync promotion datasource uid mapping",
@@ -924,11 +929,17 @@ def _load_source_mapping_from_promotion_file(mapping_file):
         "datasourceUidMappingCount": len(datasource_uids),
         "datasourceNameMappingCount": len(datasource_names),
     }
-    return folders, datasource_uids, datasource_names, {
-        "folders": folders,
-        "datasource_uids": datasource_uids,
-        "datasource_names": datasource_names,
-    }, mapping_summary
+    return (
+        folders,
+        datasource_uids,
+        datasource_names,
+        {
+            "folders": folders,
+            "datasource_uids": datasource_uids,
+            "datasource_names": datasource_names,
+        },
+        mapping_summary,
+    )
 
 
 def _extract_dashboard_body(resource):
@@ -1113,17 +1124,31 @@ def _build_ci_promotion_check_rows(
 def _summarize_sync_promotion_checks(checks):
     """Build promotion check summary counts."""
     return {
-        "folderRemapCount": len([item for item in checks if item.get("kind") == "folder-remap"]),
+        "folderRemapCount": len(
+            [item for item in checks if item.get("kind") == "folder-remap"]
+        ),
         "datasourceUidRemapCount": len(
-            [item for item in checks if item.get("kind") in ("datasource-uid-remap", "alert-datasource-uid-remap")]
+            [
+                item
+                for item in checks
+                if item.get("kind")
+                in ("datasource-uid-remap", "alert-datasource-uid-remap")
+            ]
         ),
         "datasourceNameRemapCount": len(
-            [item for item in checks if item.get("kind") in ("datasource-name-remap", "alert-datasource-name-remap")]
+            [
+                item
+                for item in checks
+                if item.get("kind")
+                in ("datasource-name-remap", "alert-datasource-name-remap")
+            ]
         ),
         "resolvedCount": len([item for item in checks if not item.get("blocking")]),
         "directCount": len([item for item in checks if item.get("status") == "direct"]),
         "mappedCount": len([item for item in checks if item.get("status") == "mapped"]),
-        "missingTargetCount": len([item for item in checks if item.get("status") == "missing-target"]),
+        "missingTargetCount": len(
+            [item for item in checks if item.get("status") == "missing-target"]
+        ),
     }
 
 
@@ -1135,16 +1160,27 @@ def _bundle_preflight_blocking_count(bundle_preflight_document):
     return (
         int(summary.get("syncBlockingCount") or 0)
         + int(summary.get("providerBlockingCount") or 0)
-        + int(summary.get("secretBlockingCount") or summary.get("secretPlaceholderBlockingCount") or 0)
-        + int(summary.get("alertBlockedCount") or summary.get("alertBlocked") or summary.get("alertArtifactBlockedCount") or 0)
+        + int(
+            summary.get("secretBlockingCount")
+            or summary.get("secretPlaceholderBlockingCount")
+            or 0
+        )
+        + int(
+            summary.get("alertBlockedCount")
+            or summary.get("alertBlocked")
+            or summary.get("alertArtifactBlockedCount")
+            or 0
+        )
     )
 
 
 def _resource_count_from_bundle_summary(source_bundle):
     """Read target resource count from bundle summary if available."""
-    summary = _require_object(source_bundle.get("summary"), "Bundle summary") if isinstance(
-        source_bundle, dict
-    ) else None
+    summary = (
+        _require_object(source_bundle.get("summary"), "Bundle summary")
+        if isinstance(source_bundle, dict)
+        else None
+    )
     if summary is not None:
         total = 0
         for value in summary.values():
@@ -1152,10 +1188,11 @@ def _resource_count_from_bundle_summary(source_bundle):
                 total += int(value)
         if total > 0:
             return total
-    return int(len(source_bundle.get("folders") or [])) + int(
-        len(source_bundle.get("datasources") or [])
-    ) + int(len(source_bundle.get("dashboards") or [])) + int(
-        len(source_bundle.get("alerts") or [])
+    return (
+        int(len(source_bundle.get("folders") or []))
+        + int(len(source_bundle.get("datasources") or []))
+        + int(len(source_bundle.get("dashboards") or []))
+        + int(len(source_bundle.get("alerts") or []))
     )
 
 
@@ -1175,7 +1212,9 @@ def build_sync_lock_document_from_lock(lock_document, live_specs):
         kind = _normalize_optional_text(resource.get("kind"))
         identity = _normalize_optional_text(resource.get("identity"))
         if not kind or not identity:
-            raise GrafanaError("Sync lock resources require non-empty kind and identity.")
+            raise GrafanaError(
+                "Sync lock resources require non-empty kind and identity."
+            )
         managed_specs.append(
             {
                 "kind": kind,
@@ -1183,9 +1222,13 @@ def build_sync_lock_document_from_lock(lock_document, live_specs):
                 "uid": identity,
                 "name": identity,
                 "identity": identity,
-                "body": _copy_mapping(resource.get("snapshot"), "Sync lock resource snapshot")
-                if resource.get("snapshot") not in (None,)
-                else {},
+                "body": (
+                    _copy_mapping(
+                        resource.get("snapshot"), "Sync lock resource snapshot"
+                    )
+                    if resource.get("snapshot") not in (None,)
+                    else {}
+                ),
                 "managedFields": resource.get("managedFields") or (),
                 "sourcePath": _normalize_optional_text(resource.get("sourcePath")),
             }
@@ -1324,7 +1367,9 @@ def render_sync_audit_text(document):
             int(summary.get("missingLiveCount") or 0),
         ),
     ]
-    for drift in _require_resource_list(document.get("drifts"), "Sync audit drift list"):
+    for drift in _require_resource_list(
+        document.get("drifts"), "Sync audit drift list"
+    ):
         if not isinstance(drift, dict):
             raise GrafanaError("Sync audit drift row must be a JSON object.")
         fields = drift.get("driftedFields") or []
@@ -1358,9 +1403,7 @@ def build_ci_promotion_test_document(
         mapping_name,
         _mapping,
         mapping_summary,
-    ) = _load_source_mapping_from_promotion_file(
-        mapping_file_path
-    )
+    ) = _load_source_mapping_from_promotion_file(mapping_file_path)
     bundle_preflight = build_bundle_preflight_document(
         source_bundle, target_inventory, availability=availability
     )
@@ -1375,7 +1418,11 @@ def build_ci_promotion_test_document(
         bundle_preflight=bundle_preflight,
         checks=checks,
         mapping_summary=mapping_summary,
-        source_summary=source_bundle.get("summary") if isinstance(source_bundle.get("summary"), dict) else {},
+        source_summary=(
+            source_bundle.get("summary")
+            if isinstance(source_bundle.get("summary"), dict)
+            else {}
+        ),
     )
 
 
@@ -1410,7 +1457,9 @@ def _build_ci_promotion_test_document_from_parts(
         "kind": SYNC_PROMOTION_PREFLIGHT_KIND,
         "schemaVersion": SYNC_PROMOTION_PREFLIGHT_SCHEMA_VERSION,
         "summary": {
-            "resourceCount": int(_resource_count_from_bundle_summary({"summary": source_summary})),
+            "resourceCount": int(
+                _resource_count_from_bundle_summary({"summary": source_summary})
+            ),
             "directMatchCount": direct_match_count,
             "mappedCount": mapped_count,
             "missingMappingCount": missing_mapping_count,
@@ -1451,7 +1500,11 @@ def _build_ci_promotion_test_document_from_parts(
             "stagedOnly": True,
             "liveMutationAllowed": False,
             "readyForContinuation": blocking_count == 0,
-            "nextStage": "staged-apply-continuation" if blocking_count == 0 else "resolve-blockers",
+            "nextStage": (
+                "staged-apply-continuation"
+                if blocking_count == 0
+                else "resolve-blockers"
+            ),
             "resolvedCount": int(len(resolved_checks)),
             "blockingCount": blocking_count,
             "continuationInstruction": (
@@ -1470,7 +1523,9 @@ def render_sync_promotion_preflight_text(document):
     """Render one compatibility sync promotion preflight document."""
     if _normalize_optional_text(document.get("kind")) != SYNC_PROMOTION_PREFLIGHT_KIND:
         raise GrafanaError("Sync promotion preflight document kind is not supported.")
-    summary = _require_object(document.get("summary"), "Sync promotion preflight summary")
+    summary = _require_object(
+        document.get("summary"), "Sync promotion preflight summary"
+    )
     mapping_summary = _require_object(
         document.get("mappingSummary"), "Sync promotion mapping summary"
     )
@@ -1542,7 +1597,9 @@ def render_sync_promotion_preflight_text(document):
             _normalize_optional_text(continuation_summary.get("nextStage") or ""),
             int(continuation_summary.get("resolvedCount") or 0),
             int(continuation_summary.get("blockingCount") or len(blocking_checks)),
-            _normalize_optional_text(continuation_summary.get("continuationInstruction") or ""),
+            _normalize_optional_text(
+                continuation_summary.get("continuationInstruction") or ""
+            ),
         ),
         "",
         "# Resolved remaps",
@@ -1657,8 +1714,6 @@ def _coerce_operation(item, index):
     )
 
 
-
-
 def _normalize_optional_text(value):
     """Internal helper for normalize optional text."""
     if value is None:
@@ -1710,7 +1765,9 @@ def _require_trace_id(document, label):
 
 def _deterministic_stage_marker(trace_id, stage):
     """Internal helper for deterministic marker text."""
-    return f"staged:{_normalize_optional_text(trace_id)}:{_normalize_optional_text(stage)}"
+    return (
+        f"staged:{_normalize_optional_text(trace_id)}:{_normalize_optional_text(stage)}"
+    )
 
 
 def _attach_lineage(document, stage, step_index, parent_trace_id=None):
@@ -1728,13 +1785,12 @@ def _attach_lineage(document, stage, step_index, parent_trace_id=None):
 
 def _has_lineage_metadata(document):
     """Internal helper for lineage metadata check."""
-    return any(
-        key in document
-        for key in ("stage", "stepIndex", "parentTraceId")
-    )
+    return any(key in document for key in ("stage", "stepIndex", "parentTraceId"))
 
 
-def _require_optional_stage(document, label, expected_stage, expected_step_index, expected_parent_trace_id=None):
+def _require_optional_stage(
+    document, label, expected_stage, expected_step_index, expected_parent_trace_id=None
+):
     """Internal helper for optional lineage validation."""
     if not isinstance(document, dict):
         raise GrafanaError(f"{label} must be a JSON object.")
@@ -1760,7 +1816,9 @@ def _require_optional_stage(document, label, expected_stage, expected_step_index
         raise GrafanaError(
             f"{label} has unexpected lineage parentTraceId {actual_parent_trace_id!r}; expected no parent trace."
         )
-    if expected_parent_trace_id and (not actual_parent_trace_id or actual_parent_trace_id != expected_parent_trace_id):
+    if expected_parent_trace_id and (
+        not actual_parent_trace_id or actual_parent_trace_id != expected_parent_trace_id
+    ):
         raise GrafanaError(
             f"{label} has unexpected lineage parentTraceId {actual_parent_trace_id!r}; expected {expected_parent_trace_id!r}."
         )
@@ -1842,10 +1900,14 @@ def _validate_apply_bundle_preflight(document):
         raise GrafanaError("Sync bundle preflight summary is missing resourceCount.")
     sync_blocking_count = summary.get("syncBlockingCount")
     if not _is_json_int(sync_blocking_count):
-        raise GrafanaError("Sync bundle preflight summary is missing syncBlockingCount.")
+        raise GrafanaError(
+            "Sync bundle preflight summary is missing syncBlockingCount."
+        )
     provider_blocking_count = summary.get("providerBlockingCount")
     if not _is_json_int(provider_blocking_count):
-        raise GrafanaError("Sync bundle preflight summary is missing providerBlockingCount.")
+        raise GrafanaError(
+            "Sync bundle preflight summary is missing providerBlockingCount."
+        )
     blocking_count = sync_blocking_count + provider_blocking_count
     if blocking_count > 0:
         raise GrafanaError(
@@ -1855,11 +1917,16 @@ def _validate_apply_bundle_preflight(document):
         "kind": document.get("kind"),
         "resourceCount": resource_count,
         "checkCount": resource_count,
-        "okCount": (resource_count - blocking_count) if resource_count - blocking_count > 0 else 0,
+        "okCount": (
+            (resource_count - blocking_count)
+            if resource_count - blocking_count > 0
+            else 0
+        ),
         "blockingCount": blocking_count,
         "syncBlockingCount": sync_blocking_count,
         "providerBlockingCount": provider_blocking_count,
     }
+
 
 def load_plan_document(path):
     """Load one persisted sync plan document back into a SyncPlan."""
@@ -2612,7 +2679,9 @@ def _attach_review_audit(document, trace_id, reviewed_by, reviewed_at, review_no
     reviewed_by = _normalize_optional_text(reviewed_by)
     if reviewed_by:
         payload["reviewedBy"] = reviewed_by
-    payload["reviewedAt"] = _normalize_optional_text(reviewed_at) or _deterministic_stage_marker(
+    payload["reviewedAt"] = _normalize_optional_text(
+        reviewed_at
+    ) or _deterministic_stage_marker(
         trace_id,
         "reviewed",
     )
@@ -2635,7 +2704,9 @@ def _attach_apply_audit(
     applied_by = _normalize_optional_text(applied_by)
     if applied_by:
         payload["appliedBy"] = applied_by
-    payload["appliedAt"] = _normalize_optional_text(applied_at) or _deterministic_stage_marker(
+    payload["appliedAt"] = _normalize_optional_text(
+        applied_at
+    ) or _deterministic_stage_marker(
         trace_id,
         "applied",
     )
@@ -2918,9 +2989,7 @@ def run_apply(args):
             "Sync bundle preflight document",
             trace_id,
         )
-        bundle_preflight_summary = _validate_apply_bundle_preflight(
-            bundle_preflight
-        )
+        bundle_preflight_summary = _validate_apply_bundle_preflight(bundle_preflight)
 
     intent = build_apply_intent(plan, approve=bool(getattr(args, "approve", False)))
     intent = _attach_preflight_summary(intent, preflight_summary)
@@ -3031,7 +3100,9 @@ def run_ci_audit(args):
 
     baseline_lock = None
     if getattr(args, "lock_file", None):
-        baseline_lock = _require_object(load_json_document(args.lock_file), "Sync lock input")
+        baseline_lock = _require_object(
+            load_json_document(args.lock_file), "Sync lock input"
+        )
 
     if bool(getattr(args, "fetch_live", False)):
         live_specs = fetch_live_resource_specs(
@@ -3040,7 +3111,9 @@ def run_ci_audit(args):
         )
     else:
         if not getattr(args, "live_file", None):
-            raise GrafanaError("Sync audit requires --live-file unless --fetch-live is used.")
+            raise GrafanaError(
+                "Sync audit requires --live-file unless --fetch-live is used."
+            )
         live_specs = _require_resource_list(
             load_json_document(args.live_file),
             "Sync live input",

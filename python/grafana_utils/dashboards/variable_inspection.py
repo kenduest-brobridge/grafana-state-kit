@@ -46,13 +46,17 @@ def inspect_dashboard_variables_with_client(
     #   Upstream callers: 無
     #   Downstream callees: 106, 15, 58
 
-    resolved_uid = resolve_dashboard_uid(dashboard_uid=dashboard_uid, dashboard_url=dashboard_url)
+    resolved_uid = resolve_dashboard_uid(
+        dashboard_uid=dashboard_uid, dashboard_url=dashboard_url
+    )
     payload = client.fetch_dashboard(resolved_uid)
     if not isinstance(payload, dict):
         raise GrafanaError("Unexpected dashboard payload for UID %s." % resolved_uid)
     dashboard = payload.get("dashboard")
     if not isinstance(dashboard, dict):
-        raise GrafanaError("Dashboard UID %s did not include a dashboard object." % resolved_uid)
+        raise GrafanaError(
+            "Dashboard UID %s did not include a dashboard object." % resolved_uid
+        )
     document = build_dashboard_variable_document(dashboard, dashboard_uid=resolved_uid)
     apply_vars_query_overrides(document["variables"], vars_query)
     document["variableCount"] = len(document["variables"])
@@ -160,8 +164,7 @@ def render_dashboard_variable_document(
     if normalized_format not in VARIABLE_OUTPUT_FORMATS:
         raise GrafanaError(
             "Unsupported dashboard variable output format %r. "
-            "Use one of: %s."
-            % (output_format, ", ".join(VARIABLE_OUTPUT_FORMATS))
+            "Use one of: %s." % (output_format, ", ".join(VARIABLE_OUTPUT_FORMATS))
         )
     if normalized_format == "json":
         return json.dumps(document, indent=2, sort_keys=True)

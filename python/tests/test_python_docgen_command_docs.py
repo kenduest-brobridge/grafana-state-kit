@@ -17,19 +17,27 @@ class CommandDocCliPathTests(unittest.TestCase):
     def test_reads_backticked_canonical_path(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / "resource-describe.md"
-            path.write_text("# `grafana-util status resource describe`\n", encoding="utf-8")
-            self.assertEqual(command_doc_cli_path(path), "grafana-util status resource describe")
+            path.write_text(
+                "# `grafana-util status resource describe`\n", encoding="utf-8"
+            )
+            self.assertEqual(
+                command_doc_cli_path(path), "grafana-util status resource describe"
+            )
 
     def test_reads_bare_command_heading(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / "dashboard-browse.md"
             path.write_text("# dashboard browse\n", encoding="utf-8")
-            self.assertEqual(command_doc_cli_path(path), "grafana-util dashboard browse")
+            self.assertEqual(
+                command_doc_cli_path(path), "grafana-util dashboard browse"
+            )
 
     def test_reads_removed_root_heading(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / "overview.md"
-            path.write_text("# 已移除的 root path：`grafana-util overview`\n", encoding="utf-8")
+            path.write_text(
+                "# 已移除的 root path：`grafana-util overview`\n", encoding="utf-8"
+            )
             self.assertEqual(command_doc_cli_path(path), "grafana-util overview")
 
 

@@ -64,7 +64,9 @@ def resolve_artifact_root_path(
     root = Path(str(raw_root))
     if root.is_absolute():
         return root
-    config_dir = resolved_config_path.parent if str(resolved_config_path.parent) else Path(".")
+    config_dir = (
+        resolved_config_path.parent if str(resolved_config_path.parent) else Path(".")
+    )
     return config_dir / root
 
 
@@ -73,7 +75,9 @@ def profile_scope_name(profile_name: Optional[str] = None) -> str:
     return _normalize_text(profile_name, DEFAULT_PROFILE_SCOPE_NAME)
 
 
-def profile_scope_path(artifact_root: Path | str, profile_name: Optional[str] = None) -> Path:
+def profile_scope_path(
+    artifact_root: Path | str, profile_name: Optional[str] = None
+) -> Path:
     """Return the artifact workspace scope root for one profile."""
     return Path(artifact_root) / profile_scope_name(profile_name)
 
@@ -94,13 +98,17 @@ def read_latest_run_id(scope_root: Path | str) -> str:
         raise ValueError(f"No latest run recorded at {pointer_path}.")
     raw = yaml.safe_load(pointer_path.read_text(encoding="utf-8"))
     if not isinstance(raw, Mapping):
-        raise ValueError(f"Latest run pointer must be a JSON/YAML object: {pointer_path}")
+        raise ValueError(
+            f"Latest run pointer must be a JSON/YAML object: {pointer_path}"
+        )
     run_id = _normalize_text(raw.get("run_id") or raw.get("runId"))
     _validate_run_id(run_id)
     return run_id
 
 
-def resolve_artifact_run_id(scope_root: Path | str, run: Optional[str], run_id: Optional[str]) -> str:
+def resolve_artifact_run_id(
+    scope_root: Path | str, run: Optional[str], run_id: Optional[str]
+) -> str:
     """Resolve a local artifact run selector for read-only consumers."""
     if run_id:
         selected = _normalize_text(run_id)
@@ -111,17 +119,23 @@ def resolve_artifact_run_id(scope_root: Path | str, run: Optional[str], run_id: 
         return read_latest_run_id(scope_root)
     if selector == "timestamp":
         runs_root = Path(scope_root) / "runs"
-        candidates = sorted(
-            path.name
-            for path in runs_root.iterdir()
-            if path.is_dir() and path.name not in {".", ".."}
-        ) if runs_root.is_dir() else []
+        candidates = (
+            sorted(
+                path.name
+                for path in runs_root.iterdir()
+                if path.is_dir() and path.name not in {".", ".."}
+            )
+            if runs_root.is_dir()
+            else []
+        )
         if not candidates:
             raise ValueError(f"No timestamp run recorded under {runs_root}.")
         selected = candidates[-1]
         _validate_run_id(selected)
         return selected
-    raise ValueError(f"Unsupported artifact run selector '{selector}'. Use latest or timestamp.")
+    raise ValueError(
+        f"Unsupported artifact run selector '{selector}'. Use latest or timestamp."
+    )
 
 
 def resolve_input_lane_path(
@@ -244,11 +258,15 @@ def build_profile_summary(
     if not isinstance(auth, Mapping):
         auth = {}
     secret_mode = _normalize_text(auth.get("secretMode"), "file")
-    token = _profile_secret_value(auth, "apiToken") if show_secrets else _mask(
-        auth.get("apiToken") or auth.get("apiTokenEncoded")
+    token = (
+        _profile_secret_value(auth, "apiToken")
+        if show_secrets
+        else _mask(auth.get("apiToken") or auth.get("apiTokenEncoded"))
     )
-    basic_password = _profile_secret_value(auth, "basicPassword") if show_secrets else _mask(
-        auth.get("basicPassword") or auth.get("basicPasswordEncoded")
+    basic_password = (
+        _profile_secret_value(auth, "basicPassword")
+        if show_secrets
+        else _mask(auth.get("basicPassword") or auth.get("basicPasswordEncoded"))
     )
     return {
         "name": name,
@@ -381,7 +399,9 @@ def resolve_connection_details(
         or bool(auth.get("promptPassword", False)),
     )
 
-    profile_url = _normalize_text(selected_profile.get("url") if selected_profile else "")
+    profile_url = _normalize_text(
+        selected_profile.get("url") if selected_profile else ""
+    )
     profile_timeout = selected_profile.get("timeout") if selected_profile else None
     profile_verify_ssl = bool(
         selected_profile.get("verifySsl") if selected_profile else False
@@ -397,7 +417,9 @@ def resolve_connection_details(
     )
 
     return ProfileConnectionDetails(
-        url=_normalize_text(getattr(args, "url", None)) or profile_url or "http://localhost:3000",
+        url=_normalize_text(getattr(args, "url", None))
+        or profile_url
+        or "http://localhost:3000",
         headers=headers,
         timeout=int(getattr(args, "timeout", None) or profile_timeout or 30),
         verify_ssl=bool(
@@ -410,7 +432,9 @@ def resolve_connection_details(
             if getattr(args, "insecure", None) is not None
             else profile_insecure
         ),
-        ca_cert=_normalize_text(getattr(args, "ca_cert", None)) or profile_ca_cert or None,
+        ca_cert=_normalize_text(getattr(args, "ca_cert", None))
+        or profile_ca_cert
+        or None,
         org_id=_normalize_text(getattr(args, "org_id", None)) or profile_org_id or None,
         profile_name=profile_name,
     )

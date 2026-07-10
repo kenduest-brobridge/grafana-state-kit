@@ -30,7 +30,9 @@ class CheckDocsSurfaceTests(unittest.TestCase):
             for locale in ("en", "zh-TW"):
                 locale_root = root / locale
                 locale_root.mkdir(parents=True)
-                (locale_root / "index.md").write_text("# Command Reference\n\n- [alert](./alert.md)\n", encoding="utf-8")
+                (locale_root / "index.md").write_text(
+                    "# Command Reference\n\n- [alert](./alert.md)\n", encoding="utf-8"
+                )
                 (locale_root / "alert.md").write_text(
                     "\n".join(
                         (
@@ -48,8 +50,11 @@ class CheckDocsSurfaceTests(unittest.TestCase):
                 )
 
             surface = {"command_doc_locales": ["en", "zh-TW"], "doc_pages": {}}
-            with patch.object(module, "COMMAND_DOC_ROOT", root), patch.object(
-                module, "resolve_cli_path", side_effect=lambda tokens: tuple(tokens)
+            with (
+                patch.object(module, "COMMAND_DOC_ROOT", root),
+                patch.object(
+                    module, "resolve_cli_path", side_effect=lambda tokens: tuple(tokens)
+                ),
             ):
                 findings = module.validate_command_doc_locale_parity(surface)
 
@@ -65,15 +70,21 @@ class CheckDocsSurfaceTests(unittest.TestCase):
             zh_root.mkdir(parents=True)
             (en_root / "index.md").write_text("# Command Reference\n", encoding="utf-8")
             (zh_root / "index.md").write_text("# 指令參考\n", encoding="utf-8")
-            (en_root / "alert.md").write_text("# alert\n\n```bash\ngrafana-util alert preview-route\n```\n", encoding="utf-8")
+            (en_root / "alert.md").write_text(
+                "# alert\n\n```bash\ngrafana-util alert preview-route\n```\n",
+                encoding="utf-8",
+            )
             (zh_root / "alert.md").write_text(
                 "# `grafana-util alert`\n\n```bash\ngrafana-util alert preview-route\n```\n",
                 encoding="utf-8",
             )
 
             surface = {"command_doc_locales": ["en", "zh-TW"], "doc_pages": {}}
-            with patch.object(module, "COMMAND_DOC_ROOT", root), patch.object(
-                module, "resolve_cli_path", side_effect=lambda tokens: tuple(tokens)
+            with (
+                patch.object(module, "COMMAND_DOC_ROOT", root),
+                patch.object(
+                    module, "resolve_cli_path", side_effect=lambda tokens: tuple(tokens)
+                ),
             ):
                 findings = module.validate_command_doc_locale_parity(surface)
 
@@ -99,16 +110,24 @@ class CheckDocsSurfaceTests(unittest.TestCase):
             )
 
             surface = {"command_doc_locales": ["en", "zh-TW"], "doc_pages": {}}
-            with patch.object(module, "COMMAND_DOC_ROOT", root), patch.object(
-                module, "resolve_cli_path", side_effect=lambda tokens: tuple(tokens)
+            with (
+                patch.object(module, "COMMAND_DOC_ROOT", root),
+                patch.object(
+                    module, "resolve_cli_path", side_effect=lambda tokens: tuple(tokens)
+                ),
             ):
                 findings = module.validate_command_doc_locale_parity(surface)
 
         self.assertTrue(
-            any("heading differs across locales" in finding.message for finding in findings)
+            any(
+                "heading differs across locales" in finding.message
+                for finding in findings
+            )
         )
 
-    def test_validate_command_doc_locale_parity_flags_example_outside_page_surface(self):
+    def test_validate_command_doc_locale_parity_flags_example_outside_page_surface(
+        self,
+    ):
         module = load_module()
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -128,12 +147,20 @@ class CheckDocsSurfaceTests(unittest.TestCase):
             )
 
             surface = {"command_doc_locales": ["en", "zh-TW"], "doc_pages": {}}
-            with patch.object(module, "COMMAND_DOC_ROOT", root), patch.object(
-                module, "resolve_cli_path", side_effect=lambda tokens: tuple(tokens)
+            with (
+                patch.object(module, "COMMAND_DOC_ROOT", root),
+                patch.object(
+                    module, "resolve_cli_path", side_effect=lambda tokens: tuple(tokens)
+                ),
             ):
                 findings = module.validate_command_doc_locale_parity(surface)
 
-        self.assertTrue(any("escapes page command surface" in finding.message for finding in findings))
+        self.assertTrue(
+            any(
+                "escapes page command surface" in finding.message
+                for finding in findings
+            )
+        )
 
     def test_validate_links_accepts_landing_manpage_html_mirror(self):
         module = load_module()
@@ -144,11 +171,17 @@ class CheckDocsSurfaceTests(unittest.TestCase):
             landing.mkdir(parents=True)
             man_html.mkdir(parents=True)
             source = landing / "en.md"
-            source.write_text("[grafana-util(1)](../man/grafana-util.html)\n", encoding="utf-8")
-            (man_html / "grafana-util.html").write_text("<html></html>\n", encoding="utf-8")
+            source.write_text(
+                "[grafana-util(1)](../man/grafana-util.html)\n", encoding="utf-8"
+            )
+            (man_html / "grafana-util.html").write_text(
+                "<html></html>\n", encoding="utf-8"
+            )
 
             with patch.object(module, "REPO_ROOT", root):
-                findings = module.validate_links(source, source.read_text(encoding="utf-8"))
+                findings = module.validate_links(
+                    source, source.read_text(encoding="utf-8")
+                )
 
         self.assertEqual(findings, [])
 

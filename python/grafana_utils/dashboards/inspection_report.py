@@ -122,8 +122,7 @@ SUPPORTED_REPORT_COLUMN_HEADERS = OrderedDict(
     list(REPORT_COLUMN_HEADERS.items()) + list(OPTIONAL_REPORT_COLUMN_HEADERS.items())
 )
 SUPPORTED_REPORT_COLUMN_VALUES = tuple(
-    list(REPORT_COLUMN_ALIASES.keys())
-    + list(SUPPORTED_REPORT_COLUMN_HEADERS.keys())
+    list(REPORT_COLUMN_ALIASES.keys()) + list(SUPPORTED_REPORT_COLUMN_HEADERS.keys())
 )
 INSPECT_REPORT_FORMAT_CHOICES = (
     "table",
@@ -175,6 +174,8 @@ NORMALIZED_QUERY_REPORT_FIELDS = (
     "buckets",
     "file",
 )
+
+
 def format_supported_report_column_values() -> str:
     """Render supported report column ids for CLI help and parser errors."""
     # Call graph: see callers/callees.
@@ -212,9 +213,7 @@ def extract_dashboard_tags(dashboard: dict[str, Any]) -> list[str]:
     tags = dashboard.get("tags")
     if not isinstance(tags, list):
         return []
-    return unique_strings(
-        [str(tag).strip() for tag in tags if str(tag).strip()]
-    )
+    return unique_strings([str(tag).strip() for tag in tags if str(tag).strip()])
 
 
 def extract_query_variable_names(query_text: str) -> list[str]:
@@ -454,9 +453,7 @@ def build_export_inspection_report_document(
     )
     return {
         "summary": {
-            "dashboardCount": len(
-                set(record["dashboardUid"] for record in records)
-            ),
+            "dashboardCount": len(set(record["dashboardUid"] for record in records)),
             "queryRecordCount": len(records),
         },
         "queries": records,
@@ -665,12 +662,15 @@ def build_query_report_record(
         datasources_by_uid,
         datasources_by_name,
     )
-    datasource_record = resolve_panel_datasource_inventory_record(
-        panel,
-        target,
-        datasources_by_uid,
-        datasources_by_name,
-    ) or {}
+    datasource_record = (
+        resolve_panel_datasource_inventory_record(
+            panel,
+            target,
+            datasources_by_uid,
+            datasources_by_name,
+        )
+        or {}
+    )
     record = {
         "dashboardUid": str(dashboard.get("uid") or DEFAULT_UNKNOWN_UID),
         "dashboardTitle": str(dashboard.get("title") or DEFAULT_DASHBOARD_TITLE),
@@ -813,7 +813,9 @@ def filter_export_inspection_report_document(
     return {
         "summary": {
             "dashboardCount": len(
-                set(str(record.get("dashboardUid") or "") for record in filtered_records)
+                set(
+                    str(record.get("dashboardUid") or "") for record in filtered_records
+                )
             ),
             "queryRecordCount": len(filtered_records),
         },
@@ -822,7 +824,7 @@ def filter_export_inspection_report_document(
 
 
 def build_grouped_export_inspection_report_document(
-    document: dict[str, Any]
+    document: dict[str, Any],
 ) -> dict[str, Any]:
     """Normalize one flat inspection report into dashboard-first grouped form."""
     # Call graph: see callers/callees.

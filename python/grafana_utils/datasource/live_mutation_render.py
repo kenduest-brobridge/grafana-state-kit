@@ -61,7 +61,9 @@ def build_live_mutation_dry_run_record(operation, plan, spec=None, uid=None, nam
         "action": str(plan.get("action") or ""),
         "targetId": str(target.get("id") or ""),
         "secretFields": secret_fields,
-        "secretSummary": "fields=%s" % ", ".join(secret_fields) if secret_fields else "",
+        "secretSummary": (
+            "fields=%s" % ", ".join(secret_fields) if secret_fields else ""
+        ),
     }
 
 

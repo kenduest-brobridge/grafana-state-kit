@@ -23,14 +23,16 @@ class InstallScriptTests(unittest.TestCase):
             'archive_name="grafana-utils-rust-${PLATFORM}${ARTIFACT_SUFFIX}-${release_tag}.tar.gz"',
             content,
         )
-        self.assertIn('RUST_ARTIFACT_FLAVOR="${RUST_ARTIFACT_FLAVOR:-standard}"', content)
-        self.assertIn('browser) printf \'%s\\n\' "-browser" ;;', content)
+        self.assertIn(
+            'RUST_ARTIFACT_FLAVOR="${RUST_ARTIFACT_FLAVOR:-standard}"', content
+        )
+        self.assertIn("browser) printf '%s\\n' \"-browser\" ;;", content)
         self.assertIn(
             'archive_url="https://github.com/${REPO}/releases/download/${release_tag}/${archive_name}"',
             content,
         )
         self.assertIn(
-            'supported targets: linux-amd64, macos-arm64',
+            "supported targets: linux-amd64, macos-arm64",
             content,
         )
         self.assertIn("BIN_DIR=/custom/bin", content)
@@ -106,7 +108,10 @@ class InstallScriptTests(unittest.TestCase):
             self.assertEqual(completed.returncode, 0, msg=completed.stderr)
             completion_path = completion_dir / "_grafana-util"
             self.assertTrue(completion_path.is_file())
-            self.assertEqual(completion_path.read_text(encoding="utf-8").strip(), "#compdef grafana-util")
+            self.assertEqual(
+                completion_path.read_text(encoding="utf-8").strip(),
+                "#compdef grafana-util",
+            )
             self.assertIn("Installed Zsh completion to", completed.stdout)
 
     def test_install_script_interactive_prompts_for_install_and_completion(self):
@@ -162,11 +167,16 @@ class InstallScriptTests(unittest.TestCase):
             self.assertTrue((bin_dir / "grafana-util").is_file())
             completion_path = completion_dir / "_grafana-util"
             self.assertTrue(completion_path.is_file())
-            self.assertEqual(completion_path.read_text(encoding="utf-8").strip(), "#compdef grafana-util")
+            self.assertEqual(
+                completion_path.read_text(encoding="utf-8").strip(),
+                "#compdef grafana-util",
+            )
             self.assertIn("Install grafana-util into", completed.stderr)
             self.assertIn("Install zsh shell completion?", completed.stderr)
             self.assertIn("Install zsh completion into", completed.stderr)
-            self.assertIn("Update ~/.zshrc to load grafana-util completion?", completed.stderr)
+            self.assertIn(
+                "Update ~/.zshrc to load grafana-util completion?", completed.stderr
+            )
             self.assertIn("Skipped ~/.zshrc update.", completed.stdout)
 
     def test_install_script_interactive_can_update_zshrc_for_completion(self):
@@ -193,12 +203,17 @@ class InstallScriptTests(unittest.TestCase):
             zshrc_path = home_dir / ".zshrc"
             input_path = temp_path / "interactive-input.txt"
             home_dir.mkdir()
-            (home_dir / ".zcompdump").write_text("old completion cache\n", encoding="utf-8")
-            (home_dir / ".zcompdump-test-host-5.9").write_text("old completion cache\n", encoding="utf-8")
-            (home_dir / ".zcompdump.test-host.5.9").write_text("old completion cache\n", encoding="utf-8")
+            (home_dir / ".zcompdump").write_text(
+                "old completion cache\n", encoding="utf-8"
+            )
+            (home_dir / ".zcompdump-test-host-5.9").write_text(
+                "old completion cache\n", encoding="utf-8"
+            )
+            (home_dir / ".zcompdump.test-host.5.9").write_text(
+                "old completion cache\n", encoding="utf-8"
+            )
             zshrc_path.write_text(
-                'export ZSH="$HOME/.oh-my-zsh"\n'
-                'source "$ZSH/oh-my-zsh.sh"\n',
+                'export ZSH="$HOME/.oh-my-zsh"\n' 'source "$ZSH/oh-my-zsh.sh"\n',
                 encoding="utf-8",
             )
             input_path.write_text(
@@ -245,7 +260,10 @@ class InstallScriptTests(unittest.TestCase):
             self.assertFalse((home_dir / ".zcompdump").exists())
             self.assertFalse((home_dir / ".zcompdump-test-host-5.9").exists())
             self.assertFalse((home_dir / ".zcompdump.test-host.5.9").exists())
-            self.assertIn("Updated " + str(zshrc_path) + " to load Zsh completion.", completed.stdout)
+            self.assertIn(
+                "Updated " + str(zshrc_path) + " to load Zsh completion.",
+                completed.stdout,
+            )
             self.assertIn("Cleared Zsh completion cache.", completed.stdout)
 
     def test_install_script_updates_existing_zshrc_completion_block_once(self):
@@ -310,8 +328,12 @@ class InstallScriptTests(unittest.TestCase):
             self.assertEqual(completed.returncode, 0, msg=completed.stderr)
             zshrc_content = zshrc_path.read_text(encoding="utf-8")
             self.assertNotIn("# >>> grafana-util completion >>>", zshrc_content)
-            self.assertEqual(zshrc_content.count("# >>> grafana-util completion fpath >>>"), 1)
-            self.assertEqual(zshrc_content.count("# >>> grafana-util completion compdef >>>"), 1)
+            self.assertEqual(
+                zshrc_content.count("# >>> grafana-util completion fpath >>>"), 1
+            )
+            self.assertEqual(
+                zshrc_content.count("# >>> grafana-util completion compdef >>>"), 1
+            )
             self.assertNotIn("/old/path", zshrc_content)
             self.assertIn('fpath=("' + str(completion_dir) + '" $fpath)', zshrc_content)
             self.assertIn("compdef _grafana-util grafana-util", zshrc_content)
@@ -328,7 +350,9 @@ class InstallScriptTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
             fake_binary = temp_path / "grafana-util"
-            fake_binary.write_text("#!/bin/sh\necho grafana-util test build\n", encoding="utf-8")
+            fake_binary.write_text(
+                "#!/bin/sh\necho grafana-util test build\n", encoding="utf-8"
+            )
             fake_binary.chmod(0o755)
 
             archive_path = temp_path / "grafana-utils-rust-linux-amd64-v9.9.9.tar.gz"
@@ -363,8 +387,12 @@ class InstallScriptTests(unittest.TestCase):
             self.assertTrue(installed_binary.is_file())
             self.assertTrue(os.access(installed_binary, os.X_OK))
             self.assertIn("Installed grafana-util to", completed.stdout)
-            self.assertIn("The install directory is not currently on PATH.", completed.stdout)
-            self.assertIn("Add " + str(bin_dir) + " to PATH if needed:", completed.stdout)
+            self.assertIn(
+                "The install directory is not currently on PATH.", completed.stdout
+            )
+            self.assertIn(
+                "Add " + str(bin_dir) + " to PATH if needed:", completed.stdout
+            )
 
             mode = installed_binary.stat().st_mode
             self.assertTrue(mode & stat.S_IXUSR)

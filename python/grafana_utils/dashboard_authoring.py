@@ -26,7 +26,10 @@ from .dashboards.import_support import (
     load_json_file,
 )
 from .dashboards.output_support import write_json_document
-from .dashboards.transformer import build_preserved_web_import_document, collect_datasource_refs
+from .dashboards.transformer import (
+    build_preserved_web_import_document,
+    collect_datasource_refs,
+)
 from . import yaml_compat as yaml
 
 HISTORY_EXPORT_KIND = "grafana-utils-dashboard-history-export"
@@ -134,19 +137,33 @@ def summarize_dashboard_change_lines(
     original_meta = original.get("meta") if isinstance(original, dict) else None
     edited_meta = edited.get("meta") if isinstance(edited, dict) else None
     original_folder_uid = _normalize_text(
-        (original_meta or {}).get("folderUid") if isinstance(original_meta, dict) else None,
+        (
+            (original_meta or {}).get("folderUid")
+            if isinstance(original_meta, dict)
+            else None
+        ),
         "-",
     )
     edited_folder_uid = _normalize_text(
         (edited_meta or {}).get("folderUid") if isinstance(edited_meta, dict) else None,
         "-",
     )
-    original_tags = ", ".join(
-        [str(tag) for tag in (original_object.get("tags") or []) if str(tag).strip()]
-    ) or "-"
-    edited_tags = ", ".join(
-        [str(tag) for tag in (edited_object.get("tags") or []) if str(tag).strip()]
-    ) or "-"
+    original_tags = (
+        ", ".join(
+            [
+                str(tag)
+                for tag in (original_object.get("tags") or [])
+                if str(tag).strip()
+            ]
+        )
+        or "-"
+    )
+    edited_tags = (
+        ", ".join(
+            [str(tag) for tag in (edited_object.get("tags") or []) if str(tag).strip()]
+        )
+        or "-"
+    )
     return [
         "Dashboard edit review uid=%s title=%s -> %s"
         % (
@@ -181,20 +198,17 @@ def build_dashboard_authoring_review(
         if isinstance(document.get("meta"), dict)
         else None
     )
-    tags = [
-        str(tag)
-        for tag in (document_object.get("tags") or [])
-        if str(tag).strip()
-    ]
+    tags = [str(tag) for tag in (document_object.get("tags") or []) if str(tag).strip()]
     dashboard_id_is_null = document_object.get("id") is None
     meta_message_present = bool(
-        isinstance(document.get("meta"), dict)
-        and "message" in document.get("meta")
+        isinstance(document.get("meta"), dict) and "message" in document.get("meta")
     )
 
     blocking_issues: list[str] = []
     try:
-        build_import_payload(document, folder_uid_override=None, replace_existing=False, message="")
+        build_import_payload(
+            document, folder_uid_override=None, replace_existing=False, message=""
+        )
     except GrafanaError as exc:
         blocking_issues.append(str(exc))
     if document_object.get("id") is not None:
@@ -245,7 +259,8 @@ def render_dashboard_authoring_review_text(review: dict[str, Any]) -> list[str]:
         "dashboard.id: %s" % ("null" if review.get("dashboardIdIsNull") else "non-null")
     )
     lines.append(
-        "meta.message: %s" % ("present" if review.get("metaMessagePresent") else "absent")
+        "meta.message: %s"
+        % ("present" if review.get("metaMessagePresent") else "absent")
     )
     blocking_issues = review.get("blockingIssues") or []
     if blocking_issues:
@@ -257,7 +272,9 @@ def render_dashboard_authoring_review_text(review: dict[str, Any]) -> list[str]:
     return lines
 
 
-def render_dashboard_authoring_review_document(review: dict[str, Any]) -> dict[str, Any]:
+def render_dashboard_authoring_review_document(
+    review: dict[str, Any],
+) -> dict[str, Any]:
     """Render one dashboard authoring review as a serializable document."""
 
     return {
@@ -284,11 +301,7 @@ def edit_payload_in_external_editor(
         handle.write(json.dumps(value, indent=2, ensure_ascii=False) + "\n")
 
     try:
-        editor = (
-            os.environ.get("VISUAL")
-            or os.environ.get("EDITOR")
-            or "vi"
-        ).strip()
+        editor = (os.environ.get("VISUAL") or os.environ.get("EDITOR") or "vi").strip()
         command = shlex.split(editor)
         if not command:
             raise GrafanaError("Could not resolve an external editor command.")
@@ -316,7 +329,9 @@ def run_dashboard_edit_live(
 ) -> int:
     """Edit one live dashboard through an external editor and optional live apply."""
 
-    if bool(getattr(args, "apply_live", False)) and not bool(getattr(args, "yes", False)):
+    if bool(getattr(args, "apply_live", False)) and not bool(
+        getattr(args, "yes", False)
+    ):
         raise GrafanaError(
             "--apply-live requires --yes because it writes the edited dashboard back to Grafana."
         )
@@ -376,8 +391,10 @@ def run_dashboard_edit_live(
         return 0
 
     output = getattr(args, "output", None)
-    output_path = Path(output) if output else Path(
-        f"{getattr(args, 'dashboard_uid')}.edited.json"
+    output_path = (
+        Path(output)
+        if output
+        else Path(f"{getattr(args, 'dashboard_uid')}.edited.json")
     )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     write_json_document(edited, output_path)
@@ -398,9 +415,7 @@ def _serve_text_document(path: Path) -> dict[str, Any]:
         except json.JSONDecodeError:
             value = yaml.safe_load(raw_text)
     if not isinstance(value, dict):
-        raise GrafanaError(
-            f"Dashboard serve expects JSON/YAML objects: {path}"
-        )
+        raise GrafanaError(f"Dashboard serve expects JSON/YAML objects: {path}")
     return value
 
 
@@ -437,7 +452,9 @@ def load_dashboard_serve_items(args: Any) -> list[dict[str, Any]]:
                 else json.loads(output.stdout)
             )
         except json.JSONDecodeError as exc:
-            raise GrafanaError(f"Failed to parse dashboard serve JSON script output: {exc}") from exc
+            raise GrafanaError(
+                f"Failed to parse dashboard serve JSON script output: {exc}"
+            ) from exc
         if isinstance(payload, list):
             items = payload
         else:
@@ -445,7 +462,9 @@ def load_dashboard_serve_items(args: Any) -> list[dict[str, Any]]:
         result = []
         for index, item in enumerate(items):
             if not isinstance(item, dict):
-                raise GrafanaError("Dashboard serve script output must contain JSON/YAML objects.")
+                raise GrafanaError(
+                    "Dashboard serve script output must contain JSON/YAML objects."
+                )
             result.append(_serve_item_from_document(item, f"script:{index}"))
         return result
 
@@ -582,14 +601,18 @@ def _serve_html() -> str:
 </html>"""
 
 
-def _serve_reload_items(state: dict[str, Any], items: list[dict[str, Any]], last_error: Optional[str]) -> None:
+def _serve_reload_items(
+    state: dict[str, Any], items: list[dict[str, Any]], last_error: Optional[str]
+) -> None:
     state["itemCount"] = len(items)
     state["items"] = items
     state["lastReloadMillis"] = int(time.time() * 1000)
     state["lastError"] = last_error
 
 
-def _serve_watch_reload_loop(args: Any, state: dict[str, Any], lock: threading.Lock, watch_paths: list[Path]) -> None:
+def _serve_watch_reload_loop(
+    args: Any, state: dict[str, Any], lock: threading.Lock, watch_paths: list[Path]
+) -> None:
     previous = {path: _serve_fingerprint(path) for path in watch_paths}
     while True:
         time.sleep(1)
@@ -627,7 +650,9 @@ def run_dashboard_serve(args: Any) -> int:
         thread.start()
 
     class _Handler(BaseHTTPRequestHandler):
-        def log_message(self, format: str, *values: Any) -> None:  # pragma: no cover - noise suppression.
+        def log_message(
+            self, format: str, *values: Any
+        ) -> None:  # pragma: no cover - noise suppression.
             return
 
         def do_GET(self) -> None:  # noqa: N802
@@ -641,7 +666,9 @@ def run_dashboard_serve(args: Any) -> int:
                 return
             if self.path == "/index.json":
                 with state_lock:
-                    payload = json.dumps(state, indent=2, ensure_ascii=False).encode("utf-8")
+                    payload = json.dumps(state, indent=2, ensure_ascii=False).encode(
+                        "utf-8"
+                    )
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
                 self.send_header("Content-Length", str(len(payload)))
@@ -655,13 +682,19 @@ def run_dashboard_serve(args: Any) -> int:
             self.end_headers()
             self.wfile.write(body)
 
-    server = ThreadingHTTPServer((getattr(args, "address"), int(getattr(args, "port"))), _Handler)
+    server = ThreadingHTTPServer(
+        (getattr(args, "address"), int(getattr(args, "port"))), _Handler
+    )
     server.daemon_threads = True
     preview_url = "http://%s:%s" % server.server_address[:2]
     print(f"Dashboard preview available at {preview_url}")
     if bool(getattr(args, "open_browser", False)):
-        if not webbrowser.open(preview_url):  # pragma: no cover - browser availability varies.
-            print("Dashboard serve browser launch failed: could not open the default browser.")
+        if not webbrowser.open(
+            preview_url
+        ):  # pragma: no cover - browser availability varies.
+            print(
+                "Dashboard serve browser launch failed: could not open the default browser."
+            )
     try:
         server.serve_forever(poll_interval=0.2)
     except KeyboardInterrupt:  # pragma: no cover - manual termination path.
@@ -823,7 +856,9 @@ def list_dashboard_history_versions(
     elif isinstance(response, dict):
         items = response.get("versions") or []
     else:
-        raise GrafanaError("Unexpected dashboard history versions payload from Grafana.")
+        raise GrafanaError(
+            "Unexpected dashboard history versions payload from Grafana."
+        )
     versions = []
     for item in items:
         if not isinstance(item, dict):
@@ -885,12 +920,16 @@ def _fetch_dashboard_history_version_dashboard(
     dashboard_uid: str,
     version: int,
 ) -> dict[str, Any]:
-    response = client.request_json(f"/api/dashboards/uid/{dashboard_uid}/versions/{version}")
+    response = client.request_json(
+        f"/api/dashboards/uid/{dashboard_uid}/versions/{version}"
+    )
     if not isinstance(response, dict):
         raise GrafanaError("Unexpected dashboard history version payload from Grafana.")
     data = response.get("data")
     if not isinstance(data, dict):
-        raise GrafanaError("Dashboard history version payload did not include dashboard data.")
+        raise GrafanaError(
+            "Dashboard history version payload did not include dashboard data."
+        )
     return data
 
 
@@ -1046,9 +1085,7 @@ def _history_diff_source_count(
     input_dir: Optional[Path | str],
 ) -> int:
     return sum(
-        1
-        for value in (dashboard_uid, input_path, input_dir)
-        if value not in (None, "")
+        1 for value in (dashboard_uid, input_path, input_dir) if value not in (None, "")
     )
 
 
@@ -1153,8 +1190,12 @@ def build_dashboard_history_diff_document(
         input_dir=new_input_dir,
         version=int(new_version),
     )
-    base_json = json.dumps(base["dashboard"], indent=2, sort_keys=True, ensure_ascii=False)
-    new_json = json.dumps(new["dashboard"], indent=2, sort_keys=True, ensure_ascii=False)
+    base_json = json.dumps(
+        base["dashboard"], indent=2, sort_keys=True, ensure_ascii=False
+    )
+    new_json = json.dumps(
+        new["dashboard"], indent=2, sort_keys=True, ensure_ascii=False
+    )
     diff_lines = list(
         difflib.unified_diff(
             base_json.splitlines(),
@@ -1322,8 +1363,7 @@ def restore_dashboard_history_version(
     payload: dict[str, Any] = {
         "dashboard": restored_dashboard,
         "overwrite": True,
-        "message": message
-        or f"{DEFAULT_HISTORY_RESTORE_MESSAGE} to version {version}",
+        "message": message or f"{DEFAULT_HISTORY_RESTORE_MESSAGE} to version {version}",
     }
     current_meta = current.get("meta") if isinstance(current, dict) else None
     if isinstance(current_meta, dict):
@@ -1332,7 +1372,9 @@ def restore_dashboard_history_version(
             payload["folderUid"] = folder_uid
     response = client.import_dashboard(payload)
     if not isinstance(response, dict):
-        raise GrafanaError("Unexpected dashboard history restore response from Grafana.")
+        raise GrafanaError(
+            "Unexpected dashboard history restore response from Grafana."
+        )
     return {
         "kind": HISTORY_RESTORE_KIND,
         "dashboardUid": dashboard_uid,
@@ -1399,7 +1441,9 @@ def validate_dashboard_export_tree(import_dir: Path) -> dict[str, Any]:
     parsed = []
     for path in files:
         parsed.append(load_json_file(path))
-        build_import_payload(parsed[-1], folder_uid_override=None, replace_existing=False, message="")
+        build_import_payload(
+            parsed[-1], folder_uid_override=None, replace_existing=False, message=""
+        )
     return {
         "kind": "grafana-utils-dashboard-export-validation",
         "inputDir": str(import_dir),

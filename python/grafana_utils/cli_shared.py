@@ -114,7 +114,13 @@ def build_connection_details(
 def build_live_clients(
     args: Any,
     config_path: Optional[Path | str] = None,
-) -> tuple[ProfileConnectionDetails, GrafanaClient, GrafanaDatasourceClient, GrafanaAlertClient, GrafanaAccessClient]:
+) -> tuple[
+    ProfileConnectionDetails,
+    GrafanaClient,
+    GrafanaDatasourceClient,
+    GrafanaAlertClient,
+    GrafanaAccessClient,
+]:
     """Build the common live Grafana clients from resolved connection details."""
 
     details = build_connection_details(args, config_path=config_path)

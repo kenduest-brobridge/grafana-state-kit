@@ -420,7 +420,9 @@ def build_add_defaults_for_supported_type(type_or_alias, preset_profile="starter
         return {}
     profile = normalize_supported_datasource_preset_profile(preset_profile)
     if profile == "full":
-        return deepcopy(entry.get("full_add_defaults") or entry.get("add_defaults") or {})
+        return deepcopy(
+            entry.get("full_add_defaults") or entry.get("add_defaults") or {}
+        )
     return deepcopy(entry.get("add_defaults") or {})
 
 

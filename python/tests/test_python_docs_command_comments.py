@@ -72,7 +72,9 @@ class MarkdownCommandCommentTests(unittest.TestCase):
                 command_count = sum(
                     1 for line in lines if line.lstrip().startswith("grafana-util ")
                 )
-                comment_count = sum(1 for line in lines if line.lstrip().startswith("# "))
+                comment_count = sum(
+                    1 for line in lines if line.lstrip().startswith("# ")
+                )
                 if command_count > 1 and comment_count < command_count:
                     line_no = text[: match.start()].count("\n") + 1
                     offenders.append(

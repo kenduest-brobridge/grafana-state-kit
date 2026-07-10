@@ -12,6 +12,7 @@ from pathlib import Path
 from unittest import mock
 
 from grafana_utils import __version__ as TOOL_VERSION
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 PYTHON_ROOT = REPO_ROOT / "python"
 MODULE_PATH = PYTHON_ROOT / "grafana_utils" / "alert_cli.py"
@@ -331,7 +332,9 @@ class AlertUtilsTests(unittest.TestCase):
             plan_file = Path(tmpdir) / "plan.json"
             plan_file.write_text("{}", encoding="utf-8")
 
-            args = alert_utils.parse_args(["apply", "--plan-file", str(plan_file), "--approve"])
+            args = alert_utils.parse_args(
+                ["apply", "--plan-file", str(plan_file), "--approve"]
+            )
 
             self.assertEqual(args.alert_command, "apply")
             self.assertTrue(args.approve)
@@ -362,7 +365,9 @@ class AlertUtilsTests(unittest.TestCase):
         self.assertFalse(args.allow_policy_reset)
 
     def test_alert_parse_args_supports_new_rule_subcommand(self):
-        args = alert_utils.parse_args(["new-rule", "--desired-dir", "alerts/stage", "--name", "cpu"])
+        args = alert_utils.parse_args(
+            ["new-rule", "--desired-dir", "alerts/stage", "--name", "cpu"]
+        )
 
         self.assertEqual(args.alert_command, "new-rule")
         self.assertEqual(args.desired_dir, "alerts/stage")
@@ -370,7 +375,13 @@ class AlertUtilsTests(unittest.TestCase):
 
     def test_alert_parse_args_supports_new_contact_point_subcommand(self):
         args = alert_utils.parse_args(
-            ["new-contact-point", "--desired-dir", "alerts/stage", "--name", "webhook-main"]
+            [
+                "new-contact-point",
+                "--desired-dir",
+                "alerts/stage",
+                "--name",
+                "webhook-main",
+            ]
         )
 
         self.assertEqual(args.alert_command, "new-contact-point")
@@ -550,7 +561,14 @@ class AlertUtilsTests(unittest.TestCase):
         stream = io.StringIO()
         with redirect_stdout(stream):
             result = alert_utils.main(
-                ["delete", "--kind", "policy-tree", "--identity", "root", "--allow-policy-reset"]
+                [
+                    "delete",
+                    "--kind",
+                    "policy-tree",
+                    "--identity",
+                    "root",
+                    "--allow-policy-reset",
+                ]
             )
 
         self.assertEqual(result, 0)
@@ -657,9 +675,7 @@ class AlertUtilsTests(unittest.TestCase):
                 )
 
             self.assertEqual(result, 1)
-            self.assertIn(
-                "cannot use --receiver when --no-route", stream.getvalue()
-            )
+            self.assertIn("cannot use --receiver when --no-route", stream.getvalue())
 
     def test_alert_main_runs_add_rule_no_route_without_receiver(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -683,10 +699,10 @@ class AlertUtilsTests(unittest.TestCase):
             self.assertEqual(result, 0)
             output = stream.getvalue()
             self.assertIn("Alert add-rule", output)
-            payload = json.loads((Path(tmpdir) / "rules" / "CPU-Load.yaml").read_text(encoding="utf-8"))
-            self.assertEqual(
-                payload["metadata"]["uid"], "CPU-Load"
+            payload = json.loads(
+                (Path(tmpdir) / "rules" / "CPU-Load.yaml").read_text(encoding="utf-8")
             )
+            self.assertEqual(payload["metadata"]["uid"], "CPU-Load")
             self.assertTrue((Path(tmpdir) / "rules" / "CPU-Load.yaml").is_file())
 
     def test_alert_main_rejects_clone_rule_without_receiver(self):
@@ -752,10 +768,10 @@ class AlertUtilsTests(unittest.TestCase):
             self.assertEqual(result, 0)
             output = stream.getvalue()
             self.assertIn("Alert clone-rule", output)
-            payload = json.loads((Path(tmpdir) / "rules" / "clone-rule.yaml").read_text(encoding="utf-8"))
-            self.assertEqual(
-                payload["metadata"]["uid"], "clone-rule"
+            payload = json.loads(
+                (Path(tmpdir) / "rules" / "clone-rule.yaml").read_text(encoding="utf-8")
             )
+            self.assertEqual(payload["metadata"]["uid"], "clone-rule")
 
     def test_alert_main_runs_preview_route_with_strict_route_matchers(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -781,7 +797,9 @@ class AlertUtilsTests(unittest.TestCase):
                         },
                         {
                             "receiver": "route-managed-only",
-                            "object_matchers": [["grafana_utils_route", "=", "managed-route"]],
+                            "object_matchers": [
+                                ["grafana_utils_route", "=", "managed-route"]
+                            ],
                         },
                     ],
                 )
@@ -1323,7 +1341,9 @@ class AlertUtilsTests(unittest.TestCase):
                 return {}
 
             def get_template(self, name):
-                raise alert_utils.GrafanaApiError(500, "https://grafana/templates/%s" % name, "error")
+                raise alert_utils.GrafanaApiError(
+                    500, "https://grafana/templates/%s" % name, "error"
+                )
 
         plan = {
             "kind": alert_runtime.ALERT_PLAN_KIND,
@@ -1398,7 +1418,9 @@ class AlertUtilsTests(unittest.TestCase):
                 False,
             )
 
-    def test_alert_execute_alert_plan_supports_policy_create_and_update_with_plan_rows(self):
+    def test_alert_execute_alert_plan_supports_policy_create_and_update_with_plan_rows(
+        self,
+    ):
         class PolicyClient(FakeAlertClient):
             def __init__(self):
                 super().__init__()
@@ -1555,7 +1577,9 @@ class AlertUtilsTests(unittest.TestCase):
 
             plan_client = FakeAlertClient(
                 contact_points=[
-                    sample_contact_point(uid="cp-uid", settings={"url": "http://127.0.0.1/old"})
+                    sample_contact_point(
+                        uid="cp-uid", settings={"url": "http://127.0.0.1/old"}
+                    )
                 ],
                 policies=sample_policies(),
             )
@@ -1575,7 +1599,9 @@ class AlertUtilsTests(unittest.TestCase):
             spec = live.get("spec")
             self.assertIsInstance(spec, dict)
             self.assertEqual(spec.get("name"), "Webhook Main")
-            self.assertEqual(spec.get("settings", {}).get("url"), "http://127.0.0.1/old")
+            self.assertEqual(
+                spec.get("settings", {}).get("url"), "http://127.0.0.1/old"
+            )
 
     def test_alert_build_rule_review_hints_detects_linked_dashboard_and_panel(self):
         hints = alert_runtime.build_rule_review_hints(sample_linked_rule())
@@ -1598,12 +1624,16 @@ class AlertUtilsTests(unittest.TestCase):
             ],
         )
 
-    def test_alert_build_alert_plan_rows_are_warning_when_linked_rule_refs_present(self):
+    def test_alert_build_alert_plan_rows_are_warning_when_linked_rule_refs_present(
+        self,
+    ):
         with tempfile.TemporaryDirectory() as tmpdir:
             desired_dir = Path(tmpdir)
             rule_path = desired_dir / "rules" / "rule.json"
             alert_utils.write_json(
-                alert_utils.build_rule_export_document(sample_linked_rule(uid="rule-uid")),
+                alert_utils.build_rule_export_document(
+                    sample_linked_rule(uid="rule-uid")
+                ),
                 rule_path,
                 overwrite=True,
             )
@@ -1759,7 +1789,9 @@ class AlertUtilsTests(unittest.TestCase):
         self.assertEqual(kind, alert_utils.RULE_KIND)
         self.assertEqual(payload["uid"], "rule-uid")
 
-    def test_alert_build_compare_document_normalizes_rule_payload_for_plan_comparison(self):
+    def test_alert_build_compare_document_normalizes_rule_payload_for_plan_comparison(
+        self,
+    ):
         document = alert_utils.build_compare_document(
             alert_utils.RULE_KIND,
             {
@@ -1791,7 +1823,9 @@ class AlertUtilsTests(unittest.TestCase):
         self.assertEqual(document["spec"]["data"][0], {})
         self.assertEqual(document["spec"]["data"][1], {"queryType": "A"})
 
-    def test_alert_build_compare_document_normalizes_template_payload_for_plan_comparison(self):
+    def test_alert_build_compare_document_normalizes_template_payload_for_plan_comparison(
+        self,
+    ):
         document = alert_utils.build_compare_document(
             alert_utils.TEMPLATE_KIND,
             {

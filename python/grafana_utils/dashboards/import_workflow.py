@@ -31,7 +31,9 @@ def _select_interactive_dashboard_documents(args, deps, dashboard_documents):
     if not getattr(args, "interactive", False):
         return dashboard_documents
     if not deps["is_tty"]():
-        raise deps["GrafanaError"]("Dashboard import --interactive requires an interactive terminal (TTY).")
+        raise deps["GrafanaError"](
+            "Dashboard import --interactive requires an interactive terminal (TTY)."
+        )
     if not dashboard_documents:
         return dashboard_documents
     deps["output_writer"](
@@ -73,7 +75,9 @@ def _select_interactive_dashboard_documents(args, deps, dashboard_documents):
         if index in selected_indexes
     ]
     if not selected:
-        raise deps["GrafanaError"]("Dashboard import --interactive selected no dashboards.")
+        raise deps["GrafanaError"](
+            "Dashboard import --interactive selected no dashboards."
+        )
     return selected
 
 
@@ -113,7 +117,9 @@ class _CachedDashboardImportClient:
 
         cache_key = str(uid or "")
         if cache_key not in self._dashboard_cache:
-            self._dashboard_cache[cache_key] = self._client.fetch_dashboard_if_exists(uid)
+            self._dashboard_cache[cache_key] = self._client.fetch_dashboard_if_exists(
+                uid
+            )
         return self._dashboard_cache[cache_key]
 
     def fetch_dashboard(self, uid):
@@ -198,8 +204,7 @@ def _validate_export_org_match(args, deps, client, import_dir, metadata):
     if not source_org_id:
         raise deps["GrafanaError"](
             "Could not determine one source export orgId from %s while "
-            "--require-matching-export-org is active."
-            % import_dir
+            "--require-matching-export-org is active." % import_dir
         )
     target_org = client.fetch_current_org()
     target_org_id = _normalize_org_id(target_org)
@@ -267,8 +272,7 @@ def _resolve_multi_org_targets(args, deps, client):
         if not source_org_id:
             raise deps["GrafanaError"](
                 "Could not determine one source export orgId from %s while "
-                "--use-export-org is active."
-                % raw_dir
+                "--use-export-org is active." % raw_dir
             )
         if selected_org_ids and source_org_id not in selected_org_ids:
             continue
@@ -337,9 +341,11 @@ def _resolve_multi_org_targets(args, deps, client):
         raise deps["GrafanaError"](
             "No org-scoped raw exports matched %s under %s."
             % (
-                "--only-org-id selection"
-                if selected_org_ids
-                else "the combined multi-org export root",
+                (
+                    "--only-org-id selection"
+                    if selected_org_ids
+                    else "the combined multi-org export root"
+                ),
                 import_dir,
             )
         )
@@ -410,7 +416,11 @@ def _run_import_dashboards_by_export_org(args, deps, client):
                 [item for item in org_entries if item["orgAction"] == "missing-org"]
             ),
             "wouldCreateOrgCount": len(
-                [item for item in org_entries if item["orgAction"] == "would-create-org"]
+                [
+                    item
+                    for item in org_entries
+                    if item["orgAction"] == "would-create-org"
+                ]
             ),
             "dashboardCount": sum([item["dashboardCount"] for item in org_entries]),
         }
@@ -449,17 +459,16 @@ def _run_import_dashboards_by_export_org(args, deps, client):
         for row in rows:
             for index, value in enumerate(row):
                 widths[index] = max(widths[index], len(value))
+
         def format_row(values):
             # Purpose: implementation note.
             # Args: see function signature.
             # Returns: see implementation.
 
             return "  ".join(
-                [
-                    "%-*s" % (widths[index], value)
-                    for index, value in enumerate(values)
-                ]
+                ["%-*s" % (widths[index], value) for index, value in enumerate(values)]
             )
+
         if not bool(getattr(args, "no_header", False)):
             print(format_row(headers))
             print(format_row(["-" * width for width in widths]))
@@ -530,9 +539,7 @@ def _run_import_dashboards_for_single_org(args, deps):
     if getattr(args, "json", False) and not args.dry_run:
         raise grafana_error("--json is only supported with --dry-run for import.")
     if getattr(args, "table", False) and getattr(args, "json", False):
-        raise grafana_error(
-            "--table and --json are mutually exclusive for import."
-        )
+        raise grafana_error("--table and --json are mutually exclusive for import.")
     if getattr(args, "no_header", False) and not getattr(args, "table", False):
         raise grafana_error(
             "--no-header is only supported with --dry-run --table for import."
@@ -564,9 +571,13 @@ def _run_import_dashboards_for_single_org(args, deps):
     metadata = {}
     if input_format == "provisioning":
         if getattr(args, "use_export_org", False):
-            raise grafana_error("--use-export-org is only supported with raw dashboard import.")
+            raise grafana_error(
+                "--use-export-org is only supported with raw dashboard import."
+            )
         if getattr(args, "ensure_folders", False):
-            raise grafana_error("--ensure-folders is only supported with raw dashboard import.")
+            raise grafana_error(
+                "--ensure-folders is only supported with raw dashboard import."
+            )
         dashboard_files = _discover_provisioning_dashboard_files(import_dir)
     else:
         metadata = deps["load_export_metadata"](
@@ -615,7 +626,9 @@ def _run_import_dashboards_for_single_org(args, deps):
         print("Import mode: %s" % mode)
     folder_dry_run_records = []
     if getattr(args, "dry_run", False) and getattr(args, "ensure_folders", False):
-        folder_dry_run_records = deps["inspect_folder_inventory"](client, folder_inventory)
+        folder_dry_run_records = deps["inspect_folder_inventory"](
+            client, folder_inventory
+        )
         if json_output:
             pass
         elif getattr(args, "table", False):
@@ -744,7 +757,9 @@ def _run_import_dashboards_for_single_org(args, deps):
                         action,
                         folder_path=folder_path,
                         source_folder_path=match_result.get("source_folder_path"),
-                        destination_folder_path=match_result.get("destination_folder_path"),
+                        destination_folder_path=match_result.get(
+                            "destination_folder_path"
+                        ),
                         reason=match_result.get("reason"),
                     )
                 )
@@ -886,7 +901,9 @@ def _run_import_dashboards_for_single_org(args, deps):
                 % (len(dashboard_files), import_dir, skipped_folder_mismatch_count)
             )
         else:
-            print(f"Dry-run checked {len(dashboard_files)} dashboard files from {import_dir}")
+            print(
+                f"Dry-run checked {len(dashboard_files)} dashboard files from {import_dir}"
+            )
     else:
         if (
             getattr(args, "update_existing_only", False)

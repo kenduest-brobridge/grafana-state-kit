@@ -248,7 +248,11 @@ class DashboardInspectionTests(unittest.TestCase):
             ("1", "Main Org.", "cpu-main", "up"),
             ("2", "Ops Org", "logs-main", '{job="grafana"}'),
         ]:
-            raw_dir = export_root / ("org_%s_%s" % (org_id, org_name.replace(" ", "_"))) / "raw"
+            raw_dir = (
+                export_root
+                / ("org_%s_%s" % (org_id, org_name.replace(" ", "_")))
+                / "raw"
+            )
             self.write_summary_fixture(
                 raw_dir,
                 dashboards=[
@@ -415,9 +419,7 @@ class DashboardInspectionTests(unittest.TestCase):
                 ],
             )
 
-            args = exporter.parse_args(
-                ["summary", "--import-dir", str(import_dir)]
-            )
+            args = exporter.parse_args(["summary", "--import-dir", str(import_dir)])
             result, output = self.run_inspect(args)
 
             self.assertEqual(result, 0)
@@ -571,7 +573,9 @@ class DashboardInspectionTests(unittest.TestCase):
                 ],
             )
 
-            with self.assertRaisesRegex(exporter.GrafanaError, "interactive mode is not implemented"):
+            with self.assertRaisesRegex(
+                exporter.GrafanaError, "interactive mode is not implemented"
+            ):
                 self.run_inspect(
                     exporter.parse_args(
                         [
@@ -590,7 +594,9 @@ class DashboardInspectionTests(unittest.TestCase):
             scope_root = root / ".grafana-util" / "artifacts" / "default"
             raw_dir = scope_root / "runs" / "run-001" / "dashboards" / "raw"
             raw_dir.mkdir(parents=True)
-            exporter.write_json_document({"run_id": "run-001"}, scope_root / "latest-run.json")
+            exporter.write_json_document(
+                {"run_id": "run-001"}, scope_root / "latest-run.json"
+            )
             self.write_summary_fixture(
                 raw_dir,
                 dashboards=[
@@ -777,7 +783,10 @@ class DashboardInspectionTests(unittest.TestCase):
                                 {
                                     "id": 1,
                                     "type": "timeseries",
-                                    "datasource": {"uid": "prom-main", "type": "prometheus"},
+                                    "datasource": {
+                                        "uid": "prom-main",
+                                        "type": "prometheus",
+                                    },
                                     "targets": [{"refId": "A", "expr": "up"}],
                                 }
                             ],
@@ -1001,7 +1010,10 @@ class DashboardInspectionTests(unittest.TestCase):
                             "id": 11,
                             "title": "Elastic Query",
                             "type": "table",
-                            "datasource": {"type": "elasticsearch", "uid": "elastic-main"},
+                            "datasource": {
+                                "type": "elasticsearch",
+                                "uid": "elastic-main",
+                            },
                             "targets": [
                                 {
                                     "refId": "E",
@@ -1069,9 +1081,7 @@ class DashboardInspectionTests(unittest.TestCase):
             self.assertEqual(query_by_panel["7"]["datasourceType"], "prometheus")
             self.assertEqual(query_by_panel["7"]["datasourceFamily"], "prometheus")
             self.assertEqual(query_by_panel["7"]["datasourceName"], "Prometheus Main")
-            self.assertEqual(
-                query_by_panel["7"]["metrics"], ["node_cpu_seconds_total"]
-            )
+            self.assertEqual(query_by_panel["7"]["metrics"], ["node_cpu_seconds_total"])
             self.assertEqual(query_by_panel["7"]["buckets"], ["5m"])
             self.assertEqual(query_by_panel["8"]["datasourceType"], "influxdb")
             self.assertEqual(query_by_panel["8"]["datasourceFamily"], "influxdb")
@@ -1092,7 +1102,8 @@ class DashboardInspectionTests(unittest.TestCase):
             self.assertEqual(query_by_panel["9"]["datasourceDatabase"], "metrics_v1")
             self.assertEqual(query_by_panel["10"]["datasourceFamily"], "loki")
             self.assertEqual(
-                query_by_panel["10"]["functions"], ["sum", "count_over_time", "filter_eq"]
+                query_by_panel["10"]["functions"],
+                ["sum", "count_over_time", "filter_eq"],
             )
             self.assertEqual(query_by_panel["10"]["buckets"], ["30m"])
             self.assertEqual(
@@ -1440,7 +1451,7 @@ class DashboardInspectionTests(unittest.TestCase):
                             "refId": "C",
                             "expr": 'sum(rate(node_cpu_seconds_total{job="node"}[15m]))',
                             "disabled": True,
-                        }
+                        },
                     ],
                 },
                 {
@@ -2049,7 +2060,9 @@ class DashboardInspectionTests(unittest.TestCase):
         self.assertEqual(payload["summary"]["dashboardCount"], 1)
         self.assertEqual(payload["dashboards"][0]["uid"], "ops-main")
 
-    def test_dashboard_inspection_inspect_live_with_all_orgs_merges_scoped_clients(self):
+    def test_dashboard_inspection_inspect_live_with_all_orgs_merges_scoped_clients(
+        self,
+    ):
         main_client = FakeDashboardWorkflowClient(
             org={"id": 1, "name": "Main Org."},
             summaries=[
@@ -2100,9 +2113,13 @@ class DashboardInspectionTests(unittest.TestCase):
         payload = json.loads(stdout.getvalue())
         self.assertEqual(result, 0)
         self.assertEqual(payload["summary"]["dashboardCount"], 2)
-        self.assertEqual({item["uid"] for item in payload["dashboards"]}, {"main", "ops"})
+        self.assertEqual(
+            {item["uid"] for item in payload["dashboards"]}, {"main", "ops"}
+        )
 
-    def test_dashboard_inspection_inspect_export_accepts_provisioning_input_format(self):
+    def test_dashboard_inspection_inspect_export_accepts_provisioning_input_format(
+        self,
+    ):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             dashboards_dir = root / "provisioning" / "dashboards" / "platform"

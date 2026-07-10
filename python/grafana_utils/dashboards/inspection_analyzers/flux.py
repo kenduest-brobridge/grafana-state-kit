@@ -21,12 +21,14 @@ def extract_flux_pipeline_functions(query: str) -> list[str]:
     return unique_strings(
         extract_string_values(
             query,
-            r'(?:^|\|>)\s*([A-Za-z_][A-Za-z0-9_]*)\s*\(',
+            r"(?:^|\|>)\s*([A-Za-z_][A-Za-z0-9_]*)\s*\(",
         )
     )
 
 
-def analyze_query(panel: dict[str, Any], target: dict[str, Any], query_field: str, query_text: str) -> dict[str, Any]:
+def analyze_query(
+    panel: dict[str, Any], target: dict[str, Any], query_field: str, query_text: str
+) -> dict[str, Any]:
     """Build normalized analysis output for a Flux query."""
     # Call graph: see callers/callees.
     #   Upstream callers: 無
@@ -36,9 +38,7 @@ def analyze_query(panel: dict[str, Any], target: dict[str, Any], query_field: st
     stripped = str(query_text or "").lstrip()
     return normalize_query_analysis(
         {
-            "metrics": (
-                extract_influxql_select_metrics(query_text)
-            ),
+            "metrics": (extract_influxql_select_metrics(query_text)),
             "functions": (
                 extract_flux_pipeline_functions(query_text)
                 if (
@@ -50,6 +50,7 @@ def analyze_query(panel: dict[str, Any], target: dict[str, Any], query_field: st
             )
             + extract_influxql_select_functions(query_text),
             "measurements": extract_measurements(query_text),
-            "buckets": extract_buckets(query_text) + extract_influxql_time_buckets(query_text),
+            "buckets": extract_buckets(query_text)
+            + extract_influxql_time_buckets(query_text),
         }
     )

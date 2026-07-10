@@ -3410,8 +3410,12 @@ class AccessCliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             config_path = root / "grafana-util.yaml"
-            config_path.write_text("artifact_root: artifacts\nprofiles: {}\n", encoding="utf-8")
-            lane = root / "artifacts" / "default" / "runs" / "run-1" / "access" / "users"
+            config_path.write_text(
+                "artifact_root: artifacts\nprofiles: {}\n", encoding="utf-8"
+            )
+            lane = (
+                root / "artifacts" / "default" / "runs" / "run-1" / "access" / "users"
+            )
             lane.mkdir(parents=True)
             (lane / "users.json").write_text(
                 json.dumps(
@@ -3432,10 +3436,14 @@ class AccessCliTests(unittest.TestCase):
 
             output = io.StringIO()
             with (
-                mock.patch.dict("os.environ", {"GRAFANA_UTIL_CONFIG": str(config_path)}),
+                mock.patch.dict(
+                    "os.environ", {"GRAFANA_UTIL_CONFIG": str(config_path)}
+                ),
                 redirect_stdout(output),
             ):
-                result = access_workflows.browse_users_with_client(args, FakeAccessClient())
+                result = access_workflows.browse_users_with_client(
+                    args, FakeAccessClient()
+                )
 
         self.assertEqual(result, 0)
         rows = json.loads(output.getvalue())
@@ -3445,7 +3453,9 @@ class AccessCliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             config_path = root / "grafana-util.yaml"
-            config_path.write_text("artifact_root: artifacts\nprofiles: {}\n", encoding="utf-8")
+            config_path.write_text(
+                "artifact_root: artifacts\nprofiles: {}\n", encoding="utf-8"
+            )
             scope = root / "artifacts" / "default"
             lane = scope / "runs" / "run-2" / "access" / "teams"
             lane.mkdir(parents=True)
@@ -3461,10 +3471,14 @@ class AccessCliTests(unittest.TestCase):
 
             output = io.StringIO()
             with (
-                mock.patch.dict("os.environ", {"GRAFANA_UTIL_CONFIG": str(config_path)}),
+                mock.patch.dict(
+                    "os.environ", {"GRAFANA_UTIL_CONFIG": str(config_path)}
+                ),
                 redirect_stdout(output),
             ):
-                result = access_workflows.browse_teams_with_client(args, FakeAccessClient())
+                result = access_workflows.browse_teams_with_client(
+                    args, FakeAccessClient()
+                )
 
         self.assertEqual(result, 0)
         rows = json.loads(output.getvalue())
@@ -3509,7 +3523,9 @@ class AccessCliTests(unittest.TestCase):
                 "artifact_root: artifacts\nprofiles: {}\n",
                 encoding="utf-8",
             )
-            lane = root / "artifacts" / "default" / "runs" / "run-1" / "access" / "users"
+            lane = (
+                root / "artifacts" / "default" / "runs" / "run-1" / "access" / "users"
+            )
             lane.mkdir(parents=True)
             (lane / "users.json").write_text(
                 json.dumps(
@@ -3548,7 +3564,9 @@ class AccessCliTests(unittest.TestCase):
                 ]
             )
             with (
-                mock.patch.dict("os.environ", {"GRAFANA_UTIL_CONFIG": str(config_path)}),
+                mock.patch.dict(
+                    "os.environ", {"GRAFANA_UTIL_CONFIG": str(config_path)}
+                ),
                 redirect_stdout(output),
             ):
                 result = access_workflows.plan_access_with_client(args, client)

@@ -181,7 +181,7 @@ def synthesize_influx_builder_query(target: dict[str, Any]) -> str:
             if rendered:
                 select_parts.append(rendered)
     select_clause = ", ".join(select_parts) or "*"
-    query = f'SELECT {select_clause}'
+    query = f"SELECT {select_clause}"
     if measurement:
         query += f' FROM "{measurement}"'
     where_clause = _render_tag_filters(target.get("tags"))
@@ -337,9 +337,7 @@ def extract_influxql_select_metrics(query: str) -> list[str]:
     if not select_clause:
         return []
     select_clause = re.sub(r'(?i)\bas\s+"[^"]+"', " ", select_clause)
-    return unique_strings(
-        extract_string_values(select_clause, r'"([^"]+)"')
-    )
+    return unique_strings(extract_string_values(select_clause, r'"([^"]+)"'))
 
 
 def extract_influxql_select_functions(query: str) -> list[str]:
@@ -359,7 +357,9 @@ def extract_influxql_select_functions(query: str) -> list[str]:
     )
 
 
-def build_default_query_analysis(target: dict[str, Any], query_text: str) -> dict[str, list[str]]:
+def build_default_query_analysis(
+    target: dict[str, Any], query_text: str
+) -> dict[str, list[str]]:
     """Build normalized query-analysis fields for an unknown analyzer family."""
     # Call graph: see callers/callees.
     #   Upstream callers: 無

@@ -149,9 +149,8 @@ def _resolve_snapshot_artifact_root(args: argparse.Namespace) -> Path:
 def _resolve_snapshot_output_dir(args: argparse.Namespace) -> Path:
     """Resolve the export output directory, defaulting into the artifact workspace."""
     output_dir = Path(args.output_dir)
-    if (
-        str(args.output_dir or "").strip() == "snapshot"
-        and (getattr(args, "run", None) or getattr(args, "run_id", None))
+    if str(args.output_dir or "").strip() == "snapshot" and (
+        getattr(args, "run", None) or getattr(args, "run_id", None)
     ):
         document = load_profile_document(getattr(args, "config", None))
         scope_root = profile_scope_path(
@@ -176,8 +175,8 @@ def _resolve_snapshot_output_dir(args: argparse.Namespace) -> Path:
 
 
 def _snapshot_bundle(args: argparse.Namespace) -> dict[str, Any]:
-    details, dashboard_client, datasource_client, alert_client, access_client = build_live_clients(
-        args, config_path=args.config
+    details, dashboard_client, datasource_client, alert_client, access_client = (
+        build_live_clients(args, config_path=args.config)
     )
     dashboards = dashboard_client.iter_dashboard_summaries(int(args.page_size))
     datasources = datasource_client.list_datasources()
@@ -299,7 +298,9 @@ def _load_snapshot_document(args: argparse.Namespace) -> dict[str, Any]:
     if snapshot_file.is_file():
         data = json.loads(snapshot_file.read_text(encoding="utf-8"))
         if not isinstance(data, dict):
-            raise ValueError("Snapshot bundle must be a JSON object: %s" % snapshot_file)
+            raise ValueError(
+                "Snapshot bundle must be a JSON object: %s" % snapshot_file
+            )
         return data
     return _build_snapshot_lane_document(path)
 
@@ -315,8 +316,12 @@ def review_command(args: argparse.Namespace) -> int:
             "datasources": len(document.get("datasources") or []),
             "users": len((document.get("access") or {}).get("users") or []),
             "teams": len((document.get("access") or {}).get("teams") or []),
-            "organizations": len((document.get("access") or {}).get("organizations") or []),
-            "serviceAccounts": len((document.get("access") or {}).get("serviceAccounts") or []),
+            "organizations": len(
+                (document.get("access") or {}).get("organizations") or []
+            ),
+            "serviceAccounts": len(
+                (document.get("access") or {}).get("serviceAccounts") or []
+            ),
             "alerts": len(document.get("alerts") or []),
         },
     }

@@ -33,20 +33,27 @@ class DocgenLandingTests(unittest.TestCase):
         self.assertEqual(len(page.sections), 3)
         self.assertEqual(page.sections[0].title, "Recommended Starts")
         self.assertEqual(page.sections[0].tasks[0].title, "First time using the CLI")
-        self.assertEqual(page.sections[0].tasks[0].links[0].target, "../user-guide/en/getting-started.md")
+        self.assertEqual(
+            page.sections[0].tasks[0].links[0].target,
+            "../user-guide/en/getting-started.md",
+        )
         self.assertEqual(page.maintainer.links[0].target, "../DEVELOPER.md")
 
     def test_parse_landing_text_requires_search_and_maintainer_sections(self):
         module = load_module()
 
-        with self.assertRaisesRegex(ValueError, "content section and one Maintainer section"):
+        with self.assertRaisesRegex(
+            ValueError, "content section and one Maintainer section"
+        ):
             module.parse_landing_text(
                 "# grafana-util\n\nSummary only.\n",
                 locale="en",
                 source_path=REPO_ROOT / "docs" / "landing" / "broken.md",
             )
 
-    def test_load_landing_page_falls_back_to_repo_landing_text_for_missing_version_lane_file(self):
+    def test_load_landing_page_falls_back_to_repo_landing_text_for_missing_version_lane_file(
+        self,
+    ):
         module = load_module()
 
         with tempfile.TemporaryDirectory() as tmp_dir:

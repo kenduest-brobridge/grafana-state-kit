@@ -683,7 +683,9 @@ def build_parser(prog: Optional[str] = None) -> argparse.ArgumentParser:
         required=True,
         help="Directory containing the staged alert desired-state layout.",
     )
-    new_template_parser.add_argument("--name", required=True, help="Template name to author.")
+    new_template_parser.add_argument(
+        "--name", required=True, help="Template name to author."
+    )
     new_template_parser.set_defaults(alert_command="new-template")
 
     add_rule_parser = subparsers.add_parser(
@@ -1225,7 +1227,9 @@ def render_alert_action_text(title: str, document: dict[str, Any]) -> str:
             review_hints = row.get("reviewHints")
             if isinstance(review_hints, list):
                 codes = [
-                    str(hint.get("code")) for hint in review_hints[:3] if isinstance(hint, dict) and hint.get("code")
+                    str(hint.get("code"))
+                    for hint in review_hints[:3]
+                    if isinstance(hint, dict) and hint.get("code")
                 ]
                 if codes:
                     line += f" reviewHints={','.join(codes)}"
@@ -1251,7 +1255,9 @@ def render_alert_action_text(title: str, document: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def print_alert_action_document(document: dict[str, Any], title: str, output_format: str = "text") -> None:
+def print_alert_action_document(
+    document: dict[str, Any], title: str, output_format: str = "text"
+) -> None:
     """Print action documents in text or json mode."""
     if output_format == "json":
         print(json.dumps(document, indent=2))
@@ -2250,7 +2256,9 @@ def run_alert_plan_cli(args: argparse.Namespace) -> int:
 def run_alert_apply_cli(args: argparse.Namespace) -> int:
     """Run alert apply command."""
     if not bool(getattr(args, "approve", False)):
-        raise GrafanaError("Alert apply requires --approve before live execution is allowed.")
+        raise GrafanaError(
+            "Alert apply requires --approve before live execution is allowed."
+        )
     client = build_client(args)
     plan_file = Path(args.plan_file)
     with open(plan_file, "r", encoding="utf-8") as f:
@@ -2316,7 +2324,9 @@ def run_alert_new_rule_cli(args: argparse.Namespace) -> int:
     path = desired_dir / RULES_SUBDIR / f"{sanitize_path_component(name)}.yaml"
     document = build_new_rule_scaffold_document(name)
     if path.exists():
-        raise GrafanaError(f"Refusing to overwrite existing file: {path}. Use --overwrite.")
+        raise GrafanaError(
+            f"Refusing to overwrite existing file: {path}. Use --overwrite."
+        )
 
     write_json(document, path, overwrite=False)
     result = {
@@ -2332,14 +2342,12 @@ def run_alert_new_contact_point_cli(args: argparse.Namespace) -> int:
     """Run alert new-contact-point command."""
     desired_dir = Path(args.desired_dir)
     name = args.name
-    path = (
-        desired_dir
-        / CONTACT_POINTS_SUBDIR
-        / f"{sanitize_path_component(name)}.yaml"
-    )
+    path = desired_dir / CONTACT_POINTS_SUBDIR / f"{sanitize_path_component(name)}.yaml"
     document = build_new_contact_point_scaffold_document(name)
     if path.exists():
-        raise GrafanaError(f"Refusing to overwrite existing file: {path}. Use --overwrite.")
+        raise GrafanaError(
+            f"Refusing to overwrite existing file: {path}. Use --overwrite."
+        )
 
     write_json(document, path, overwrite=False)
     result = {
@@ -2355,14 +2363,12 @@ def run_alert_new_template_cli(args: argparse.Namespace) -> int:
     """Run alert new-template command."""
     desired_dir = Path(args.desired_dir)
     name = args.name
-    path = (
-        desired_dir
-        / TEMPLATES_SUBDIR
-        / f"{sanitize_path_component(name)}.yaml"
-    )
+    path = desired_dir / TEMPLATES_SUBDIR / f"{sanitize_path_component(name)}.yaml"
     document = build_new_template_scaffold_document(name)
     if path.exists():
-        raise GrafanaError(f"Refusing to overwrite existing file: {path}. Use --overwrite.")
+        raise GrafanaError(
+            f"Refusing to overwrite existing file: {path}. Use --overwrite."
+        )
 
     write_json(document, path, overwrite=False)
     result = {
@@ -2430,7 +2436,8 @@ def run_alert_clone_rule_cli(args: argparse.Namespace) -> int:
             or meta.get("title") == source
             or spec.get("uid") == source
             or spec.get("title") == source
-            or sanitize_path_component(str(meta.get("title") or "")) == normalized_source
+            or sanitize_path_component(str(meta.get("title") or ""))
+            == normalized_source
         ):
             source_path = path
             source_document = doc
