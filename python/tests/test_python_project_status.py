@@ -4,7 +4,6 @@ from grafana_utils import project_status_live
 from grafana_utils.project_status import (
     build_project_status,
     ProjectStatusFreshness,
-    ProjectDomainStatus,
     PROJECT_STATUS_READY,
     PROJECT_STATUS_PARTIAL,
 )

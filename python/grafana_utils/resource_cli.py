@@ -2,8 +2,7 @@
 
 import argparse
 import sys
-import json
-from typing import Any, List, Optional, Dict
+from typing import List, Optional
 from .cli_shared import build_live_clients, dump_document, OUTPUT_FORMAT_CHOICES
 
 
@@ -255,7 +254,7 @@ def get_command(args: argparse.Namespace) -> int:
 
     item = None
     if kind == ResourceKind.DASHBOARDS:
-        item = dashboard_client.get_dashboard(identity)
+        item = dashboard_client.fetch_dashboard(identity)
     elif kind == ResourceKind.FOLDERS:
         item = dashboard_client.request_json(f"/api/folders/{identity}", method="GET")
     elif kind == ResourceKind.DATASOURCES:

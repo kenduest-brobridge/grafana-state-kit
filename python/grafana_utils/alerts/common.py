@@ -1,6 +1,7 @@
 """Shared alerting constants and exceptions."""
 
 import re
+from typing import Any
 
 RAW_EXPORT_SUBDIR = "raw"
 RULES_SUBDIR = "rules"
@@ -40,7 +41,7 @@ def sanitize_path_component(value: str) -> str:
     return normalized or "untitled"
 
 
-def value_to_string(value: any) -> str:
+def value_to_string(value: Any) -> str:
     """Convert any value to a stable string representation."""
     if value is None:
         return ""

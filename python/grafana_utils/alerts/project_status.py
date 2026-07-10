@@ -8,7 +8,7 @@ from ..project_status import (
     PROJECT_STATUS_READY,
     PROJECT_STATUS_BLOCKED,
 )
-from ..status_model import StatusReading
+from ..status_model import StatusReading, StatusRecordCount
 
 
 ALERT_DOMAIN_ID = "alert"
@@ -222,7 +222,7 @@ def build_alert_project_status_domain(
         reason_code = ALERT_REASON_READY
         next_actions = list(ALERT_REEXPORT_AFTER_CHANGES_ACTIONS)
 
-    warnings = []
+    warnings: List[StatusRecordCount] = []
     add_missing_supporting_surface_signal(
         warnings,
         next_actions,

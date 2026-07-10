@@ -1629,6 +1629,7 @@ def _write_full_page_output(request, metadata, capture):
 
     output_format = request["output_format"]
     if request["full_page_output"] == "single":
+        Image, _, _ = _pil_modules()
         stitched = Image.new(
             "RGBA", (capture["target_width"], max(capture["total_height"], 1))
         )
@@ -1847,9 +1848,10 @@ def capture_dashboard_screenshot(args, backend=None, client=None):
                 "Dashboard screenshot capture requires a browser backend or a configured Grafana client."
             )
         client.browser_path = getattr(args, "browser_path", None)
-        backend = lambda capture_request: _capture_with_browser_cli(
-            capture_request, client
-        )
+
+        def backend(capture_request):
+            return _capture_with_browser_cli(capture_request, client)
+
     result = backend(request)
     return result
 

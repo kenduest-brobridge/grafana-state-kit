@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, List, Optional, Dict
 
@@ -14,9 +14,8 @@ from .cli_shared import (
     add_live_connection_args,
     build_live_clients,
     dump_document,
-    summarize_path,
 )
-from .project_status import ProjectStatus, ProjectStatusFreshness
+from .project_status import ProjectStatus
 from .project_status_staged import build_staged_project_status
 from .project_status_live import build_live_project_status
 
@@ -328,10 +327,10 @@ def render_overview_text(doc: OverviewDocument) -> List[str]:
         for a in status.next_actions[:5]:
             lines.append(f"- {a.domain} reason={a.reason_code} action={a.action}")
 
-    for a in doc.artifacts:
+    for artifact in doc.artifacts:
         lines.append("")
-        lines.append(f"# {a.title}")
-        lines.append(f"Summary: {a.kind} inputs={len(a.inputs)}")
+        lines.append(f"# {artifact.title}")
+        lines.append(f"Summary: {artifact.kind} inputs={len(artifact.inputs)}")
 
     return lines
 

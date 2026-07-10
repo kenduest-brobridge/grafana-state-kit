@@ -64,7 +64,7 @@ the existing block on direct mutation of Git Sync-managed resources.
 
 ## Acceptance Checks
 
-- [x] Poetry installs PyYAML and all 1,227 Python tests pass with two skips.
+- [x] Poetry installs PyYAML and all 1,230 Python tests pass with two skips.
 - [ ] Nonnumeric datasource UID 404 makes no numeric-ID fallback request.
 - [ ] TUI registry includes access user/team browse and exact parser/test paths.
 - [ ] Dashboard v2 and `all` export tests pass, including unsupported-lane skip.
@@ -120,7 +120,7 @@ the existing block on direct mutation of Git Sync-managed resources.
 - [x] Rerun `make poetry-test` and the project Black check. The full quality
       target now reaches Ruff/MyPy and exposes a separate pre-existing lint and
       type backlog tracked in Task 1C.
-- [ ] Commit the formatter-only change separately from functional work.
+- [x] Commit the formatter-only change separately from functional work.
 
 ### Task 1C: Restore the Python Ruff and MyPy quality gates
 
@@ -129,12 +129,12 @@ the existing block on direct mutation of Git Sync-managed resources.
 - Modify/test: the 17 Python modules reported by MyPy
 - Modify/test: the Python modules/tests reported by Ruff
 
-- [ ] Capture and group the current 55 Ruff and 56 MyPy errors by root cause.
-- [ ] Apply Ruff safe fixes, review every changed import, and rerun Ruff.
-- [ ] Fix remaining lint findings without behavior changes.
-- [ ] Fix MyPy findings by correcting real API/name defects first, then adding
+- [x] Capture and group the current 55 Ruff and 56 MyPy errors by root cause.
+- [x] Apply Ruff safe fixes, review every changed import, and rerun Ruff.
+- [x] Fix remaining lint findings without behavior changes.
+- [x] Fix MyPy findings by correcting real API/name defects first, then adding
       precise annotations and narrow casts where runtime validation exists.
-- [ ] Run `make poetry-test` and `make poetry-quality-python` green.
+- [x] Run `make poetry-test` and `make poetry-quality-python` green.
 - [ ] Commit lint/type repairs separately from formatter and Grafana features.
 
 ### Task 2: Stop invalid datasource numeric-ID fallback
@@ -351,3 +351,10 @@ impl AppPlatformResourceClient<'_> {
   all 173 files Black-clean and the 1,227-test suite remained green. The next
   quality stages exposed an independent baseline of 55 Ruff and 56 MyPy errors;
   these are isolated as Task 1C instead of being hidden by the formatter fix.
+- 2026-07-10: Task 1C restored Ruff, MyPy, and Black gates and fixed three
+  runtime defects found by static analysis: sync partial status referenced a
+  misspelled constant, single-image full-page screenshots referenced an
+  unloaded Pillow symbol, and Python resource get called a nonexistent
+  dashboard client method. Each received a failing regression test before its
+  fix. `make poetry-quality-python` passed all stages with 1,230 tests and two
+  skips.

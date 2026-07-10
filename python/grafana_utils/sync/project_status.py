@@ -2,7 +2,6 @@
 
 from typing import Any, Optional, List, Dict
 from ..project_status import (
-    status_finding,
     ProjectDomainStatus,
     PROJECT_STATUS_BLOCKED,
     PROJECT_STATUS_PARTIAL,
@@ -201,7 +200,7 @@ def build_live_sync_domain_status(
         reason_code = (
             SYNC_REASON_PARTIAL_NO_DATA
             if resources == 0
-            else SYASON_PARTIAL_MISSING_SURFACES
+            else SYNC_REASON_PARTIAL_MISSING_SURFACES
         )
         if resources > 0:
             reason_code = SYNC_REASON_PARTIAL_MISSING_SURFACES

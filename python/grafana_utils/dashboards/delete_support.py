@@ -1,6 +1,5 @@
 """Dashboard delete planning helpers."""
 
-import copy
 from typing import Any, Optional
 
 from .common import DEFAULT_DASHBOARD_TITLE, DEFAULT_FOLDER_TITLE, GrafanaError

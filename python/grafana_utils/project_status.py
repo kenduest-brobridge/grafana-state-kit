@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+import datetime
+import time
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Optional, List
 
 PROJECT_STATUS_READY = "ready"
@@ -10,11 +13,6 @@ PROJECT_STATUS_PARTIAL = "partial"
 PROJECT_STATUS_BLOCKED = "blocked"
 PROJECT_STATUS_UNKNOWN = "unknown"
 PROJECT_STATUS_KIND = "grafana-util-project-status"
-
-
-import time
-import datetime
-from pathlib import Path
 
 PROJECT_STATUS_FRESHNESS_CURRENT = "current"
 PROJECT_STATUS_FRESHNESS_STALE = "stale"

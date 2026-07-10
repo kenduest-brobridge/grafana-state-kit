@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Iterable, Mapping, Optional, Sequence
+from typing import Any, Mapping, Optional, Sequence
 
 from .clients.access_client import GrafanaAccessClient
 from .clients.alert_client import GrafanaAlertClient
@@ -125,17 +125,34 @@ def build_live_clients(
 
     details = build_connection_details(args, config_path=config_path)
     verify_ssl = bool(details.verify_ssl or details.ca_cert)
-    common_kwargs = {
-        "base_url": details.url,
-        "headers": details.headers,
-        "timeout": details.timeout,
-        "verify_ssl": verify_ssl,
-        "ca_cert": details.ca_cert,
-    }
-    dashboard_client = GrafanaClient(**common_kwargs)
-    datasource_client = GrafanaDatasourceClient(**common_kwargs)
-    alert_client = GrafanaAlertClient(**common_kwargs)
-    access_client = GrafanaAccessClient(**common_kwargs)
+    dashboard_client = GrafanaClient(
+        base_url=details.url,
+        headers=details.headers,
+        timeout=details.timeout,
+        verify_ssl=verify_ssl,
+        ca_cert=details.ca_cert,
+    )
+    datasource_client = GrafanaDatasourceClient(
+        base_url=details.url,
+        headers=details.headers,
+        timeout=details.timeout,
+        verify_ssl=verify_ssl,
+        ca_cert=details.ca_cert,
+    )
+    alert_client = GrafanaAlertClient(
+        base_url=details.url,
+        headers=details.headers,
+        timeout=details.timeout,
+        verify_ssl=verify_ssl,
+        ca_cert=details.ca_cert,
+    )
+    access_client = GrafanaAccessClient(
+        base_url=details.url,
+        headers=details.headers,
+        timeout=details.timeout,
+        verify_ssl=verify_ssl,
+        ca_cert=details.ca_cert,
+    )
     return details, dashboard_client, datasource_client, alert_client, access_client
 
 

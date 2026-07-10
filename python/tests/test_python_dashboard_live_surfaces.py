@@ -1,6 +1,5 @@
 import importlib
 import io
-import json
 import sys
 import tempfile
 import unittest

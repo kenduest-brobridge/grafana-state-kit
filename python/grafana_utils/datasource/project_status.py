@@ -1,8 +1,7 @@
 """Datasource live domain-status producer."""
 
-from typing import Any, Optional, List, Set, Tuple, Dict
+from typing import Any, Optional, List, Set, Dict
 from ..project_status import (
-    status_finding,
     ProjectDomainStatus,
     PROJECT_STATUS_PARTIAL,
     PROJECT_STATUS_READY,
@@ -254,6 +253,7 @@ def build_datasource_live_project_status(
         records = datasource_list
         datasource_source_kind = DATASOURCE_SOURCE_KIND_LIST
     else:
+        assert datasource_read is not None
         records = [datasource_read]
         datasource_source_kind = DATASOURCE_SOURCE_KIND_READ
 

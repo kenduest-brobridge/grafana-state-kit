@@ -151,7 +151,7 @@ def _render_tag_filters(tags: Any) -> str:
     """Render Grafana tag filters into one readable WHERE predicate."""
     if not isinstance(tags, list):
         return ""
-    rendered = []
+    rendered: list[str] = []
     for item in tags:
         if not isinstance(item, dict):
             continue

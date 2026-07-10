@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from enum import Enum, auto
+from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Tuple, Union
 
@@ -94,7 +94,7 @@ class ChangeDiscoveryDocument:
         return f"Discovered change workspace root {self.workspace_root} from {sources}."
 
     def to_dict(self) -> Dict[str, Any]:
-        result = {}
+        result: Dict[str, Any] = {}
         if self.workspace_root:
             result["workspaceRoot"] = str(self.workspace_root)
         result["inputCount"] = len(self.inputs)

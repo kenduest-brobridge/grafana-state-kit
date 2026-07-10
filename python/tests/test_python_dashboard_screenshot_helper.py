@@ -478,6 +478,39 @@ class DashboardScreenshotHelperTests(unittest.TestCase):
             self.assertTrue((output_dir / "part-0002.png").exists())
             self.assertFalse((output_dir / "manifest.json").exists())
 
+    def test_dashboard_screenshot_write_full_page_output_single_stitches_segments(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output = Path(tmpdir) / "capture.png"
+            request = {
+                "output": output,
+                "output_format": "png",
+                "full_page": True,
+                "full_page_output": "single",
+                "header_title": None,
+                "header_url": None,
+                "header_captured_at": False,
+                "header_text": None,
+                "url": "https://grafana.example.com/d/cpu-main/cpu-overview",
+            }
+            capture = {
+                "total_height": 30,
+                "target_width": 20,
+                "segments": [
+                    {
+                        "image": Image.new("RGBA", (20, 15), (1, 2, 3, 255)),
+                    },
+                    {
+                        "image": Image.new("RGBA", (20, 15), (4, 5, 6, 255)),
+                    },
+                ],
+            }
+
+            screenshot._write_full_page_output(request, {}, capture)
+
+            self.assertTrue(output.is_file())
+            with Image.open(output) as rendered:
+                self.assertEqual(rendered.size, (20, 30))
+
     def test_dashboard_screenshot_write_full_page_output_manifest_writes_manifest(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             request = {

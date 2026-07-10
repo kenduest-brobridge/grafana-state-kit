@@ -15,7 +15,7 @@ import subprocess
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Protocol
 
 from .clients.dashboard_client import GrafanaClient
 from .dashboards.common import DEFAULT_DASHBOARD_TITLE, DEFAULT_FOLDER_UID, GrafanaError
@@ -33,6 +33,12 @@ from .dashboards.transformer import (
 from . import yaml_compat as yaml
 
 HISTORY_EXPORT_KIND = "grafana-utils-dashboard-history-export"
+
+
+class DashboardPlanClient(Protocol):
+    def fetch_dashboard_if_exists(self, uid: str) -> Optional[dict[str, Any]]: ...
+
+
 HISTORY_LIST_KIND = "grafana-utils-dashboard-history-list"
 HISTORY_RESTORE_KIND = "grafana-utils-dashboard-history-restore"
 HISTORY_INVENTORY_KIND = "grafana-utils-dashboard-history-inventory"
@@ -200,9 +206,8 @@ def build_dashboard_authoring_review(
     )
     tags = [str(tag) for tag in (document_object.get("tags") or []) if str(tag).strip()]
     dashboard_id_is_null = document_object.get("id") is None
-    meta_message_present = bool(
-        isinstance(document.get("meta"), dict) and "message" in document.get("meta")
-    )
+    metadata = document.get("meta")
+    meta_message_present = bool(isinstance(metadata, dict) and "message" in metadata)
 
     blocking_issues: list[str] = []
     try:
@@ -686,7 +691,10 @@ def run_dashboard_serve(args: Any) -> int:
         (getattr(args, "address"), int(getattr(args, "port"))), _Handler
     )
     server.daemon_threads = True
-    preview_url = "http://%s:%s" % server.server_address[:2]
+    host = server.server_address[0]
+    if isinstance(host, bytes):
+        host = host.decode("utf-8")
+    preview_url = f"http://{host}:{server.server_address[1]}"
     print(f"Dashboard preview available at {preview_url}")
     if bool(getattr(args, "open_browser", False)):
         if not webbrowser.open(
@@ -1235,7 +1243,7 @@ def _discover_plan_dashboard_files(input_dir: Path) -> list[Path]:
 
 
 def _plan_row_for_dashboard(
-    client: GrafanaClient,
+    client: DashboardPlanClient,
     path: Path,
     document: dict[str, Any],
     *,
@@ -1288,7 +1296,7 @@ def _plan_row_for_dashboard(
 
 
 def build_dashboard_plan_document(
-    client: GrafanaClient,
+    client: DashboardPlanClient,
     *,
     input_dir: Path | str,
     input_type: str = "raw",

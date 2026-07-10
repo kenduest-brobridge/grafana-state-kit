@@ -3,7 +3,7 @@
 from typing import Any, List, Optional
 from .project_status import (
     ProjectDomainStatus,
-    ProjectStatusFreshness,
+    ProjectStatusFinding,
     build_project_status,
 )
 from .alerts.project_status import build_alert_live_project_status_domain
@@ -17,10 +17,7 @@ from .clients.access_client import GrafanaAccessClient
 
 from pathlib import Path
 from .project_status import (
-    ProjectDomainStatus,
-    ProjectStatusFreshness,
     ProjectStatusFreshnessSample,
-    build_project_status,
     build_live_project_status_freshness,
     build_live_project_status_freshness_from_samples,
     build_live_project_status_freshness_from_source_count,
@@ -54,9 +51,7 @@ def project_status_severity_rank(status: str) -> int:
 
 
 def merge_project_status_findings(findings: List[Any]) -> List[Any]:
-    from .project_status import ProjectStatusFinding
-
-    merged = {}
+    merged: dict[tuple[str, str], int] = {}
     for f in findings:
         key = (f.kind, f.source)
         merged[key] = merged.get(key, 0) + f.count

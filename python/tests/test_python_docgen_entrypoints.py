@@ -9,7 +9,7 @@ SCRIPTS_DIR = REPO_ROOT / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
-from docgen_entrypoints import (
+from docgen_entrypoints import (  # noqa: E402
     HANDBOOK_COMMAND_MAPS,
     JUMP_COMMAND_ENTRIES,
     QUICK_COMMANDS,

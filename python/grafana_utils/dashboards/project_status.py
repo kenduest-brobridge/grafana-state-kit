@@ -2,7 +2,6 @@
 
 from typing import Any, Optional, List, Dict, Set
 from ..project_status import (
-    status_finding,
     ProjectDomainStatus,
     PROJECT_STATUS_BLOCKED,
     PROJECT_STATUS_PARTIAL,
@@ -179,11 +178,10 @@ def build_dashboard_domain_status(
     orphaned_items = summary_document.get(DASHBOARD_ORPHANED_DATASOURCES_KEY)
     mixed_items = summary_document.get(DASHBOARD_MIXED_DASHBOARDS_KEY)
     dashboard_gov_items = summary_document.get(DASHBOARD_DASHBOARD_GOVERNANCE_KEY)
-    datasource_gov_items = summary_document.get(DASHBOARD_DATASOURCE_GOVERNANCE_KEY)
     dependency_items = summary_document.get(DASHBOARD_DASHBOARD_DEPENDENCIES_KEY)
 
-    blockers = []
-    warnings = []
+    blockers: List[StatusRecordCount] = []
+    warnings: List[StatusRecordCount] = []
     signal_keys = set(DASHBOARD_SIGNAL_KEYS_STAGED)
 
     push_detail_findings(

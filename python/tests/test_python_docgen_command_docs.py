@@ -10,7 +10,7 @@ SCRIPTS_DIR = REPO_ROOT / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
-from docgen_command_docs import command_doc_cli_path
+from docgen_command_docs import command_doc_cli_path  # noqa: E402
 
 
 class CommandDocCliPathTests(unittest.TestCase):

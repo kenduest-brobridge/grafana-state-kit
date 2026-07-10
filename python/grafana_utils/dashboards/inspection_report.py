@@ -13,7 +13,7 @@ from .common import (
 )
 from .inspection_analyzers import build_query_field_and_text, dispatch_query_analysis
 from .inspection_analyzers.contract import unique_strings
-from .transformer import is_builtin_datasource_ref, is_placeholder_string
+from .transformer import is_builtin_datasource_ref
 
 INSPECT_SOURCE_ROOT_FILENAME = ".inspect-source-root"
 
@@ -920,13 +920,3 @@ def build_grouped_export_inspection_report_document(
         },
         "dashboards": dashboard_records,
     }
-
-
-from .inspection_render import (  # noqa: E402
-    format_report_column_value,
-    render_export_inspection_grouped_report,
-    render_export_inspection_report_csv,
-    render_export_inspection_report_tables,
-    render_export_inspection_table_section,
-    render_export_inspection_tree_tables,
-)

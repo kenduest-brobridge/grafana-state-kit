@@ -2,7 +2,6 @@
 
 from typing import Any, Optional, List, Dict
 from ..project_status import (
-    status_finding,
     ProjectDomainStatus,
     PROJECT_STATUS_BLOCKED,
     PROJECT_STATUS_PARTIAL,
@@ -224,7 +223,7 @@ def build_next_actions(
     mapping_count: int,
     availability_count: int,
 ) -> List[str]:
-    next_actions = []
+    next_actions: List[str] = []
 
     if not summary_present:
         for action in LIVE_PROMOTION_PROVIDE_SUMMARY_ACTIONS:
@@ -310,8 +309,8 @@ def build_live_promotion_project_status(
             )
         )
 
-    warnings = []
-    evidence_actions = []
+    warnings: List[StatusRecordCount] = []
+    evidence_actions: List[str] = []
     add_handoff_evidence(promotion_summary_document, warnings, evidence_actions)
     add_continuation_evidence(promotion_summary_document, warnings, evidence_actions)
 

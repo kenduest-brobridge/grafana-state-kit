@@ -28,7 +28,6 @@ from ..datasource_contract import (
 from ..datasource_diff import (
     build_live_datasource_diff_records,
     compare_datasource_bundle_to_live,
-    load_datasource_diff_bundle,
 )
 from ..profile_config import resolve_input_lane_path
 from .live_mutation_render_safe import (
@@ -55,7 +54,6 @@ from .parser import (
     DATASOURCE_IMPORT_FORMAT_CHOICES,
     DATASOURCE_PROVISIONING_FILENAME,
     DATASOURCE_PROVISIONING_SUBDIR,
-    DIFF_OUTPUT_FORMAT_CHOICES,
     EXPORT_METADATA_FILENAME,
     IMPORT_DRY_RUN_COLUMN_ALIASES,
     IMPORT_DRY_RUN_COLUMN_HEADERS,

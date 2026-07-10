@@ -53,7 +53,6 @@ from .gitops_sync import (
     render_sync_source_bundle_text,
 )
 from .sync_preflight_workbench import (
-    SYNC_PREFLIGHT_KIND,
     build_sync_preflight_document,
     render_sync_preflight_text,
 )
@@ -174,21 +173,21 @@ def build_parser(prog=None):
     subparsers = parser.add_subparsers(dest="command")
     subparsers.required = True
 
-    scan_parser = subparsers.add_parser(
+    subparsers.add_parser(
         "scan",
         help="Scan staged workspace artifacts and summarize local resource state.",
         epilog=SUMMARY_HELP_EXAMPLES,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
-    test_parser = subparsers.add_parser(
+    subparsers.add_parser(
         "test",
         help="Test whether staged workspace artifacts are structurally safe to continue.",
         epilog=PREFLIGHT_HELP_EXAMPLES,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
-    preview_parser = subparsers.add_parser(
+    subparsers.add_parser(
         "preview",
         help="Preview what would change from staged workspace inputs.",
         epilog=PLAN_HELP_EXAMPLES,

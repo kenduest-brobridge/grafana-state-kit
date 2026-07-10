@@ -60,14 +60,14 @@ def compare_field_changes(
     live: Optional[dict[str, Any]],
 ) -> tuple[list[str], list[dict[str, Any]]]:
     """Compare two objects and return changed fields and detailed changes."""
-    fields = set()
+    fields: set[str] = set()
     if desired:
         fields.update(desired.keys())
     if live:
         fields.update(live.keys())
 
-    changed_fields = []
-    changes = []
+    changed_fields: list[str] = []
+    changes: list[dict[str, Any]] = []
     for field in sorted(fields):
         desired_val = desired.get(field) if desired else None
         live_val = live.get(field) if live else None

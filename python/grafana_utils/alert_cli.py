@@ -76,10 +76,8 @@ from .alerts.provisioning import (
     load_string_map as load_string_map_impl,
     prepare_import_payload_for_target,
     serialize_compare_document,
-    RESOURCE_SUBDIR_BY_KIND as PROVISIONING_RESOURCE_SUBDIR_BY_KIND,
 )
 from .alerts.scaffold import (
-    build_contact_point_scaffold_document,
     build_managed_policy_route_preview,
     build_new_contact_point_scaffold_document,
     build_new_rule_scaffold_document,
@@ -2422,7 +2420,6 @@ def run_alert_clone_rule_cli(args: argparse.Namespace) -> int:
     route_receiver = _require_route_receiver(args, "clone-rule")
 
     # Find source
-    source_path = None
     source_document = None
     normalized_source = sanitize_path_component(source)
     for path in discover_alert_resource_files(desired_dir):
@@ -2439,7 +2436,6 @@ def run_alert_clone_rule_cli(args: argparse.Namespace) -> int:
             or sanitize_path_component(str(meta.get("title") or ""))
             == normalized_source
         ):
-            source_path = path
             source_document = doc
             break
 

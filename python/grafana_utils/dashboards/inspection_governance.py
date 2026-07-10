@@ -3,7 +3,7 @@
 import json
 import re
 from pathlib import Path
-from typing import Any, Iterable, Optional
+from typing import Any, Iterable
 
 from .import_support import extract_dashboard_object
 from .variable_inspection import extract_dashboard_variables

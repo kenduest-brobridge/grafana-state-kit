@@ -144,15 +144,15 @@ def collect_dashboard_import_dependency_records(
     dashboard_documents: list[tuple[Path, dict[str, Any]]],
 ) -> list[DashboardImportDependencyRecord]:
     """Collect dependency signals from raw dashboard import documents."""
-    records = []
+    records: list[DashboardImportDependencyRecord] = []
     for dashboard_file, document in dashboard_documents:
         dashboard = extract_dashboard_object(
             document, "Dashboard payload must be a JSON object."
         )
-        datasource_refs = []
+        datasource_refs: list[dict[str, Any]] = []
         collect_datasource_refs(dashboard, datasource_refs)
-        normalized_datasource_refs = []
-        seen_datasource_refs = set()
+        normalized_datasource_refs: list[dict[str, Any]] = []
+        seen_datasource_refs: set[str] = set()
         for ref in datasource_refs:
             if ref is None or _is_builtin_import_datasource_ref(ref):
                 continue
@@ -162,7 +162,7 @@ def collect_dashboard_import_dependency_records(
             seen_datasource_refs.add(key)
             normalized_datasource_refs.append(ref)
 
-        panel_types = set()
+        panel_types: set[str] = set()
         panels = dashboard.get("panels")
         if isinstance(panels, list):
             collect_panel_types(
@@ -171,9 +171,9 @@ def collect_dashboard_import_dependency_records(
             )
         panel_types.discard("row")
 
-        alert_datasource_uids = set()
-        alert_datasource_names = set()
-        alert_contact_points = set()
+        alert_datasource_uids: set[str] = set()
+        alert_datasource_names: set[str] = set()
+        alert_contact_points: set[str] = set()
         _collect_dashboard_alert_dependency_refs(
             dashboard,
             alert_datasource_uids,

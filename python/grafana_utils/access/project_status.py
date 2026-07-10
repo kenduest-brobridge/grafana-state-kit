@@ -1,8 +1,7 @@
 """Access domain-status producer."""
 
-from typing import Any, Optional, List, Dict
+from typing import Any, Optional
 from ..project_status import (
-    status_finding,
     ProjectDomainStatus,
     PROJECT_STATUS_PARTIAL,
     PROJECT_STATUS_READY,

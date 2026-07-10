@@ -14,7 +14,7 @@ REGISTRY_PATH = REPO_ROOT / "scripts" / "contracts" / "output-contracts.json"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
-import output_contracts
+import output_contracts  # noqa: E402
 
 
 class OutputContractTests(unittest.TestCase):

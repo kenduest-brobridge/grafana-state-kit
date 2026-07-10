@@ -9,7 +9,11 @@ SCRIPTS_DIR = REPO_ROOT / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
-from docgen_handbook import HANDBOOK_NAV_GROUPS, HANDBOOK_NAV_TITLES, HANDBOOK_ORDER
+from docgen_handbook import (  # noqa: E402
+    HANDBOOK_NAV_GROUPS,
+    HANDBOOK_NAV_TITLES,
+    HANDBOOK_ORDER,
+)
 
 
 class DocgenHandbookTests(unittest.TestCase):

@@ -2,7 +2,7 @@
 
 import argparse
 import sys
-from typing import Any, List, Optional, Dict
+from typing import Optional
 from .cli_shared import dump_document, OUTPUT_FORMAT_CHOICES
 from . import profile_config as pc
 

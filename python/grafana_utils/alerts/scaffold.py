@@ -1,18 +1,10 @@
 """Alert authoring and scaffolding helpers."""
 
 import json
-from pathlib import Path
 from typing import Any, Optional
 
 from .common import (
-    CONTACT_POINT_KIND,
-    CONTACT_POINTS_SUBDIR,
     MANAGED_ROUTE_LABEL_KEY,
-    POLICIES_KIND,
-    RULE_KIND,
-    RULES_SUBDIR,
-    TEMPLATE_KIND,
-    TEMPLATES_SUBDIR,
     sanitize_path_component,
     value_to_string,
 )
@@ -20,7 +12,6 @@ from .provisioning import (
     build_contact_point_export_document,
     build_rule_export_document,
     build_template_export_document,
-    RESOURCE_SUBDIR_BY_KIND,
 )
 
 

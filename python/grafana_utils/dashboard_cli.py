@@ -170,6 +170,7 @@ from .dashboard_authoring import (
     build_dashboard_history_diff_document,
     build_dashboard_history_list_document_from_export,
     build_dashboard_history_list_document,
+    DashboardPlanClient,
     build_dashboard_plan_document,
     build_dashboard_review_document,
     build_history_inventory_document,
@@ -2912,6 +2913,7 @@ def _build_dashboard_multi_org_plan_document(
     action_counts: dict[str, int] = {}
     for target in targets:
         target_org_id = str(target["target_org_id"] or "")
+        scoped_client: DashboardPlanClient
         if target["org_action"] == "would-create-org":
             scoped_client = _DashboardPlanCreateOnlyClient()
         elif target["org_action"] == "missing-org":
@@ -3778,7 +3780,7 @@ def raw_to_prompt_command(args: argparse.Namespace) -> int:
             raise GrafanaError(
                 "Plain directory input requires --output-dir so raw-to-prompt does not mix generated files into the source tree."
             )
-        metadata_source_dir: Optional[Path] = resolved_input_dir
+        metadata_source_dir = resolved_input_dir
         source_metadata = import_support_load_export_metadata(
             metadata_source_dir,
             export_metadata_filename=EXPORT_METADATA_FILENAME,
@@ -3903,6 +3905,8 @@ def raw_to_prompt_command(args: argparse.Namespace) -> int:
                     build_export_metadata(
                         variant=PROMPT_EXPORT_SUBDIR,
                         dashboard_count=len(build_rows),
+                        tool_schema_version=TOOL_SCHEMA_VERSION,
+                        root_index_kind=ROOT_INDEX_KIND,
                         format_name="grafana-web-import-with-datasource-inputs",
                         org_name=org_name,
                         org_id=org_id,

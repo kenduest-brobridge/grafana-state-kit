@@ -375,7 +375,8 @@ def _encode_secret(value: str) -> str:
 
 def add_profile(args: argparse.Namespace) -> int:
     document = _load_document(args.config)
-    profiles = dict(document.get("profiles") or {})
+    profiles_value = document.get("profiles")
+    profiles = dict(profiles_value) if isinstance(profiles_value, dict) else {}
     if args.name in profiles and not bool(args.replace_existing):
         raise ValueError("Profile already exists: %s" % args.name)
 

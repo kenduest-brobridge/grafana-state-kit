@@ -32,7 +32,49 @@ class FakeGetClient:
         return {"uid": kwargs.get("path") or (args[0] if args else None)}
 
 
+class FakeDashboardGetClient:
+    def __init__(self):
+        self.uids = []
+
+    def fetch_dashboard(self, uid):
+        self.uids.append(uid)
+        return {"dashboard": {"uid": uid}}
+
+
 class ResourceCliTests(unittest.TestCase):
+    def test_get_dashboard_uses_live_client_fetch_method(self) -> None:
+        dashboard_client = FakeDashboardGetClient()
+        datasource_client = FakeGetClient()
+        alert_client = mock.Mock()
+        access_client = FakeGetClient()
+        args = argparse.Namespace(
+            selector="dashboards/cpu-main",
+            output_format="json",
+            verify_ssl=False,
+            url="http://127.0.0.1:3000",
+        )
+
+        with (
+            mock.patch.object(
+                resource_cli,
+                "build_live_clients",
+                return_value=(
+                    None,
+                    dashboard_client,
+                    datasource_client,
+                    alert_client,
+                    access_client,
+                ),
+            ),
+            mock.patch.object(resource_cli, "dump_document") as dump_document,
+        ):
+            resource_cli.get_command(args)
+
+        self.assertEqual(dashboard_client.uids, ["cpu-main"])
+        dump_document.assert_called_once_with(
+            {"dashboard": {"uid": "cpu-main"}}, "json"
+        )
+
     def test_list_folders_uses_path_as_first_arg(self) -> None:
         dashboard_client = FakeListClient()
         datasource_client = FakeListClient()

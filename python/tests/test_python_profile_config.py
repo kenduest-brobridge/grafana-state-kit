@@ -8,7 +8,7 @@ PYTHON_ROOT = REPO_ROOT / "python"
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(PYTHON_ROOT))
 
-from grafana_utils import profile_config
+from grafana_utils import profile_config  # noqa: E402
 
 
 class ProfileConfigTests(unittest.TestCase):

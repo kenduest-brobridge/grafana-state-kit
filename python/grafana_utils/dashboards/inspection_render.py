@@ -14,7 +14,6 @@ from .common import (
 from .inspection_report import (
     DEFAULT_REPORT_COLUMN_IDS,
     REPORT_COLUMN_ALIASES,
-    REPORT_COLUMN_HEADERS,
     SUPPORTED_REPORT_COLUMN_HEADERS,
 )
 

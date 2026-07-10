@@ -1,5 +1,6 @@
 """Workflow and helper logic for the Python access-management CLI."""
 
+import argparse
 import json
 from pathlib import Path
 
