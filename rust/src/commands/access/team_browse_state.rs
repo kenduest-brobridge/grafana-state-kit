@@ -13,6 +13,25 @@ pub(super) enum PaneFocus {
     Facts,
 }
 
+#[cfg(test)]
+mod detail_cursor_tests {
+    use super::*;
+
+    #[test]
+    fn team_detail_cursor_clamps_to_rendered_line_count() {
+        let mut state = BrowserState::new(Vec::new());
+
+        state.move_detail_cursor(50, 4);
+        assert_eq!(state.detail_cursor, 3);
+
+        state.move_detail_cursor(-50, 4);
+        assert_eq!(state.detail_cursor, 0);
+
+        state.set_detail_cursor(10, 0);
+        assert_eq!(state.detail_cursor, 0);
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum SearchDirection {
     Forward,

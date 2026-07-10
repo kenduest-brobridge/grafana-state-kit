@@ -66,7 +66,7 @@ the existing block on direct mutation of Git Sync-managed resources.
 
 - [x] Poetry installs PyYAML and all 1,230 Python tests pass with two skips.
 - [x] Nonnumeric datasource UID 404 makes no numeric-ID fallback request.
-- [ ] TUI registry includes access user/team browse and exact parser/test paths.
+- [x] TUI registry includes access user/team browse and exact parser/test paths.
 - [ ] Dashboard v2 and `all` export tests pass, including unsupported-lane skip.
 - [ ] Shared discovery, folder pagination, and resource history tests pass.
 - [ ] Notification v1beta1 resource kinds are available only through explicit
@@ -160,17 +160,17 @@ the existing block on direct mutation of Git Sync-managed resources.
 - Modify: `scripts/tui_inventory_report.py`
 - Modify/test: `scripts/test_tui_inventory_report.py`
 
-- [ ] Add failing tests that require `parser_paths` and `test_paths`, reject a
+- [x] Add failing tests that require `parser_paths` and `test_paths`, reject a
       missing path, and assert both access browse routes appear.
-- [ ] Run the script tests and confirm red.
-- [ ] Add `access user browse` and `access team browse`, mark consolidated
+- [x] Run the script tests and confirm red.
+- [x] Add `access user browse` and `access team browse`, mark consolidated
       `access browse` read-only, and replace `has_tests` with concrete paths.
-- [ ] Validate each path exists and each command token sequence occurs in at
+- [x] Validate each path exists and each command token sequence occurs in at
       least one parser path; report `missing-parser-evidence` or
       `missing-test-path` otherwise.
-- [ ] Add 60x10 terminal tests for access browse detail scrolling and modal
+- [x] Add 60x10 terminal tests for access browse detail scrolling and modal
       bounds using the existing `TestBackend` pattern.
-- [ ] Run registry, checker, and focused Rust TUI tests green.
+- [x] Run registry, checker, and focused Rust TUI tests green.
 
 ### Task 4: Add the shared App Platform resource client
 
@@ -363,3 +363,9 @@ impl AppPlatformResourceClient<'_> {
   replaced by an unclassified error after the legacy request attempt. The
   legacy closure is now available only for numeric identities; all nine
   resource runtime tests pass and the original UID 404 is preserved.
+- 2026-07-10: Task 3 upgraded the TUI registry to schema 2 with concrete parser
+  evidence and test paths, added access user/team browse, corrected consolidated
+  access browse to read-only, and removed the nonexistent `dashboard topology`
+  public path. Four 60x10 access browser render/modal tests and two detail
+  cursor clamping tests pass with the `tui` feature; all 14 registry tests and
+  the live registry check are green.

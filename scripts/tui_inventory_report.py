@@ -30,13 +30,13 @@ SKIP_FILES = {
 TUI_RE = re.compile(
     r"ratatui|crossterm|tui_shell|TerminalSession|feature = \"tui\"|"
     r"--interactive|output-format interactive|browse interactively|"
-    r"interactive terminal|terminal UI|Terminal UI|TUI|"
-    r"互動式終端機|互動式清單視圖",
+    r"interactive terminal|interactively|terminal UI|Terminal UI|TUI|"
+    r"互動式瀏覽|互動式終端機|互動式清單視圖",
 )
 PUBLIC_TUI_DOC_RE = re.compile(
     r"--interactive|--output-format\s+interactive|output-format interactive|"
-    r"interactive terminal|terminal UI|Terminal UI|"
-    r"互動式終端機|互動式清單視圖",
+    r"interactive terminal|interactively|terminal UI|Terminal UI|"
+    r"互動式瀏覽|互動式終端機|互動式清單視圖",
 )
 NAMESPACE_COMMAND_DOCS = {
     "docs/commands/en/access.md",
@@ -244,6 +244,63 @@ def matching_code_paths(entry: dict, detected_rust_paths: set[str]) -> list[str]
     return sorted(matching_rust + matching_infra)
 
 
+def check_registry_entry_evidence(
+    entry: dict, *, repo_root: Path = REPO_ROOT
+) -> list[RegistryFinding]:
+    """Validate the concrete parser and test files claimed by one registry entry."""
+    findings: list[RegistryFinding] = []
+    command = entry["command"]
+    parser_paths = entry.get("parser_paths", [])
+    test_paths = entry.get("test_paths", [])
+    parser_texts: list[str] = []
+
+    for parser_path in parser_paths:
+        absolute_path = repo_root / parser_path
+        if not absolute_path.is_file():
+            findings.append(
+                RegistryFinding(
+                    kind="missing-parser-path",
+                    surface=command,
+                    message=f"declared parser path `{parser_path}` does not exist",
+                )
+            )
+            continue
+        parser_texts.append(absolute_path.read_text(encoding="utf-8"))
+
+    for test_path in test_paths:
+        if not (repo_root / test_path).is_file():
+            findings.append(
+                RegistryFinding(
+                    kind="missing-test-path",
+                    surface=command,
+                    message=f"declared test path `{test_path}` does not exist",
+                )
+            )
+
+    parser_evidence = entry.get("parser_evidence", [])
+    if parser_texts and (
+        not parser_evidence
+        or any(
+            evidence not in "\n".join(parser_texts) for evidence in parser_evidence
+        )
+    ):
+        missing = [
+            evidence
+            for evidence in parser_evidence
+            if evidence not in "\n".join(parser_texts)
+        ]
+        detail = ", ".join(f"`{value}`" for value in missing) or "no evidence declared"
+        findings.append(
+            RegistryFinding(
+                kind="missing-parser-evidence",
+                surface=command,
+                message=f"declared parser files do not prove {detail}",
+            )
+        )
+
+    return findings
+
+
 def build_surface_summary(registry: dict, items: list[InventoryItem]) -> list[dict]:
     detected_doc_paths = {item.path for item in items if item.kind == "docs"}
     detected_rust_paths = {item.path for item in items if item.kind != "docs"}
@@ -255,7 +312,7 @@ def build_surface_summary(registry: dict, items: list[InventoryItem]) -> list[di
             for path in (entry.get("docs_en"), entry.get("docs_zh_TW"))
             if path is not None
         ]
-        code_paths = matching_code_paths(entry, detected_rust_paths)
+        code_paths = entry.get("parser_paths", [])
         summary.append(
             {
                 "command": entry["command"],
@@ -286,6 +343,8 @@ def check_registry(items: list[InventoryItem]) -> list[RegistryFinding]:
         command = entry["command"]
         docs_en = entry.get("docs_en")
         docs_zh_tw = entry.get("docs_zh_TW")
+
+        findings.extend(check_registry_entry_evidence(entry))
 
         # Check English docs exist
         if docs_en:

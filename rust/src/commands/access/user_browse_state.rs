@@ -567,4 +567,18 @@ mod tests {
         assert_eq!(state.repeat_last_search(), None);
         assert_eq!(state.list_state.selected(), Some(1));
     }
+
+    #[test]
+    fn user_detail_cursor_clamps_to_rendered_line_count() {
+        let mut state = repeat_search_state();
+
+        state.move_detail_cursor(50, 4);
+        assert_eq!(state.detail_cursor, 3);
+
+        state.move_detail_cursor(-50, 4);
+        assert_eq!(state.detail_cursor, 0);
+
+        state.set_detail_cursor(10, 0);
+        assert_eq!(state.detail_cursor, 0);
+    }
 }

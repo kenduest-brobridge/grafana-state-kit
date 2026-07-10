@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -9,6 +10,7 @@ from scripts.tui_inventory_report import (
     SCAN_ROOTS,
     collect_helper_drift,
     check_registry,
+    check_registry_entry_evidence,
     load_registry,
     build_inventory,
     build_surface_summary,
@@ -53,7 +55,8 @@ pub(crate) fn control_line(items: &[(&str, Color, &str)]) -> Line<'static> {
             self.assertIn("domain", entry)
             self.assertIn("tier", entry)
             self.assertIn("feature_gate", entry)
-            self.assertIn("has_tests", entry)
+            self.assertIn("parser_paths", entry)
+            self.assertIn("test_paths", entry)
 
     def test_check_registry_finds_no_critical_errors_in_live_data(self) -> None:
         items = build_inventory()
@@ -80,8 +83,61 @@ pub(crate) fn control_line(items: &[(&str, Color, &str)]) -> Line<'static> {
                 self.assertIn(entry["entrypoint_kind"], {"flag", "output-format", "implicit"})
                 self.assertIn(entry["tier"], {2, 3, 4})
                 self.assertIsInstance(entry["validation"], str)
-                self.assertIsInstance(entry["has_tests"], bool)
+                self.assertNotIn("has_tests", entry)
+                self.assertIsInstance(entry["parser_paths"], list)
+                self.assertGreater(len(entry["parser_paths"]), 0)
+                self.assertIsInstance(entry["test_paths"], list)
+                self.assertGreater(len(entry["test_paths"]), 0)
                 self.assertIn(entry["feature_gate"], {"tui", "browser"})
+
+    def test_registry_claims_user_and_team_browse_surfaces(self) -> None:
+        commands = {entry["command"] for entry in load_registry()["surfaces"]}
+        self.assertIn("access user browse", commands)
+        self.assertIn("access team browse", commands)
+
+    def test_registry_marks_consolidated_access_browse_read_only(self) -> None:
+        entries = {
+            entry["command"]: entry for entry in load_registry()["surfaces"]
+        }
+        self.assertEqual(entries["access browse"]["behavior"], "read-only")
+
+    def test_registry_evidence_rejects_missing_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            findings = check_registry_entry_evidence(
+                {
+                    "command": "access user browse",
+                    "parser_paths": ["rust/src/commands/access/missing.rs"],
+                    "test_paths": ["rust/src/commands/access/missing_tests.rs"],
+                    "parser_evidence": ["UserCommand::Browse"],
+                },
+                repo_root=root,
+            )
+
+        self.assertEqual(
+            {finding.kind for finding in findings},
+            {"missing-parser-path", "missing-test-path"},
+        )
+
+    def test_registry_evidence_rejects_unproven_parser_claim(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            parser_path = root / "parser.rs"
+            test_path = root / "parser_tests.rs"
+            parser_path.write_text("enum UserCommand { List }", encoding="utf-8")
+            test_path.write_text("#[test] fn parses_list() {}", encoding="utf-8")
+
+            findings = check_registry_entry_evidence(
+                {
+                    "command": "access user browse",
+                    "parser_paths": ["parser.rs"],
+                    "test_paths": ["parser_tests.rs"],
+                    "parser_evidence": ["UserCommand::Browse"],
+                },
+                repo_root=root,
+            )
+
+        self.assertEqual([finding.kind for finding in findings], ["missing-parser-evidence"])
 
     def test_registry_surfaces_record_operator_friendliness(self) -> None:
         registry = load_registry()

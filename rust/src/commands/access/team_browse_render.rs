@@ -20,12 +20,22 @@ pub(super) fn render_frame(
     state: &mut BrowserState,
     args: &TeamBrowseArgs,
 ) {
+    let footer_controls = if frame.area().height <= 12 {
+        tui_shell::control_grid(&[vec![
+            ("Up/Down", Color::Blue, "move"),
+            ("Tab", Color::Blue, "pane"),
+            ("/", Color::Yellow, "search"),
+            ("Esc/q", Color::Gray, "exit"),
+        ]])
+    } else {
+        control_lines(args)
+    };
     let outer = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Length(3),
             Constraint::Min(1),
-            Constraint::Length(tui_shell::footer_height(3)),
+            Constraint::Length(tui_shell::footer_height(footer_controls.len())),
         ])
         .split(frame.area());
     let panes = Layout::default()
@@ -99,7 +109,7 @@ pub(super) fn render_frame(
     render_detail_panel(frame, panes[1], state);
 
     frame.render_widget(
-        tui_shell::build_footer(control_lines(args), state.status.clone()),
+        tui_shell::build_footer(footer_controls, state.status.clone()),
         outer[2],
     );
 
@@ -662,5 +672,36 @@ mod tests {
 
         assert!(footer.contains("Esc/q"));
         assert!(!footer.contains("q exit"));
+    }
+
+    #[test]
+    fn team_browser_renders_in_sixty_by_ten_terminal() {
+        let mut state = state();
+        let args = args();
+        let mut terminal = Terminal::new(TestBackend::new(60, 10)).unwrap();
+
+        terminal
+            .draw(|frame| render_frame(frame, &mut state, &args))
+            .unwrap();
+
+        let screen = format!("{}", terminal.backend());
+        assert!(screen.contains("Team Browser"));
+        assert!(screen.contains("platform-ops"));
+    }
+
+    #[test]
+    fn team_delete_modal_remains_visible_in_sixty_by_ten_terminal() {
+        let mut state = state();
+        state.pending_delete = true;
+        let args = args();
+        let mut terminal = Terminal::new(TestBackend::new(60, 10)).unwrap();
+
+        terminal
+            .draw(|frame| render_frame(frame, &mut state, &args))
+            .unwrap();
+
+        let screen = format!("{}", terminal.backend());
+        assert!(screen.contains("Delete team"));
+        assert!(screen.contains("Confirm: y"));
     }
 }

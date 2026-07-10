@@ -1,7 +1,7 @@
 {
-  "schema": 1,
+  "schema": 2,
   "generated": "2026-06-14",
-  "description": "TUI surface registry. Every public --interactive and --output-format interactive path should appear here with owner, tier, docs, and test coverage.",
+  "description": "TUI surface registry. Every public interactive path must declare concrete parser evidence and test files.",
   "surfaces": [
     {
       "command": "dashboard browse",
@@ -13,7 +13,9 @@
       "fallback": "error: requires the 'tui' feature",
       "docs_en": "docs/commands/en/dashboard-browse.md",
       "docs_zh_TW": "docs/commands/zh-TW/dashboard-browse.md",
-      "has_tests": true,
+      "parser_paths": ["rust/src/commands/dashboard/cli_defs_command.rs"],
+      "parser_evidence": ["Browse(BrowseArgs)"],
+      "test_paths": ["rust/src/commands/dashboard/browse/input.rs"],
       "notes": "Mature dedicated live/local tree browser with edit, delete, history, external edit."
     },
     {
@@ -26,7 +28,9 @@
       "fallback": "error: requires the 'tui' feature",
       "docs_en": "docs/commands/en/dashboard-summary.md",
       "docs_zh_TW": "docs/commands/zh-TW/dashboard-summary.md",
-      "has_tests": true,
+      "parser_paths": ["rust/src/commands/dashboard/cli_defs_command.rs", "rust/src/commands/dashboard/cli_defs_inspect_analysis.rs"],
+      "parser_evidence": ["Summary(SummaryArgs)", "pub interactive: bool"],
+      "test_paths": ["rust/src/commands/dashboard/dashboard_cli_inspect_help_rust_tests.rs"],
       "notes": "Uses the inspect workbench for live or local export summary review."
     },
     {
@@ -39,7 +43,9 @@
       "fallback": "error: requires the 'tui' feature",
       "docs_en": "docs/commands/en/dashboard-import.md",
       "docs_zh_TW": "docs/commands/zh-TW/dashboard-import.md",
-      "has_tests": true,
+      "parser_paths": ["rust/src/commands/dashboard/cli_defs_command.rs", "rust/src/commands/dashboard/cli_defs_command_local.rs"],
+      "parser_evidence": ["Import(ImportArgs)", "pub interactive: bool"],
+      "test_paths": ["rust/src/commands/dashboard/dashboard_cli_parser_help_workflow_rust_tests.rs"],
       "notes": "Mature specialized import review with confirmation, provenance, and blocker evidence."
     },
     {
@@ -52,7 +58,9 @@
       "fallback": "error: requires the 'tui' feature",
       "docs_en": "docs/commands/en/dashboard-policy.md",
       "docs_zh_TW": "docs/commands/zh-TW/dashboard-policy.md",
-      "has_tests": true,
+      "parser_paths": ["rust/src/commands/dashboard/cli_defs_command.rs", "rust/src/commands/dashboard/cli_defs_inspect_policy.rs"],
+      "parser_evidence": ["GovernanceGate(GovernanceGateArgs)", "pub interactive: bool"],
+      "test_paths": ["rust/src/commands/dashboard/dashboard_cli_inspect_help_rust_tests.rs"],
       "notes": "Interactive browser over governance findings."
     },
     {
@@ -65,7 +73,9 @@
       "fallback": "error: requires the 'tui' feature",
       "docs_en": "docs/commands/en/dashboard-impact.md",
       "docs_zh_TW": "docs/commands/zh-TW/dashboard-impact.md",
-      "has_tests": true,
+      "parser_paths": ["rust/src/commands/dashboard/cli_defs_command.rs", "rust/src/commands/dashboard/cli_defs_inspect_policy.rs"],
+      "parser_evidence": ["Impact(ImpactArgs)", "pub interactive: bool"],
+      "test_paths": ["rust/src/commands/dashboard/topology_impact_rust_tests.rs"],
       "notes": "Interactive terminal browser over blast radius document."
     },
     {
@@ -78,21 +88,10 @@
       "fallback": "error: requires the 'tui' feature",
       "docs_en": "docs/commands/en/dashboard-dependencies.md",
       "docs_zh_TW": "docs/commands/zh-TW/dashboard-dependencies.md",
-      "has_tests": true,
+      "parser_paths": ["rust/src/commands/dashboard/cli_defs_command.rs", "rust/src/commands/dashboard/cli_defs_inspect_policy.rs"],
+      "parser_evidence": ["Topology(TopologyArgs)", "pub interactive: bool"],
+      "test_paths": ["rust/src/commands/dashboard/topology_impact_rust_tests.rs"],
       "notes": "Shared dependency workbench."
-    },
-    {
-      "command": "dashboard topology --interactive",
-      "domain": "dashboard",
-      "tier": 2,
-      "mode": ["local"],
-      "behavior": "read-only",
-      "feature_gate": "tui",
-      "fallback": "error: requires the 'tui' feature",
-      "docs_en": null,
-      "docs_zh_TW": null,
-      "has_tests": true,
-      "notes": "Specialized interactive TUI for dashboard topology exploration. No separate command doc; covered under dashboard doc tree."
     },
     {
       "command": "datasource browse",
@@ -104,7 +103,9 @@
       "fallback": "error: requires the 'tui' feature",
       "docs_en": "docs/commands/en/datasource-browse.md",
       "docs_zh_TW": "docs/commands/zh-TW/datasource-browse.md",
-      "has_tests": true,
+      "parser_paths": ["rust/src/commands/datasource/cli/defs.rs"],
+      "parser_evidence": ["Browse(DatasourceBrowseArgs)"],
+      "test_paths": ["rust/src/commands/datasource/browse/input.rs"],
       "notes": "Active implementation with shared detail and review projection reuse."
     },
     {
@@ -117,7 +118,9 @@
       "fallback": "error: requires the 'tui' feature",
       "docs_en": "docs/commands/en/datasource-list.md",
       "docs_zh_TW": "docs/commands/zh-TW/datasource-list.md",
-      "has_tests": true,
+      "parser_paths": ["rust/src/commands/datasource/cli/defs.rs", "rust/src/commands/datasource/cli/defs_read.rs", "rust/src/commands/datasource/cli/formats.rs"],
+      "parser_evidence": ["List(DatasourceListArgs)", "Interactive"],
+      "test_paths": ["rust/src/commands/datasource/tests/cli_mutation_help_parse.rs"],
       "notes": "Local datasource list interactive workbench for export/provisioning inspection."
     },
     {
@@ -130,7 +133,9 @@
       "fallback": "error: requires the 'tui' feature",
       "docs_en": "docs/commands/en/datasource-plan.md",
       "docs_zh_TW": "docs/commands/zh-TW/datasource-plan.md",
-      "has_tests": true,
+      "parser_paths": ["rust/src/commands/datasource/cli/defs.rs", "rust/src/commands/datasource/cli/defs_sync.rs", "rust/src/commands/datasource/cli/formats.rs"],
+      "parser_evidence": ["Plan(DatasourcePlanArgs)", "Interactive"],
+      "test_paths": ["rust/src/commands/datasource/plan/tests.rs"],
       "notes": "Review projection with blockers, warnings, hints, and safe diffs."
     },
     {
@@ -143,7 +148,9 @@
       "fallback": "error: requires the 'tui' feature",
       "docs_en": "docs/commands/en/datasource-import.md",
       "docs_zh_TW": "docs/commands/zh-TW/datasource-import.md",
-      "has_tests": true,
+      "parser_paths": ["rust/src/commands/datasource/cli/defs.rs", "rust/src/commands/datasource/cli/defs_sync.rs", "rust/src/commands/datasource/cli/formats.rs"],
+      "parser_evidence": ["Import(DatasourceImportArgs)", "pub dry_run: bool", "Interactive"],
+      "test_paths": ["rust/src/commands/datasource/tests/tail_import.rs"],
       "notes": "Review projection with blockers, warnings, hints, and safe diffs."
     },
     {
@@ -151,13 +158,45 @@
       "domain": "access",
       "tier": 3,
       "mode": ["live"],
-      "behavior": "mutation-capable",
+      "behavior": "read-only",
       "feature_gate": "tui",
       "fallback": "error: requires the 'tui' feature",
       "docs_en": "docs/commands/en/access-browse.md",
       "docs_zh_TW": "docs/commands/zh-TW/access-browse.md",
-      "has_tests": true,
-      "notes": "Consolidated access-wide browse over users, teams, orgs, service accounts."
+      "parser_paths": ["rust/src/commands/access/cli_defs.rs"],
+      "parser_evidence": ["Browse(AccessBrowseArgs)"],
+      "test_paths": ["rust/src/commands/access/access_cli_rust_tests.rs"],
+      "notes": "Consolidated read-only access-wide browse over users, teams, orgs, service accounts."
+    },
+    {
+      "command": "access user browse",
+      "domain": "access",
+      "tier": 3,
+      "mode": ["live", "local"],
+      "behavior": "mutation-capable",
+      "feature_gate": "tui",
+      "fallback": "error: requires the 'tui' feature",
+      "docs_en": "docs/commands/en/access-user.md",
+      "docs_zh_TW": "docs/commands/zh-TW/access-user.md",
+      "parser_paths": ["rust/src/commands/access/access_user_cli.rs"],
+      "parser_evidence": ["Browse(UserBrowseArgs)"],
+      "test_paths": ["rust/src/commands/access/user_browse_render.rs"],
+      "notes": "Dedicated user browser with org and team membership mutation confirmations."
+    },
+    {
+      "command": "access team browse",
+      "domain": "access",
+      "tier": 3,
+      "mode": ["live", "local"],
+      "behavior": "mutation-capable",
+      "feature_gate": "tui",
+      "fallback": "error: requires the 'tui' feature",
+      "docs_en": "docs/commands/en/access-team.md",
+      "docs_zh_TW": "docs/commands/zh-TW/access-team.md",
+      "parser_paths": ["rust/src/commands/access/access_team_cli.rs"],
+      "parser_evidence": ["Browse(TeamBrowseArgs)"],
+      "test_paths": ["rust/src/commands/access/team_browse_render.rs"],
+      "notes": "Dedicated team browser with member and team mutation confirmations."
     },
     {
       "command": "access plan --interactive",
@@ -169,7 +208,9 @@
       "fallback": "error: requires the 'tui' feature",
       "docs_en": "docs/commands/en/access-plan.md",
       "docs_zh_TW": "docs/commands/zh-TW/access-plan.md",
-      "has_tests": true,
+      "parser_paths": ["rust/src/commands/access/access_plan_cli.rs"],
+      "parser_evidence": ["pub struct AccessPlanArgs", "pub interactive: bool"],
+      "test_paths": ["rust/src/commands/access/access_plan_tests.rs"],
       "notes": "Uses shared review-contract projections for action detail rows."
     },
     {
@@ -182,7 +223,9 @@
       "fallback": "error: requires the 'tui' feature",
       "docs_en": "docs/commands/en/status.md",
       "docs_zh_TW": "docs/commands/zh-TW/status.md",
-      "has_tests": true,
+      "parser_paths": ["rust/src/commands/status/overview/mod.rs"],
+      "parser_evidence": ["Live(OverviewLiveArgs)", "OverviewOutputFormat::Interactive"],
+      "test_paths": ["rust/src/commands/status/overview/contract_parser_tests.rs"],
       "notes": "Document-backed browser with shared search conventions."
     },
     {
@@ -195,7 +238,9 @@
       "fallback": "error: requires the 'tui' feature",
       "docs_en": "docs/commands/en/status.md",
       "docs_zh_TW": "docs/commands/zh-TW/status.md",
-      "has_tests": true,
+      "parser_paths": ["rust/src/commands/status/overview/mod.rs"],
+      "parser_evidence": ["OverviewOutputFormat::Interactive"],
+      "test_paths": ["rust/src/commands/status/overview/contract_parser_tests.rs"],
       "notes": "Document-backed browser for staged artifact readiness."
     },
     {
@@ -208,7 +253,9 @@
       "fallback": "error: requires the 'tui' feature",
       "docs_en": "docs/commands/en/status.md",
       "docs_zh_TW": "docs/commands/zh-TW/status.md",
-      "has_tests": true,
+      "parser_paths": ["rust/src/commands/status/cli.rs"],
+      "parser_evidence": ["ProjectStatusOutputFormat", "Interactive"],
+      "test_paths": ["rust/src/commands/status/parser_tests.rs"],
       "notes": "Project status TUI for staged and live aggregation."
     },
     {
@@ -221,7 +268,9 @@
       "fallback": "error: requires the 'tui' feature",
       "docs_en": "docs/commands/en/snapshot.md",
       "docs_zh_TW": "docs/commands/zh-TW/snapshot.md",
-      "has_tests": true,
+      "parser_paths": ["rust/src/commands/snapshot/cli_defs.rs"],
+      "parser_evidence": ["Review(SnapshotReviewArgs)", "pub interactive: bool"],
+      "test_paths": ["rust/src/commands/snapshot/tests_review_browser_rust_tests.rs"],
       "notes": "Document-backed review over snapshot artifacts."
     },
     {
@@ -234,7 +283,9 @@
       "fallback": "error: requires the 'tui' feature",
       "docs_en": null,
       "docs_zh_TW": null,
-      "has_tests": true,
+      "parser_paths": ["rust/src/commands/sync/cli_args_task_first.rs"],
+      "parser_evidence": ["Preview(ChangePreviewArgs)", "pub interactive_review: bool"],
+      "test_paths": ["rust/src/commands/sync/workspace_preview_review_view_rust_tests.rs"],
       "notes": "Internal review surfaces with strong review and diff precedent. Workspace doc exists but does not yet detail the interactive review path."
     },
     {
@@ -247,7 +298,9 @@
       "fallback": "error: requires the 'tui' feature",
       "docs_en": null,
       "docs_zh_TW": null,
-      "has_tests": true,
+      "parser_paths": ["rust/src/commands/sync/cli_args_ci.rs"],
+      "parser_evidence": ["Audit(SyncAuditArgs)", "pub interactive: bool"],
+      "test_paths": ["rust/src/commands/sync/cli_audit_preflight_rust_tests.rs"],
       "notes": "Specialized interactive TUI for sync audit drift triage. No separate command doc."
     }
   ],

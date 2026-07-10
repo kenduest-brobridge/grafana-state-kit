@@ -27,7 +27,16 @@ pub(super) fn render_frame(
     state: &mut BrowserState,
     args: &UserBrowseArgs,
 ) {
-    let footer_controls = control_lines(state, args);
+    let footer_controls = if frame.area().height <= 12 {
+        tui_shell::control_grid(&[vec![
+            ("Up/Down", Color::Blue, "move"),
+            ("Tab", Color::Blue, "pane"),
+            ("/", Color::Yellow, "search"),
+            ("Esc/q", Color::Gray, "exit"),
+        ]])
+    } else {
+        control_lines(state, args)
+    };
     let outer = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
@@ -731,6 +740,11 @@ fn blank_dash(value: &str) -> &str {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use crate::access::{CommonCliArgs, Scope};
+    use ratatui::backend::TestBackend;
+    use ratatui::Terminal;
+
     #[test]
     fn user_browse_render_does_not_wrap_shared_detail_info_lines() {
         let source = include_str!("user_browse_render.rs");
@@ -740,5 +754,84 @@ mod tests {
             "user_browse_render.rs should call browser_detail_info_line directly instead of \
              carrying a local detail_line delegate wrapper"
         );
+    }
+
+    fn args() -> UserBrowseArgs {
+        UserBrowseArgs {
+            common: CommonCliArgs {
+                profile: None,
+                url: "http://127.0.0.1:3000".to_string(),
+                api_token: Some("token".to_string()),
+                username: None,
+                password: None,
+                prompt_password: false,
+                prompt_token: false,
+                org_id: None,
+                timeout: 30,
+                verify_ssl: false,
+                insecure: false,
+                ca_cert: None,
+            },
+            input_dir: None,
+            local: false,
+            run: None,
+            run_id: None,
+            scope: Scope::Global,
+            all_orgs: false,
+            current_org: false,
+            query: None,
+            login: None,
+            email: None,
+            org_role: None,
+            grafana_admin: None,
+            with_teams: true,
+            page: 1,
+            per_page: 100,
+        }
+    }
+
+    fn state() -> BrowserState {
+        BrowserState::new(
+            vec![Map::from_iter(vec![
+                ("id".to_string(), Value::String("7".to_string())),
+                ("login".to_string(), Value::String("alice".to_string())),
+                (
+                    "email".to_string(),
+                    Value::String("alice@example.com".to_string()),
+                ),
+            ])],
+            DisplayMode::GlobalAccounts,
+        )
+    }
+
+    #[test]
+    fn user_browser_renders_in_sixty_by_ten_terminal() {
+        let mut state = state();
+        let args = args();
+        let mut terminal = Terminal::new(TestBackend::new(60, 10)).unwrap();
+
+        terminal
+            .draw(|frame| render_frame(frame, &mut state, &args))
+            .unwrap();
+
+        let screen = format!("{}", terminal.backend());
+        assert!(screen.contains("User Browser"));
+        assert!(screen.contains("alice"));
+    }
+
+    #[test]
+    fn user_delete_modal_remains_visible_in_sixty_by_ten_terminal() {
+        let mut state = state();
+        state.pending_delete = true;
+        let args = args();
+        let mut terminal = Terminal::new(TestBackend::new(60, 10)).unwrap();
+
+        terminal
+            .draw(|frame| render_frame(frame, &mut state, &args))
+            .unwrap();
+
+        let screen = format!("{}", terminal.backend());
+        assert!(screen.contains("Delete user"));
+        assert!(screen.contains("Confirm: y"));
     }
 }
