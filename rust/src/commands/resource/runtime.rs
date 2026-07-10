@@ -4,7 +4,7 @@ use serde_json::{Map, Value};
 use super::catalog::ResourceSelector;
 use super::cli_defs::{ResourceApiMode, ResourceCliArgs, ResourceCommand, ResourceKind};
 use super::render::{render_describe, render_get, render_kind_catalog, render_list};
-use crate::common::{set_json_color_choice, Result};
+use crate::common::{message, set_json_color_choice, Result};
 use crate::dashboard::{CommonCliArgs, DEFAULT_TIMEOUT, DEFAULT_URL};
 use crate::grafana_api::{
     expect_object, expect_object_list, AuthInputs, GrafanaApiClient, GrafanaConnection,
@@ -105,6 +105,20 @@ pub(crate) fn get_resource_item(
             )?))
         }
         ResourceKind::Datasources => {
+            let legacy_identity_is_numeric = selector.identity.parse::<u64>().is_ok();
+            if api_mode == ResourceApiMode::Legacy {
+                ensure_legacy_datasource_identity(&selector.identity)?;
+            }
+            let legacy_request = || {
+                client.datasource().request_json(
+                    Method::GET,
+                    &format!("/api/datasources/{}", selector.identity),
+                    &[],
+                    None,
+                )
+            };
+            let legacy_request = legacy_identity_is_numeric
+                .then_some(&legacy_request as &dyn Fn() -> Result<Option<Value>>);
             let object = resolve_with_api_mode(
                 api_mode,
                 &|| {
@@ -115,14 +129,7 @@ pub(crate) fn get_resource_item(
                         None,
                     )
                 },
-                Some(&|| {
-                    client.datasource().request_json(
-                        Method::GET,
-                        &format!("/api/datasources/{}", selector.identity),
-                        &[],
-                        None,
-                    )
-                }),
+                legacy_request,
             )?;
             Ok(Value::Object(expect_object(
                 object,
@@ -153,6 +160,15 @@ pub(crate) fn get_resource_item(
             )?))
         }
     }
+}
+
+fn ensure_legacy_datasource_identity(identity: &str) -> Result<()> {
+    if identity.parse::<u64>().is_ok() {
+        return Ok(());
+    }
+    Err(message(format!(
+        "Legacy datasource API mode requires a numeric datasource ID, got '{identity}'."
+    )))
 }
 
 fn resolve_with_api_mode<T>(
@@ -279,6 +295,15 @@ mod tests {
     }
 
     #[test]
+    fn legacy_datasource_mode_rejects_nonnumeric_identity_before_transport() {
+        let error = super::ensure_legacy_datasource_identity("prom-main").unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "Legacy datasource API mode requires a numeric datasource ID, got 'prom-main'."
+        );
+    }
+
+    #[test]
     fn resolve_with_api_mode_auto_uses_legacy_when_modern_404s() {
         let value: Result<i32> = super::resolve_with_api_mode(
             ResourceApiMode::Auto,
@@ -362,6 +387,32 @@ mod tests {
         let requests = requests.lock().unwrap();
         assert_eq!(requests[0], "GET /api/datasources/uid/10 HTTP/1.1");
         assert_eq!(requests[1], "GET /api/datasources/10 HTTP/1.1");
+    }
+
+    #[test]
+    fn get_datasource_auto_preserves_nonnumeric_uid_404_without_legacy_request() {
+        let Some((base_url, requests, handle)) = spawn_sequence_server(vec![http_response(
+            "404 Not Found",
+            r#"{"message":"not found"}"#,
+        )]) else {
+            return;
+        };
+        let client = build_test_api(base_url);
+
+        let error = super::get_resource_item(
+            &client,
+            &datasource_selector("prom-main"),
+            ResourceApiMode::Auto,
+        )
+        .unwrap_err();
+
+        assert_eq!(error.status_code(), Some(404));
+        handle.join().unwrap();
+        let requests = requests.lock().unwrap();
+        assert_eq!(
+            requests.as_slice(),
+            ["GET /api/datasources/uid/prom-main HTTP/1.1"]
+        );
     }
 
     #[test]

@@ -65,7 +65,7 @@ the existing block on direct mutation of Git Sync-managed resources.
 ## Acceptance Checks
 
 - [x] Poetry installs PyYAML and all 1,230 Python tests pass with two skips.
-- [ ] Nonnumeric datasource UID 404 makes no numeric-ID fallback request.
+- [x] Nonnumeric datasource UID 404 makes no numeric-ID fallback request.
 - [ ] TUI registry includes access user/team browse and exact parser/test paths.
 - [ ] Dashboard v2 and `all` export tests pass, including unsupported-lane skip.
 - [ ] Shared discovery, folder pagination, and resource history tests pass.
@@ -135,7 +135,7 @@ the existing block on direct mutation of Git Sync-managed resources.
 - [x] Fix MyPy findings by correcting real API/name defects first, then adding
       precise annotations and narrow casts where runtime validation exists.
 - [x] Run `make poetry-test` and `make poetry-quality-python` green.
-- [ ] Commit lint/type repairs separately from formatter and Grafana features.
+- [x] Commit lint/type repairs separately from formatter and Grafana features.
 
 ### Task 2: Stop invalid datasource numeric-ID fallback
 
@@ -143,13 +143,14 @@ the existing block on direct mutation of Git Sync-managed resources.
 
 - Modify/test: `rust/src/commands/resource/runtime.rs`
 
-- [ ] Add a request-server regression test for `datasources/prom-main`: UID GET
+- [x] Add a request-server regression test for `datasources/prom-main`: UID GET
       returns 404, the command returns that error, and only one request is made.
-- [ ] Run the focused test and confirm it observes the current second request.
-- [ ] Supply the legacy closure in auto mode only when
+- [x] Run the focused test and confirm it loses the original 404 after the
+      current fallback attempt.
+- [x] Supply the legacy closure in auto mode only when
       `selector.identity.parse::<u64>().is_ok()`; explicit legacy mode rejects a
       nonnumeric selector before transport.
-- [ ] Rerun the focused resource runtime tests green.
+- [x] Rerun the focused resource runtime tests green.
 
 ### Task 3: Make TUI registry coverage exact
 
@@ -358,3 +359,7 @@ impl AppPlatformResourceClient<'_> {
   dashboard client method. Each received a failing regression test before its
   fix. `make poetry-quality-python` passed all stages with 1,230 tests and two
   skips.
+- 2026-07-10: Task 2 red test showed a nonnumeric datasource UID 404 was
+  replaced by an unclassified error after the legacy request attempt. The
+  legacy closure is now available only for numeric identities; all nine
+  resource runtime tests pass and the original UID 404 is preserved.
