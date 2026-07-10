@@ -2,8 +2,8 @@ use crate::common::Result;
 use crate::http::JsonHttpClient;
 
 use super::{
-    AccessResourceClient, AlertingResourceClient, DashboardResourceClient,
-    DatasourceResourceClient, GrafanaConnection,
+    AccessResourceClient, AlertingResourceClient, AppPlatformResourceClient,
+    DashboardResourceClient, DatasourceResourceClient, GrafanaConnection,
 };
 
 #[derive(Clone)]
@@ -39,6 +39,10 @@ impl GrafanaApiClient {
     #[allow(dead_code)]
     pub(crate) fn dashboard(&self) -> DashboardResourceClient<'_> {
         DashboardResourceClient::new(&self.http)
+    }
+
+    pub(crate) fn app_platform(&self) -> AppPlatformResourceClient<'_> {
+        AppPlatformResourceClient::new(&self.http)
     }
 
     #[allow(dead_code)]

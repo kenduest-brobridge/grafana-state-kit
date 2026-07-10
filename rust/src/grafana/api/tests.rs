@@ -8,8 +8,9 @@ use std::time::Duration;
 use crate::grafana_api::connection::auth_mode_from_headers;
 use crate::grafana_api::{
     execute_sync_live_apply_with_client, fetch_sync_live_availability_with_client,
-    AccessResourceClient, AlertingResourceClient, AuthInputs, DashboardResourceApiVersion,
-    DatasourceResourceClient, GrafanaApiClient, GrafanaConnection, SyncLiveClient,
+    AccessResourceClient, AlertingResourceClient, AppPlatformApiVersion, AppPlatformResource,
+    AuthInputs, DashboardResourceApiVersion, DatasourceResourceClient, GrafanaApiClient,
+    GrafanaConnection, SyncLiveClient,
 };
 use crate::profile_config::ConnectionMergeInput;
 use crate::sync::live::SyncApplyOperation;
@@ -626,6 +627,127 @@ fn dashboard_resource_client_rejects_v2_resource_api_before_transport() {
 
     assert!(error.to_string().contains("dashboard.grafana.app/v2"));
     assert!(error.to_string().contains("not verified"));
+}
+
+#[test]
+fn app_platform_discovery_treats_only_404_as_unsupported() {
+    let responses = vec![
+        http_response(
+            "200 OK",
+            r#"{"apiVersion":"dashboard.grafana.app/v2","kind":"DashboardList","items":[],"metadata":{}}"#,
+        ),
+        http_response("404 Not Found", r#"{"message":"not found"}"#),
+        http_response("403 Forbidden", r#"{"message":"forbidden"}"#),
+    ];
+    let (base_url, requests, handle) = sequence_server_or_skip!(responses);
+    let api = build_test_api(base_url);
+    let resource = AppPlatformResource::new(
+        "dashboard.grafana.app",
+        AppPlatformApiVersion::V2,
+        "dashboards",
+    );
+
+    assert!(api.app_platform().is_served(resource, "default").unwrap());
+    assert!(!api.app_platform().is_served(resource, "missing").unwrap());
+    let error = api
+        .app_platform()
+        .is_served(resource, "forbidden")
+        .expect_err("403 must remain an authorization error");
+
+    handle.join().unwrap();
+
+    assert_eq!(error.status_code(), Some(403));
+    let requests = requests.lock().unwrap().clone();
+    assert_eq!(requests.len(), 3);
+    assert!(requests[0]
+        .starts_with("GET /apis/dashboard.grafana.app/v2/namespaces/default/dashboards?limit=1 "));
+}
+
+#[test]
+fn app_platform_list_all_follows_continue_tokens() {
+    let responses = vec![
+        http_response(
+            "200 OK",
+            r#"{"items":[{"metadata":{"name":"cpu"}}],"metadata":{"continue":"page two"}}"#,
+        ),
+        http_response(
+            "200 OK",
+            r#"{"items":[{"metadata":{"name":"memory"}}],"metadata":{"continue":""}}"#,
+        ),
+    ];
+    let (base_url, requests, handle) = sequence_server_or_skip!(responses);
+    let api = build_test_api(base_url);
+    let resource = AppPlatformResource::new(
+        "dashboard.grafana.app",
+        AppPlatformApiVersion::V2,
+        "dashboards",
+    );
+
+    let items = api
+        .app_platform()
+        .list_all(resource, "default", Some(1))
+        .unwrap();
+
+    handle.join().unwrap();
+
+    assert_eq!(items.len(), 2);
+    assert_eq!(items[0]["metadata"]["name"], "cpu");
+    assert_eq!(items[1]["metadata"]["name"], "memory");
+    let requests = requests.lock().unwrap().clone();
+    assert!(requests[0]
+        .starts_with("GET /apis/dashboard.grafana.app/v2/namespaces/default/dashboards?limit=1 "));
+    assert!(requests[1].starts_with(
+        "GET /apis/dashboard.grafana.app/v2/namespaces/default/dashboards?limit=1&continue=page+two "
+    ));
+}
+
+#[test]
+fn app_platform_get_and_history_use_resource_version_contract() {
+    let responses = vec![
+        http_response(
+            "200 OK",
+            r#"{"kind":"Dashboard","metadata":{"name":"cpu-main","resourceVersion":"9"}}"#,
+        ),
+        http_response(
+            "200 OK",
+            r#"{"items":[{"metadata":{"name":"cpu-main","resourceVersion":"8"}},{"metadata":{"name":"cpu-main","resourceVersion":"9"}}],"metadata":{}}"#,
+        ),
+        http_response(
+            "200 OK",
+            r#"{"kind":"Dashboard","metadata":{"name":"cpu-main","resourceVersion":"8"}}"#,
+        ),
+    ];
+    let (base_url, requests, handle) = sequence_server_or_skip!(responses);
+    let api = build_test_api(base_url);
+    let resource = AppPlatformResource::new(
+        "dashboard.grafana.app",
+        AppPlatformApiVersion::V1,
+        "dashboards",
+    );
+    let client = api.app_platform();
+
+    let current = client.get(resource, "default", "cpu-main").unwrap();
+    let history = client
+        .list_history(resource, "default", "cpu-main", Some(100))
+        .unwrap();
+    let historical = client
+        .get_at_resource_version(resource, "default", "cpu-main", "8")
+        .unwrap();
+
+    handle.join().unwrap();
+
+    assert_eq!(current["metadata"]["resourceVersion"], "9");
+    assert_eq!(history.len(), 2);
+    assert_eq!(historical["metadata"]["resourceVersion"], "8");
+    let requests = requests.lock().unwrap().clone();
+    assert!(requests[0]
+        .starts_with("GET /apis/dashboard.grafana.app/v1/namespaces/default/dashboards/cpu-main "));
+    assert!(requests[1].starts_with(
+        "GET /apis/dashboard.grafana.app/v1/namespaces/default/dashboards?fieldSelector=metadata.name%3Dcpu-main&labelSelector=grafana.app%2Fget-history%3Dtrue&limit=100 "
+    ));
+    assert!(requests[2].starts_with(
+        "GET /apis/dashboard.grafana.app/v1/namespaces/default/dashboards/cpu-main?resourceVersion=8 "
+    ));
 }
 
 #[test]

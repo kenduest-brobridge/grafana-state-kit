@@ -7,6 +7,7 @@
 mod access;
 pub(crate) mod alert_live;
 mod alerting;
+mod app_platform;
 mod client;
 mod connection;
 mod dashboard;
@@ -18,6 +19,9 @@ mod sync_live;
 pub(crate) use access::AccessResourceClient;
 pub(crate) use alerting::{
     expect_object, expect_object_list, parse_template_list_response, AlertingResourceClient,
+};
+pub(crate) use app_platform::{
+    AppPlatformApiVersion, AppPlatformResource, AppPlatformResourceClient,
 };
 pub(crate) use client::GrafanaApiClient;
 pub(crate) use connection::{AuthInputs, GrafanaConnection};

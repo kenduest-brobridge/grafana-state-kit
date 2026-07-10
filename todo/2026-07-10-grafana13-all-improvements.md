@@ -180,10 +180,10 @@ the existing block on direct mutation of Git Sync-managed resources.
 - Modify: `rust/src/grafana/api/mod.rs`
 - Modify: `rust/src/grafana/api/client.rs`
 
-- [ ] Write failing pure/request tests for discovery, collection paths,
+- [x] Write failing pure/request tests for discovery, collection paths,
       404-only unsupported handling, continue pagination, get, history
       selectors, and historical `resourceVersion` reads.
-- [ ] Introduce these core types and methods:
+- [x] Introduce these core types and methods:
 
 ```rust
 pub(crate) enum AppPlatformApiVersion { V1, V2, V1Beta1 }
@@ -202,7 +202,7 @@ impl AppPlatformResourceClient<'_> {
 }
 ```
 
-- [ ] Rerun the focused API tests green.
+- [x] Rerun the focused API tests green.
 
 ### Task 5: Enable dashboard v2 export and resource history
 
@@ -369,3 +369,8 @@ impl AppPlatformResourceClient<'_> {
   public path. Four 60x10 access browser render/modal tests and two detail
   cursor clamping tests pass with the `tui` feature; all 14 registry tests and
   the live registry check are green.
+- 2026-07-10: Task 4 added a shared App Platform client for v1, v2, and
+  v1beta1 resources. Request tests cover 404-only discovery, authorization
+  error preservation, encoded continue pagination, current gets, stable
+  history selectors, and historical `resourceVersion` reads. All 25 shared API
+  tests pass.
