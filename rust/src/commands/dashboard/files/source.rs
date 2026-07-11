@@ -120,7 +120,13 @@ fn contains_dashboard_resource(path: &Path) -> bool {
         if name == ".git" {
             continue;
         }
-        if entry_path.is_dir() {
+        let Ok(file_type) = entry.file_type() else {
+            continue;
+        };
+        if file_type.is_symlink() {
+            continue;
+        }
+        if file_type.is_dir() {
             if contains_dashboard_resource(&entry_path) {
                 return true;
             }

@@ -2,6 +2,10 @@
 
 ## Active
 
+- [x] [2026-07-12 Grafana 13 review follow-up fixes](2026-07-12-grafana13-review-followup-fixes.md) -
+  Correct resource history semantics, native-only export routing, Cloud
+  namespace selection, and Git Sync symlink traversal found after merge.
+
 - [x] [2026-07-10 Grafana 13 all improvements](2026-07-10-grafana13-all-improvements.md) -
   Implement the confirmed dashboard resource, Python packaging, datasource,
   TUI governance, App Platform history/folder/notification/secret metadata,
