@@ -7,10 +7,11 @@ List one supported live Grafana resource kind.
 Use this when you need a read-only live inventory for one supported resource kind but do not yet need a higher-level domain workflow.
 
 ## Key flags
-- positional `KIND`: one supported resource kind such as `dashboards`, `folders`, `datasources`, `alert-rules`, or `orgs`
+- positional `KIND`: a stable kind or Grafana 13 preview kind listed by `status resource kinds`
 - `--profile`, `--url`, `--token`, `--basic-user`, `--basic-password`: live Grafana connection settings
 - `--output-format`: choose `text`, `table`, `json`, or `yaml`
-- `--api-mode`: compatibility preference for kinds that have alternate endpoint paths (`auto` default)
+- `--api-mode`: `auto`, `legacy`, `v1`, `v2`, or explicit preview `v1beta1`
+- `--namespace`: App Platform namespace, default `default`
 
 ## Examples
 ```bash
@@ -26,6 +27,11 @@ grafana-util status resource list folders --profile prod --output-format yaml
 ```bash
 # List alert rules as JSON.
 grafana-util status resource list alert-rules --profile prod --output-format json
+```
+
+```bash
+# List public-preview notification routing trees.
+grafana-util status resource list routing-trees --profile prod --api-mode v1beta1 --namespace default --output-format json
 ```
 
 ## Related commands

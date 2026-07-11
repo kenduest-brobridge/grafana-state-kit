@@ -15,6 +15,7 @@ Restore creates a new latest revision instead of overwriting the historical vers
 - live: use `--url` and `--dashboard-uid`
 - single local artifact: use `--input <history.json>` from `dashboard history export`
 - export tree: use `--input-dir <export-root>` from `dashboard export --include-history`
+- App Platform resource history: add `--history-source v1` or `v2` and, when needed, `--resource-namespace <namespace>`. The default remains `classic`.
 
 `dashboard history restore` stays live-only.
 
@@ -29,6 +30,8 @@ Restore creates a new latest revision instead of overwriting the historical vers
 - `--base-input-dir` / `--new-input-dir`: export trees to compare, which lets you compare history exports from different dates.
 - `--base-version` / `--new-version`: the historical version numbers to compare.
 - `--limit`: how many recent versions to include in list or export views.
+- `--history-source`: choose `classic` (default), stable resource `v1`, or stable resource `v2` for live list/export.
+- `--resource-namespace`: App Platform namespace for resource history; defaults to `default`.
 - `--version`: the historical version number to restore. Required unless `--prompt` is used.
 - `--prompt`: prompt for one recent historical version, preview it, and confirm the restore in the terminal.
 - `--message`: revision message for the new restored revision.
@@ -112,6 +115,11 @@ grafana-util dashboard history diff --base-input-dir ./exports-2026-04-01 --base
 ```bash
 # Export the recent dashboard history revisions into a reusable JSON artifact.
 grafana-util dashboard history export --url http://localhost:3000 --token "$GRAFANA_API_TOKEN" --dashboard-uid cpu-main --limit 20 --output ./cpu-main.history.json
+```
+
+```bash
+# Export stable v2 resource history while preserving each native resource envelope.
+grafana-util dashboard history export --profile prod --dashboard-uid cpu-main --history-source v2 --resource-namespace default --output ./cpu-main.resource-history.json
 ```
 
 ## Before / After

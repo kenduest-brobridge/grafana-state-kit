@@ -119,7 +119,7 @@ If you are not sure where to start, use this sequence:
 3. `workspace preview . --fetch-live --profile <profile>`
 4. `workspace apply --preview-file ./workspace-preview.json --approve --execute-live --profile <profile>`
 
-The workspace path is the shortest path because `workspace` will try to discover common staged inputs in the current repo or working tree, including one repo root that mixes Git Sync dashboards, `alerts/raw`, and `datasources/provisioning`. If that does not match your layout, switch to explicit flags such as `--desired-file`, `--dashboard-export-dir`, `--alert-export-dir`, `workspace package`, or `--target-inventory`.
+The workspace path is the shortest path because `workspace` will try to discover common staged inputs in the current repo or working tree, including one repo root that mixes Git Sync dashboards, `alerts/raw`, and `datasources/provisioning`. Grafana 13.1 Git Sync roots may use either a `.git` directory or worktree `.git` file and may keep dashboard CRDs at the repo root; nested `_folder.json` and `README.md` files are recorded as read-only provenance. If that does not match your layout, switch to explicit flags such as `--desired-file`, `--dashboard-export-dir`, `--alert-export-dir`, `workspace package`, or `--target-inventory`.
 
 Treat Git Sync and file-provisioned dashboard inputs as source-owned. Workspace scan, test, and preview are useful review gates for those trees, but if preview points at a Git Sync-managed or file-provisioned target, make the live change through the repository/PR or provisioning path instead of `workspace apply --execute-live`.
 

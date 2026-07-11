@@ -954,11 +954,11 @@ code[class*="language-"],pre[class*="language-"]{color:#ccc;background:none;font
 <h2 id="workflow">Workflow</h2>
 <ul><li>Start with <code>status resource describe</code> to see the supported selector patterns and endpoint shape for each kind.</li><li>Use <code>status resource kinds</code> to see the currently supported live resource kinds.</li><li>Use <code>status resource list &lt;kind&gt;</code> when you need inventory for one kind.</li><li>Use <code>status resource get &lt;kind&gt;/&lt;identity&gt;</code> when you need the full live payload for one item.</li></ul>
 <h2 id="supported-kinds">Supported kinds</h2>
-<ul><li><code>dashboards</code></li><li><code>folders</code></li><li><code>datasources</code></li><li><code>alert-rules</code></li><li><code>orgs</code></li></ul>
+<ul><li><code>dashboards</code></li><li><code>folders</code></li><li><code>datasources</code></li><li><code>alert-rules</code></li><li><code>orgs</code></li><li><code>receivers</code>, <code>routing-trees</code>, <code>template-groups</code>, <code>time-intervals</code>, <code>inhibition-rules</code></li><li><code>secure-values</code> (metadata only; <code>spec.value</code> is stripped defensively)</li></ul>
 <h2 id="output">Output</h2>
-<ul><li><code>kinds</code> supports <code>text</code>, <code>table</code>, <code>json</code>, and <code>yaml</code></li><li><code>list</code> supports <code>text</code>, <code>table</code>, <code>json</code>, and <code>yaml</code></li><li><code>get</code> supports <code>text</code>, <code>table</code>, <code>json</code>, and <code>yaml</code></li><li><code>--api-mode</code> on <code>list</code>/<code>get</code> defaults to <code>auto</code>; for datasource <code>get</code>, <code>auto</code> falls back from the UID endpoint to the legacy numeric-ID endpoint on 404.</li></ul>
+<ul><li><code>kinds</code> supports <code>text</code>, <code>table</code>, <code>json</code>, and <code>yaml</code></li><li><code>list</code> supports <code>text</code>, <code>table</code>, <code>json</code>, and <code>yaml</code></li><li><code>get</code> supports <code>text</code>, <code>table</code>, <code>json</code>, and <code>yaml</code></li><li><code>--api-mode</code> accepts <code>auto</code>, <code>legacy</code>, <code>v1</code>, <code>v2</code>, and <code>v1beta1</code>.</li><li>Dashboard <code>auto</code> tries App Platform v2, then v1, then classic endpoints, falling back only on 404. Folder <code>auto</code> tries v1 before classic. Datasource UID lookup keeps its numeric legacy fallback.</li><li>Notification and secure-value resources are public preview and require explicit <code>--api-mode v1beta1</code>; they are never auto-probed.</li><li><code>--namespace</code> selects the App Platform namespace and defaults to <code>default</code>.</li></ul>
 <h2 id="recommended-mode">Recommended mode</h2>
-<ul><li>Prefer default <code>auto</code> for mixed-version environments; use <code>legacy</code> only for datasource lookups that are known to require the classic numeric-ID endpoint.</li></ul>
+<ul><li>Prefer default <code>auto</code> for stable dashboard/folder inspection. Use explicit <code>v1</code> or <code>v2</code> when a script requires one envelope, <code>legacy</code> for classic-only access, and <code>v1beta1</code> only for the documented preview resources.</li></ul>
 <h2 id="examples">Examples</h2>
 <pre><code># Describe the supported live resource kinds and selector patterns.
 grafana-util status resource describe</code></pre>
@@ -970,6 +970,9 @@ grafana-util status resource list dashboards --url http://localhost:3000 --basic
 grafana-util status resource get datasources/prom-main --profile prod --output-format yaml</code></pre>
 <pre><code># Force legacy compatibility mode when needed.
 grafana-util status resource get datasources/10 --api-mode legacy</code></pre>
+<pre><code># Inspect Grafana 13 notification receivers through the explicit preview API.
+grafana-util status resource list receivers --api-mode v1beta1 --namespace default --profile prod --output-format json</code></pre>
+<p><code>secure-values</code> is intentionally read-only metadata inspection. The command has no export or mutation path and removes <code>spec.value</code> even if a hostile or nonconforming server sends it.</p>
 <h2 id="related-commands">Related commands</h2>
 <ul><li><a href="resource-describe.html">resource describe</a></li><li><a href="resource-kinds.html">resource kinds</a></li><li><a href="resource-list.html">resource list</a></li><li><a href="resource-get.html">resource get</a></li><li><a href="dashboard.html">dashboard</a></li></ul>
 

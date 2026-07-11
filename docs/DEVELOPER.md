@@ -175,6 +175,21 @@ local zig path fails or you want an isolated toolchain, use the Docker fallback:
 make build-rust-linux-amd64-docker
 ```
 
+## Grafana App Platform boundaries
+
+- Keep `/apis/<group>/<version>/namespaces/<namespace>/<plural>` construction,
+  continue-token pagination, stable resource history selectors, and 404-only
+  discovery semantics in `rust/src/grafana/api/app_platform.rs`.
+- Dashboard and folder `auto` mode may fall back only on 404. Authentication,
+  authorization, malformed payload, and server errors must remain visible.
+- Notification and secret APIs are v1beta1 public-preview surfaces and require
+  explicit selection. The generic resource command remains read-only.
+- Never pass `secure-values.spec.value` to renderers, logs, artifacts, or tests;
+  the resource runtime strips it defensively even though conforming Grafana 13
+  responses do not return it.
+- A Git Sync repo may use a `.git` file and root-level resource CRDs. Preserve
+  `_folder.json` and README discovery as provenance, not dashboard payloads.
+
 ## Maintenance Rules
 
 - Update Rust behavior and help text first; treat Python as legacy unless the

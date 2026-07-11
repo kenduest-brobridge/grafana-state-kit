@@ -10,10 +10,12 @@ Use this when you need the live payload for one supported resource item and want
 - positional `SELECTOR`: required `<kind>/<identity>` selector, for example `dashboards/cpu-main` or `datasources/prom-main`
 - `--profile`, `--url`, `--token`, `--basic-user`, `--basic-password`: live Grafana connection settings
 - `--output-format`: choose `text`, `table`, `json`, or `yaml`
-- `--api-mode`: compatibility preference (`auto` default; datasource `get` falls back from UID path to legacy numeric-ID path on 404)
+- `--api-mode`: `auto`, `legacy`, `v1`, `v2`, or explicit preview `v1beta1`
+- `--namespace`: App Platform namespace, default `default`
 
 ## Notes
-- The selector kind must currently be one of `dashboards`, `folders`, `datasources`, `alert-rules`, or `orgs`.
+- Selector kinds include stable resources plus the Grafana 13 preview notification and `secure-values` kinds listed by `status resource kinds`.
+- `secure-values` never returns secret material through this command; `spec.value` is stripped before text, table, JSON, or YAML rendering.
 - `text` and `table` outputs summarize the fetched object. Use `json` or `yaml` when you need the full payload.
 
 ## Examples

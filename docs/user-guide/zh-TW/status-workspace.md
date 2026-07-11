@@ -117,7 +117,7 @@ Workspace 這組命令處理的是「一包 staged files 能不能進下一個�
 3. `workspace preview . --fetch-live --profile <profile>`
 4. `workspace apply --preview-file ./workspace-preview.json --approve --execute-live --profile <profile>`
 
-workspace 路徑是最短路徑，因為 `workspace` 會先嘗試在目前 repo 或工作目錄裡找常見 staged inputs，包含同一個 mixed repo root 裡的 Git Sync dashboards、`alerts/raw`、`datasources/provisioning`。若這不符合你的目錄布局，再改用 `--desired-file`、`--dashboard-export-dir`、`--alert-export-dir`、`workspace package`、`--target-inventory` 這些明確旗標。
+workspace 路徑是最短路徑，因為 `workspace` 會先嘗試在目前 repo 或工作目錄裡找常見 staged inputs，包含同一個 mixed repo root 裡的 Git Sync dashboards、`alerts/raw`、`datasources/provisioning`。Grafana 13.1 Git Sync root 可使用 `.git` 目錄或 worktree `.git` file，也可把 dashboard CRD 放在 repo root；巢狀 `_folder.json` 與 `README.md` 會記錄成唯讀 provenance。若這不符合你的目錄布局，再改用 `--desired-file`、`--dashboard-export-dir`、`--alert-export-dir`、`workspace package`、`--target-inventory` 這些明確旗標。
 
 Git Sync 與 file-provisioned dashboard inputs 應視為 source-owned。Workspace scan、test、preview 可以作為這些 tree 的 review gate；但如果 preview 指向 Git Sync-managed 或 file-provisioned target，live change 應回到 repository/PR 或 provisioning path，不要用 `workspace apply --execute-live` 直接寫入。
 

@@ -950,9 +950,9 @@ code[class*="language-"],pre[class*="language-"]{color:#ccc;background:none;font
 <h2 id="何時使用">何時使用</h2>
 <p>當你需要某一筆支援資源的 live payload，且想用比完整 export 或 inspect workflow 更簡單的逃生入口時，使用這個指令。</p>
 <h2 id="重點旗標">重點旗標</h2>
-<ul><li>位置參數 <code>SELECTOR</code>：必填 <code>&lt;kind&gt;/&lt;identity&gt;</code>，例如 <code>dashboards/cpu-main</code> 或 <code>datasources/prom-main</code></li><li><code>--profile</code>、<code>--url</code>、<code>--token</code>、<code>--basic-user</code>、<code>--basic-password</code>：live Grafana 連線設定</li><li><code>--output-format</code>：選擇 <code>text</code>、<code>table</code>、<code>json</code> 或 <code>yaml</code></li><li><code>--api-mode</code>：endpoint 相容偏好（預設 <code>auto</code>；datasource <code>get</code> 會在 UID path 404 時 fallback 到 legacy 數字 ID path）</li></ul>
+<ul><li>位置參數 <code>SELECTOR</code>：必填 <code>&lt;kind&gt;/&lt;identity&gt;</code>，例如 <code>dashboards/cpu-main</code> 或 <code>datasources/prom-main</code></li><li><code>--profile</code>、<code>--url</code>、<code>--token</code>、<code>--basic-user</code>、<code>--basic-password</code>：live Grafana 連線設定</li><li><code>--output-format</code>：選擇 <code>text</code>、<code>table</code>、<code>json</code> 或 <code>yaml</code></li><li><code>--api-mode</code>：<code>auto</code>、<code>legacy</code>、<code>v1</code>、<code>v2</code>，或明確的 preview <code>v1beta1</code></li><li><code>--namespace</code>：App Platform namespace，預設 <code>default</code></li></ul>
 <h2 id="補充說明">補充說明</h2>
-<ul><li>selector 的 kind 目前必須是 <code>dashboards</code>、<code>folders</code>、<code>datasources</code>、<code>alert-rules</code>、<code>orgs</code> 之一。</li><li><code>text</code> 和 <code>table</code> 只會摘要顯示主要欄位；需要完整 payload 時請用 <code>json</code> 或 <code>yaml</code>。</li></ul>
+<ul><li>selector kind 包含 stable resources，以及 <code>status resource kinds</code> 列出的 Grafana 13 preview notification 與 <code>secure-values</code>。</li><li><code>secure-values</code> 不會透過此指令輸出 secret material；text、table、JSON、YAML render 前都會移除 <code>spec.value</code>。</li><li><code>text</code> 和 <code>table</code> 只會摘要顯示主要欄位；需要完整 payload 時請用 <code>json</code> 或 <code>yaml</code>。</li></ul>
 <h2 id="範例">範例</h2>
 <pre><code># 依 UID 取得單一 live dashboard。
 grafana-util status resource get dashboards/cpu-main --url http://localhost:3000 --basic-user admin --basic-password admin</code></pre>

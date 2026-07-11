@@ -21,15 +21,20 @@
 - `datasources`
 - `alert-rules`
 - `orgs`
+- `receivers`、`routing-trees`、`template-groups`、`time-intervals`、`inhibition-rules`
+- `secure-values`（只讀 metadata；會防禦性移除 `spec.value`）
 
 ## 輸出
 - `kinds` 支援 `text`、`table`、`json`、`yaml`
 - `list` 支援 `text`、`table`、`json`、`yaml`
 - `get` 支援 `text`、`table`、`json`、`yaml`
-- `list` / `get` 的 `--api-mode` 預設為 `auto`；對 datasource `get` 來說，`auto` 會先嘗試 UID endpoint，404 時改走 legacy 數字 ID endpoint。
+- `--api-mode` 支援 `auto`、`legacy`、`v1`、`v2`、`v1beta1`。
+- Dashboard `auto` 依序嘗試 App Platform v2、v1、classic，且只有 404 才 fallback；folder 先試 v1 再走 classic。Datasource UID lookup 保留數字 ID legacy fallback。
+- Notification 與 secure-value 是 public preview，必須明確指定 `--api-mode v1beta1`，不會由 `auto` 自動 probe。
+- `--namespace` 指定 App Platform namespace，預設 `default`。
 
 ## 建議模式
-- 混合版本環境優先用預設 `auto`；確認 datasource 查詢需要舊版數字 ID endpoint 時才使用 `--api-mode legacy`。
+- Stable dashboard/folder inspection 優先用 `auto`；script 需要固定 envelope 時指定 `v1` 或 `v2`，classic-only 使用 `legacy`，preview resource 才使用 `v1beta1`。
 
 ## 範例
 ```bash
@@ -56,6 +61,13 @@ grafana-util status resource get datasources/prom-main --profile prod --output-f
 # 有需要時，強制 legacy 相容模式。
 grafana-util status resource get datasources/10 --api-mode legacy
 ```
+
+```bash
+# 透過明確的 preview API 檢查 Grafana 13 notification receivers。
+grafana-util status resource list receivers --api-mode v1beta1 --namespace default --profile prod --output-format json
+```
+
+`secure-values` 只提供唯讀 metadata inspection，沒有 export 或 mutation 路徑；即使異常 server 回傳 `spec.value`，也會先移除再交給 renderer。
 
 ## 相關指令
 - [resource describe](./resource-describe.md)

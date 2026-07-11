@@ -11,12 +11,10 @@
   live Grafana folder into another, with deterministic copied UIDs, optional
   target folder creation, recursive subtree support, dry-run output, and a
   `--yes` gate for live writes.
-- [ ] [Grafana 13 dashboard resource export](2026-06-26-dashboard-resource-api-export.md) -
-  Plan support for a family-oriented export layout: `classic/` contains
-  raw/prompt/provisioning/history, while native `dashboard.grafana.app` v1
-  resource API objects live under `resource-v1/objects`; keep `resource-v2/`
-  postponed until a public v2 HTTP endpoint is verified, with UI-import
-  compatibility kept classic-only.
+- [x] [Grafana 13 dashboard resource export](2026-06-26-dashboard-resource-api-export.md) -
+  Implement the family layout with unchanged native v1/v2 resource envelopes,
+  served-version discovery, stable resource history, and classic-only UI
+  import compatibility.
 - [ ] [Post-maintainability integration plan](2026-06-25-post-maintainability-integration.md) -
   Treat the clean local `dev` branch, currently ahead of `origin/dev`, as an
   integration candidate. Branch-level validation passed after fixing concrete

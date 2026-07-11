@@ -25,6 +25,13 @@ Current AI-maintained status only.
 - Older entries moved to [`ai-status-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-25.md).
 - Older entries moved to [`ai-status-archive-2026-05-28.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-28.md).
 - Older entries moved to [`ai-status-archive-2026-06-11.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-06-11.md).
+- Older entries moved to [`ai-status-archive-2026-07-12.md`](/Users/ken/work/grafana-utils/.worktrees/grafana13-all-improvements/docs/internal/archive/ai-status-archive-2026-07-12.md).
+
+## 2026-07-12 - Grafana 13 App Platform integration
+- State: Done
+- Scope: shared App Platform client; dashboard v2 export/history; status resource v1/v2/v1beta1; notification/secret safety; Grafana 13.1 Git Sync discovery
+- Current Update: Added 404-only discovery and pagination, native v2 resource lanes, stable resource history, explicit preview inspection, secret redaction, and root-level Git Sync CRD discovery.
+- Result: Classic behavior stays default while Grafana 13 resources are available through explicit, tested read-only/export lanes.
 
 ## 2026-06-11 - Shared browser detail and test split
 - State: Done
@@ -55,9 +62,3 @@ Current AI-maintained status only.
 - Scope: rust/src/commands/status/overview/tui.rs; rust/src/commands/status/overview/tui_runtime.rs; rust/src/commands/status/overview/tui_tests.rs; docs/internal/tui-architecture-roadmap.md
 - Current Update: Split status overview TUI runtime and focused tests out of the state/search module while preserving existing keyboard behavior and render tests.
 - Result: `status/overview/tui.rs` dropped below the architecture warning threshold, `make quality-architecture` no longer reports it, and default plus no-default Rust gates pass.
-
-## 2026-05-28 - Datasource interactive review output
-- State: Done
-- Scope: rust/src/commands/review_browser.rs; rust/src/commands/datasource/cli/formats.rs; rust/src/commands/datasource/cli/defs_sync.rs; rust/src/commands/datasource/runtime_guardrails.rs; rust/src/commands/datasource/import/dry_run_output.rs; rust/src/commands/datasource/plan/render.rs; docs/commands/en/datasource-{plan,import}.md; docs/commands/zh-TW/datasource-{plan,import}.md
-- Current Update: Added shared read-only mutation review browser projection and wired datasource plan/import dry-run interactive output.
-- Result: Operators can inspect datasource plan and import dry-run actions interactively with blockers, warnings, review hints, and safe diffs while public JSON remains unchanged.

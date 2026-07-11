@@ -950,7 +950,7 @@ code[class*="language-"],pre[class*="language-"]{color:#ccc;background:none;font
 <h2 id="when-to-use">When to use</h2>
 <p>Use this when you need a read-only live inventory for one supported resource kind but do not yet need a higher-level domain workflow.</p>
 <h2 id="key-flags">Key flags</h2>
-<ul><li>positional <code>KIND</code>: one supported resource kind such as <code>dashboards</code>, <code>folders</code>, <code>datasources</code>, <code>alert-rules</code>, or <code>orgs</code></li><li><code>--profile</code>, <code>--url</code>, <code>--token</code>, <code>--basic-user</code>, <code>--basic-password</code>: live Grafana connection settings</li><li><code>--output-format</code>: choose <code>text</code>, <code>table</code>, <code>json</code>, or <code>yaml</code></li><li><code>--api-mode</code>: compatibility preference for kinds that have alternate endpoint paths (<code>auto</code> default)</li></ul>
+<ul><li>positional <code>KIND</code>: a stable kind or Grafana 13 preview kind listed by <code>status resource kinds</code></li><li><code>--profile</code>, <code>--url</code>, <code>--token</code>, <code>--basic-user</code>, <code>--basic-password</code>: live Grafana connection settings</li><li><code>--output-format</code>: choose <code>text</code>, <code>table</code>, <code>json</code>, or <code>yaml</code></li><li><code>--api-mode</code>: <code>auto</code>, <code>legacy</code>, <code>v1</code>, <code>v2</code>, or explicit preview <code>v1beta1</code></li><li><code>--namespace</code>: App Platform namespace, default <code>default</code></li></ul>
 <h2 id="examples">Examples</h2>
 <pre><code># List dashboards as a table from a local Grafana.
 grafana-util status resource list dashboards --url http://localhost:3000 --basic-user admin --basic-password admin</code></pre>
@@ -958,6 +958,8 @@ grafana-util status resource list dashboards --url http://localhost:3000 --basic
 grafana-util status resource list folders --profile prod --output-format yaml</code></pre>
 <pre><code># List alert rules as JSON.
 grafana-util status resource list alert-rules --profile prod --output-format json</code></pre>
+<pre><code># List public-preview notification routing trees.
+grafana-util status resource list routing-trees --profile prod --api-mode v1beta1 --namespace default --output-format json</code></pre>
 <h2 id="related-commands">Related commands</h2>
 <ul><li><a href="resource.html">resource</a></li><li><a href="resource-describe.html">resource describe</a></li><li><a href="resource-kinds.html">resource kinds</a></li><li><a href="resource-get.html">resource get</a></li></ul>
 

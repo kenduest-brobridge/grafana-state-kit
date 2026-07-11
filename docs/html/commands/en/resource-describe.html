@@ -950,7 +950,7 @@ code[class*="language-"],pre[class*="language-"]{color:#ccc;background:none;font
 <h2 id="when-to-use">When to use</h2>
 <p>Use this when you want to know how the generic read-only resource surface is shaped before you pick <code>status resource list</code> or <code>status resource get</code>.</p>
 <h2 id="key-flags">Key flags</h2>
-<ul><li>optional positional <code>KIND</code>: limit the output to one supported resource kind such as <code>dashboards</code>, <code>folders</code>, <code>datasources</code>, <code>alert-rules</code>, or <code>orgs</code></li><li><code>--output-format</code>: choose <code>text</code>, <code>table</code>, <code>json</code>, or <code>yaml</code></li></ul>
+<ul><li>optional positional <code>KIND</code>: limit output to any stable or Grafana 13 preview kind listed by <code>status resource kinds</code></li><li><code>--output-format</code>: choose <code>text</code>, <code>table</code>, <code>json</code>, or <code>yaml</code></li></ul>
 <h2 id="notes">Notes</h2>
 <ul><li>This command is descriptive only. It does not discover live schemas from Grafana.</li><li>Use it when you need the selector format, list endpoint, or get endpoint for a supported kind.</li></ul>
 <h2 id="examples">Examples</h2>

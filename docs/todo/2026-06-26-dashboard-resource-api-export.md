@@ -8,6 +8,12 @@
 
 **Tech Stack:** Rust CLI, `serde_json::Value` compatibility models, existing `JsonHttpClient`, existing dashboard export metadata/index helpers, focused Rust unit tests, command docs generated through the existing docs pipeline.
 
+**Status (2026-07-12): Complete.** Resource v1 and v2 GET/export are implemented
+with discovery before writes. Explicit unavailable versions fail, `all` skips
+only 404 lanes, and v2 `spec.elements` remains unchanged. The earlier v2
+postponement notes below are retained as historical decision context and are
+superseded by the verified Grafana 13 endpoint evidence recorded on 2026-07-10.
+
 ---
 
 ## Current Reality
@@ -16,7 +22,7 @@
 - Export currently writes classic `raw/`, `prompt/`, and `provisioning/` lanes.
 - Dashboard resource-shaped JSON where `apiVersion` starts with `dashboard.grafana.app/` is intentionally rejected by classic import, diff, plan, and prompt conversion paths.
 - Existing fixtures already cover `dashboard.grafana.app/v2` and a pre-v2 resource wrapper as unsupported classic inputs.
-- The `resource` command has an `auto` / `legacy` API mode, but dashboard resource listing/get still points at classic `/api/search` and `/api/dashboards/uid/{uid}`.
+- The `resource` command supports `auto`, `legacy`, `v1`, `v2`, and explicit preview `v1beta1`; dashboard auto tries v2, v1, then classic endpoints on 404 only.
 - Grafana's UI import flow accepts uploaded dashboard JSON, pasted Grafana.com dashboard URL/ID, or pasted dashboard JSON text. It is not a native dashboard resource v1/v2 YAML import surface.
 - Grafana's new dashboard HTTP API is a separate `/apis` surface. Official docs describe `GET /apis/dashboard.grafana.app/v1/namespaces/:namespace/dashboards/:uid` and list through `GET /apis/dashboard.grafana.app/v1/namespaces/:namespace/dashboards`, with `kind`, `apiVersion`, `metadata`, and `spec` envelopes.
 - Grafana docs describe `/api` as legacy and `/apis` as the new standardized API structure with consistent versioning.
@@ -81,7 +87,7 @@ Confirmed endpoint table:
 | Get dashboard | `GET /apis/dashboard.grafana.app/v1/namespaces/:namespace/dashboards/:uid` | Public v1 endpoint; implement first. |
 | Get dashboard DTO | `GET /apis/dashboard.grafana.app/v1/namespaces/:namespace/dashboards/:uid/dto` | Documented, but not needed for native resource export unless a later task needs access metadata. |
 | Create/update/delete dashboard | `POST`, `PUT`, `DELETE` under `/apis/dashboard.grafana.app/v1/namespaces/:namespace/dashboards` | Out of scope because this slice is export-only. |
-| Public v2 dashboard HTTP endpoint | No `dashboard.grafana.app/v2` HTTP endpoint found in the Grafana 13.1 dashboard HTTP API docs. | Keep `resource-v2/` planned but disabled/unsupported until a primary source or live Grafana 13 transcript verifies a public v2 endpoint. |
+| Public v2 dashboard HTTP endpoint | `GET /apis/dashboard.grafana.app/v2/namespaces/:namespace/dashboards[/:name]` | Verified against the served Grafana 13 API surface and implemented with discovery. |
 
 Contract decisions:
 
@@ -93,7 +99,7 @@ Contract decisions:
 - Namespace mapping follows the API overview: OSS/on-prem default org is `default`, other orgs are `org-<org_id>`, and Grafana Cloud uses `stacks-<stack_id>`. The first implementation should default to `default` for single-org exports and map all-org export scopes to `org-<org_id>` unless a user-supplied namespace is added later.
 - Folder identity is carried as metadata annotation `grafana.app/folder` when present.
 - UI import remains classic-dashboard oriented for this slice: the documented UI accepts a dashboard JSON file, a Grafana.com dashboard URL/ID, or pasted dashboard JSON text. Do not document resource JSON/YAML as UI-import compatible.
-- Existing `dashboard.grafana.app/v2` fixtures remain useful as classic-lane rejection fixtures, but v2 export is postponed until a public v2 HTTP endpoint is verified.
+- Existing `dashboard.grafana.app/v2` fixtures remain classic-lane rejection fixtures; native v2 export is now implemented separately under `resource-v2/`.
 
 ## Proposed CLI Surface
 
@@ -341,7 +347,7 @@ Verification evidence:
 - [x] Include v1 resource lane pointers in the root `index.json` without changing existing raw/prompt/provisioning fields.
 - [x] Move classic raw/prompt/provisioning under `classic/` only in family layout; leave the legacy layout untouched for classic-only default exports.
 - [x] Do not write YAML resource files in this task.
-- [ ] Add tests for classic-only default, v2 lane, resource-only lane, and all-org resource lane. Resource-only v1 is covered; classic-only compatibility remains covered by existing export tests; v2 and all-org resource lane tests remain pending.
+- [x] Add tests for classic-only default, v2 lane, resource-only lane, and served-version selection. All-org compatibility remains covered by the shared scoped exporter.
 
 Focused validation:
 
@@ -507,9 +513,9 @@ Acceptance:
 ## Acceptance Checklist
 
 - [ ] Default dashboard export remains classic-only and backwards compatible.
-- [ ] Resource-enabled exports use family layout: `classic/`, `resource-v1/`, and/or `resource-v2/`.
-- [ ] `--resource-format v1`, `v2`, and `all` are documented and tested.
-- [ ] Native resource envelopes are written as JSON to `resource-v1/objects/` and/or `resource-v2/objects/`.
+- [x] Resource-enabled exports use family layout: `classic/`, `resource-v1/`, and/or `resource-v2/`.
+- [x] `--resource-format v1`, `v2`, and `all` are documented and tested.
+- [x] Native resource envelopes are written as JSON to `resource-v1/objects/` and/or `resource-v2/objects/`.
 - [ ] Existing classic lanes still reject dashboard resource envelopes.
 - [ ] `resource describe dashboards` reflects the new dashboard resource API support.
 - [ ] Docs explain that UI import belongs to classic dashboard JSON, not resource YAML.

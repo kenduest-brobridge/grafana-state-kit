@@ -7,10 +7,11 @@
 當你需要某一種支援資源的唯讀 live inventory，但還不需要進入更高階的 domain workflow 時，使用這個指令。
 
 ## 重點旗標
-- 位置參數 `KIND`：例如 `dashboards`、`folders`、`datasources`、`alert-rules`、`orgs`
+- 位置參數 `KIND`：`status resource kinds` 列出的 stable 或 Grafana 13 preview kind
 - `--profile`、`--url`、`--token`、`--basic-user`、`--basic-password`：live Grafana 連線設定
 - `--output-format`：選擇 `text`、`table`、`json` 或 `yaml`
-- `--api-mode`：有 alternate endpoint path 的 kind 會使用的相容偏好（預設 `auto`）
+- `--api-mode`：`auto`、`legacy`、`v1`、`v2`，或明確的 preview `v1beta1`
+- `--namespace`：App Platform namespace，預設 `default`
 
 ## 範例
 ```bash

@@ -954,11 +954,11 @@ code[class*="language-"],pre[class*="language-"]{color:#ccc;background:none;font
 <h2 id="使用方式">使用方式</h2>
 <ul><li>先用 <code>status resource describe</code> 看各 kind 的 selector 格式與 endpoint 形狀。</li><li>先用 <code>status resource kinds</code> 看目前支援哪些 live resource kinds。</li><li>需要盤點某一類資源時，用 <code>status resource list &lt;kind&gt;</code>。</li><li>需要抓某一筆完整 live payload 時，用 <code>status resource get &lt;kind&gt;/&lt;identity&gt;</code>。</li></ul>
 <h2 id="目前支援的-kinds">目前支援的 kinds</h2>
-<ul><li><code>dashboards</code></li><li><code>folders</code></li><li><code>datasources</code></li><li><code>alert-rules</code></li><li><code>orgs</code></li></ul>
+<ul><li><code>dashboards</code></li><li><code>folders</code></li><li><code>datasources</code></li><li><code>alert-rules</code></li><li><code>orgs</code></li><li><code>receivers</code>、<code>routing-trees</code>、<code>template-groups</code>、<code>time-intervals</code>、<code>inhibition-rules</code></li><li><code>secure-values</code>（只讀 metadata；會防禦性移除 <code>spec.value</code>）</li></ul>
 <h2 id="輸出">輸出</h2>
-<ul><li><code>kinds</code> 支援 <code>text</code>、<code>table</code>、<code>json</code>、<code>yaml</code></li><li><code>list</code> 支援 <code>text</code>、<code>table</code>、<code>json</code>、<code>yaml</code></li><li><code>get</code> 支援 <code>text</code>、<code>table</code>、<code>json</code>、<code>yaml</code></li><li><code>list</code> / <code>get</code> 的 <code>--api-mode</code> 預設為 <code>auto</code>；對 datasource <code>get</code> 來說，<code>auto</code> 會先嘗試 UID endpoint，404 時改走 legacy 數字 ID endpoint。</li></ul>
+<ul><li><code>kinds</code> 支援 <code>text</code>、<code>table</code>、<code>json</code>、<code>yaml</code></li><li><code>list</code> 支援 <code>text</code>、<code>table</code>、<code>json</code>、<code>yaml</code></li><li><code>get</code> 支援 <code>text</code>、<code>table</code>、<code>json</code>、<code>yaml</code></li><li><code>--api-mode</code> 支援 <code>auto</code>、<code>legacy</code>、<code>v1</code>、<code>v2</code>、<code>v1beta1</code>。</li><li>Dashboard <code>auto</code> 依序嘗試 App Platform v2、v1、classic，且只有 404 才 fallback；folder 先試 v1 再走 classic。Datasource UID lookup 保留數字 ID legacy fallback。</li><li>Notification 與 secure-value 是 public preview，必須明確指定 <code>--api-mode v1beta1</code>，不會由 <code>auto</code> 自動 probe。</li><li><code>--namespace</code> 指定 App Platform namespace，預設 <code>default</code>。</li></ul>
 <h2 id="建議模式">建議模式</h2>
-<ul><li>混合版本環境優先用預設 <code>auto</code>；確認 datasource 查詢需要舊版數字 ID endpoint 時才使用 <code>--api-mode legacy</code>。</li></ul>
+<ul><li>Stable dashboard/folder inspection 優先用 <code>auto</code>；script 需要固定 envelope 時指定 <code>v1</code> 或 <code>v2</code>，classic-only 使用 <code>legacy</code>，preview resource 才使用 <code>v1beta1</code>。</li></ul>
 <h2 id="範例">範例</h2>
 <pre><code># 說明目前支援的 live resource kinds 與 selector 格式。
 grafana-util status resource describe</code></pre>
@@ -970,6 +970,9 @@ grafana-util status resource list dashboards --url http://localhost:3000 --basic
 grafana-util status resource get datasources/prom-main --profile prod --output-format yaml</code></pre>
 <pre><code># 有需要時，強制 legacy 相容模式。
 grafana-util status resource get datasources/10 --api-mode legacy</code></pre>
+<pre><code># 透過明確的 preview API 檢查 Grafana 13 notification receivers。
+grafana-util status resource list receivers --api-mode v1beta1 --namespace default --profile prod --output-format json</code></pre>
+<p><code>secure-values</code> 只提供唯讀 metadata inspection，沒有 export 或 mutation 路徑；即使異常 server 回傳 <code>spec.value</code>，也會先移除再交給 renderer。</p>
 <h2 id="相關指令">相關指令</h2>
 <ul><li><a href="resource-describe.html">resource describe</a></li><li><a href="resource-kinds.html">resource kinds</a></li><li><a href="resource-list.html">resource list</a></li><li><a href="resource-get.html">resource get</a></li><li><a href="dashboard.html">dashboard</a></li></ul>
 

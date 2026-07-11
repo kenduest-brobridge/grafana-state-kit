@@ -299,12 +299,12 @@ impl AppPlatformResourceClient<'_> {
 - Modify: `docs/todo/todo.md`
 - Regenerate: `docs/man/*.1`, `docs/html/`
 
-- [ ] Update source docs with stable/beta maturity, discovery behavior,
+- [x] Update source docs with stable/beta maturity, discovery behavior,
       namespace rules, legacy compatibility, and secret metadata limitations.
-- [ ] Refresh the stale dashboard resource tracker to mark v1 complete and v2
+- [x] Refresh the stale dashboard resource tracker to mark v1 complete and v2
       implemented by this slice.
-- [ ] Update command contracts and run `make quality-docs-surface`.
-- [ ] Regenerate `make man` and `make html`; run both drift checks.
+- [x] Update command contracts and run `make quality-docs-surface`.
+- [x] Regenerate `make man` and `make html`; run both drift checks.
 
 ### Task 10: Broad verification and grouped closeout
 
@@ -394,3 +394,9 @@ impl AppPlatformResourceClient<'_> {
   as provenance instead of loaded as a dashboard, and discovery records the
   repo root, first folder metadata file, and README. Source-loader (6),
   workspace-discovery (9), repo-layout (3), and dashboard-file (6) tests pass.
+- 2026-07-12: Task 9 updated the public command contract, bilingual dashboard
+  export/history/resource references, status-workspace handbook, developer
+  boundaries, active resource tracker, and AI trace. `make
+  quality-docs-surface`, `make man-check`, `make html-check`, and `make
+  quality-ai-workflow` all pass after regenerating 88 manpages and 286 HTML
+  pages.

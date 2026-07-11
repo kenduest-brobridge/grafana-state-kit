@@ -18,6 +18,7 @@
 - `--overwrite`：取代既有的匯出檔案。
 - `--without-raw`、`--without-prompt`、`--without-provisioning`：略過某個變體。
 - `--include-history`：把逐版本 dashboard 歷史成品寫到每個匯出 org 範圍下的 `history/<uid>/vN.history.json`。
+- `--resource-format`：加入原生 App Platform resource lane，可選 `none`（預設）、`v1`、`v2`、`all`。
 - `--provider-name`、`--provider-org-id`、`--provider-path`：自訂產生的 provisioning provider 檔案。
 - `--provider-disable-deletion`、`--provider-allow-ui-updates`、`--provider-update-interval-seconds`：調整 provisioning 行為。
 - `--run`：未指定 `--output-dir` 時，寫入 artifact workspace run。`timestamp` 會建立新的時間戳 run，`latest` 會重用最新紀錄的 run。
@@ -26,6 +27,9 @@
 
 ## 說明
 - 預設會寫出 `raw/`、`prompt/`、`provisioning/`。
+- 啟用 resource lane 時會使用 family layout：classic lanes 放到 `classic/`，原生 envelope 則原樣寫到 `resource-v1/objects/` 與／或 `resource-v2/objects/`。
+- 寫入前會先 probe collection endpoint。明確指定 `v1` 或 `v2` 時，404 會直接報錯；`all` 只略過回傳 404 的版本，權限與伺服器錯誤不會被誤判成 unsupported。
+- Resource artifact 是給 `/apis/dashboard.grafana.app/...` 使用，不是 Grafana UI import；v2 的 `spec.elements` 會完整保留，不會轉成 classic `panels`。
 - 搭配 `--all-orgs` 時，優先用 Basic auth。
 - 非 flat 的 `raw/` 與 `prompt/` 匯出會對齊 Grafana folder path，例如 `Platform / Team / Infra` 會成為 `raw/Platform/Team/Infra/`。
 - Dashboard JSON 檔名使用穩定的 dashboard UID，例如 `raw/Platform/Team/Infra/cpu-main.json`，因此 title 變更只會改內容，不會造成檔案 rename。
@@ -67,6 +71,7 @@ run layout 如下：
 | `raw/` | 從 Grafana API 讀回並保留 API 匯入所需上下文的 dashboard JSON。 | `dashboard import`、`dashboard diff`、`dashboard review`、`dashboard dependencies`、`workspace scan/test/preview`。 | 這是最適合拿來做 CLI replay、比對、審查與 Git 版本控管的格式。若不確定要留哪一種，先保留 `raw/`。 |
 | `prompt/` | 轉成 Grafana UI 匯入提示可接受的 dashboard JSON。 | 人工交接、貼到 Grafana UI 的 Import dashboard 流程、把一般 dashboard JSON 整理成 UI 匯入格式。 | 不是給 `dashboard import` API replay 用。若手上只有一般或 raw JSON，使用 `dashboard convert raw-to-prompt` 轉成這個格式。 |
 | `provisioning/` | 檔案 provisioning 目錄，含 dashboard JSON 與 provider YAML。 | 掛載到 Grafana provisioning path、建立 GitOps-style 檔案供應流程。 | provider YAML 預設位於 `provisioning/provisioning/dashboards.yaml`。這條路徑適合由 Grafana 啟動或 reload provisioning 時讀取，不是互動式 API 匯入流程。 |
+| `resource-v1/`、`resource-v2/` | 原生 App Platform dashboard resource envelope。 | API 證據、resource-aware review 與 Git 管理流程。 | 由 `--resource-format` 啟用，不能拿去 Grafana UI import prompt。 |
 
 常見選擇：
 

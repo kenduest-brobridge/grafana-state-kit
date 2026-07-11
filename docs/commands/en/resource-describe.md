@@ -7,7 +7,7 @@ Describe the supported live Grafana resource kinds and selector patterns.
 Use this when you want to know how the generic read-only resource surface is shaped before you pick `status resource list` or `status resource get`.
 
 ## Key flags
-- optional positional `KIND`: limit the output to one supported resource kind such as `dashboards`, `folders`, `datasources`, `alert-rules`, or `orgs`
+- optional positional `KIND`: limit output to any stable or Grafana 13 preview kind listed by `status resource kinds`
 - `--output-format`: choose `text`, `table`, `json`, or `yaml`
 
 ## Notes

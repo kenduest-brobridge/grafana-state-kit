@@ -26,6 +26,38 @@
         "all"
       ]
     },
+    "dashboard history list": {
+      "--history-source": [
+        "classic",
+        "v1",
+        "v2"
+      ]
+    },
+    "dashboard history export": {
+      "--history-source": [
+        "classic",
+        "v1",
+        "v2"
+      ]
+    },
+    "status resource list": {
+      "--api-mode": [
+        "auto",
+        "legacy",
+        "v1",
+        "v2",
+        "v1beta1"
+      ]
+    },
+    "status resource get": {
+      "--api-mode": [
+        "auto",
+        "legacy",
+        "v1",
+        "v2",
+        "v1beta1"
+      ]
+    },
     "dashboard clone-folder": {
       "--output-format": [
         "text",

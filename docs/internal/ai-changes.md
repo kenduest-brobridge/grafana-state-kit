@@ -25,6 +25,7 @@ Current AI change log only.
 - Older entries moved to [`ai-changes-archive-2026-05-25.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-25.md).
 - Older entries moved to [`ai-changes-archive-2026-05-28.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-28.md).
 - Older entries moved to [`ai-changes-archive-2026-06-11.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-06-11.md).
+- Older entries moved to [`ai-changes-archive-2026-07-12.md`](/Users/ken/work/grafana-utils/.worktrees/grafana13-all-improvements/docs/internal/archive/ai-changes-archive-2026-07-12.md).
 
 ## 2026-06-11 - Shared browser detail and test split
 - Summary: Moved shared browser detail projection helpers into common/browser/detail.rs and session behavior tests into common/browser/session_tests.rs while preserving the crate::interactive_browser helper surface.
@@ -39,6 +40,13 @@ Current AI change log only.
 - Impact: `review_contract.rs` is now below the architecture warning threshold, reducing the warning list from two files to one without changing public CLI paths, help text, generated docs, or review projection behavior.
 - Rollback/Risk: Low; this is a test-module move with the same private-helper coverage and no production behavior changes.
 - Follow-up: Continue reducing the remaining shared warning-threshold file: shared browser session.
+
+## 2026-07-12 - Grafana 13 App Platform integration
+- Summary: Added the shared namespaced App Platform transport and integrated dashboard v2 export/history, generic resource inspection, public-preview notification/secret metadata, and Grafana 13.1 Git Sync root discovery.
+- Tests: focused App Platform, dashboard, resource, parser, redaction, source-loader, and workspace-discovery suites; broad verification recorded in the owning todo.
+- Impact: Operators can preserve native v1/v2 dashboard envelopes, inspect stable and preview resources with explicit maturity boundaries, and review current Git Sync repository layouts without bypassing source ownership.
+- Rollback/Risk: Medium; new paths are opt-in or read-only, auto fallback is restricted to 404, and classic export/history remain the defaults.
+- Follow-up: Keep beta resources explicit until Grafana promotes their API versions.
 
 ## 2026-06-11 - Datasource browse support review split
 - Summary: Moved datasource browse review-evidence projection and safe changed-field filtering into a dedicated support review module while keeping support.rs focused on browse documents, item rows, and detail facts.
@@ -88,10 +96,3 @@ Current AI change log only.
 - Impact: The roadmap now has an evidence-backed completion audit instead of stale continue-follow-up items. Public CLI paths, help text, generated docs, Rust runtime behavior, and command contracts are unchanged.
 - Rollback/Risk: Low. Documentation-only audit update based on current inventory/search/test evidence.
 - Follow-up: Treat future TUI work as new scoped feature work unless a fresh inventory or user report identifies a concrete regression or duplication.
-
-## 2026-05-25 - Shared review narrative and impact projection
-- Summary: Moved access plan narrative and impact row projection into the shared review contract so mutation review surfaces can reuse action/status/changed-field guidance text.
-- Tests: cargo test --quiet review_mutation_action_narrative_and_impact_lines_project_action_guidance; cargo test --quiet access_plan_interactive_browser; cargo test --quiet review_contract; cargo test --quiet access (outside sandbox for local mock-server coverage after sandbox denied binding); RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; python3 scripts/tui_inventory_report.py; make quality-ai-workflow; git diff --check
-- Impact: Access plan TUI keeps the same Narrative and Why this matters rows while review_contract now owns the generic action narrative and changed-field impact projection. Public CLI paths, help text, generated docs, and command contracts are unchanged.
-- Rollback/Risk: Low. This moves equivalent projection code into review_contract, removes the now-unused access review action alias, and focused access/review-contract tests cover the old output.
-- Follow-up: Continue auditing remaining compatible local artifact browser review/detail projections before declaring the broader TUI design work complete.

@@ -10,10 +10,12 @@
 - 位置參數 `SELECTOR`：必填 `<kind>/<identity>`，例如 `dashboards/cpu-main` 或 `datasources/prom-main`
 - `--profile`、`--url`、`--token`、`--basic-user`、`--basic-password`：live Grafana 連線設定
 - `--output-format`：選擇 `text`、`table`、`json` 或 `yaml`
-- `--api-mode`：endpoint 相容偏好（預設 `auto`；datasource `get` 會在 UID path 404 時 fallback 到 legacy 數字 ID path）
+- `--api-mode`：`auto`、`legacy`、`v1`、`v2`，或明確的 preview `v1beta1`
+- `--namespace`：App Platform namespace，預設 `default`
 
 ## 補充說明
-- selector 的 kind 目前必須是 `dashboards`、`folders`、`datasources`、`alert-rules`、`orgs` 之一。
+- selector kind 包含 stable resources，以及 `status resource kinds` 列出的 Grafana 13 preview notification 與 `secure-values`。
+- `secure-values` 不會透過此指令輸出 secret material；text、table、JSON、YAML render 前都會移除 `spec.value`。
 - `text` 和 `table` 只會摘要顯示主要欄位；需要完整 payload 時請用 `json` 或 `yaml`。
 
 ## 範例

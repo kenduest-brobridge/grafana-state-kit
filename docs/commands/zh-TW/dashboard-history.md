@@ -15,6 +15,7 @@
 - live：使用 `--url` 和 `--dashboard-uid`
 - 單一 local 成品：使用 `dashboard history export` 產生的 `--input <history.json>`
 - export tree：使用 `dashboard export --include-history` 產生的 `--input-dir <export-root>`
+- App Platform resource history：加上 `--history-source v1` 或 `v2`，需要時再指定 `--resource-namespace <namespace>`；預設仍是 `classic`。
 
 `dashboard history restore` 仍然只支援 live。
 
@@ -29,6 +30,8 @@
 - `--base-input-dir` / `--new-input-dir`：要比對的 export tree，可直接比較不同日期的 history exports。
 - `--base-version` / `--new-version`：要比對的歷史版本號。
 - `--limit`：list 或 export 要包含多少個最近版本。
+- `--history-source`：live list/export 可選 `classic`（預設）、stable resource `v1` 或 `v2`。
+- `--resource-namespace`：resource history 使用的 App Platform namespace，預設 `default`。
 - `--version`：要還原的歷史版本號。未使用 `--prompt` 時必填。
 - `--prompt`：在終端機中提示最近的歷史版本、預覽還原內容，並確認執行。
 - `--message`：新還原 revision 要附帶的版本訊息。

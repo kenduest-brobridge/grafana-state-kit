@@ -20,7 +20,10 @@ live Grafana connection settings
 choose text, table, json, or yaml
 .TP
 .B \-\-api\-mode
-compatibility preference (auto default; datasource get falls back from UID path to legacy numeric\-ID path on 404)
+auto, legacy, v1, v2, or explicit preview v1beta1
+.TP
+.B \-\-namespace
+App Platform namespace, default default
 .SH EXAMPLES
 .PP
 Fetch one supported live Grafana resource by selector.

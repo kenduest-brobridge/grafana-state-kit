@@ -11,7 +11,7 @@ Use this when you need a read\-only live inventory for one supported resource ki
 .SH COMMON OPTIONS
 .TP
 .B positional KIND
-one supported resource kind such as dashboards, folders, datasources, alert\-rules, or orgs
+a stable kind or Grafana 13 preview kind listed by status resource kinds
 .TP
 .B \-\-profile, \-\-url, \-\-token, \-\-basic\-user, \-\-basic\-password
 live Grafana connection settings
@@ -20,7 +20,10 @@ live Grafana connection settings
 choose text, table, json, or yaml
 .TP
 .B \-\-api\-mode
-compatibility preference for kinds that have alternate endpoint paths (auto default)
+auto, legacy, v1, v2, or explicit preview v1beta1
+.TP
+.B \-\-namespace
+App Platform namespace, default default
 .SH EXAMPLES
 .PP
 List one supported live Grafana resource kind.

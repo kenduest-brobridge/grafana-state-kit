@@ -18,6 +18,7 @@ Use this when you need a local export tree for later import, review, diff, Git r
 - `--overwrite`: replace existing export files.
 - `--without-raw`, `--without-prompt`, `--without-provisioning`: skip a variant.
 - `--include-history`: write per-version dashboard revision-history artifacts under `history/<uid>/vN.history.json` for each exported org scope.
+- `--resource-format`: add native App Platform resource lanes: `none` (default), `v1`, `v2`, or `all`.
 - `--provider-name`, `--provider-org-id`, `--provider-path`: customize the generated provisioning provider file.
 - `--provider-disable-deletion`, `--provider-allow-ui-updates`, `--provider-update-interval-seconds`: tune provisioning behavior.
 - `--run`: write under an artifact workspace run when `--output-dir` is omitted. Use `timestamp` for a new timestamped run or `latest` to reuse the latest recorded run.
@@ -26,6 +27,9 @@ Use this when you need a local export tree for later import, review, diff, Git r
 
 ## Notes
 - Writes `raw/`, `prompt/`, and `provisioning/` by default.
+- Resource-enabled exports use a family layout: classic lanes move under `classic/`, while native envelopes are written unchanged under `resource-v1/objects/` and/or `resource-v2/objects/`.
+- Before writing a resource lane, the exporter probes its collection endpoint. Explicit `v1` or `v2` requests fail if that version returns 404; `all` keeps every served lane and skips only versions that return 404. Authorization and server errors are never treated as unsupported.
+- Resource artifacts are for `/apis/dashboard.grafana.app/...`, not Grafana UI import. In particular, v2 `spec.elements` is preserved and is not rewritten as classic `panels`.
 - Use Basic auth with `--all-orgs`.
 - Non-flat `raw/` and `prompt/` exports mirror Grafana folder paths, for example `Platform / Team / Infra` becomes `raw/Platform/Team/Infra/`.
 - Dashboard JSON filenames use stable dashboard UIDs, for example `raw/Platform/Team/Infra/cpu-main.json`, so title edits change content without renaming files.
@@ -67,6 +71,7 @@ Think of `provisioning/` as the deployment projection Grafana reads from disk. I
 | `raw/` | Dashboard JSON read from the Grafana API with the context needed for API import. | `dashboard import`, `dashboard diff`, `dashboard review`, `dashboard dependencies`, `workspace scan/test/preview`. | This is the best format for CLI replay, diff, review, and Git history. If you are not sure which lane to keep, keep `raw/`. |
 | `prompt/` | Dashboard JSON shaped for Grafana UI import prompts. | Human handoff, Grafana UI Import dashboard flow, or converting ordinary dashboard JSON into a UI-importable shape. | Do not use this as the input for API replay through `dashboard import`. Use `dashboard convert raw-to-prompt` when you only have ordinary or raw dashboard JSON. |
 | `provisioning/` | File provisioning tree with dashboard JSON plus provider YAML. | Mount into Grafana provisioning paths or keep as a GitOps-style file-provisioning source. | The provider YAML defaults to `provisioning/provisioning/dashboards.yaml`. This lane is for Grafana provisioning reload/startup, not interactive API import. |
+| `resource-v1/`, `resource-v2/` | Native App Platform dashboard resource envelopes. | API evidence, resource-aware review, and Git-managed workflows. | Enabled with `--resource-format`; not compatible with the Grafana UI import prompt. |
 
 Common choices:
 
@@ -112,6 +117,11 @@ grafana-util dashboard export --url http://localhost:3000 --basic-user admin --b
 ```bash
 # Export dashboards into the profile artifact workspace with a timestamped run id.
 grafana-util dashboard export --profile prod --run timestamp --overwrite
+```
+
+```bash
+# Export every dashboard resource API version served by Grafana 13.
+grafana-util dashboard export --profile prod --resource-format all --output-dir ./dashboards --overwrite
 ```
 
 ## Related commands

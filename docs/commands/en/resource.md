@@ -21,15 +21,20 @@ This namespace is intentionally narrower and more generic than the main operator
 - `datasources`
 - `alert-rules`
 - `orgs`
+- `receivers`, `routing-trees`, `template-groups`, `time-intervals`, `inhibition-rules`
+- `secure-values` (metadata only; `spec.value` is stripped defensively)
 
 ## Output
 - `kinds` supports `text`, `table`, `json`, and `yaml`
 - `list` supports `text`, `table`, `json`, and `yaml`
 - `get` supports `text`, `table`, `json`, and `yaml`
-- `--api-mode` on `list`/`get` defaults to `auto`; for datasource `get`, `auto` falls back from the UID endpoint to the legacy numeric-ID endpoint on 404.
+- `--api-mode` accepts `auto`, `legacy`, `v1`, `v2`, and `v1beta1`.
+- Dashboard `auto` tries App Platform v2, then v1, then classic endpoints, falling back only on 404. Folder `auto` tries v1 before classic. Datasource UID lookup keeps its numeric legacy fallback.
+- Notification and secure-value resources are public preview and require explicit `--api-mode v1beta1`; they are never auto-probed.
+- `--namespace` selects the App Platform namespace and defaults to `default`.
 
 ## Recommended mode
-- Prefer default `auto` for mixed-version environments; use `legacy` only for datasource lookups that are known to require the classic numeric-ID endpoint.
+- Prefer default `auto` for stable dashboard/folder inspection. Use explicit `v1` or `v2` when a script requires one envelope, `legacy` for classic-only access, and `v1beta1` only for the documented preview resources.
 
 ## Examples
 ```bash
@@ -56,6 +61,13 @@ grafana-util status resource get datasources/prom-main --profile prod --output-f
 # Force legacy compatibility mode when needed.
 grafana-util status resource get datasources/10 --api-mode legacy
 ```
+
+```bash
+# Inspect Grafana 13 notification receivers through the explicit preview API.
+grafana-util status resource list receivers --api-mode v1beta1 --namespace default --profile prod --output-format json
+```
+
+`secure-values` is intentionally read-only metadata inspection. The command has no export or mutation path and removes `spec.value` even if a hostile or nonconforming server sends it.
 
 ## Related commands
 - [resource describe](./resource-describe.md)

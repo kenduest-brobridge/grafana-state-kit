@@ -7,7 +7,7 @@
 當你想先看清楚通用唯讀資源查詢介面的形狀，再決定要用 `resource list` 還是 `resource get` 時，使用這個指令。
 
 ## 重點旗標
-- 位置參數 `KIND`（可省略）：限制輸出為某一種支援的 resource kind，例如 `dashboards`、`folders`、`datasources`、`alert-rules` 或 `orgs`
+- 位置參數 `KIND`（可省略）：限制輸出為 `status resource kinds` 列出的某個 stable 或 Grafana 13 preview kind
 - `--output-format`：選擇 `text`、`table`、`json` 或 `yaml`
 
 ## 補充說明

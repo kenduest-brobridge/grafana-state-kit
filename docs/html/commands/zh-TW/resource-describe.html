@@ -950,7 +950,7 @@ code[class*="language-"],pre[class*="language-"]{color:#ccc;background:none;font
 <h2 id="何時使用">何時使用</h2>
 <p>當你想先看清楚通用唯讀資源查詢介面的形狀，再決定要用 <code>resource list</code> 還是 <code>resource get</code> 時，使用這個指令。</p>
 <h2 id="重點旗標">重點旗標</h2>
-<ul><li>位置參數 <code>KIND</code>（可省略）：限制輸出為某一種支援的 resource kind，例如 <code>dashboards</code>、<code>folders</code>、<code>datasources</code>、<code>alert-rules</code> 或 <code>orgs</code></li><li><code>--output-format</code>：選擇 <code>text</code>、<code>table</code>、<code>json</code> 或 <code>yaml</code></li></ul>
+<ul><li>位置參數 <code>KIND</code>（可省略）：限制輸出為 <code>status resource kinds</code> 列出的某個 stable 或 Grafana 13 preview kind</li><li><code>--output-format</code>：選擇 <code>text</code>、<code>table</code>、<code>json</code> 或 <code>yaml</code></li></ul>
 <h2 id="補充說明">補充說明</h2>
 <ul><li>這個指令只做說明，不會從 Grafana 動態探測 schema。</li><li>當你想知道 selector 格式、list endpoint 或 get endpoint 時，直接用這個指令。</li></ul>
 <h2 id="範例">範例</h2>
