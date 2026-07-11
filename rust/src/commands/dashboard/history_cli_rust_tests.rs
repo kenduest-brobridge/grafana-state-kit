@@ -168,6 +168,8 @@ fn dashboard_history_export_writes_json_artifact_with_dashboard_payloads() {
         dashboard_uid: "cpu-main".to_string(),
         output: output.clone(),
         limit: 2,
+        history_source: crate::dashboard::DashboardHistorySource::Classic,
+        resource_namespace: "default".to_string(),
         overwrite: false,
     };
 
@@ -452,6 +454,8 @@ fn dashboard_history_list_reads_single_local_artifact() {
         input: Some(artifact_path),
         input_dir: None,
         limit: 20,
+        history_source: crate::dashboard::DashboardHistorySource::Classic,
+        resource_namespace: "default".to_string(),
         output_format: HistoryOutputFormat::Json,
     };
 
@@ -488,6 +492,8 @@ fn dashboard_history_list_rejects_mismatched_local_artifact_uid() {
         input: Some(artifact_path),
         input_dir: None,
         limit: 20,
+        history_source: crate::dashboard::DashboardHistorySource::Classic,
+        resource_namespace: "default".to_string(),
         output_format: HistoryOutputFormat::Json,
     };
 
@@ -545,6 +551,8 @@ fn dashboard_history_list_reads_export_tree_inventory_without_uid_filter() {
         input: None,
         input_dir: Some(input_dir),
         limit: 20,
+        history_source: crate::dashboard::DashboardHistorySource::Classic,
+        resource_namespace: "default".to_string(),
         output_format: HistoryOutputFormat::Json,
     };
 
@@ -588,6 +596,8 @@ fn dashboard_history_list_rejects_ambiguous_uid_in_export_tree() {
         input: None,
         input_dir: Some(input_dir),
         limit: 20,
+        history_source: crate::dashboard::DashboardHistorySource::Classic,
+        resource_namespace: "default".to_string(),
         output_format: HistoryOutputFormat::Table,
     };
 
@@ -635,6 +645,8 @@ fn dashboard_history_list_merges_per_version_files_for_same_uid_scope() {
         input: None,
         input_dir: Some(input_dir),
         limit: 20,
+        history_source: crate::dashboard::DashboardHistorySource::Classic,
+        resource_namespace: "default".to_string(),
         output_format: HistoryOutputFormat::Json,
     };
 
@@ -679,6 +691,8 @@ fn dashboard_history_list_keeps_same_uid_per_version_files_separate_by_scope() {
         input: None,
         input_dir: Some(input_dir),
         limit: 20,
+        history_source: crate::dashboard::DashboardHistorySource::Classic,
+        resource_namespace: "default".to_string(),
         output_format: HistoryOutputFormat::Table,
     };
 

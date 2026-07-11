@@ -1,3 +1,5 @@
+use std::collections::BTreeSet;
+
 use crate::common::{message, value_as_object, Result};
 use rayon::prelude::*;
 use rayon::ThreadPoolBuilder;
@@ -16,8 +18,8 @@ use super::history_types::{
 };
 use super::{
     fetch_dashboard_with_request, import_dashboard_request_with_request, string_field,
-    tool_version, write_json_document, HistoryExportArgs, HistoryListArgs, DEFAULT_DASHBOARD_TITLE,
-    DEFAULT_FOLDER_UID, TOOL_SCHEMA_VERSION,
+    tool_version, write_json_document, DashboardHistorySource, HistoryExportArgs, HistoryListArgs,
+    DEFAULT_DASHBOARD_TITLE, DEFAULT_FOLDER_UID, TOOL_SCHEMA_VERSION,
 };
 
 const HISTORY_VERSION_FETCH_CONCURRENCY: usize = 8;
@@ -91,6 +93,200 @@ where
         version_count: versions.len(),
         versions,
     })
+}
+
+fn resource_history_version_segment(source: DashboardHistorySource) -> Result<&'static str> {
+    match source {
+        DashboardHistorySource::V1 => Ok("v1"),
+        DashboardHistorySource::V2 => Ok("v2"),
+        DashboardHistorySource::Classic => Err(message(
+            "Classic dashboard history does not use the App Platform resource API.",
+        )),
+    }
+}
+
+fn resource_history_version(resource: &Value) -> Result<i64> {
+    resource
+        .get("metadata")
+        .and_then(Value::as_object)
+        .and_then(|metadata| metadata.get("resourceVersion"))
+        .and_then(Value::as_str)
+        .ok_or_else(|| message("Dashboard resource history item is missing resourceVersion."))?
+        .parse::<i64>()
+        .map_err(|_| message("Dashboard resource history resourceVersion is not numeric."))
+}
+
+fn resource_history_metadata(resource: &Value, key: &str, fallback: &str) -> String {
+    let metadata = resource.get("metadata").and_then(Value::as_object);
+    if key == "created" {
+        return metadata
+            .and_then(|value| value.get("creationTimestamp"))
+            .and_then(Value::as_str)
+            .unwrap_or(fallback)
+            .to_string();
+    }
+    metadata
+        .and_then(|value| value.get("annotations"))
+        .and_then(Value::as_object)
+        .and_then(|annotations| annotations.get(key))
+        .and_then(Value::as_str)
+        .unwrap_or(fallback)
+        .to_string()
+}
+
+fn list_dashboard_resource_history_values_with_request<F>(
+    request_json: &mut F,
+    source: DashboardHistorySource,
+    namespace: &str,
+    uid: &str,
+    limit: usize,
+) -> Result<Vec<Value>>
+where
+    F: FnMut(Method, &str, &[(String, String)], Option<&Value>) -> Result<Option<Value>>,
+{
+    let version = resource_history_version_segment(source)?;
+    let path = format!("/apis/dashboard.grafana.app/{version}/namespaces/{namespace}/dashboards");
+    let mut resources = Vec::new();
+    let mut continuation: Option<String> = None;
+    let mut seen_tokens = BTreeSet::new();
+    loop {
+        let mut params = vec![
+            ("fieldSelector".to_string(), format!("metadata.name={uid}")),
+            (
+                "labelSelector".to_string(),
+                "grafana.app/get-history=true".to_string(),
+            ),
+            ("limit".to_string(), limit.to_string()),
+        ];
+        if let Some(token) = continuation.as_ref() {
+            params.push(("continue".to_string(), token.clone()));
+        }
+        let response = request_json(Method::GET, &path, &params, None)?;
+        let object = match response {
+            Some(Value::Object(object)) => object,
+            Some(_) => {
+                return Err(message(
+                    "Unexpected dashboard resource history collection payload.",
+                ))
+            }
+            None => {
+                return Err(message(
+                    "Unexpected empty dashboard resource history collection payload.",
+                ))
+            }
+        };
+        let items = object
+            .get("items")
+            .and_then(Value::as_array)
+            .ok_or_else(|| {
+                message("Dashboard resource history collection is missing an items array.")
+            })?;
+        resources.extend(items.iter().cloned());
+        continuation = object
+            .get("metadata")
+            .and_then(Value::as_object)
+            .and_then(|metadata| metadata.get("continue"))
+            .and_then(Value::as_str)
+            .filter(|token| !token.is_empty())
+            .map(str::to_string);
+        let Some(token) = continuation.as_ref() else {
+            break;
+        };
+        if !seen_tokens.insert(token.clone()) {
+            return Err(message(format!(
+                "Dashboard resource history repeated continue token `{token}`."
+            )));
+        }
+    }
+    Ok(resources)
+}
+
+pub(crate) fn build_dashboard_resource_history_list_document_with_request<F>(
+    mut request_json: F,
+    source: DashboardHistorySource,
+    namespace: &str,
+    uid: &str,
+    limit: usize,
+) -> Result<DashboardHistoryListDocument>
+where
+    F: FnMut(Method, &str, &[(String, String)], Option<&Value>) -> Result<Option<Value>>,
+{
+    let resources = list_dashboard_resource_history_values_with_request(
+        &mut request_json,
+        source,
+        namespace,
+        uid,
+        limit,
+    )?;
+    let versions = resources
+        .iter()
+        .map(|resource| {
+            Ok(DashboardHistoryVersion {
+                version: resource_history_version(resource)?,
+                created: resource_history_metadata(resource, "created", "-"),
+                created_by: resource_history_metadata(resource, "grafana.app/createdBy", "-"),
+                message: resource_history_metadata(resource, "grafana.app/message", ""),
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+    Ok(DashboardHistoryListDocument {
+        kind: super::history_types::DASHBOARD_HISTORY_LIST_KIND.to_string(),
+        schema_version: TOOL_SCHEMA_VERSION,
+        tool_version: tool_version().to_string(),
+        dashboard_uid: uid.to_string(),
+        version_count: versions.len(),
+        versions,
+    })
+}
+
+fn build_dashboard_resource_history_export_document_with_request<F>(
+    mut request_json: F,
+    source: DashboardHistorySource,
+    namespace: &str,
+    uid: &str,
+    limit: usize,
+) -> Result<DashboardHistoryExportDocument>
+where
+    F: FnMut(Method, &str, &[(String, String)], Option<&Value>) -> Result<Option<Value>>,
+{
+    let version = resource_history_version_segment(source)?;
+    let path =
+        format!("/apis/dashboard.grafana.app/{version}/namespaces/{namespace}/dashboards/{uid}");
+    let current = request_json(Method::GET, &path, &[], None)?
+        .ok_or_else(|| message("Current dashboard resource was not returned."))?;
+    let current_version = resource_history_version(&current)?;
+    let current_title = current
+        .get("spec")
+        .and_then(Value::as_object)
+        .and_then(|spec| spec.get("title"))
+        .and_then(Value::as_str)
+        .unwrap_or(uid)
+        .to_string();
+    let resources = list_dashboard_resource_history_values_with_request(
+        &mut request_json,
+        source,
+        namespace,
+        uid,
+        limit,
+    )?;
+    let versions = resources
+        .into_iter()
+        .map(|resource| {
+            Ok(DashboardHistoryExportVersion {
+                version: resource_history_version(&resource)?,
+                created: resource_history_metadata(&resource, "created", "-"),
+                created_by: resource_history_metadata(&resource, "grafana.app/createdBy", "-"),
+                message: resource_history_metadata(&resource, "grafana.app/message", ""),
+                dashboard: resource,
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+    Ok(build_dashboard_history_export_document(
+        uid,
+        current_version,
+        current_title,
+        versions,
+    ))
 }
 
 pub(crate) fn fetch_dashboard_history_version_data_with_request<F>(
@@ -344,11 +540,20 @@ where
             args.output.display()
         )));
     }
-    let document = build_dashboard_history_export_document_with_request(
-        &mut request_json,
-        &args.dashboard_uid,
-        args.limit,
-    )?;
+    let document = match args.history_source {
+        DashboardHistorySource::Classic => build_dashboard_history_export_document_with_request(
+            &mut request_json,
+            &args.dashboard_uid,
+            args.limit,
+        )?,
+        source => build_dashboard_resource_history_export_document_with_request(
+            &mut request_json,
+            source,
+            &args.resource_namespace,
+            &args.dashboard_uid,
+            args.limit,
+        )?,
+    };
     write_json_document(&document, &args.output)?;
     Ok(())
 }
@@ -378,10 +583,128 @@ where
             "Dashboard history list requires --dashboard-uid unless --input or --input-dir is set.",
         )
     })?;
-    let document = build_dashboard_history_list_document_with_request(
-        &mut request_json,
-        dashboard_uid,
-        args.limit,
-    )?;
+    let document = match args.history_source {
+        DashboardHistorySource::Classic => build_dashboard_history_list_document_with_request(
+            &mut request_json,
+            dashboard_uid,
+            args.limit,
+        )?,
+        source => build_dashboard_resource_history_list_document_with_request(
+            &mut request_json,
+            source,
+            &args.resource_namespace,
+            dashboard_uid,
+            args.limit,
+        )?,
+    };
     render_dashboard_history_list_output(&document, args.output_format)
+}
+
+#[cfg(test)]
+mod resource_history_tests {
+    use super::*;
+    use crate::dashboard::DashboardHistorySource;
+    use serde_json::json;
+
+    #[test]
+    fn resource_history_list_follows_continue_and_preserves_resource_versions() {
+        let mut calls = Vec::new();
+        let document = build_dashboard_resource_history_list_document_with_request(
+            |method, path, params, _| {
+                calls.push((method, path.to_string(), params.to_vec()));
+                if params.iter().any(|(key, _)| key == "continue") {
+                    Ok(Some(json!({
+                        "items": [{
+                            "metadata": {
+                                "name": "cpu-main",
+                                "resourceVersion": "8",
+                                "creationTimestamp": "2026-07-01T01:00:00Z"
+                            }
+                        }],
+                        "metadata": {}
+                    })))
+                } else {
+                    Ok(Some(json!({
+                        "items": [{
+                            "metadata": {
+                                "name": "cpu-main",
+                                "resourceVersion": "9",
+                                "creationTimestamp": "2026-07-02T01:00:00Z"
+                            }
+                        }],
+                        "metadata": {"continue": "next page"}
+                    })))
+                }
+            },
+            DashboardHistorySource::V2,
+            "default",
+            "cpu-main",
+            1,
+        )
+        .unwrap();
+
+        assert_eq!(document.version_count, 2);
+        assert_eq!(document.versions[0].version, 9);
+        assert_eq!(document.versions[1].version, 8);
+        assert_eq!(calls.len(), 2);
+        assert_eq!(
+            calls[0].1,
+            "/apis/dashboard.grafana.app/v2/namespaces/default/dashboards"
+        );
+        assert_eq!(
+            calls[0].2,
+            vec![
+                (
+                    "fieldSelector".to_string(),
+                    "metadata.name=cpu-main".to_string()
+                ),
+                (
+                    "labelSelector".to_string(),
+                    "grafana.app/get-history=true".to_string()
+                ),
+                ("limit".to_string(), "1".to_string())
+            ]
+        );
+        assert_eq!(
+            calls[1].2.last(),
+            Some(&("continue".to_string(), "next page".to_string()))
+        );
+    }
+
+    #[test]
+    fn resource_history_export_preserves_v2_elements() {
+        let document = build_dashboard_resource_history_export_document_with_request(
+            |_method, path, _params, _| {
+                if path.ends_with("/dashboards/cpu-main") {
+                    Ok(Some(json!({
+                        "metadata": {"name": "cpu-main", "resourceVersion": "9"},
+                        "spec": {"title": "CPU Main", "elements": {"panel-1": {"kind": "Panel"}}}
+                    })))
+                } else {
+                    Ok(Some(json!({
+                        "items": [{
+                            "metadata": {"name": "cpu-main", "resourceVersion": "8"},
+                            "spec": {"title": "CPU Main", "elements": {"panel-1": {"kind": "Panel"}}}
+                        }],
+                        "metadata": {}
+                    })))
+                }
+            },
+            DashboardHistorySource::V2,
+            "default",
+            "cpu-main",
+            20,
+        )
+        .unwrap();
+
+        assert_eq!(document.current_version, 9);
+        assert_eq!(document.versions[0].version, 8);
+        assert_eq!(
+            document.versions[0].dashboard["spec"]["elements"]["panel-1"]["kind"],
+            "Panel"
+        );
+        assert!(document.versions[0].dashboard["spec"]
+            .get("panels")
+            .is_none());
+    }
 }

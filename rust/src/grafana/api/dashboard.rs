@@ -16,9 +16,7 @@ impl DashboardResourceApiVersion {
     fn path_segment(self) -> Result<&'static str> {
         match self {
             Self::V1 => Ok("v1"),
-            Self::V2 => Err(message(
-                "dashboard.grafana.app/v2 resource HTTP API is not verified yet.",
-            )),
+            Self::V2 => Ok("v2"),
         }
     }
 }

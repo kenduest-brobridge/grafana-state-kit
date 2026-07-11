@@ -37,8 +37,8 @@ pub use cli_defs_command_export::{
     ExportLayoutVariant, RawToPromptArgs,
 };
 pub use cli_defs_command_history::{
-    DashboardHistoryArgs, DashboardHistorySubcommand, HistoryDiffArgs, HistoryExportArgs,
-    HistoryListArgs, HistoryRestoreArgs,
+    DashboardHistoryArgs, DashboardHistorySource, DashboardHistorySubcommand, HistoryDiffArgs,
+    HistoryExportArgs, HistoryListArgs, HistoryRestoreArgs,
 };
 pub use cli_defs_command_list::ListArgs;
 pub use cli_defs_command_live::{

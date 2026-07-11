@@ -217,16 +217,16 @@ impl AppPlatformResourceClient<'_> {
 - Modify/test: `rust/src/commands/dashboard/cli_defs_command_history.rs`
 - Modify/test: `rust/src/commands/dashboard/history_live.rs`
 
-- [ ] Add failing tests for v2 lane metadata/path, v2 GET, `all` with only v1
+- [x] Add failing tests for v2 lane metadata/path, v2 GET, `all` with only v1
       served, and resource history pagination/version retrieval.
-- [ ] Make v2 map to `dashboard.grafana.app/v2` and `resource-v2/`.
-- [ ] Probe lane group/version discovery before export. Explicit unavailable
+- [x] Make v2 map to `dashboard.grafana.app/v2` and `resource-v2/`.
+- [x] Probe lane group/version discovery before export. Explicit unavailable
       versions error; `all` retains every served lane and skips only 404 lanes.
-- [ ] Add `--history-source classic|v1|v2` to list/export/get-compatible history
+- [x] Add `--history-source classic|v1|v2` to list/export/get-compatible history
       commands with `classic` as the default.
-- [ ] Preserve v2 resource objects without converting `spec.elements` to
+- [x] Preserve v2 resource objects without converting `spec.elements` to
       classic dashboard JSON.
-- [ ] Run focused dashboard API/export/history tests green.
+- [x] Run focused dashboard API/export/history tests green.
 
 ### Task 6: Expand the read-only resource surface for Grafana 13
 
@@ -374,3 +374,10 @@ impl AppPlatformResourceClient<'_> {
   error preservation, encoded continue pagination, current gets, stable
   history selectors, and historical `resourceVersion` reads. All 25 shared API
   tests pass.
+- 2026-07-12: Task 5 enabled verified `dashboard.grafana.app/v2` GET/export,
+  added per-lane discovery with explicit-version errors and 404-only skipping
+  for `all`, and writes complete `resource-v2` indexes/metadata without
+  rewriting `spec.elements`. Dashboard history list/export now accepts
+  `--history-source classic|v1|v2` plus an App Platform namespace and follows
+  resource-history pagination. Focused history (57), resource export (2), and
+  dashboard API client (6) tests pass.

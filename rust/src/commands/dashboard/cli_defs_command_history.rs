@@ -1,7 +1,7 @@
 //! CLI definitions for dashboard history workflows.
 
 use crate::common::DiffOutputFormat;
-use clap::{Args, Subcommand};
+use clap::{Args, Subcommand, ValueEnum};
 use std::path::PathBuf;
 
 use super::super::cli_defs_shared::{CommonCliArgs, HistoryOutputFormat};
@@ -9,6 +9,13 @@ use super::super::{
     DASHBOARD_HISTORY_DIFF_AFTER_HELP, DASHBOARD_HISTORY_EXPORT_AFTER_HELP,
     DASHBOARD_HISTORY_LIST_AFTER_HELP, DASHBOARD_HISTORY_RESTORE_AFTER_HELP,
 };
+
+#[derive(Debug, Clone, Copy, ValueEnum, PartialEq, Eq)]
+pub enum DashboardHistorySource {
+    Classic,
+    V1,
+    V2,
+}
 
 /// Arguments for dashboard history list.
 #[derive(Debug, Clone, Args)]
@@ -40,6 +47,19 @@ pub struct HistoryListArgs {
         help = "Maximum number of recent versions to request from Grafana in live mode."
     )]
     pub limit: usize,
+    #[arg(
+        long,
+        value_enum,
+        default_value_t = DashboardHistorySource::Classic,
+        help = "Read classic dashboard revisions or stable App Platform v1/v2 resource history."
+    )]
+    pub history_source: DashboardHistorySource,
+    #[arg(
+        long,
+        default_value = "default",
+        help = "App Platform namespace used with --history-source v1 or v2."
+    )]
+    pub resource_namespace: String,
     #[arg(
         long,
         value_enum,
@@ -112,6 +132,19 @@ pub struct HistoryExportArgs {
         help = "Maximum number of recent versions to include in the exported history artifact."
     )]
     pub limit: usize,
+    #[arg(
+        long,
+        value_enum,
+        default_value_t = DashboardHistorySource::Classic,
+        help = "Export classic dashboard revisions or stable App Platform v1/v2 resource history."
+    )]
+    pub history_source: DashboardHistorySource,
+    #[arg(
+        long,
+        default_value = "default",
+        help = "App Platform namespace used with --history-source v1 or v2."
+    )]
+    pub resource_namespace: String,
     #[arg(
         long,
         default_value_t = false,

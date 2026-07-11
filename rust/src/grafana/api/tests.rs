@@ -617,16 +617,26 @@ fn dashboard_resource_client_returns_none_for_v1_resource_404() {
 }
 
 #[test]
-fn dashboard_resource_client_rejects_v2_resource_api_before_transport() {
-    let api = build_test_api("http://127.0.0.1:9".to_string());
+fn dashboard_resource_client_fetches_v2_resource_api() {
+    let responses = vec![http_response(
+        "200 OK",
+        r#"{"kind":"Dashboard","apiVersion":"dashboard.grafana.app/v2","metadata":{"name":"cpu-main"},"spec":{"elements":{}}}"#,
+    )];
+    let (base_url, requests, handle) = sequence_server_or_skip!(responses);
+    let api = build_test_api(base_url);
     let dashboard = api.dashboard();
 
-    let error = dashboard
-        .list_dashboard_resources(DashboardResourceApiVersion::V2, "default", None, None)
-        .expect_err("v2 resource API should be rejected until a public endpoint is verified");
+    let resource = dashboard
+        .fetch_dashboard_resource(DashboardResourceApiVersion::V2, "default", "cpu-main")
+        .unwrap();
 
-    assert!(error.to_string().contains("dashboard.grafana.app/v2"));
-    assert!(error.to_string().contains("not verified"));
+    handle.join().unwrap();
+
+    assert_eq!(resource["apiVersion"], "dashboard.grafana.app/v2");
+    assert!(resource["spec"]["elements"].is_object());
+    let requests = requests.lock().unwrap().clone();
+    assert!(requests[0]
+        .starts_with("GET /apis/dashboard.grafana.app/v2/namespaces/default/dashboards/cpu-main "));
 }
 
 #[test]

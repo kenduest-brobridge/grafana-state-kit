@@ -552,6 +552,35 @@ fn dashboard_history_list_help_mentions_local_inputs() {
 }
 
 #[test]
+fn dashboard_history_list_parses_resource_history_source() {
+    let cli = parse_cli_from([
+        "grafana-util",
+        "history",
+        "list",
+        "--dashboard-uid",
+        "cpu-main",
+        "--history-source",
+        "v2",
+        "--resource-namespace",
+        "org-2",
+    ]);
+
+    match cli.command {
+        DashboardCommand::History(history_args) => match history_args.command {
+            DashboardHistorySubcommand::List(args) => {
+                assert_eq!(
+                    args.history_source,
+                    crate::dashboard::DashboardHistorySource::V2
+                );
+                assert_eq!(args.resource_namespace, "org-2");
+            }
+            _ => panic!("expected history list subcommand"),
+        },
+        _ => panic!("expected history command"),
+    }
+}
+
+#[test]
 fn dashboard_history_diff_help_mentions_dual_sources() {
     let help = render_dashboard_history_subcommand_help("diff");
     assert!(help.contains("--base-dashboard-uid"));
