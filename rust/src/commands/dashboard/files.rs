@@ -58,6 +58,7 @@ pub(crate) fn discover_dashboard_files(input_dir: &Path) -> Result<Vec<PathBuf>>
     files.retain(|path| {
         let file_name = path.file_name().and_then(|name| name.to_str());
         file_name != Some("index.json")
+            && file_name != Some("_folder.json")
             && file_name != Some(EXPORT_METADATA_FILENAME)
             && file_name != Some(FOLDER_INVENTORY_FILENAME)
             && file_name != Some(DATASOURCE_INVENTORY_FILENAME)

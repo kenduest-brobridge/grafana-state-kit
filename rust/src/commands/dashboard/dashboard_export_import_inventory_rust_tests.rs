@@ -249,6 +249,49 @@ fn dashboard_repo_layout_kind_resolves_git_sync_variant_roots() {
 }
 
 #[test]
+fn dashboard_repo_layout_accepts_git_file_and_root_resource_crds() {
+    let temp = tempdir().unwrap();
+    let repo_root = temp.path();
+    fs::write(repo_root.join(".git"), "gitdir: /tmp/worktree.git\n").unwrap();
+    fs::write(
+        repo_root.join("cpu-main.json"),
+        serde_json::to_string_pretty(&json!({
+            "apiVersion": "dashboard.grafana.app/v2",
+            "kind": "Dashboard",
+            "metadata": {"name": "cpu-main"},
+            "spec": {"title": "CPU Main", "elements": {}}
+        }))
+        .unwrap(),
+    )
+    .unwrap();
+
+    let layout = DashboardRepoLayoutKind::from_root_dir(repo_root).unwrap();
+    assert_eq!(layout, DashboardRepoLayoutKind::GitSyncRepo);
+    assert_eq!(
+        layout.resolve_dashboard_variant_root(repo_root, "raw"),
+        Some(repo_root.to_path_buf())
+    );
+}
+
+#[test]
+fn discover_dashboard_files_ignores_git_sync_folder_metadata() {
+    let temp = tempdir().unwrap();
+    fs::write(
+        temp.path().join("cpu-main.json"),
+        r#"{"apiVersion":"dashboard.grafana.app/v2","kind":"Dashboard","metadata":{"name":"cpu-main"},"spec":{}}"#,
+    )
+    .unwrap();
+    fs::write(
+        temp.path().join("_folder.json"),
+        r#"{"apiVersion":"folder.grafana.app/v1","kind":"Folder","metadata":{"name":"infra"},"spec":{}}"#,
+    )
+    .unwrap();
+
+    let files = discover_dashboard_files(temp.path()).unwrap();
+    assert_eq!(files, vec![temp.path().join("cpu-main.json")]);
+}
+
+#[test]
 fn import_dashboards_accepts_provisioning_root_with_explicit_format() {
     let temp = tempdir().unwrap();
     let provisioning_root = temp.path().join("provisioning");

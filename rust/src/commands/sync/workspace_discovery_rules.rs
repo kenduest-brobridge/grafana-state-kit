@@ -2,7 +2,9 @@
 
 use std::path::{Path, PathBuf};
 
-use crate::dashboard::{infer_dashboard_workspace_root, DashboardSourceKind};
+use crate::dashboard::{
+    infer_dashboard_workspace_root, DashboardRepoLayoutKind, DashboardSourceKind,
+};
 
 use super::DiscoveredChangeInputs;
 
@@ -118,6 +120,26 @@ fn first_existing(paths: &[PathBuf]) -> Option<PathBuf> {
     paths.iter().find(|path| path.exists()).cloned()
 }
 
+fn first_named_file(root: &Path, file_name: &str) -> Option<PathBuf> {
+    let mut entries = std::fs::read_dir(root)
+        .ok()?
+        .filter_map(|entry| entry.ok())
+        .map(|entry| entry.path())
+        .collect::<Vec<_>>();
+    entries.sort();
+    for path in entries {
+        if path.file_name().and_then(|value| value.to_str()) == Some(file_name) {
+            return Some(path);
+        }
+        if path.is_dir() && path.file_name().and_then(|value| value.to_str()) != Some(".git") {
+            if let Some(found) = first_named_file(&path, file_name) {
+                return Some(found);
+            }
+        }
+    }
+    None
+}
+
 fn access_workspace_dirs(
     base_dir: &Path,
 ) -> (
@@ -137,7 +159,14 @@ fn access_workspace_dirs(
 pub(crate) fn discover_from_workspace_root(base_dir: &Path) -> DiscoveredChangeInputs {
     let datasources_dir = base_dir.join("datasources");
     let alerts_dir = base_dir.join("alerts");
-    let (dashboard_export_dir, dashboard_provisioning_dir) = dashboard_workspace_roots(base_dir);
+    let (mut dashboard_export_dir, dashboard_provisioning_dir) =
+        dashboard_workspace_roots(base_dir);
+    let git_sync_layout = DashboardRepoLayoutKind::from_root_dir(base_dir);
+    if let Some(layout) = git_sync_layout {
+        dashboard_export_dir = layout
+            .resolve_dashboard_variant_root(base_dir, "raw")
+            .or(dashboard_export_dir);
+    }
     let (
         access_user_export_dir,
         access_team_export_dir,
@@ -176,10 +205,19 @@ pub(crate) fn discover_from_workspace_root(base_dir: &Path) -> DiscoveredChangeI
             base_dir.join("reviewed-plan.json"),
             base_dir.join("sync-plan.json"),
         ]),
+        git_sync_root: git_sync_layout.map(|_| base_dir.to_path_buf()),
+        git_sync_folder_metadata: git_sync_layout
+            .and_then(|_| first_named_file(base_dir, "_folder.json")),
+        git_sync_readme: git_sync_layout.and_then(|_| first_named_file(base_dir, "README.md")),
     }
 }
 
 pub(crate) fn infer_workspace_root(base_dir: &Path) -> PathBuf {
+    for ancestor in base_dir.ancestors() {
+        if DashboardRepoLayoutKind::from_root_dir(ancestor).is_some() {
+            return ancestor.to_path_buf();
+        }
+    }
     for ancestor in base_dir.ancestors() {
         let Some(name) = ancestor.file_name().and_then(|name| name.to_str()) else {
             continue;

@@ -278,13 +278,13 @@ impl AppPlatformResourceClient<'_> {
 - Modify: `rust/src/commands/sync/workspace_discovery_rules.rs`
 - Modify/test: `rust/src/commands/sync/discovery_model.rs`
 
-- [ ] Add failing tests for a repository whose `.git` is a file, root-level
+- [x] Add failing tests for a repository whose `.git` is a file, root-level
       dashboard CRDs, nested `_folder.json`, and `README.md` provenance.
-- [ ] Recognize `.git` files or directories and a resource root containing
+- [x] Recognize `.git` files or directories and a resource root containing
       dashboard CRDs; do not require `dashboards/git-sync/{raw,provisioning}`.
-- [ ] Add read-only discovery inputs for Git Sync root, folder metadata, and
+- [x] Add read-only discovery inputs for Git Sync root, folder metadata, and
       README files; retain `git-sync-managed` ownership and mutation blockers.
-- [ ] Run focused dashboard source and sync discovery tests green.
+- [x] Run focused dashboard source and sync discovery tests green.
 
 ### Task 9: Update public contracts and documentation
 
@@ -388,3 +388,9 @@ impl AppPlatformResourceClient<'_> {
   correctly, notification fixtures round-trip unchanged, and hostile
   `spec.value` input is stripped before any renderer sees it. Resource (26),
   parser surface (24), and App Platform (3) focused tests pass.
+- 2026-07-12: Task 8 recognizes Grafana 13.1 Git Sync repositories with either
+  a `.git` directory or worktree `.git` file and root/nested dashboard CRDs.
+  Root resource trees resolve as Git Sync raw sources, `_folder.json` is kept
+  as provenance instead of loaded as a dashboard, and discovery records the
+  repo root, first folder metadata file, and README. Source-loader (6),
+  workspace-discovery (9), repo-layout (3), and dashboard-file (6) tests pass.

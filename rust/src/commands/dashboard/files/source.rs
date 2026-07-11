@@ -69,7 +69,9 @@ pub(crate) enum DashboardRepoLayoutKind {
 impl DashboardRepoLayoutKind {
     #[allow(dead_code)]
     pub(crate) fn from_root_dir(path: &Path) -> Option<Self> {
-        if path.join(".git").is_dir() && path.join("dashboards").is_dir() {
+        if path.join(".git").exists()
+            && (path.join("dashboards").is_dir() || contains_dashboard_resource(path))
+        {
             Some(Self::GitSyncRepo)
         } else {
             None
@@ -85,10 +87,13 @@ impl DashboardRepoLayoutKind {
     pub(crate) fn resolve_dashboard_variant_root(
         self,
         input_dir: &Path,
-        variant_dir_name: &'static str,
+        variant_dir_name: &str,
     ) -> Option<PathBuf> {
         if !self.is_git_sync_repo() {
             return None;
+        }
+        if variant_dir_name == RAW_EXPORT_SUBDIR && contains_dashboard_resource(input_dir) {
+            return Some(input_dir.to_path_buf());
         }
         let dashboards_dir =
             if input_dir.file_name().and_then(|name| name.to_str()) == Some("dashboards") {
@@ -103,6 +108,45 @@ impl DashboardRepoLayoutKind {
         let wrapped_candidate = dashboards_dir.join("git-sync").join(variant_dir_name);
         wrapped_candidate.is_dir().then_some(wrapped_candidate)
     }
+}
+
+fn contains_dashboard_resource(path: &Path) -> bool {
+    let Ok(entries) = std::fs::read_dir(path) else {
+        return false;
+    };
+    for entry in entries.flatten() {
+        let entry_path = entry.path();
+        let name = entry.file_name();
+        if name == ".git" {
+            continue;
+        }
+        if entry_path.is_dir() {
+            if contains_dashboard_resource(&entry_path) {
+                return true;
+            }
+            continue;
+        }
+        if entry_path.extension().and_then(|value| value.to_str()) != Some("json")
+            || entry_path.file_name().and_then(|value| value.to_str()) == Some("_folder.json")
+        {
+            continue;
+        }
+        let Ok(bytes) = std::fs::read(&entry_path) else {
+            continue;
+        };
+        let Ok(value) = serde_json::from_slice::<serde_json::Value>(&bytes) else {
+            continue;
+        };
+        if value.get("kind").and_then(serde_json::Value::as_str) == Some("Dashboard")
+            && value
+                .get("apiVersion")
+                .and_then(serde_json::Value::as_str)
+                .is_some_and(|version| version.starts_with("dashboard.grafana.app/"))
+        {
+            return true;
+        }
+    }
+    false
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -27,6 +27,9 @@ pub(crate) enum DiscoveryInputKind {
     MappingFile,
     ReviewedPlanFile,
     MetadataFile,
+    GitSyncRoot,
+    GitSyncFolderMetadata,
+    GitSyncReadme,
 }
 
 impl DiscoveryInputKind {
@@ -48,6 +51,9 @@ impl DiscoveryInputKind {
             Self::MappingFile => "mappingFile",
             Self::ReviewedPlanFile => "reviewedPlanFile",
             Self::MetadataFile => "metadataFile",
+            Self::GitSyncRoot => "gitSyncRoot",
+            Self::GitSyncFolderMetadata => "gitSyncFolderMetadata",
+            Self::GitSyncReadme => "gitSyncReadme",
         }
     }
 
@@ -69,6 +75,9 @@ impl DiscoveryInputKind {
             Self::MappingFile => "mapping-file",
             Self::ReviewedPlanFile => "reviewed-plan-file",
             Self::MetadataFile => "metadata-file",
+            Self::GitSyncRoot => "git-sync-root",
+            Self::GitSyncFolderMetadata => "git-sync-folder-metadata",
+            Self::GitSyncReadme => "git-sync-readme",
         }
     }
 
@@ -90,6 +99,9 @@ impl DiscoveryInputKind {
             "mappingFile" => Some(Self::MappingFile),
             "reviewedPlanFile" => Some(Self::ReviewedPlanFile),
             "metadataFile" => Some(Self::MetadataFile),
+            "gitSyncRoot" => Some(Self::GitSyncRoot),
+            "gitSyncFolderMetadata" => Some(Self::GitSyncFolderMetadata),
+            "gitSyncReadme" => Some(Self::GitSyncReadme),
             _ => None,
         }
     }

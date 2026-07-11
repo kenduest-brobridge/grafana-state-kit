@@ -34,6 +34,9 @@ pub(crate) struct DiscoveredChangeInputs {
     pub availability_file: Option<PathBuf>,
     pub mapping_file: Option<PathBuf>,
     pub reviewed_plan_file: Option<PathBuf>,
+    pub git_sync_root: Option<PathBuf>,
+    pub git_sync_folder_metadata: Option<PathBuf>,
+    pub git_sync_readme: Option<PathBuf>,
 }
 
 fn current_repo_dir() -> Result<PathBuf> {
@@ -196,6 +199,24 @@ fn build_change_discovery(discovered: &DiscoveredChangeInputs) -> Option<ChangeD
             path,
         });
     }
+    if let Some(path) = discovered.git_sync_root.clone() {
+        inputs.push(DiscoveryInput {
+            kind: DiscoveryInputKind::GitSyncRoot,
+            path,
+        });
+    }
+    if let Some(path) = discovered.git_sync_folder_metadata.clone() {
+        inputs.push(DiscoveryInput {
+            kind: DiscoveryInputKind::GitSyncFolderMetadata,
+            path,
+        });
+    }
+    if let Some(path) = discovered.git_sync_readme.clone() {
+        inputs.push(DiscoveryInput {
+            kind: DiscoveryInputKind::GitSyncReadme,
+            path,
+        });
+    }
     Some(ChangeDiscoveryDocument::from_inputs(
         Some(workspace_root),
         inputs,
@@ -266,6 +287,55 @@ mod workspace_discovery_rust_tests {
         assert!(provenance.contains("dashboard-provisioning(git-sync)="));
         assert!(provenance.contains("alert-export="));
         assert!(provenance.contains("datasource-provisioning="));
+    }
+
+    #[test]
+    fn discover_change_inputs_accepts_grafana_13_root_level_git_sync_repo() {
+        let temp = tempdir().unwrap();
+        let workspace = temp.path();
+        std::fs::write(workspace.join(".git"), "gitdir: /tmp/worktree.git\n").unwrap();
+        std::fs::write(
+            workspace.join("cpu-main.json"),
+            r#"{"apiVersion":"dashboard.grafana.app/v2","kind":"Dashboard","metadata":{"name":"cpu-main"},"spec":{"elements":{}}}"#,
+        )
+        .unwrap();
+        std::fs::create_dir_all(workspace.join("infra")).unwrap();
+        std::fs::write(
+            workspace.join("infra/_folder.json"),
+            r#"{"apiVersion":"folder.grafana.app/v1","kind":"Folder","metadata":{"name":"infra"},"spec":{}}"#,
+        )
+        .unwrap();
+        std::fs::write(workspace.join("README.md"), "# Grafana dashboards\n").unwrap();
+
+        let discovered = discover_change_staged_inputs(Some(&workspace.join("infra"))).unwrap();
+
+        assert_eq!(discovered.workspace_root, Some(workspace.to_path_buf()));
+        assert_eq!(
+            discovered.dashboard_export_dir,
+            Some(workspace.to_path_buf())
+        );
+        assert_eq!(discovered.git_sync_root, Some(workspace.to_path_buf()));
+        assert_eq!(
+            discovered.git_sync_folder_metadata,
+            Some(workspace.join("infra/_folder.json"))
+        );
+        assert_eq!(
+            discovered.git_sync_readme,
+            Some(workspace.join("README.md"))
+        );
+        let document = build_discovery_document(&discovered).unwrap();
+        assert_eq!(
+            document["inputs"]["gitSyncRoot"],
+            workspace.display().to_string()
+        );
+        assert_eq!(
+            document["inputs"]["gitSyncFolderMetadata"],
+            workspace.join("infra/_folder.json").display().to_string()
+        );
+        assert_eq!(
+            document["inputs"]["gitSyncReadme"],
+            workspace.join("README.md").display().to_string()
+        );
     }
 
     #[test]

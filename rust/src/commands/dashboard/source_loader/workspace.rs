@@ -1,5 +1,7 @@
 use std::path::{Component, Path, PathBuf};
 
+use super::super::files::DashboardRepoLayoutKind;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum DashboardWorkspaceLayoutKind {
     Export,
@@ -177,6 +179,13 @@ pub(crate) fn classify_dashboard_workspace_layout(
     input_dir: &Path,
     variant_dir_name: &str,
 ) -> DashboardWorkspaceLayoutKind {
+    if DashboardRepoLayoutKind::from_root_dir(input_dir)
+        .and_then(|layout| layout.resolve_dashboard_variant_root(input_dir, variant_dir_name))
+        .as_deref()
+        == Some(input_dir)
+    {
+        return DashboardWorkspaceLayoutKind::GitSync;
+    }
     let candidate = canonical_dashboard_variant_root(input_dir, variant_dir_name)
         .or_else(|| {
             if input_dir.is_dir()
@@ -204,6 +213,13 @@ pub(crate) fn resolve_dashboard_workspace_variant_dir(
     input_dir: &Path,
     variant_dir_name: &str,
 ) -> Option<PathBuf> {
+    for ancestor in input_dir.ancestors() {
+        if let Some(layout) = DashboardRepoLayoutKind::from_root_dir(ancestor) {
+            if let Some(root) = layout.resolve_dashboard_variant_root(ancestor, variant_dir_name) {
+                return Some(root);
+            }
+        }
+    }
     if let Some(canonical_root) = canonical_dashboard_variant_root(input_dir, variant_dir_name) {
         return Some(canonical_root);
     }

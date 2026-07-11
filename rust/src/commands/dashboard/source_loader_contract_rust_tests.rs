@@ -183,6 +183,31 @@ fn source_loader_contract_resolves_wrapped_git_sync_repo_root() {
 }
 
 #[test]
+fn source_loader_contract_resolves_grafana_13_root_resource_repo() {
+    let temp = tempdir().unwrap();
+    fs::write(temp.path().join(".git"), "gitdir: /tmp/worktree.git\n").unwrap();
+    fs::write(
+        temp.path().join("cpu-main.json"),
+        serde_json::to_string_pretty(&serde_json::json!({
+            "apiVersion": "dashboard.grafana.app/v2",
+            "kind": "Dashboard",
+            "metadata": {"name": "cpu-main"},
+            "spec": {"title": "CPU Main", "elements": {}}
+        }))
+        .unwrap(),
+    )
+    .unwrap();
+
+    let resolved =
+        load_dashboard_source(temp.path(), DashboardImportInputFormat::Raw, None, true).unwrap();
+
+    assert_eq!(resolved.workspace_root, temp.path());
+    assert_eq!(resolved.input_dir, temp.path());
+    assert_eq!(resolved.layout_kind, DashboardWorkspaceLayoutKind::GitSync);
+    assert_eq!(resolved.resolved.dashboard_dir, temp.path());
+}
+
+#[test]
 fn source_loader_contract_resolves_wrapped_git_sync_tree_from_dashboards_root() {
     let temp = make_dashboard_repo();
     let wrapped_provisioning_root = temp.path().join("dashboards/git-sync/provisioning");
