@@ -238,17 +238,17 @@ impl AppPlatformResourceClient<'_> {
 - Modify/test: `rust/src/commands/resource/render.rs`
 - Modify: `rust/src/commands/resource/resource_help.rs`
 
-- [ ] Add failing parser/catalog/runtime tests for API modes `v1`, `v2`, and
+- [x] Add failing parser/catalog/runtime tests for API modes `v1`, `v2`, and
       `v1beta1`; folder v1 auto preference; and invalid mode guidance.
-- [ ] Add resource kinds `receivers`, `routing-trees`, `template-groups`,
+- [x] Add resource kinds `receivers`, `routing-trees`, `template-groups`,
       `time-intervals`, `inhibition-rules`, and `secure-values`.
-- [ ] Implement descriptor-driven routing through the App Platform client:
+- [x] Implement descriptor-driven routing through the App Platform client:
       dashboard auto order v2, v1, legacy; folder auto order v1, legacy; beta
       resources require explicit v1beta1.
-- [ ] Teach table rendering to read `metadata.name`, `spec.title`,
+- [x] Teach table rendering to read `metadata.name`, `spec.title`,
       `spec.description`, and resource-specific names while JSON/YAML preserve
       the full resource documents.
-- [ ] Run parser/catalog/runtime/render tests green.
+- [x] Run parser/catalog/runtime/render tests green.
 
 ### Task 7: Add notification and secret metadata safety contracts
 
@@ -258,16 +258,16 @@ impl AppPlatformResourceClient<'_> {
 - Modify/test: `rust/src/commands/resource/runtime.rs`
 - Add fixtures under: `tests/fixtures/grafana13/`
 
-- [ ] Add failing path/round-trip tests for receivers, routing trees, template
+- [x] Add failing path/round-trip tests for receivers, routing trees, template
       groups, time intervals, and inhibition rules under
       `notifications.alerting.grafana.app/v1beta1`.
-- [ ] Preserve the returned notification objects exactly and leave existing
+- [x] Preserve the returned notification objects exactly and leave existing
       `/api/v1/provisioning` mutations untouched.
-- [ ] Add a hostile secure-value fixture containing `spec.value` and assert no
+- [x] Add a hostile secure-value fixture containing `spec.value` and assert no
       rendered/list/get document contains the value.
-- [ ] Strip `spec.value` defensively from secure-value items and reject secret
+- [x] Strip `spec.value` defensively from secure-value items and reject secret
       export/mutation additions in this surface.
-- [ ] Run focused resource and redaction tests green.
+- [x] Run focused resource and redaction tests green.
 
 ### Task 8: Recognize Grafana 13.1 Git Sync repositories
 
@@ -381,3 +381,10 @@ impl AppPlatformResourceClient<'_> {
   `--history-source classic|v1|v2` plus an App Platform namespace and follows
   resource-history pagination. Focused history (57), resource export (2), and
   dashboard API client (6) tests pass.
+- 2026-07-12: Tasks 6-7 expanded `status resource` to explicit v1, v2, and
+  v1beta1 modes; dashboard auto resolves v2 to v1 to legacy, folders resolve
+  v1 to legacy, and public-preview notification/secret resources require an
+  explicit beta mode. Eleven kinds are cataloged, nested metadata/spec render
+  correctly, notification fixtures round-trip unchanged, and hostile
+  `spec.value` input is stripped before any renderer sees it. Resource (26),
+  parser surface (24), and App Platform (3) focused tests pass.

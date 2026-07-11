@@ -27,15 +27,23 @@ struct ResourceDescribeDocument {
 }
 
 fn list_row(kind: ResourceKind, item: &Map<String, Value>) -> Vec<String> {
+    let metadata = item.get("metadata").and_then(Value::as_object);
+    let spec = item.get("spec").and_then(Value::as_object);
+    let resource_name = metadata
+        .map(|value| string_field(value, "name", ""))
+        .unwrap_or_default();
+    let spec_title = spec
+        .map(|value| string_field(value, "title", &resource_name))
+        .unwrap_or_else(|| resource_name.clone());
     match kind {
         ResourceKind::Dashboards => vec![
-            string_field(item, "uid", ""),
-            string_field(item, "title", &string_field(item, "name", "")),
+            string_field(item, "uid", &resource_name),
+            string_field(item, "title", &spec_title),
             string_field(item, "folderTitle", ""),
         ],
         ResourceKind::Folders => vec![
-            string_field(item, "uid", ""),
-            string_field(item, "title", ""),
+            string_field(item, "uid", &resource_name),
+            string_field(item, "title", &spec_title),
             string_field(item, "parentUid", ""),
         ],
         ResourceKind::Datasources => vec![
@@ -53,6 +61,16 @@ fn list_row(kind: ResourceKind, item: &Map<String, Value>) -> Vec<String> {
             string_field(item, "name", ""),
             string_field(item, "address", ""),
         ],
+        ResourceKind::Receivers
+        | ResourceKind::RoutingTrees
+        | ResourceKind::TemplateGroups
+        | ResourceKind::TimeIntervals
+        | ResourceKind::InhibitionRules
+        | ResourceKind::SecureValues => vec![
+            resource_name,
+            spec_title,
+            string_field(item, "apiVersion", ""),
+        ],
     }
 }
 
@@ -63,6 +81,12 @@ fn list_headers(kind: ResourceKind) -> [&'static str; 3] {
         ResourceKind::Datasources => ["uid", "name", "type"],
         ResourceKind::AlertRules => ["uid", "title", "folder_uid"],
         ResourceKind::Orgs => ["id", "name", "address"],
+        ResourceKind::Receivers
+        | ResourceKind::RoutingTrees
+        | ResourceKind::TemplateGroups
+        | ResourceKind::TimeIntervals
+        | ResourceKind::InhibitionRules
+        | ResourceKind::SecureValues => ["name", "title", "api_version"],
     }
 }
 
@@ -172,7 +196,7 @@ pub(crate) fn render_describe(args: &ResourceDescribeArgs) -> Result<()> {
 
 pub(crate) fn render_list(args: &ResourceListArgs) -> Result<()> {
     let client = build_client(&args.common)?;
-    let items = list_resource_items(&client, args.kind, args.api_mode)?;
+    let items = list_resource_items(&client, args.kind, args.api_mode, &args.namespace)?;
     let document = ResourceListDocument {
         kind: args.kind.as_str(),
         count: items.len(),
@@ -208,7 +232,7 @@ pub(crate) fn render_list(args: &ResourceListArgs) -> Result<()> {
 pub(crate) fn render_get(args: &ResourceGetArgs) -> Result<()> {
     let client = build_client(&args.common)?;
     let selector = parse_selector(&args.selector)?;
-    let value = get_resource_item(&client, &selector, args.api_mode)?;
+    let value = get_resource_item(&client, &selector, args.api_mode, &args.namespace)?;
     match args.output_format {
         ResourceOutputFormat::Text => {
             let object = value
@@ -219,11 +243,28 @@ pub(crate) fn render_get(args: &ResourceGetArgs) -> Result<()> {
                 ("identity", selector.identity.clone()),
                 (
                     "title",
-                    string_field(
-                        object,
-                        "title",
-                        &string_field(object, "name", &string_field(object, "uid", "")),
-                    ),
+                    object
+                        .get("spec")
+                        .and_then(Value::as_object)
+                        .map(|spec| string_field(spec, "title", ""))
+                        .filter(|title| !title.is_empty())
+                        .unwrap_or_else(|| {
+                            object
+                                .get("metadata")
+                                .and_then(Value::as_object)
+                                .map(|metadata| string_field(metadata, "name", ""))
+                                .unwrap_or_else(|| {
+                                    string_field(
+                                        object,
+                                        "title",
+                                        &string_field(
+                                            object,
+                                            "name",
+                                            &string_field(object, "uid", ""),
+                                        ),
+                                    )
+                                })
+                        }),
                 ),
             ];
             print_lines(&render_summary_table(&summary));
@@ -255,4 +296,27 @@ pub(crate) fn render_get(args: &ResourceGetArgs) -> Result<()> {
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn app_platform_dashboard_row_reads_nested_metadata_and_spec() {
+        let item = json!({
+            "apiVersion": "dashboard.grafana.app/v2",
+            "metadata": {"name": "cpu-main"},
+            "spec": {"title": "CPU Main", "elements": {}}
+        })
+        .as_object()
+        .unwrap()
+        .clone();
+
+        assert_eq!(
+            list_row(ResourceKind::Dashboards, &item),
+            vec!["cpu-main", "CPU Main", ""]
+        );
+    }
 }

@@ -1,0 +1,12 @@
+{
+  "apiVersion": "secret.grafana.app/v1beta1",
+  "kind": "SecureValue",
+  "metadata": {
+    "name": "pagerduty-token",
+    "namespace": "default"
+  },
+  "spec": {
+    "description": "PagerDuty integration token",
+    "value": "TOP-SECRET-MUST-NOT-RENDER"
+  }
+}

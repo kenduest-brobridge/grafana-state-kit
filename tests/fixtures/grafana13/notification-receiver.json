@@ -1,0 +1,19 @@
+{
+  "apiVersion": "notifications.alerting.grafana.app/v1beta1",
+  "kind": "Receiver",
+  "metadata": {
+    "name": "oncall",
+    "namespace": "default"
+  },
+  "spec": {
+    "integrations": [
+      {
+        "type": "webhook",
+        "name": "primary-webhook",
+        "settings": {
+          "url": "https://example.invalid/alert"
+        }
+      }
+    ]
+  }
+}

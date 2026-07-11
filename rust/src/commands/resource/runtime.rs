@@ -7,7 +7,8 @@ use super::render::{render_describe, render_get, render_kind_catalog, render_lis
 use crate::common::{message, set_json_color_choice, Result};
 use crate::dashboard::{CommonCliArgs, DEFAULT_TIMEOUT, DEFAULT_URL};
 use crate::grafana_api::{
-    expect_object, expect_object_list, AuthInputs, GrafanaApiClient, GrafanaConnection,
+    expect_object, expect_object_list, AppPlatformApiVersion, AppPlatformResource, AuthInputs,
+    GrafanaApiClient, GrafanaConnection,
 };
 use crate::profile_config::ConnectionMergeInput;
 
@@ -43,68 +44,166 @@ pub(crate) fn list_resource_items(
     client: &GrafanaApiClient,
     kind: ResourceKind,
     api_mode: ResourceApiMode,
+    namespace: &str,
 ) -> Result<Vec<Map<String, Value>>> {
-    let items = match kind {
-        ResourceKind::Dashboards => resolve_with_api_mode(
-            api_mode,
-            &|| client.dashboard().list_dashboard_summaries(500),
-            None,
-        ),
-        ResourceKind::Folders => resolve_with_api_mode(
-            api_mode,
-            &|| {
-                expect_object_list(
-                    client
-                        .dashboard()
-                        .request_json(Method::GET, "/api/folders", &[], None)?,
-                    "Unexpected folder list response from Grafana.",
-                )
-            },
-            None,
-        ),
+    let legacy_dashboards = || client.dashboard().list_dashboard_summaries(500);
+    let legacy_folders = || {
+        expect_object_list(
+            client
+                .dashboard()
+                .request_json(Method::GET, "/api/folders", &[], None)?,
+            "Unexpected folder list response from Grafana.",
+        )
+    };
+    match kind {
+        ResourceKind::Dashboards => match api_mode {
+            ResourceApiMode::Auto => fallback_on_404(
+                &|| list_app_resource(client, kind, AppPlatformApiVersion::V2, namespace),
+                &|| {
+                    fallback_on_404(
+                        &|| list_app_resource(client, kind, AppPlatformApiVersion::V1, namespace),
+                        &legacy_dashboards,
+                    )
+                },
+            ),
+            ResourceApiMode::Legacy => legacy_dashboards(),
+            ResourceApiMode::V1 => {
+                list_app_resource(client, kind, AppPlatformApiVersion::V1, namespace)
+            }
+            ResourceApiMode::V2 => {
+                list_app_resource(client, kind, AppPlatformApiVersion::V2, namespace)
+            }
+            ResourceApiMode::V1Beta1 => unsupported_mode(kind, api_mode),
+        },
+        ResourceKind::Folders => match api_mode {
+            ResourceApiMode::Auto => fallback_on_404(
+                &|| list_app_resource(client, kind, AppPlatformApiVersion::V1, namespace),
+                &legacy_folders,
+            ),
+            ResourceApiMode::Legacy => legacy_folders(),
+            ResourceApiMode::V1 => {
+                list_app_resource(client, kind, AppPlatformApiVersion::V1, namespace)
+            }
+            ResourceApiMode::V2 | ResourceApiMode::V1Beta1 => unsupported_mode(kind, api_mode),
+        },
         ResourceKind::Datasources => {
-            resolve_with_api_mode(api_mode, &|| client.datasource().list_datasources(), None)
+            ensure_legacy_only_mode(kind, api_mode)?;
+            client.datasource().list_datasources()
         }
         ResourceKind::AlertRules => {
-            resolve_with_api_mode(api_mode, &|| client.alerting().list_alert_rules(), None)
+            ensure_legacy_only_mode(kind, api_mode)?;
+            client.alerting().list_alert_rules()
         }
         ResourceKind::Orgs => {
-            resolve_with_api_mode(api_mode, &|| client.access().list_orgs(), None)
+            ensure_legacy_only_mode(kind, api_mode)?;
+            client.access().list_orgs()
         }
-    };
-    items
+        ResourceKind::Receivers
+        | ResourceKind::RoutingTrees
+        | ResourceKind::TemplateGroups
+        | ResourceKind::TimeIntervals
+        | ResourceKind::InhibitionRules
+        | ResourceKind::SecureValues => {
+            ensure_v1beta1_mode(kind, api_mode)?;
+            list_app_resource(client, kind, AppPlatformApiVersion::V1Beta1, namespace)
+        }
+    }
 }
 
 pub(crate) fn get_resource_item(
     client: &GrafanaApiClient,
     selector: &ResourceSelector,
     api_mode: ResourceApiMode,
+    namespace: &str,
 ) -> Result<Value> {
     match selector.kind {
-        ResourceKind::Dashboards => resolve_with_api_mode(
-            api_mode,
-            &|| client.dashboard().fetch_dashboard(&selector.identity),
-            None,
-        ),
+        ResourceKind::Dashboards => {
+            let legacy = || client.dashboard().fetch_dashboard(&selector.identity);
+            match api_mode {
+                ResourceApiMode::Auto => fallback_on_404(
+                    &|| {
+                        get_app_resource(
+                            client,
+                            selector.kind,
+                            AppPlatformApiVersion::V2,
+                            namespace,
+                            &selector.identity,
+                        )
+                    },
+                    &|| {
+                        fallback_on_404(
+                            &|| {
+                                get_app_resource(
+                                    client,
+                                    selector.kind,
+                                    AppPlatformApiVersion::V1,
+                                    namespace,
+                                    &selector.identity,
+                                )
+                            },
+                            &legacy,
+                        )
+                    },
+                ),
+                ResourceApiMode::Legacy => legacy(),
+                ResourceApiMode::V1 => get_app_resource(
+                    client,
+                    selector.kind,
+                    AppPlatformApiVersion::V1,
+                    namespace,
+                    &selector.identity,
+                ),
+                ResourceApiMode::V2 => get_app_resource(
+                    client,
+                    selector.kind,
+                    AppPlatformApiVersion::V2,
+                    namespace,
+                    &selector.identity,
+                ),
+                ResourceApiMode::V1Beta1 => unsupported_mode(selector.kind, api_mode),
+            }
+        }
         ResourceKind::Folders => {
-            let object = resolve_with_api_mode(
-                api_mode,
-                &|| {
-                    client.dashboard().request_json(
-                        Method::GET,
-                        &format!("/api/folders/{}", selector.identity),
-                        &[],
-                        None,
-                    )
-                },
-                None,
-            )?;
-            Ok(Value::Object(expect_object(
-                object,
-                "Unexpected folder payload from Grafana.",
-            )?))
+            let legacy = || {
+                let object = client.dashboard().request_json(
+                    Method::GET,
+                    &format!("/api/folders/{}", selector.identity),
+                    &[],
+                    None,
+                )?;
+                Ok(Value::Object(expect_object(
+                    object,
+                    "Unexpected folder payload from Grafana.",
+                )?))
+            };
+            match api_mode {
+                ResourceApiMode::Auto => fallback_on_404(
+                    &|| {
+                        get_app_resource(
+                            client,
+                            selector.kind,
+                            AppPlatformApiVersion::V1,
+                            namespace,
+                            &selector.identity,
+                        )
+                    },
+                    &legacy,
+                ),
+                ResourceApiMode::Legacy => legacy(),
+                ResourceApiMode::V1 => get_app_resource(
+                    client,
+                    selector.kind,
+                    AppPlatformApiVersion::V1,
+                    namespace,
+                    &selector.identity,
+                ),
+                ResourceApiMode::V2 | ResourceApiMode::V1Beta1 => {
+                    unsupported_mode(selector.kind, api_mode)
+                }
+            }
         }
         ResourceKind::Datasources => {
+            ensure_legacy_only_mode(selector.kind, api_mode)?;
             let legacy_identity_is_numeric = selector.identity.parse::<u64>().is_ok();
             if api_mode == ResourceApiMode::Legacy {
                 ensure_legacy_datasource_identity(&selector.identity)?;
@@ -137,11 +236,12 @@ pub(crate) fn get_resource_item(
             )?))
         }
         ResourceKind::AlertRules => Ok(Value::Object(resolve_with_api_mode(
-            api_mode,
+            ResourceApiMode::Auto,
             &|| client.alerting().get_alert_rule(&selector.identity),
             None,
         )?)),
         ResourceKind::Orgs => {
+            ensure_legacy_only_mode(selector.kind, api_mode)?;
             let object = resolve_with_api_mode(
                 api_mode,
                 &|| {
@@ -159,6 +259,122 @@ pub(crate) fn get_resource_item(
                 "Unexpected org payload from Grafana.",
             )?))
         }
+        ResourceKind::Receivers
+        | ResourceKind::RoutingTrees
+        | ResourceKind::TemplateGroups
+        | ResourceKind::TimeIntervals
+        | ResourceKind::InhibitionRules
+        | ResourceKind::SecureValues => {
+            ensure_v1beta1_mode(selector.kind, api_mode)?;
+            get_app_resource(
+                client,
+                selector.kind,
+                AppPlatformApiVersion::V1Beta1,
+                namespace,
+                &selector.identity,
+            )
+        }
+    }
+}
+
+fn app_platform_resource(
+    kind: ResourceKind,
+    version: AppPlatformApiVersion,
+) -> Result<AppPlatformResource> {
+    let (group, plural) = match kind {
+        ResourceKind::Dashboards => ("dashboard.grafana.app", "dashboards"),
+        ResourceKind::Folders => ("folder.grafana.app", "folders"),
+        ResourceKind::Receivers => ("notifications.alerting.grafana.app", "receivers"),
+        ResourceKind::RoutingTrees => ("notifications.alerting.grafana.app", "routingtrees"),
+        ResourceKind::TemplateGroups => ("notifications.alerting.grafana.app", "templategroups"),
+        ResourceKind::TimeIntervals => ("notifications.alerting.grafana.app", "timeintervals"),
+        ResourceKind::InhibitionRules => ("notifications.alerting.grafana.app", "inhibitionrules"),
+        ResourceKind::SecureValues => ("secret.grafana.app", "securevalues"),
+        _ => {
+            return Err(message(format!(
+                "{} has no App Platform API.",
+                kind.as_str()
+            )))
+        }
+    };
+    Ok(AppPlatformResource::new(group, version, plural))
+}
+
+fn list_app_resource(
+    client: &GrafanaApiClient,
+    kind: ResourceKind,
+    version: AppPlatformApiVersion,
+    namespace: &str,
+) -> Result<Vec<Map<String, Value>>> {
+    client
+        .app_platform()
+        .list_all(app_platform_resource(kind, version)?, namespace, Some(500))?
+        .into_iter()
+        .map(|value| {
+            redact_secure_value(kind, value)
+                .as_object()
+                .cloned()
+                .ok_or_else(|| message("App Platform resource list item is not an object."))
+        })
+        .collect()
+}
+
+fn get_app_resource(
+    client: &GrafanaApiClient,
+    kind: ResourceKind,
+    version: AppPlatformApiVersion,
+    namespace: &str,
+    name: &str,
+) -> Result<Value> {
+    let value =
+        client
+            .app_platform()
+            .get(app_platform_resource(kind, version)?, namespace, name)?;
+    Ok(redact_secure_value(kind, value))
+}
+
+fn redact_secure_value(kind: ResourceKind, mut value: Value) -> Value {
+    if kind == ResourceKind::SecureValues {
+        if let Some(spec) = value.get_mut("spec").and_then(Value::as_object_mut) {
+            spec.remove("value");
+        }
+    }
+    value
+}
+
+fn fallback_on_404<T>(
+    primary: &dyn Fn() -> Result<T>,
+    fallback: &dyn Fn() -> Result<T>,
+) -> Result<T> {
+    match primary() {
+        Err(error) if error.status_code() == Some(404) => fallback(),
+        result => result,
+    }
+}
+
+fn unsupported_mode<T>(kind: ResourceKind, mode: ResourceApiMode) -> Result<T> {
+    Err(message(format!(
+        "Resource kind {} does not support API mode {:?}.",
+        kind.as_str(),
+        mode
+    )))
+}
+
+fn ensure_legacy_only_mode(kind: ResourceKind, mode: ResourceApiMode) -> Result<()> {
+    match mode {
+        ResourceApiMode::Auto | ResourceApiMode::Legacy => Ok(()),
+        _ => unsupported_mode(kind, mode),
+    }
+}
+
+fn ensure_v1beta1_mode(kind: ResourceKind, mode: ResourceApiMode) -> Result<()> {
+    if mode == ResourceApiMode::V1Beta1 {
+        Ok(())
+    } else {
+        Err(message(format!(
+            "Resource kind {} is public preview and requires --api-mode v1beta1.",
+            kind.as_str()
+        )))
     }
 }
 
@@ -195,6 +411,7 @@ fn resolve_with_api_mode<T>(
                 modern()
             }
         }
+        ResourceApiMode::V1 | ResourceApiMode::V2 | ResourceApiMode::V1Beta1 => modern(),
     }
 }
 
@@ -223,6 +440,7 @@ mod tests {
     use super::super::cli_defs::ResourceKind;
     use crate::common::{api_response, message, Result};
     use crate::grafana_api::{GrafanaApiClient, GrafanaConnection};
+    use serde_json::Value;
 
     type SequenceServer = (String, Arc<Mutex<Vec<String>>>, thread::JoinHandle<()>);
 
@@ -292,6 +510,196 @@ mod tests {
             kind: ResourceKind::Datasources,
             identity: identity.to_string(),
         }
+    }
+
+    fn selector(kind: ResourceKind, identity: &str) -> ResourceSelector {
+        ResourceSelector {
+            kind,
+            identity: identity.to_string(),
+        }
+    }
+
+    #[test]
+    fn dashboard_auto_mode_falls_back_from_v2_to_v1_before_legacy() {
+        let responses = vec![
+            http_response("404 Not Found", r#"{"message":"not found"}"#),
+            http_response(
+                "200 OK",
+                r#"{"items":[{"metadata":{"name":"cpu-main"},"spec":{"title":"CPU Main"}}],"metadata":{}}"#,
+            ),
+        ];
+        let Some((base_url, requests, handle)) = spawn_sequence_server(responses) else {
+            return;
+        };
+        let api = build_test_api(base_url);
+
+        let items = super::list_resource_items(
+            &api,
+            ResourceKind::Dashboards,
+            ResourceApiMode::Auto,
+            "default",
+        )
+        .unwrap();
+
+        handle.join().unwrap();
+        assert_eq!(items[0]["metadata"]["name"], "cpu-main");
+        let requests = requests.lock().unwrap().clone();
+        assert!(requests[0]
+            .starts_with("GET /apis/dashboard.grafana.app/v2/namespaces/default/dashboards"));
+        assert!(requests[1]
+            .starts_with("GET /apis/dashboard.grafana.app/v1/namespaces/default/dashboards"));
+    }
+
+    #[test]
+    fn receiver_get_uses_explicit_notification_v1beta1_path() {
+        let responses = vec![http_response(
+            "200 OK",
+            r#"{"metadata":{"name":"oncall"},"spec":{"integrations":[]}}"#,
+        )];
+        let Some((base_url, requests, handle)) = spawn_sequence_server(responses) else {
+            return;
+        };
+        let api = build_test_api(base_url);
+
+        let value = super::get_resource_item(
+            &api,
+            &selector(ResourceKind::Receivers, "oncall"),
+            ResourceApiMode::V1Beta1,
+            "default",
+        )
+        .unwrap();
+
+        handle.join().unwrap();
+        assert_eq!(value["metadata"]["name"], "oncall");
+        let requests = requests.lock().unwrap().clone();
+        assert!(requests[0].starts_with(
+            "GET /apis/notifications.alerting.grafana.app/v1beta1/namespaces/default/receivers/oncall"
+        ));
+    }
+
+    #[test]
+    fn preview_resource_kind_requires_explicit_v1beta1_mode() {
+        let api = build_test_api("http://127.0.0.1:9".to_string());
+
+        let error = super::list_resource_items(
+            &api,
+            ResourceKind::RoutingTrees,
+            ResourceApiMode::Auto,
+            "default",
+        )
+        .expect_err("preview resources must not be auto-probed");
+
+        assert!(error.to_string().contains("requires --api-mode v1beta1"));
+    }
+
+    #[test]
+    fn secure_value_get_never_exposes_spec_value() {
+        let hostile =
+            include_str!("../../../../tests/fixtures/grafana13/secure-value-hostile.json");
+        let responses = vec![http_response("200 OK", hostile)];
+        let Some((base_url, _requests, handle)) = spawn_sequence_server(responses) else {
+            return;
+        };
+        let api = build_test_api(base_url);
+
+        let value = super::get_resource_item(
+            &api,
+            &selector(ResourceKind::SecureValues, "pagerduty-token"),
+            ResourceApiMode::V1Beta1,
+            "default",
+        )
+        .unwrap();
+
+        handle.join().unwrap();
+        assert!(value["spec"].get("value").is_none());
+        assert!(!value.to_string().contains("TOP-SECRET-MUST-NOT-RENDER"));
+        assert_eq!(value["spec"]["description"], "PagerDuty integration token");
+    }
+
+    #[test]
+    fn folder_auto_mode_prefers_v1_then_falls_back_to_legacy() {
+        let responses = vec![
+            http_response("404 Not Found", r#"{"message":"not found"}"#),
+            http_response("200 OK", r#"[{"uid":"infra","title":"Infra"}]"#),
+        ];
+        let Some((base_url, requests, handle)) = spawn_sequence_server(responses) else {
+            return;
+        };
+        let api = build_test_api(base_url);
+
+        let items = super::list_resource_items(
+            &api,
+            ResourceKind::Folders,
+            ResourceApiMode::Auto,
+            "default",
+        )
+        .unwrap();
+
+        handle.join().unwrap();
+        assert_eq!(items[0]["uid"], "infra");
+        let requests = requests.lock().unwrap().clone();
+        assert!(
+            requests[0].starts_with("GET /apis/folder.grafana.app/v1/namespaces/default/folders")
+        );
+        assert!(requests[1].starts_with("GET /api/folders"));
+    }
+
+    #[test]
+    fn notification_preview_kinds_use_documented_plural_paths() {
+        let kinds = [
+            (ResourceKind::Receivers, "receivers"),
+            (ResourceKind::RoutingTrees, "routingtrees"),
+            (ResourceKind::TemplateGroups, "templategroups"),
+            (ResourceKind::TimeIntervals, "timeintervals"),
+            (ResourceKind::InhibitionRules, "inhibitionrules"),
+        ];
+        let responses = kinds
+            .iter()
+            .map(|_| http_response("200 OK", r#"{"items":[],"metadata":{}}"#))
+            .collect();
+        let Some((base_url, requests, handle)) = spawn_sequence_server(responses) else {
+            return;
+        };
+        let api = build_test_api(base_url);
+
+        for (kind, _) in kinds {
+            let items = super::list_resource_items(&api, kind, ResourceApiMode::V1Beta1, "default")
+                .unwrap();
+            assert!(items.is_empty());
+        }
+
+        handle.join().unwrap();
+        let requests = requests.lock().unwrap().clone();
+        for (request, (_, plural)) in requests.iter().zip(kinds) {
+            assert!(request.starts_with(&format!(
+                "GET /apis/notifications.alerting.grafana.app/v1beta1/namespaces/default/{plural}"
+            )));
+        }
+    }
+
+    #[test]
+    fn receiver_fixture_round_trips_without_shape_changes() {
+        let receiver =
+            include_str!("../../../../tests/fixtures/grafana13/notification-receiver.json");
+        let responses = vec![http_response("200 OK", receiver)];
+        let Some((base_url, _requests, handle)) = spawn_sequence_server(responses) else {
+            return;
+        };
+        let api = build_test_api(base_url);
+
+        let value = super::get_resource_item(
+            &api,
+            &selector(ResourceKind::Receivers, "oncall"),
+            ResourceApiMode::V1Beta1,
+            "default",
+        )
+        .unwrap();
+
+        handle.join().unwrap();
+        assert_eq!(
+            value,
+            serde_json::from_str::<Value>(receiver).expect("fixture should be valid JSON")
+        );
     }
 
     #[test]
@@ -378,9 +786,13 @@ mod tests {
             return;
         };
         let client = build_test_api(base_url);
-        let value =
-            super::get_resource_item(&client, &datasource_selector("10"), ResourceApiMode::Auto)
-                .unwrap();
+        let value = super::get_resource_item(
+            &client,
+            &datasource_selector("10"),
+            ResourceApiMode::Auto,
+            "default",
+        )
+        .unwrap();
 
         assert_eq!(value["name"], "Prometheus");
         handle.join().unwrap();
@@ -403,6 +815,7 @@ mod tests {
             &client,
             &datasource_selector("prom-main"),
             ResourceApiMode::Auto,
+            "default",
         )
         .unwrap_err();
 
@@ -424,9 +837,13 @@ mod tests {
             return;
         };
         let client = build_test_api(base_url);
-        let value =
-            super::get_resource_item(&client, &datasource_selector("10"), ResourceApiMode::Legacy)
-                .unwrap();
+        let value = super::get_resource_item(
+            &client,
+            &datasource_selector("10"),
+            ResourceApiMode::Legacy,
+            "default",
+        )
+        .unwrap();
 
         assert_eq!(value["uid"], "prom-main");
         handle.join().unwrap();

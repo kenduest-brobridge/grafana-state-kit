@@ -26,13 +26,19 @@ pub(crate) struct ResourceDescribeRecord {
     pub(crate) description: &'static str,
 }
 
-pub(crate) fn supported_kinds() -> [ResourceKind; 5] {
+pub(crate) fn supported_kinds() -> [ResourceKind; 11] {
     [
         ResourceKind::Dashboards,
         ResourceKind::Folders,
         ResourceKind::Datasources,
         ResourceKind::AlertRules,
         ResourceKind::Orgs,
+        ResourceKind::Receivers,
+        ResourceKind::RoutingTrees,
+        ResourceKind::TemplateGroups,
+        ResourceKind::TimeIntervals,
+        ResourceKind::InhibitionRules,
+        ResourceKind::SecureValues,
     ]
 }
 
@@ -93,6 +99,12 @@ pub(crate) fn parse_selector(input: &str) -> Result<ResourceSelector> {
         "datasources" => ResourceKind::Datasources,
         "alert-rules" => ResourceKind::AlertRules,
         "orgs" => ResourceKind::Orgs,
+        "receivers" => ResourceKind::Receivers,
+        "routing-trees" => ResourceKind::RoutingTrees,
+        "template-groups" => ResourceKind::TemplateGroups,
+        "time-intervals" => ResourceKind::TimeIntervals,
+        "inhibition-rules" => ResourceKind::InhibitionRules,
+        "secure-values" => ResourceKind::SecureValues,
         _ => {
             return Err(message(format!(
                 "Unsupported resource selector kind '{kind}'. Use grafana-util status resource describe to see selector patterns. Supported kinds: {}.",
@@ -138,6 +150,7 @@ mod tests {
         assert!(error.contains("Unsupported resource selector kind 'widgets'."));
         assert!(error.contains("resource describe"));
         assert!(error.contains("dashboards, folders, datasources, alert-rules, orgs"));
+        assert!(error.contains("receivers, routing-trees"));
     }
 
     #[test]
@@ -149,5 +162,13 @@ mod tests {
         assert_eq!(record.selector, "dashboards/<uid>");
         assert_eq!(record.list_endpoint, "GET /api/search");
         assert_eq!(record.get_endpoint, "GET /api/dashboards/uid/{uid}");
+    }
+
+    #[test]
+    fn parse_selector_accepts_grafana_13_preview_kinds() {
+        let receiver = parse_selector("receivers/oncall").unwrap();
+        assert_eq!(receiver.kind, ResourceKind::Receivers);
+        let secret = parse_selector("secure-values/pagerduty-token").unwrap();
+        assert_eq!(secret.kind, ResourceKind::SecureValues);
     }
 }

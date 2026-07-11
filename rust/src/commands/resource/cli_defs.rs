@@ -20,6 +20,10 @@ pub enum ResourceOutputFormat {
 pub enum ResourceApiMode {
     Auto,
     Legacy,
+    V1,
+    V2,
+    #[value(name = "v1beta1", alias = "v1-beta1")]
+    V1Beta1,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum, Serialize)]
@@ -30,6 +34,17 @@ pub enum ResourceKind {
     #[value(name = "alert-rules")]
     AlertRules,
     Orgs,
+    Receivers,
+    #[value(name = "routing-trees")]
+    RoutingTrees,
+    #[value(name = "template-groups")]
+    TemplateGroups,
+    #[value(name = "time-intervals")]
+    TimeIntervals,
+    #[value(name = "inhibition-rules")]
+    InhibitionRules,
+    #[value(name = "secure-values")]
+    SecureValues,
 }
 
 impl ResourceKind {
@@ -40,6 +55,12 @@ impl ResourceKind {
             Self::Datasources => "datasources",
             Self::AlertRules => "alert-rules",
             Self::Orgs => "orgs",
+            Self::Receivers => "receivers",
+            Self::RoutingTrees => "routing-trees",
+            Self::TemplateGroups => "template-groups",
+            Self::TimeIntervals => "time-intervals",
+            Self::InhibitionRules => "inhibition-rules",
+            Self::SecureValues => "secure-values",
         }
     }
 
@@ -50,6 +71,12 @@ impl ResourceKind {
             Self::Datasources => "datasource",
             Self::AlertRules => "alert-rule",
             Self::Orgs => "org",
+            Self::Receivers => "receiver",
+            Self::RoutingTrees => "routing-tree",
+            Self::TemplateGroups => "template-group",
+            Self::TimeIntervals => "time-interval",
+            Self::InhibitionRules => "inhibition-rule",
+            Self::SecureValues => "secure-value",
         }
     }
 
@@ -62,6 +89,12 @@ impl ResourceKind {
                 "Grafana alert rules from /api/v1/provisioning/alert-rules and /api/v1/provisioning/alert-rules/{uid}."
             }
             Self::Orgs => "Grafana org inventory from /api/orgs and /api/orgs/{id}.",
+            Self::Receivers => "Grafana Alerting receivers from notifications.alerting.grafana.app/v1beta1.",
+            Self::RoutingTrees => "Grafana Alerting routing trees from notifications.alerting.grafana.app/v1beta1.",
+            Self::TemplateGroups => "Grafana Alerting template groups from notifications.alerting.grafana.app/v1beta1.",
+            Self::TimeIntervals => "Grafana Alerting time intervals from notifications.alerting.grafana.app/v1beta1.",
+            Self::InhibitionRules => "Grafana Alerting inhibition rules from notifications.alerting.grafana.app/v1beta1.",
+            Self::SecureValues => "Grafana secret metadata from secret.grafana.app/v1beta1; secret values are never returned.",
         }
     }
 
@@ -72,6 +105,12 @@ impl ResourceKind {
             Self::Datasources => "datasources/<uid>",
             Self::AlertRules => "alert-rules/<uid>",
             Self::Orgs => "orgs/<id>",
+            Self::Receivers => "receivers/<name>",
+            Self::RoutingTrees => "routing-trees/<name>",
+            Self::TemplateGroups => "template-groups/<name>",
+            Self::TimeIntervals => "time-intervals/<name>",
+            Self::InhibitionRules => "inhibition-rules/<name>",
+            Self::SecureValues => "secure-values/<name>",
         }
     }
 
@@ -82,6 +121,12 @@ impl ResourceKind {
             Self::Datasources => "GET /api/datasources",
             Self::AlertRules => "GET /api/v1/provisioning/alert-rules",
             Self::Orgs => "GET /api/orgs",
+            Self::Receivers => "GET /apis/notifications.alerting.grafana.app/v1beta1/namespaces/{namespace}/receivers",
+            Self::RoutingTrees => "GET /apis/notifications.alerting.grafana.app/v1beta1/namespaces/{namespace}/routingtrees",
+            Self::TemplateGroups => "GET /apis/notifications.alerting.grafana.app/v1beta1/namespaces/{namespace}/templategroups",
+            Self::TimeIntervals => "GET /apis/notifications.alerting.grafana.app/v1beta1/namespaces/{namespace}/timeintervals",
+            Self::InhibitionRules => "GET /apis/notifications.alerting.grafana.app/v1beta1/namespaces/{namespace}/inhibitionrules",
+            Self::SecureValues => "GET /apis/secret.grafana.app/v1beta1/namespaces/{namespace}/securevalues",
         }
     }
 
@@ -92,6 +137,12 @@ impl ResourceKind {
             Self::Datasources => "GET /api/datasources/uid/{uid}",
             Self::AlertRules => "GET /api/v1/provisioning/alert-rules/{uid}",
             Self::Orgs => "GET /api/orgs/{id}",
+            Self::Receivers => "GET /apis/notifications.alerting.grafana.app/v1beta1/namespaces/{namespace}/receivers/{name}",
+            Self::RoutingTrees => "GET /apis/notifications.alerting.grafana.app/v1beta1/namespaces/{namespace}/routingtrees/{name}",
+            Self::TemplateGroups => "GET /apis/notifications.alerting.grafana.app/v1beta1/namespaces/{namespace}/templategroups/{name}",
+            Self::TimeIntervals => "GET /apis/notifications.alerting.grafana.app/v1beta1/namespaces/{namespace}/timeintervals/{name}",
+            Self::InhibitionRules => "GET /apis/notifications.alerting.grafana.app/v1beta1/namespaces/{namespace}/inhibitionrules/{name}",
+            Self::SecureValues => "GET /apis/secret.grafana.app/v1beta1/namespaces/{namespace}/securevalues/{name}",
         }
     }
 }
@@ -146,6 +197,12 @@ pub struct ResourceListArgs {
         help = "Choose API probing mode. auto uses primary endpoints and falls back to legacy alternatives where available; legacy prefers those alternatives when supported."
     )]
     pub api_mode: ResourceApiMode,
+    #[arg(
+        long,
+        default_value = "default",
+        help = "App Platform namespace used by v1, v2, or v1beta1 resource APIs."
+    )]
+    pub namespace: String,
 }
 
 #[derive(Debug, Clone, Args)]
@@ -171,6 +228,12 @@ pub struct ResourceGetArgs {
         help = "Choose API probing mode. auto uses primary endpoints and falls back to legacy alternatives where available; legacy prefers those alternatives when supported."
     )]
     pub api_mode: ResourceApiMode,
+    #[arg(
+        long,
+        default_value = "default",
+        help = "App Platform namespace used by v1, v2, or v1beta1 resource APIs."
+    )]
+    pub namespace: String,
 }
 
 #[derive(Debug, Clone, Subcommand)]

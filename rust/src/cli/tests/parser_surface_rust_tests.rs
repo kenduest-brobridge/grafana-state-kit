@@ -205,6 +205,36 @@ fn parse_status_resource_get_accepts_legacy_api_mode() {
 }
 
 #[test]
+fn parse_status_resource_accepts_v1beta1_notification_kind_and_namespace() {
+    let args: CliArgs = parse_cli_from([
+        "grafana-util",
+        "status",
+        "resource",
+        "list",
+        "receivers",
+        "--api-mode",
+        "v1-beta1",
+        "--namespace",
+        "org-2",
+    ]);
+
+    match args.command {
+        UnifiedCommand::Status { command } => match command {
+            StatusCommand::Resource { command } => match command {
+                ResourceCommand::List(inner) => {
+                    assert_eq!(inner.kind, ResourceKind::Receivers);
+                    assert_eq!(inner.api_mode, ResourceApiMode::V1Beta1);
+                    assert_eq!(inner.namespace, "org-2");
+                }
+                _ => panic!("expected status resource list"),
+            },
+            _ => panic!("expected status resource"),
+        },
+        _ => panic!("expected status command"),
+    }
+}
+
+#[test]
 fn parse_cli_rejects_removed_legacy_roots_without_compatibility() {
     for args in [
         vec!["grafana-util", "observe", "live"],
