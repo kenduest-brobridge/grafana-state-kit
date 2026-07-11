@@ -67,16 +67,16 @@ the existing block on direct mutation of Git Sync-managed resources.
 - [x] Poetry installs PyYAML and all 1,230 Python tests pass with two skips.
 - [x] Nonnumeric datasource UID 404 makes no numeric-ID fallback request.
 - [x] TUI registry includes access user/team browse and exact parser/test paths.
-- [ ] Dashboard v2 and `all` export tests pass, including unsupported-lane skip.
-- [ ] Shared discovery, folder pagination, and resource history tests pass.
-- [ ] Notification v1beta1 resource kinds are available only through explicit
+- [x] Dashboard v2 and `all` export tests pass, including unsupported-lane skip.
+- [x] Shared discovery, folder pagination, and resource history tests pass.
+- [x] Notification v1beta1 resource kinds are available only through explicit
       beta mode and preserve raw resource documents.
-- [ ] Secure-value outputs are metadata-only even for a hostile response that
+- [x] Secure-value outputs are metadata-only even for a hostile response that
       unexpectedly contains `spec.value`.
-- [ ] Git Sync root-level CRDs, `_folder.json`, README provenance, and linked
+- [x] Git Sync root-level CRDs, `_folder.json`, README provenance, and linked
       worktree `.git` files are covered.
-- [ ] English/zh-TW docs, command contracts, man pages, and HTML are regenerated.
-- [ ] Rust fmt, Clippy, default/browser builds, Rust/Python suites, architecture,
+- [x] English/zh-TW docs, command contracts, man pages, and HTML are regenerated.
+- [x] Rust fmt, Clippy, default/browser builds, Rust/Python suites, architecture,
       output, TUI, docs, generated-doc, and diff checks pass.
 
 ## Execution Plan
@@ -308,17 +308,17 @@ impl AppPlatformResourceClient<'_> {
 
 ### Task 10: Broad verification and grouped closeout
 
-- [ ] Run `cargo fmt --manifest-path rust/Cargo.toml --all --check`.
-- [ ] Run `cargo clippy --manifest-path rust/Cargo.toml --all-targets -- -D warnings`.
-- [ ] Run `cargo test --manifest-path rust/Cargo.toml --quiet`.
-- [ ] Run `cargo check --manifest-path rust/Cargo.toml --features browser`.
-- [ ] Run `make poetry-test`, `make quality-architecture`,
+- [x] Run `cargo fmt --manifest-path rust/Cargo.toml --all --check`.
+- [x] Run `cargo clippy --manifest-path rust/Cargo.toml --all-targets -- -D warnings`.
+- [x] Run `cargo test --manifest-path rust/Cargo.toml --quiet`.
+- [x] Run `cargo check --manifest-path rust/Cargo.toml --features browser`.
+- [x] Run `make poetry-test`, `make quality-architecture`,
       `make quality-output-contracts`, `make quality-ai-workflow`,
       `make quality-docs-surface`, `make man-check`, and `make html-check`.
-- [ ] Run `python3 -m unittest -v scripts.test_tui_inventory_report` and
+- [x] Run `python3 -m unittest -v scripts.test_tui_inventory_report` and
       `python3 scripts/tui_inventory_report.py --registry-check --json`.
-- [ ] Run `git diff --check` and confirm no generated or test side effects.
-- [ ] Commit by concern using the repository hook format; do not mix unrelated
+- [x] Run `git diff --check` and confirm no generated or test side effects.
+- [x] Commit by concern using the repository hook format; do not mix unrelated
       implementation families.
 
 ## Official Contracts
@@ -400,3 +400,8 @@ impl AppPlatformResourceClient<'_> {
   quality-docs-surface`, `make man-check`, `make html-check`, and `make
   quality-ai-workflow` all pass after regenerating 88 manpages and 286 HTML
   pages.
+- 2026-07-12: Task 10 fresh verification passed: Rust fmt; Clippy with warnings
+  denied; 1,914 Rust tests with one ignored; browser-feature check; 1,230
+  Python tests with two skipped plus Ruff, MyPy, and Black; architecture,
+  output-contract, docs-surface, AI-workflow, man, HTML, and TUI registry gates;
+  and the aggregate `make test` target.

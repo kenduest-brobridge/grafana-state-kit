@@ -43,6 +43,7 @@ impl AppPlatformResource {
         }
     }
 
+    #[allow(dead_code)]
     pub(crate) const fn version(self) -> AppPlatformApiVersion {
         self.version
     }
@@ -70,6 +71,7 @@ impl<'a> AppPlatformResourceClient<'a> {
         Self { http }
     }
 
+    #[allow(dead_code)]
     pub(crate) fn is_served(&self, resource: AppPlatformResource, namespace: &str) -> Result<bool> {
         let path = resource.collection_path(namespace);
         match self.http.request_json(
@@ -108,6 +110,7 @@ impl<'a> AppPlatformResourceClient<'a> {
         self.get_with_params(resource, namespace, name, &[])
     }
 
+    #[allow(dead_code)]
     pub(crate) fn get_if_exists(
         &self,
         resource: AppPlatformResource,
@@ -121,6 +124,7 @@ impl<'a> AppPlatformResourceClient<'a> {
         }
     }
 
+    #[allow(dead_code)]
     pub(crate) fn list_history(
         &self,
         resource: AppPlatformResource,
@@ -147,6 +151,7 @@ impl<'a> AppPlatformResourceClient<'a> {
         )
     }
 
+    #[allow(dead_code)]
     pub(crate) fn get_at_resource_version(
         &self,
         resource: AppPlatformResource,
