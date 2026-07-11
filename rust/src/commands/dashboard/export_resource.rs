@@ -98,6 +98,100 @@ where
     Ok(served)
 }
 
+pub(crate) fn list_dashboard_resources_with_request<F>(
+    mut request_json: F,
+    format: DashboardResourceFormat,
+    namespace: &str,
+    page_size: usize,
+) -> Result<Vec<(ResourceExportLane, Vec<Value>)>>
+where
+    F: FnMut(Method, &str, &[(String, String)], Option<&Value>) -> Result<Option<Value>>,
+{
+    let mut exports = Vec::new();
+    for lane in selected_resource_lanes(format)? {
+        match list_dashboard_resources_for_lane_with_request(
+            &mut request_json,
+            lane,
+            namespace,
+            page_size,
+        ) {
+            Ok(resources) => exports.push((lane, resources)),
+            Err(error)
+                if error.status_code() == Some(404) && format == DashboardResourceFormat::All => {}
+            Err(error) if error.status_code() == Some(404) => {
+                return Err(message(format!(
+                    "Dashboard resource API {} is not served by this Grafana instance.",
+                    lane.api_version
+                )))
+            }
+            Err(error) => return Err(error),
+        }
+    }
+    Ok(exports)
+}
+
+fn list_dashboard_resources_for_lane_with_request<F>(
+    request_json: &mut F,
+    lane: ResourceExportLane,
+    namespace: &str,
+    page_size: usize,
+) -> Result<Vec<Value>>
+where
+    F: FnMut(Method, &str, &[(String, String)], Option<&Value>) -> Result<Option<Value>>,
+{
+    let path = lane.collection_path(namespace);
+    let mut resources = Vec::new();
+    let mut continuation: Option<String> = None;
+    let mut seen_tokens = std::collections::BTreeSet::new();
+    loop {
+        let mut params = vec![("limit".to_string(), page_size.max(1).to_string())];
+        if let Some(token) = continuation.as_ref() {
+            params.push(("continue".to_string(), token.clone()));
+        }
+        let object = match request_json(Method::GET, &path, &params, None)? {
+            Some(Value::Object(object)) => object,
+            Some(_) => {
+                return Err(message(format!(
+                    "Unexpected dashboard resource collection payload for {}.",
+                    lane.api_version
+                )))
+            }
+            None => {
+                return Err(message(format!(
+                    "Unexpected empty dashboard resource collection payload for {}.",
+                    lane.api_version
+                )))
+            }
+        };
+        let items = object
+            .get("items")
+            .and_then(Value::as_array)
+            .ok_or_else(|| {
+                message(format!(
+                    "Dashboard resource collection for {} is missing an items array.",
+                    lane.api_version
+                ))
+            })?;
+        resources.extend(items.iter().cloned());
+        continuation = object
+            .get("metadata")
+            .and_then(Value::as_object)
+            .and_then(|metadata| metadata.get("continue"))
+            .and_then(Value::as_str)
+            .filter(|token| !token.is_empty())
+            .map(str::to_string);
+        let Some(token) = continuation.as_ref() else {
+            break;
+        };
+        if !seen_tokens.insert(token.clone()) {
+            return Err(message(format!(
+                "Dashboard resource collection repeated continue token `{token}`."
+            )));
+        }
+    }
+    Ok(resources)
+}
+
 pub(crate) fn selected_resource_lanes(
     format: DashboardResourceFormat,
 ) -> Result<Vec<ResourceExportLane>> {
@@ -309,5 +403,51 @@ mod tests {
 
         assert!(error.to_string().contains("dashboard.grafana.app/v2"));
         assert!(error.to_string().contains("not served"));
+    }
+
+    #[test]
+    fn resource_collection_follows_continue_tokens() {
+        let mut request_count = 0;
+        let exports = list_dashboard_resources_with_request(
+            |_method, _path, params, _| {
+                request_count += 1;
+                if params.iter().any(|(key, _)| key == "continue") {
+                    Ok(Some(json!({
+                        "items": [{"metadata": {"name": "second"}}],
+                        "metadata": {}
+                    })))
+                } else {
+                    Ok(Some(json!({
+                        "items": [{"metadata": {"name": "first"}}],
+                        "metadata": {"continue": "page-2"}
+                    })))
+                }
+            },
+            DashboardResourceFormat::V2,
+            "default",
+            25,
+        )
+        .unwrap();
+
+        assert_eq!(request_count, 2);
+        assert_eq!(exports[0].1.len(), 2);
+    }
+
+    #[test]
+    fn resource_collection_rejects_repeated_continue_tokens() {
+        let error = list_dashboard_resources_with_request(
+            |_method, _path, _params, _| {
+                Ok(Some(json!({
+                    "items": [],
+                    "metadata": {"continue": "loop"}
+                })))
+            },
+            DashboardResourceFormat::V2,
+            "default",
+            25,
+        )
+        .expect_err("repeated continuation token must terminate pagination");
+
+        assert!(error.to_string().contains("repeated continue token"));
     }
 }

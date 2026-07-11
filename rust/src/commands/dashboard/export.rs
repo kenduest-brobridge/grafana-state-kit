@@ -349,6 +349,7 @@ mod export_tests {
             without_dashboard_provisioning: true,
             include_history: false,
             resource_format: crate::dashboard::DashboardResourceFormat::None,
+            resource_namespace: None,
             provisioning_provider_name: "grafana-utils-dashboards".to_string(),
             provisioning_provider_org_id: None,
             provisioning_provider_path: None,

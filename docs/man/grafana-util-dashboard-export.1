@@ -39,6 +39,9 @@ write per\-version dashboard revision\-history artifacts under history/<uid>/vN.
 .B \-\-resource\-format
 add native App Platform resource lanes: none (default), v1, v2, or all.
 .TP
+.B \-\-resource\-namespace
+override the App Platform namespace for resource export. It is required for resource\-only export; mixed exports default to default for Grafana OSS org 1 and org\-<id> for other orgs.
+.TP
 .B \-\-provider\-name, \-\-provider\-org\-id, \-\-provider\-path
 customize the generated provisioning provider file.
 .TP

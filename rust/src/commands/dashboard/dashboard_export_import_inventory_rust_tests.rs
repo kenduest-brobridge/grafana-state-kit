@@ -273,6 +273,60 @@ fn dashboard_repo_layout_accepts_git_file_and_root_resource_crds() {
     );
 }
 
+#[cfg(unix)]
+#[test]
+fn dashboard_repo_layout_ignores_symlinked_dashboard_resources() {
+    use std::os::unix::fs::symlink;
+
+    let temp = tempdir().unwrap();
+    let repo_root = temp.path().join("repo");
+    let external_root = temp.path().join("external");
+    fs::create_dir_all(repo_root.join(".git")).unwrap();
+    fs::create_dir_all(&external_root).unwrap();
+    let external_dashboard = external_root.join("cpu-main.json");
+    fs::write(
+        &external_dashboard,
+        serde_json::to_string_pretty(&json!({
+            "apiVersion": "dashboard.grafana.app/v2",
+            "kind": "Dashboard",
+            "metadata": {"name": "cpu-main"},
+            "spec": {"title": "CPU Main", "elements": {}}
+        }))
+        .unwrap(),
+    )
+    .unwrap();
+    symlink(&external_dashboard, repo_root.join("cpu-main.json")).unwrap();
+
+    assert_eq!(DashboardRepoLayoutKind::from_root_dir(&repo_root), None);
+}
+
+#[cfg(unix)]
+#[test]
+fn dashboard_repo_layout_ignores_symlink_loops_while_finding_root_resource_crds() {
+    use std::os::unix::fs::symlink;
+
+    let temp = tempdir().unwrap();
+    let repo_root = temp.path();
+    fs::create_dir_all(repo_root.join(".git")).unwrap();
+    symlink(repo_root, repo_root.join("a-loop")).unwrap();
+    fs::write(
+        repo_root.join("z-cpu-main.json"),
+        serde_json::to_string_pretty(&json!({
+            "apiVersion": "dashboard.grafana.app/v2",
+            "kind": "Dashboard",
+            "metadata": {"name": "cpu-main"},
+            "spec": {"title": "CPU Main", "elements": {}}
+        }))
+        .unwrap(),
+    )
+    .unwrap();
+
+    assert_eq!(
+        DashboardRepoLayoutKind::from_root_dir(repo_root),
+        Some(DashboardRepoLayoutKind::GitSyncRepo)
+    );
+}
+
 #[test]
 fn discover_dashboard_files_ignores_git_sync_folder_metadata() {
     let temp = tempdir().unwrap();

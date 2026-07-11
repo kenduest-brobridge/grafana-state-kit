@@ -34,7 +34,8 @@ use super::vars::inspect_dashboard_variables;
 use super::{
     build_dashboard_review, build_http_client, render_summary_export_help_full,
     render_summary_live_help_full, DashboardCliArgs, DashboardCommand, DashboardHistorySubcommand,
-    InspectExportArgs, InspectLiveArgs, ReviewArgs, SimpleOutputFormat, SummaryArgs,
+    DashboardResourceFormat, ExportArgs, InspectExportArgs, InspectLiveArgs, ReviewArgs,
+    SimpleOutputFormat, SummaryArgs,
 };
 use auth::materialize_dashboard_command_auth;
 
@@ -63,6 +64,28 @@ const DASHBOARD_IMPORT_OUTPUT_COLUMNS: &[&str] = &[
 
 fn print_supported_dashboard_report_columns() {
     print_supported_columns(SUPPORTED_REPORT_COLUMN_IDS);
+}
+
+fn validate_dashboard_export_variants(args: &ExportArgs) -> Result<()> {
+    let no_classic_variants = args.without_dashboard_raw
+        && args.without_dashboard_prompt
+        && args.without_dashboard_provisioning;
+    if no_classic_variants && args.resource_format == DashboardResourceFormat::None {
+        return Err(message(
+            "At least one export variant must stay enabled. Remove --without-raw, --without-prompt, or --without-provisioning, or set --resource-format.",
+        ));
+    }
+    if no_classic_variants && args.resource_namespace.is_none() {
+        return Err(message(
+            "Resource-only export requires --resource-namespace so it can use App Platform APIs without resolving the current Grafana org.",
+        ));
+    }
+    if no_classic_variants && args.all_orgs {
+        return Err(message(
+            "Resource-only export does not support --all-orgs because each App Platform namespace must be selected explicitly.",
+        ));
+    }
+    Ok(())
 }
 
 fn summary_args_to_export_args(args: SummaryArgs) -> Result<InspectExportArgs> {
@@ -387,14 +410,7 @@ pub fn run_dashboard_cli(args: DashboardCliArgs) -> Result<()> {
         }
         DashboardCommand::Export(export_args) => {
             let mut export_args = export_args;
-            if export_args.without_dashboard_raw
-                && export_args.without_dashboard_prompt
-                && export_args.without_dashboard_provisioning
-            {
-                return Err(message(
-                    "At least one export variant must stay enabled. Remove --without-raw, --without-prompt, or --without-provisioning.",
-                ));
-            }
+            validate_dashboard_export_variants(&export_args)?;
             let artifact_run =
                 command_artifacts::prepare_dashboard_export_artifact_run(&mut export_args)?;
             let _ = export::export_dashboards_with_org_clients(&export_args)?;
@@ -547,5 +563,75 @@ pub fn run_dashboard_cli(args: DashboardCliArgs) -> Result<()> {
         DashboardCommand::Screenshot(screenshot_args) => {
             capture_dashboard_screenshot(&screenshot_args)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::dashboard::{parse_cli_from, DashboardResourceFormat};
+
+    #[test]
+    fn resource_only_dashboard_export_is_valid_at_command_runner_boundary() {
+        let args = parse_cli_from([
+            "grafana-util",
+            "export",
+            "--without-raw",
+            "--without-prompt",
+            "--without-provisioning",
+            "--resource-format",
+            "v2",
+            "--resource-namespace",
+            "stacks-123",
+        ]);
+        let DashboardCommand::Export(export_args) = args.command else {
+            panic!("expected dashboard export command");
+        };
+
+        assert_eq!(export_args.resource_format, DashboardResourceFormat::V2);
+        validate_dashboard_export_variants(&export_args).unwrap();
+    }
+
+    #[test]
+    fn resource_only_dashboard_export_requires_resource_namespace_at_command_runner_boundary() {
+        let args = parse_cli_from([
+            "grafana-util",
+            "export",
+            "--without-raw",
+            "--without-prompt",
+            "--without-provisioning",
+            "--resource-format",
+            "v2",
+        ]);
+        let DashboardCommand::Export(export_args) = args.command else {
+            panic!("expected dashboard export command");
+        };
+
+        let error = validate_dashboard_export_variants(&export_args)
+            .expect_err("resource-only export must require an explicit resource namespace");
+        assert!(error.to_string().contains("--resource-namespace"));
+    }
+
+    #[test]
+    fn resource_only_dashboard_export_rejects_all_orgs_at_command_runner_boundary() {
+        let args = parse_cli_from([
+            "grafana-util",
+            "export",
+            "--all-orgs",
+            "--without-raw",
+            "--without-prompt",
+            "--without-provisioning",
+            "--resource-format",
+            "v2",
+            "--resource-namespace",
+            "stacks-123",
+        ]);
+        let DashboardCommand::Export(export_args) = args.command else {
+            panic!("expected dashboard export command");
+        };
+
+        let error = validate_dashboard_export_variants(&export_args)
+            .expect_err("resource-only export must not enumerate all orgs");
+        assert!(error.to_string().contains("--all-orgs"));
     }
 }

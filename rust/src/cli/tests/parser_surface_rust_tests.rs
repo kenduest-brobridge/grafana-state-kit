@@ -394,6 +394,31 @@ fn parse_dashboard_export_accepts_resource_format_v2() {
 }
 
 #[test]
+fn parse_dashboard_export_accepts_resource_namespace_override() {
+    let args: CliArgs = parse_cli_from([
+        "grafana-util",
+        "dashboard",
+        "export",
+        "--output-dir",
+        "./dashboards",
+        "--resource-format",
+        "v2",
+        "--resource-namespace",
+        "stacks-123",
+    ]);
+
+    match args.command {
+        UnifiedCommand::Dashboard { command } => match command {
+            DashboardRootCommand::Export(inner) => {
+                assert_eq!(inner.resource_namespace.as_deref(), Some("stacks-123"));
+            }
+            _ => panic!("expected dashboard export"),
+        },
+        _ => panic!("expected dashboard command"),
+    }
+}
+
+#[test]
 fn parse_dashboard_export_accepts_resource_only_selection() {
     let args: CliArgs = parse_cli_from([
         "grafana-util",

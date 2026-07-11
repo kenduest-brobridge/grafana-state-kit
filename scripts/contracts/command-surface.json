@@ -19,6 +19,9 @@
   ],
   "public_flags": {
     "dashboard export": {
+      "--resource-namespace": [
+        "<namespace>"
+      ],
       "--resource-format": [
         "none",
         "v1",

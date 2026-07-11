@@ -19,6 +19,7 @@ Use this when you need a local export tree for later import, review, diff, Git r
 - `--without-raw`, `--without-prompt`, `--without-provisioning`: skip a variant.
 - `--include-history`: write per-version dashboard revision-history artifacts under `history/<uid>/vN.history.json` for each exported org scope.
 - `--resource-format`: add native App Platform resource lanes: `none` (default), `v1`, `v2`, or `all`.
+- `--resource-namespace`: override the App Platform namespace for resource export. It is required for resource-only export; mixed exports default to `default` for Grafana OSS org 1 and `org-<id>` for other orgs.
 - `--provider-name`, `--provider-org-id`, `--provider-path`: customize the generated provisioning provider file.
 - `--provider-disable-deletion`, `--provider-allow-ui-updates`, `--provider-update-interval-seconds`: tune provisioning behavior.
 - `--run`: write under an artifact workspace run when `--output-dir` is omitted. Use `timestamp` for a new timestamped run or `latest` to reuse the latest recorded run.
@@ -30,6 +31,9 @@ Use this when you need a local export tree for later import, review, diff, Git r
 - Resource-enabled exports use a family layout: classic lanes move under `classic/`, while native envelopes are written unchanged under `resource-v1/objects/` and/or `resource-v2/objects/`.
 - Before writing a resource lane, the exporter probes its collection endpoint. Explicit `v1` or `v2` requests fail if that version returns 404; `all` keeps every served lane and skips only versions that return 404. Authorization and server errors are never treated as unsupported.
 - Resource artifacts are for `/apis/dashboard.grafana.app/...`, not Grafana UI import. In particular, v2 `spec.elements` is preserved and is not rewritten as classic `panels`.
+- A resource-only export (`--without-raw --without-prompt --without-provisioning --resource-format v1|v2|all`) requires `--resource-namespace`, then lists and writes the served App Platform collection directly without legacy dashboard, folder, datasource, or org API permissions.
+- Resource-only export does not support `--all-orgs`; run one export for each explicit App Platform namespace.
+- Grafana Cloud resource endpoints use stack namespaces such as `stacks-123`; pass that value with `--resource-namespace stacks-123`.
 - Use Basic auth with `--all-orgs`.
 - Non-flat `raw/` and `prompt/` exports mirror Grafana folder paths, for example `Platform / Team / Infra` becomes `raw/Platform/Team/Infra/`.
 - Dashboard JSON filenames use stable dashboard UIDs, for example `raw/Platform/Team/Infra/cpu-main.json`, so title edits change content without renaming files.
@@ -122,6 +126,11 @@ grafana-util dashboard export --profile prod --run timestamp --overwrite
 ```bash
 # Export every dashboard resource API version served by Grafana 13.
 grafana-util dashboard export --profile prod --resource-format all --output-dir ./dashboards --overwrite
+```
+
+```bash
+# Export only Grafana Cloud App Platform v2 resources with a resource-scoped token.
+grafana-util dashboard export --profile prod --without-raw --without-prompt --without-provisioning --resource-format v2 --resource-namespace stacks-123 --output-dir ./dashboards --overwrite
 ```
 
 ## Related commands

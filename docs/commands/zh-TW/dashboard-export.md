@@ -19,6 +19,7 @@
 - `--without-raw`、`--without-prompt`、`--without-provisioning`：略過某個變體。
 - `--include-history`：把逐版本 dashboard 歷史成品寫到每個匯出 org 範圍下的 `history/<uid>/vN.history.json`。
 - `--resource-format`：加入原生 App Platform resource lane，可選 `none`（預設）、`v1`、`v2`、`all`。
+- `--resource-namespace`：覆寫 resource export 使用的 App Platform namespace。resource-only export 必填；mixed export 未指定時，Grafana OSS 的 org 1 使用 `default`，其他 org 使用 `org-<id>`。
 - `--provider-name`、`--provider-org-id`、`--provider-path`：自訂產生的 provisioning provider 檔案。
 - `--provider-disable-deletion`、`--provider-allow-ui-updates`、`--provider-update-interval-seconds`：調整 provisioning 行為。
 - `--run`：未指定 `--output-dir` 時，寫入 artifact workspace run。`timestamp` 會建立新的時間戳 run，`latest` 會重用最新紀錄的 run。
@@ -30,6 +31,9 @@
 - 啟用 resource lane 時會使用 family layout：classic lanes 放到 `classic/`，原生 envelope 則原樣寫到 `resource-v1/objects/` 與／或 `resource-v2/objects/`。
 - 寫入前會先 probe collection endpoint。明確指定 `v1` 或 `v2` 時，404 會直接報錯；`all` 只略過回傳 404 的版本，權限與伺服器錯誤不會被誤判成 unsupported。
 - Resource artifact 是給 `/apis/dashboard.grafana.app/...` 使用，不是 Grafana UI import；v2 的 `spec.elements` 會完整保留，不會轉成 classic `panels`。
+- Resource-only export（`--without-raw --without-prompt --without-provisioning --resource-format v1|v2|all`）必須指定 `--resource-namespace`，之後會直接列舉並寫出 served 的 App Platform collection，不需要 legacy dashboard、folder、datasource 或 org API 權限。
+- Resource-only export 不支援 `--all-orgs`；每個 App Platform namespace 請個別執行一次匯出。
+- Grafana Cloud resource endpoint 使用像 `stacks-123` 的 stack namespace；請以 `--resource-namespace stacks-123` 指定。
 - 搭配 `--all-orgs` 時，優先用 Basic auth。
 - 非 flat 的 `raw/` 與 `prompt/` 匯出會對齊 Grafana folder path，例如 `Platform / Team / Infra` 會成為 `raw/Platform/Team/Infra/`。
 - Dashboard JSON 檔名使用穩定的 dashboard UID，例如 `raw/Platform/Team/Infra/cpu-main.json`，因此 title 變更只會改內容，不會造成檔案 rename。
@@ -117,6 +121,11 @@ grafana-util dashboard export --url http://localhost:3000 --basic-user admin --b
 ```bash
 # 使用時間戳 run id，將 dashboard 匯出到 profile artifact workspace。
 grafana-util dashboard export --profile prod --run timestamp --overwrite
+```
+
+```bash
+# 使用 resource-scoped token，只匯出 Grafana Cloud App Platform v2 resource。
+grafana-util dashboard export --profile prod --without-raw --without-prompt --without-provisioning --resource-format v2 --resource-namespace stacks-123 --output-dir ./dashboards --overwrite
 ```
 
 ## 相關指令

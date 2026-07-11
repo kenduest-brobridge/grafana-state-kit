@@ -49,7 +49,8 @@ use document_write::write_history_document;
 use super::export_resource::{
     build_resource_export_metadata, build_resource_index_entry, build_resource_output_path,
     dashboard_resource_namespace, discover_resource_lanes_with_request,
-    fetch_dashboard_resource_with_request, selected_resource_lanes,
+    fetch_dashboard_resource_with_request, list_dashboard_resources_with_request,
+    selected_resource_lanes, ResourceExportLane,
 };
 
 pub(crate) struct ScopeExportResult {
@@ -163,6 +164,11 @@ where
             "Nothing to export. Remove one of --without-raw, --without-prompt, or --without-provisioning, or set --resource-format.",
         ));
     }
+    if !has_classic_export && args.resource_namespace.is_none() {
+        return Err(message(
+            "Resource-only export requires --resource-namespace so it can use App Platform APIs without resolving the current Grafana org.",
+        ));
+    }
     let mut scoped_request = |method: Method,
                               path: &str,
                               params: &[(String, String)],
@@ -174,14 +180,38 @@ where
         }
         request_json(method, path, &scoped_params, payload)
     };
-    let current_org = match org {
-        Some(org) => org.clone(),
-        None => fetch_current_org_with_request(&mut scoped_request)?,
+    let resource_only_explicit_namespace =
+        !has_classic_export && args.resource_namespace.as_deref().is_some();
+    let current_org = if resource_only_explicit_namespace {
+        org.cloned().unwrap_or_else(|| {
+            let mut fallback = Map::new();
+            fallback.insert(
+                "id".to_string(),
+                Value::String(
+                    org_id_override
+                        .map(|value| value.to_string())
+                        .unwrap_or_else(|| DEFAULT_UNKNOWN_UID.to_string()),
+                ),
+            );
+            fallback.insert(
+                "name".to_string(),
+                Value::String(args.resource_namespace.clone().unwrap_or_default()),
+            );
+            fallback
+        })
+    } else {
+        match org {
+            Some(org) => org.clone(),
+            None => fetch_current_org_with_request(&mut scoped_request)?,
+        }
     };
     let current_org_name = string_field(&current_org, "name", "org");
     let current_org_id = current_org
         .get("id")
-        .map(|value| value.to_string())
+        .map(|value| match value {
+            Value::String(text) => text.clone(),
+            _ => value.to_string(),
+        })
         .unwrap_or_else(|| DEFAULT_UNKNOWN_UID.to_string());
     let scope_output_dir = if args.all_orgs {
         build_all_orgs_output_dir(&args.output_dir, &current_org)
@@ -215,7 +245,30 @@ where
     if !args.dry_run && args.include_history {
         fs::create_dir_all(&history_dir)?;
     }
-    let namespace = dashboard_resource_namespace(&current_org_id);
+    let namespace = args
+        .resource_namespace
+        .clone()
+        .unwrap_or_else(|| dashboard_resource_namespace(&current_org_id));
+    if !has_classic_export {
+        let resource_exports = list_dashboard_resources_with_request(
+            &mut scoped_request,
+            args.resource_format,
+            &namespace,
+            args.page_size,
+        )?;
+        if resource_exports.is_empty() {
+            return Err(message(
+                "None of the requested dashboard resource API versions are served by this Grafana instance.",
+            ));
+        }
+        return export_resource_only_dashboards_in_scope(
+            args,
+            &current_org_name,
+            &current_org_id,
+            &scope_output_dir,
+            resource_exports,
+        );
+    }
     let resource_lanes = discover_resource_lanes_with_request(
         &mut scoped_request,
         args.resource_format,
@@ -717,5 +770,175 @@ where
         exported_count,
         root_index: Some(root_index),
         org_summary: Some(org_summary),
+    })
+}
+
+fn export_resource_only_dashboards_in_scope(
+    args: &ExportArgs,
+    current_org_name: &str,
+    current_org_id: &str,
+    scope_output_dir: &std::path::Path,
+    resource_exports: Vec<(ResourceExportLane, Vec<Value>)>,
+) -> Result<ScopeExportResult> {
+    let mut index_items = Vec::new();
+    let mut item_positions = std::collections::BTreeMap::new();
+    let mut resource_v1_index_items = Vec::new();
+    let mut resource_v2_index_items = Vec::new();
+    let folder_paths_by_key = std::collections::BTreeMap::new();
+
+    for (lane, resources) in &resource_exports {
+        let objects_dir = scope_output_dir
+            .join(lane.dir_name)
+            .join(RESOURCE_OBJECTS_SUBDIR);
+        if !args.dry_run {
+            fs::create_dir_all(&objects_dir)?;
+        }
+        for (resource_index, resource) in resources.iter().enumerate() {
+            let fallback_name = format!("dashboard-{}", resource_index + 1);
+            let (resource_path, resource_name, resource_title, resource_folder_path) =
+                build_resource_output_path(
+                    &objects_dir,
+                    resource,
+                    &fallback_name,
+                    &folder_paths_by_key,
+                    current_org_id,
+                );
+            if !args.dry_run {
+                write_dashboard(resource, &resource_path, args.overwrite)?;
+            }
+            if args.verbose {
+                println!(
+                    "{}",
+                    format_export_verbose_line(
+                        lane.dir_name,
+                        &resource_name,
+                        &resource_path,
+                        args.dry_run
+                    )
+                );
+            }
+            let item_position = match item_positions.get(&resource_name) {
+                Some(position) => *position,
+                None => {
+                    let mut summary = Map::new();
+                    summary.insert("uid".to_string(), Value::String(resource_name.clone()));
+                    summary.insert("title".to_string(), Value::String(resource_title.clone()));
+                    summary.insert(
+                        "orgName".to_string(),
+                        Value::String(current_org_name.to_string()),
+                    );
+                    summary.insert(
+                        "orgId".to_string(),
+                        Value::String(current_org_id.to_string()),
+                    );
+                    index_items.push(build_dashboard_index_item(&summary, &resource_name));
+                    let position = index_items.len() - 1;
+                    item_positions.insert(resource_name.clone(), position);
+                    position
+                }
+            };
+            let item = &mut index_items[item_position];
+            item.folder_path = resource_folder_path.clone();
+            let resource_entry = build_resource_index_entry(
+                *lane,
+                resource_name,
+                resource_title,
+                &resource_path,
+                resource_folder_path,
+                current_org_name,
+                current_org_id,
+            );
+            if lane.dir_name == RESOURCE_V1_EXPORT_SUBDIR {
+                item.resource_v1_path = Some(resource_path.display().to_string());
+                resource_v1_index_items.push(resource_entry);
+            } else if lane.dir_name == RESOURCE_V2_EXPORT_SUBDIR {
+                item.resource_v2_path = Some(resource_path.display().to_string());
+                resource_v2_index_items.push(resource_entry);
+            }
+        }
+    }
+
+    let mut resource_v1_index_path = None;
+    let mut resource_v2_index_path = None;
+    for (lane, _) in &resource_exports {
+        let resource_dir = scope_output_dir.join(lane.dir_name);
+        let index_path = resource_dir.join("index.json");
+        let metadata_path = resource_dir.join(EXPORT_METADATA_FILENAME);
+        let entries = if lane.dir_name == RESOURCE_V1_EXPORT_SUBDIR {
+            &resource_v1_index_items
+        } else {
+            &resource_v2_index_items
+        };
+        if !args.dry_run {
+            write_json_document(entries, &index_path)?;
+            write_json_document(
+                &build_resource_export_metadata(
+                    *lane,
+                    entries.len(),
+                    current_org_name,
+                    current_org_id,
+                    &args.common.url,
+                    args.common.profile.as_deref(),
+                    &resource_dir,
+                    &metadata_path,
+                ),
+                &metadata_path,
+            )?;
+        }
+        if lane.dir_name == RESOURCE_V1_EXPORT_SUBDIR {
+            resource_v1_index_path = Some(index_path);
+        } else if lane.dir_name == RESOURCE_V2_EXPORT_SUBDIR {
+            resource_v2_index_path = Some(index_path);
+        }
+    }
+
+    let root_index = build_root_export_index_with_resources(
+        &index_items,
+        None,
+        None,
+        None,
+        resource_v1_index_path.as_deref(),
+        resource_v2_index_path.as_deref(),
+        &[],
+    );
+    if !args.dry_run {
+        write_json_document(&root_index, &scope_output_dir.join("index.json"))?;
+        write_json_document(
+            &build_export_metadata(
+                "root",
+                index_items.len(),
+                None,
+                None,
+                None,
+                None,
+                Some(current_org_name),
+                Some(current_org_id),
+                None,
+                "live",
+                Some(&args.common.url),
+                None,
+                args.common.profile.as_deref(),
+                scope_output_dir,
+                &scope_output_dir.join(EXPORT_METADATA_FILENAME),
+            ),
+            &scope_output_dir.join(EXPORT_METADATA_FILENAME),
+        )?;
+    }
+    Ok(ScopeExportResult {
+        exported_count: index_items.len(),
+        root_index: Some(root_index),
+        org_summary: Some(ExportOrgSummary {
+            org: current_org_name.to_string(),
+            org_id: current_org_id.to_string(),
+            dashboard_count: index_items.len() as u64,
+            datasource_count: None,
+            used_datasource_count: None,
+            used_datasources: None,
+            output_dir: if args.all_orgs {
+                Some(scope_output_dir.display().to_string())
+            } else {
+                None
+            },
+        }),
     })
 }

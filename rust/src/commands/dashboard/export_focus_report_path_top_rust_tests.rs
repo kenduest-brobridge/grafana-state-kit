@@ -31,6 +31,7 @@ fn make_history_only_export_args(
         without_dashboard_provisioning: true,
         include_history: true,
         resource_format: crate::dashboard::DashboardResourceFormat::None,
+        resource_namespace: None,
         provisioning_provider_name: "grafana-utils-dashboards".to_string(),
         provisioning_provider_org_id: None,
         provisioning_provider_path: None,
@@ -61,6 +62,7 @@ fn export_dashboards_with_request_all_orgs_aggregates_results() {
         without_dashboard_provisioning: true,
         include_history: false,
         resource_format: crate::dashboard::DashboardResourceFormat::None,
+        resource_namespace: None,
         provisioning_provider_name: "grafana-utils-dashboards".to_string(),
         provisioning_provider_org_id: None,
         provisioning_provider_path: None,
@@ -317,6 +319,7 @@ fn export_dashboards_writes_resource_v1_lane_without_classic_variants() {
     args.without_dashboard_prompt = true;
     args.without_dashboard_provisioning = true;
     args.resource_format = crate::dashboard::DashboardResourceFormat::V1;
+    args.resource_namespace = Some("default".to_string());
 
     let count = export_dashboards_with_request(
         |method, path, params, _payload| match (method.as_str(), path) {
@@ -325,8 +328,22 @@ fn export_dashboards_writes_resource_v1_lane_without_classic_variants() {
                 "GET",
                 "/apis/dashboard.grafana.app/v1/namespaces/default/dashboards",
             ) => {
-                assert_eq!(params, &[("limit".to_string(), "1".to_string())]);
-                Ok(Some(json!({"items": [], "metadata": {}})))
+                assert_eq!(params, &[("limit".to_string(), "500".to_string())]);
+                Ok(Some(json!({
+                    "items": [{
+                        "kind": "Dashboard",
+                        "apiVersion": "dashboard.grafana.app/v1",
+                        "metadata": {
+                            "name": "cpu-main",
+                            "namespace": "default",
+                            "uid": "internal-resource-id",
+                            "annotations": {"grafana.app/folder": "infra"}
+                        },
+                        "spec": {"title": "CPU Main", "panels": []},
+                        "status": {}
+                    }],
+                    "metadata": {}
+                })))
             }
             ("GET", "/api/datasources") => Ok(Some(json!([
                 {"uid": "prom-main", "name": "Prometheus Main", "type": "prometheus", "url": "http://prometheus:9090", "access": "proxy", "isDefault": true}
@@ -374,9 +391,7 @@ fn export_dashboards_writes_resource_v1_lane_without_classic_variants() {
     .unwrap();
 
     assert_eq!(count, 1);
-    let resource_path = args
-        .output_dir
-        .join("resource-v1/objects/Platform/Infra/cpu-main.json");
+    let resource_path = args.output_dir.join("resource-v1/objects/cpu-main.json");
     assert!(resource_path.is_file());
     assert!(!args.output_dir.join("raw").exists());
     assert!(!args.output_dir.join("classic/raw").exists());
@@ -454,32 +469,26 @@ fn export_dashboards_writes_resource_v2_without_rewriting_elements() {
     args.without_dashboard_prompt = true;
     args.without_dashboard_provisioning = true;
     args.resource_format = crate::dashboard::DashboardResourceFormat::V2;
+    args.resource_namespace = Some("default".to_string());
 
     let count = export_dashboards_with_request(
         |method, path, params, _payload| match (method.as_str(), path) {
             ("GET", "/api/org") => Ok(Some(json!({"id": 1, "name": "Main Org"}))),
             ("GET", "/apis/dashboard.grafana.app/v2/namespaces/default/dashboards") => {
-                assert_eq!(params, &[("limit".to_string(), "1".to_string())]);
-                Ok(Some(json!({"items": [], "metadata": {}})))
-            }
-            ("GET", "/api/datasources") => Ok(Some(json!([]))),
-            ("GET", "/api/search") => Ok(Some(json!([
-                {"uid": "cpu-main", "title": "CPU Main"}
-            ]))),
-            ("GET", "/api/dashboards/uid/cpu-main") => Ok(Some(json!({
-                "dashboard": {"uid": "cpu-main", "title": "CPU Main", "panels": []}
-            }))),
-            ("GET", "/apis/dashboard.grafana.app/v2/namespaces/default/dashboards/cpu-main") => {
+                assert_eq!(params, &[("limit".to_string(), "500".to_string())]);
                 Ok(Some(json!({
-                    "kind": "Dashboard",
-                    "apiVersion": "dashboard.grafana.app/v2",
-                    "metadata": {"name": "cpu-main", "namespace": "default"},
-                    "spec": {
-                        "title": "CPU Main",
-                        "elements": {
-                            "panel-1": {"kind": "Panel", "spec": {"title": "CPU"}}
+                    "items": [{
+                        "kind": "Dashboard",
+                        "apiVersion": "dashboard.grafana.app/v2",
+                        "metadata": {"name": "cpu-main", "namespace": "default"},
+                        "spec": {
+                            "title": "CPU Main",
+                            "elements": {
+                                "panel-1": {"kind": "Panel", "spec": {"title": "CPU"}}
+                            }
                         }
-                    }
+                    }],
+                    "metadata": {}
                 })))
             }
             _ => Err(test_support::message(format!("unexpected path {path}"))),
@@ -515,6 +524,54 @@ fn export_dashboards_writes_resource_v2_without_rewriting_elements() {
 }
 
 #[test]
+fn export_dashboards_uses_explicit_resource_namespace_for_resource_only_export() {
+    let temp = tempdir().unwrap();
+    let mut args = make_history_only_export_args(temp.path().join("dashboards"), None, false, true);
+    args.include_history = false;
+    args.without_dashboard_raw = true;
+    args.without_dashboard_prompt = true;
+    args.without_dashboard_provisioning = true;
+    args.resource_format = crate::dashboard::DashboardResourceFormat::V2;
+    args.resource_namespace = Some("stacks-123".to_string());
+
+    let count = export_dashboards_with_request(
+        |method, path, params, _payload| match (method.as_str(), path) {
+            ("GET", "/apis/dashboard.grafana.app/v2/namespaces/stacks-123/dashboards") => {
+                assert_eq!(params, &[("limit".to_string(), "500".to_string())]);
+                Ok(Some(json!({
+                    "items": [{
+                        "kind": "Dashboard",
+                        "apiVersion": "dashboard.grafana.app/v2",
+                        "metadata": {"name": "cpu-main", "namespace": "stacks-123"},
+                        "spec": {"title": "CPU Main", "elements": {}}
+                    }],
+                    "metadata": {}
+                })))
+            }
+            _ => Err(test_support::message(format!("unexpected path {path}"))),
+        },
+        &args,
+    )
+    .unwrap();
+
+    assert_eq!(count, 1);
+    assert!(args
+        .output_dir
+        .join("resource-v2/objects/cpu-main.json")
+        .is_file());
+    let lane_metadata: Value = serde_json::from_str(
+        &fs::read_to_string(args.output_dir.join("resource-v2/export-metadata.json")).unwrap(),
+    )
+    .unwrap();
+    let root_metadata: Value = serde_json::from_str(
+        &fs::read_to_string(args.output_dir.join("export-metadata.json")).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(lane_metadata["orgId"], Value::String("unknown".to_string()));
+    assert_eq!(root_metadata["orgId"], Value::String("unknown".to_string()));
+}
+
+#[test]
 fn export_dashboards_mirrors_nested_folder_paths_for_raw_and_prompt() {
     let temp = tempdir().unwrap();
     let args = ExportArgs {
@@ -532,6 +589,7 @@ fn export_dashboards_mirrors_nested_folder_paths_for_raw_and_prompt() {
         without_dashboard_provisioning: false,
         include_history: false,
         resource_format: crate::dashboard::DashboardResourceFormat::None,
+        resource_namespace: None,
         provisioning_provider_name: "grafana-utils-dashboards".to_string(),
         provisioning_provider_org_id: None,
         provisioning_provider_path: None,
@@ -979,6 +1037,7 @@ fn export_dashboards_with_dry_run_keeps_output_dir_empty() {
         without_dashboard_provisioning: true,
         include_history: false,
         resource_format: crate::dashboard::DashboardResourceFormat::None,
+        resource_namespace: None,
         provisioning_provider_name: "grafana-utils-dashboards".to_string(),
         provisioning_provider_org_id: None,
         provisioning_provider_path: None,
@@ -1030,6 +1089,7 @@ fn export_dashboards_writes_provisioning_artifacts_in_separate_lane() {
         without_dashboard_provisioning: false,
         include_history: false,
         resource_format: crate::dashboard::DashboardResourceFormat::None,
+        resource_namespace: None,
         provisioning_provider_name: "grafana-utils-dashboards".to_string(),
         provisioning_provider_org_id: None,
         provisioning_provider_path: None,
@@ -1147,6 +1207,7 @@ fn export_dashboards_writes_custom_provisioning_provider_settings() {
         without_dashboard_provisioning: false,
         include_history: false,
         resource_format: crate::dashboard::DashboardResourceFormat::None,
+        resource_namespace: None,
         provisioning_provider_name: "grafana-utils-prod".to_string(),
         provisioning_provider_org_id: Some(42),
         provisioning_provider_path: Some(custom_provider_path.clone()),

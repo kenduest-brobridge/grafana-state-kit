@@ -136,6 +136,13 @@ pub struct ExportArgs {
     )]
     pub resource_format: DashboardResourceFormat,
     #[arg(
+        long = "resource-namespace",
+        value_name = "NAMESPACE",
+        help = "Override the App Platform namespace used for dashboard resource export. Required for resource-only export.",
+        help_heading = "Export Variant Options"
+    )]
+    pub resource_namespace: Option<String>,
+    #[arg(
         long = "provider-name",
         value_name = "NAME",
         alias = "provisioning-provider-name",
