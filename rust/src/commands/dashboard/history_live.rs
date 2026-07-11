@@ -109,11 +109,9 @@ fn resource_history_version(resource: &Value) -> Result<i64> {
     resource
         .get("metadata")
         .and_then(Value::as_object)
-        .and_then(|metadata| metadata.get("resourceVersion"))
-        .and_then(Value::as_str)
-        .ok_or_else(|| message("Dashboard resource history item is missing resourceVersion."))?
-        .parse::<i64>()
-        .map_err(|_| message("Dashboard resource history resourceVersion is not numeric."))
+        .and_then(|metadata| metadata.get("generation"))
+        .and_then(Value::as_i64)
+        .ok_or_else(|| message("Dashboard resource history item is missing numeric generation."))
 }
 
 fn resource_history_metadata(resource: &Value, key: &str, fallback: &str) -> String {
@@ -182,6 +180,10 @@ where
                 message("Dashboard resource history collection is missing an items array.")
             })?;
         resources.extend(items.iter().cloned());
+        if resources.len() >= limit {
+            resources.truncate(limit);
+            break;
+        }
         continuation = object
             .get("metadata")
             .and_then(Value::as_object)
@@ -224,7 +226,7 @@ where
             Ok(DashboardHistoryVersion {
                 version: resource_history_version(resource)?,
                 created: resource_history_metadata(resource, "created", "-"),
-                created_by: resource_history_metadata(resource, "grafana.app/createdBy", "-"),
+                created_by: resource_history_metadata(resource, "grafana.app/updatedBy", "-"),
                 message: resource_history_metadata(resource, "grafana.app/message", ""),
             })
         })
@@ -275,7 +277,7 @@ where
             Ok(DashboardHistoryExportVersion {
                 version: resource_history_version(&resource)?,
                 created: resource_history_metadata(&resource, "created", "-"),
-                created_by: resource_history_metadata(&resource, "grafana.app/createdBy", "-"),
+                created_by: resource_history_metadata(&resource, "grafana.app/updatedBy", "-"),
                 message: resource_history_metadata(&resource, "grafana.app/message", ""),
                 dashboard: resource,
             })
@@ -607,7 +609,7 @@ mod resource_history_tests {
     use serde_json::json;
 
     #[test]
-    fn resource_history_list_follows_continue_and_preserves_resource_versions() {
+    fn resource_history_list_uses_generation_actor_and_total_limit() {
         let mut calls = Vec::new();
         let document = build_dashboard_resource_history_list_document_with_request(
             |method, path, params, _| {
@@ -617,8 +619,10 @@ mod resource_history_tests {
                         "items": [{
                             "metadata": {
                                 "name": "cpu-main",
+                                "generation": 7,
                                 "resourceVersion": "8",
-                                "creationTimestamp": "2026-07-01T01:00:00Z"
+                                "creationTimestamp": "2026-07-01T01:00:00Z",
+                                "annotations": {"grafana.app/updatedBy": "sre"}
                             }
                         }],
                         "metadata": {}
@@ -628,8 +632,10 @@ mod resource_history_tests {
                         "items": [{
                             "metadata": {
                                 "name": "cpu-main",
+                                "generation": 8,
                                 "resourceVersion": "9",
-                                "creationTimestamp": "2026-07-02T01:00:00Z"
+                                "creationTimestamp": "2026-07-02T01:00:00Z",
+                                "annotations": {"grafana.app/updatedBy": "ops"}
                             }
                         }],
                         "metadata": {"continue": "next page"}
@@ -643,10 +649,10 @@ mod resource_history_tests {
         )
         .unwrap();
 
-        assert_eq!(document.version_count, 2);
-        assert_eq!(document.versions[0].version, 9);
-        assert_eq!(document.versions[1].version, 8);
-        assert_eq!(calls.len(), 2);
+        assert_eq!(document.version_count, 1);
+        assert_eq!(document.versions[0].version, 8);
+        assert_eq!(document.versions[0].created_by, "ops");
+        assert_eq!(calls.len(), 1);
         assert_eq!(
             calls[0].1,
             "/apis/dashboard.grafana.app/v2/namespaces/default/dashboards"
@@ -665,9 +671,70 @@ mod resource_history_tests {
                 ("limit".to_string(), "1".to_string())
             ]
         );
+    }
+
+    #[test]
+    fn resource_history_list_truncates_continuation_to_total_limit_in_order() {
+        let mut calls = Vec::new();
+        let document = build_dashboard_resource_history_list_document_with_request(
+            |method, path, params, _| {
+                calls.push((method, path.to_string(), params.to_vec()));
+                if params.iter().any(|(key, _)| key == "continue") {
+                    Ok(Some(json!({
+                        "items": [
+                            {
+                                "metadata": {
+                                    "name": "cpu-main",
+                                    "generation": 7,
+                                    "annotations": {"grafana.app/updatedBy": "sre"}
+                                }
+                            },
+                            {
+                                "metadata": {
+                                    "name": "cpu-main",
+                                    "generation": 6,
+                                    "annotations": {"grafana.app/updatedBy": "admin"}
+                                }
+                            }
+                        ],
+                        "metadata": {"continue": "third page"}
+                    })))
+                } else {
+                    Ok(Some(json!({
+                        "items": [{
+                            "metadata": {
+                                "name": "cpu-main",
+                                "generation": 8,
+                                "annotations": {"grafana.app/updatedBy": "ops"}
+                            }
+                        }],
+                        "metadata": {"continue": "second page"}
+                    })))
+                }
+            },
+            DashboardHistorySource::V2,
+            "default",
+            "cpu-main",
+            2,
+        )
+        .unwrap();
+
+        assert_eq!(calls.len(), 2);
         assert_eq!(
-            calls[1].2.last(),
-            Some(&("continue".to_string(), "next page".to_string()))
+            document
+                .versions
+                .iter()
+                .map(|version| version.version)
+                .collect::<Vec<_>>(),
+            vec![8, 7]
+        );
+        assert_eq!(
+            document
+                .versions
+                .iter()
+                .map(|version| version.created_by.as_str())
+                .collect::<Vec<_>>(),
+            vec!["ops", "sre"]
         );
     }
 
@@ -677,13 +744,18 @@ mod resource_history_tests {
             |_method, path, _params, _| {
                 if path.ends_with("/dashboards/cpu-main") {
                     Ok(Some(json!({
-                        "metadata": {"name": "cpu-main", "resourceVersion": "9"},
+                        "metadata": {"name": "cpu-main", "generation": 12, "resourceVersion": "9"},
                         "spec": {"title": "CPU Main", "elements": {"panel-1": {"kind": "Panel"}}}
                     })))
                 } else {
                     Ok(Some(json!({
                         "items": [{
-                            "metadata": {"name": "cpu-main", "resourceVersion": "8"},
+                            "metadata": {
+                                "name": "cpu-main",
+                                "generation": 11,
+                                "resourceVersion": "8",
+                                "annotations": {"grafana.app/updatedBy": "ops"}
+                            },
                             "spec": {"title": "CPU Main", "elements": {"panel-1": {"kind": "Panel"}}}
                         }],
                         "metadata": {}
@@ -697,8 +769,9 @@ mod resource_history_tests {
         )
         .unwrap();
 
-        assert_eq!(document.current_version, 9);
-        assert_eq!(document.versions[0].version, 8);
+        assert_eq!(document.current_version, 12);
+        assert_eq!(document.versions[0].version, 11);
+        assert_eq!(document.versions[0].created_by, "ops");
         assert_eq!(
             document.versions[0].dashboard["spec"]["elements"]["panel-1"]["kind"],
             "Panel"
