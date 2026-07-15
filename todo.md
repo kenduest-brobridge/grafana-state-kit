@@ -59,8 +59,9 @@ Current status:
   and zh-TW command docs.
 - [x] Datasource/dashboard browse detail scrolling is clamped through
   focus-aware state helpers.
-- [ ] Datasource live/local/snapshot secret-redaction tests still need a full
-  pass across detail, diff, review, and confirmation panes.
+- [x] Datasource live/local/snapshot secret-redaction tests cover detail, diff,
+  review, and applicable confirmation panes without rendering credential
+  values.
 - [ ] Dashboard import/inspect/browse still need confirmation, footer,
   search/repeat, and source/provenance regression coverage.
 - [ ] Access, status, and workspace/sync surfaces still need blocker,

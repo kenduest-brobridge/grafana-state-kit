@@ -520,6 +520,44 @@ mod tests {
     }
 
     #[test]
+    fn datasource_browser_local_detail_lines_do_not_display_secret_values() {
+        let details = json!({
+            "name": "Prometheus",
+            "uid": "prom-main",
+            "type": "prometheus",
+            "org": "Main Org.",
+            "orgId": "1",
+            "url": "http://prometheus:9090",
+            "access": "proxy",
+            "isDefault": true,
+            "password": "local-password-secret",
+            "token": "local-token-secret",
+            "apiKey": "local-api-key-secret",
+            "secureJsonData": {
+                "password": "local-secure-json-secret"
+            }
+        })
+        .as_object()
+        .unwrap()
+        .clone();
+
+        let rendered = datasource_browser_detail_lines_from_details(&details).join("\n");
+
+        assert!(rendered.contains("Name: Prometheus"));
+        for secret in [
+            "local-password-secret",
+            "local-token-secret",
+            "local-api-key-secret",
+            "local-secure-json-secret",
+        ] {
+            assert!(
+                !rendered.contains(secret),
+                "rendered local detail leaked a credential value"
+            );
+        }
+    }
+
+    #[test]
     fn review_lines_render_placeholder_backed_secret_review_without_raw_tokens() {
         let item = datasource_item(
             json!({
@@ -559,11 +597,14 @@ mod tests {
     }
 
     #[test]
-    fn review_lines_do_not_display_resolved_secure_json_data_values() {
+    fn review_lines_do_not_display_direct_or_resolved_secret_values() {
         let item = datasource_item(
             json!({
+                "password": "live-password-secret",
+                "token": "live-token-secret",
+                "apiKey": "live-api-key-secret",
                 "secureJsonData": {
-                    "password": "super-secret-value"
+                    "password": "live-secure-json-secret"
                 }
             })
             .as_object()
@@ -581,8 +622,21 @@ mod tests {
         assert!(lines.contains(
             &"Secret review required: true (resolved secureJsonData hidden)".to_string()
         ));
-        assert!(!rendered.contains("super-secret-value"));
-        assert!(!facts.iter().any(|line| line.contains("super-secret-value")));
+        for secret in [
+            "live-password-secret",
+            "live-token-secret",
+            "live-api-key-secret",
+            "live-secure-json-secret",
+        ] {
+            assert!(
+                !rendered.contains(secret),
+                "rendered review leaked a credential value"
+            );
+            assert!(
+                !facts.iter().any(|line| line.contains(secret)),
+                "rendered detail leaked a credential value"
+            );
+        }
     }
 
     #[test]
@@ -699,7 +753,13 @@ mod tests {
             json!({
                 "status": "different",
                 "matchBasis": "uid",
-                "changedFields": ["url", "secureJsonData.password"]
+                "changedFields": [
+                    "url",
+                    "password",
+                    "token",
+                    "apiKey",
+                    "secureJsonData.password"
+                ]
             })
             .as_object()
             .unwrap()
@@ -712,6 +772,11 @@ mod tests {
         assert!(lines.contains(&"Review status: different".to_string()));
         assert!(lines.contains(&"Review match: uid".to_string()));
         assert!(lines.contains(&"Review changed fields: url".to_string()));
-        assert!(!rendered.contains("secureJsonData.password"));
+        for secret_field in ["password", "token", "apiKey", "secureJsonData.password"] {
+            assert!(
+                !rendered.contains(secret_field),
+                "rendered review diff leaked a credential field"
+            );
+        }
     }
 }

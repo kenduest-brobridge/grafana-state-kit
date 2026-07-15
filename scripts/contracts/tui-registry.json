@@ -105,7 +105,7 @@
       "docs_zh_TW": "docs/commands/zh-TW/datasource-browse.md",
       "parser_paths": ["rust/src/commands/datasource/cli/defs.rs"],
       "parser_evidence": ["Browse(DatasourceBrowseArgs)"],
-      "test_paths": ["rust/src/commands/datasource/browse/input.rs"],
+      "test_paths": ["rust/src/commands/datasource/browse/input.rs", "rust/src/commands/datasource/browse/support.rs"],
       "notes": "Active implementation with shared detail and review projection reuse."
     },
     {
@@ -120,7 +120,7 @@
       "docs_zh_TW": "docs/commands/zh-TW/datasource-list.md",
       "parser_paths": ["rust/src/commands/datasource/cli/defs.rs", "rust/src/commands/datasource/cli/defs_read.rs", "rust/src/commands/datasource/cli/formats.rs"],
       "parser_evidence": ["List(DatasourceListArgs)", "Interactive"],
-      "test_paths": ["rust/src/commands/datasource/tests/cli_mutation_help_parse.rs"],
+      "test_paths": ["rust/src/commands/datasource/tests/cli_mutation_help_parse.rs", "rust/src/commands/datasource/browse/support.rs"],
       "notes": "Local datasource list interactive workbench for export/provisioning inspection."
     },
     {

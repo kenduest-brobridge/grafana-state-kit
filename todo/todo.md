@@ -2,6 +2,10 @@
 
 ## Active
 
+- [x] [2026-07-12 datasource TUI secret-redaction coverage](2026-07-12-datasource-tui-secret-redaction-coverage.md) -
+  Prove live browse, local list, and snapshot-review datasource detail and
+  review panes never render direct or nested credential values.
+
 - [x] [2026-07-12 Grafana 13 review follow-up fixes](2026-07-12-grafana13-review-followup-fixes.md) -
   Correct resource history semantics, native-only export routing, Cloud
   namespace selection, and Git Sync symlink traversal found after merge.

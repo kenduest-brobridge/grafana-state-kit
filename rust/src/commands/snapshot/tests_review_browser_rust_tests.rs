@@ -215,8 +215,11 @@ fn snapshot_review_browser_items_reuse_datasource_review_evidence_without_secret
                 "targetReadOnly": true,
                 "changedFields": ["url", "secureJsonData.password", "jsonData.token", "basicAuthPassword"],
                 "reviewRequired": true,
+                "password": "snapshot-password-secret",
+                "token": "snapshot-token-secret",
+                "apiKey": "snapshot-api-key-secret",
                 "secureJsonData": {
-                    "password": "super-secret-value"
+                    "password": "snapshot-secure-json-secret"
                 }
             }
         ],
@@ -236,10 +239,20 @@ fn snapshot_review_browser_items_reuse_datasource_review_evidence_without_secret
     assert!(details.contains("Review target: read-only=true"));
     assert!(details.contains("Review changed fields: url"));
     assert!(details.contains("Review required: true"));
-    assert!(!details.contains("super-secret-value"));
     assert!(!details.contains("secureJsonData.password"));
     assert!(!details.contains("jsonData.token"));
     assert!(!details.contains("basicAuthPassword"));
+    for secret in [
+        "snapshot-password-secret",
+        "snapshot-token-secret",
+        "snapshot-api-key-secret",
+        "snapshot-secure-json-secret",
+    ] {
+        assert!(
+            !details.contains(secret),
+            "snapshot review leaked a credential value"
+        );
+    }
 }
 
 #[test]
