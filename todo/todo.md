@@ -2,6 +2,11 @@
 
 ## Active
 
+- [ ] [2026-07-12 full project analysis and improvement roadmap](2026-07-12-full-project-analysis-roadmap.md) -
+  Produce one complete evidence-backed project assessment and atomic backlog
+  through phased Rust-first architecture, correctness, security, delivery,
+  compatibility, documentation, and operational-readiness review.
+
 - [x] [2026-07-12 datasource TUI secret-redaction coverage](2026-07-12-datasource-tui-secret-redaction-coverage.md) -
   Prove live browse, local list, and snapshot-review datasource detail and
   review panes never render direct or nested credential values.
