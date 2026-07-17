@@ -2,7 +2,22 @@
 
 ## Active
 
-- [ ] [2026-07-12 full project analysis and improvement roadmap](2026-07-12-full-project-analysis-roadmap.md) -
+- [ ] [2026-07-17 dashboard import auto detection and server capability negotiation](2026-07-17-dashboard-import-auto-capability-negotiation.md) -
+  Plan backward-compatible source classification, shared server discovery,
+  explainable endpoint routing, and status reporting across Grafana 12, 13,
+  and later compatible API surfaces.
+
+- [x] [2026-07-17 dashboard resource-v2 import review and fix](2026-07-17-dashboard-v2-resource-import-review-fix.md) -
+  Fixed production dispatch, strict response identity, safe discovery,
+  idempotency, output and interactive contracts, then reverified unit, full
+  Rust, generated-doc, contract, registry, and live Grafana 13.1 behavior.
+
+- [x] [2026-07-17 dashboard schema v2 resource API import](2026-07-17-dashboard-v2-resource-import.md) -
+  Complete namespace-aware native v2 import with guarded reconciliation,
+  searchable interactive review, truthful partial-run reporting, bilingual
+  generated docs, and positive/negative Grafana 13.1 live evidence.
+
+- [x] [2026-07-12 full project analysis and improvement roadmap](2026-07-12-full-project-analysis-roadmap.md) -
   Produce one complete evidence-backed project assessment and atomic backlog
   through phased Rust-first architecture, correctness, security, delivery,
   compatibility, documentation, and operational-readiness review.
