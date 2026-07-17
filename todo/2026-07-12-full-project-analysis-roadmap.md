@@ -2,7 +2,7 @@
 
 ## Status
 
-- State: planned
+- State: complete
 - Date: 2026-07-12
 - Scope type: analysis, read-only validation, and planning only
 - Final deliverable: one complete project analysis report and prioritized
@@ -237,14 +237,14 @@ and classification pass Phase 7.
 
 ### Phase 0: Baseline and scope lock
 
-- [ ] Record branch, commit, worktree status, repository roots, and toolchain
+- [x] Record branch, commit, worktree status, repository roots, and toolchain
       versions without changing the environment.
-- [ ] Capture indexed repository structure and primary/secondary language
+- [x] Capture indexed repository structure and primary/secondary language
       boundaries while excluding `rust/target`.
-- [ ] Map build, test, documentation, packaging, CI, and release entry points.
-- [ ] Reconcile historical baseline items with current commits and regression
+- [x] Map build, test, documentation, packaging, CI, and release entry points.
+- [x] Reconcile historical baseline items with current commits and regression
       tests; label each resolved, still open, regressed, or runtime-dependent.
-- [ ] Record unavailable tools, credentials, services, or platforms as evidence
+- [x] Record unavailable tools, credentials, services, or platforms as evidence
       limitations rather than project defects.
 
 **Gate:** scope, baseline commit, validation lanes, exclusions, and evidence
@@ -252,17 +252,17 @@ limitations are explicit.
 
 ### Phase 1: Architecture and execution flows
 
-- [ ] Map Rust crate entry points, command registration and dispatch, shared
+- [x] Map Rust crate entry points, command registration and dispatch, shared
       infrastructure, Grafana clients, domain modules, renderers, TUI, and
       optional browser boundaries.
-- [ ] Trace representative read-only and mutation flows from operator input to
+- [x] Trace representative read-only and mutation flows from operator input to
       transport, response handling, output, and error reporting.
-- [ ] Map Python compatibility, packaging, scripts, contracts, fixtures, and
+- [x] Map Python compatibility, packaging, scripts, contracts, fixtures, and
       generated documentation relationships.
-- [ ] Document dependency direction, integration boundaries, trust boundaries,
+- [x] Document dependency direction, integration boundaries, trust boundaries,
       and failure boundaries; add one Mermaid diagram only if it materially
       clarifies these relationships.
-- [ ] Identify unclear ownership, mixed responsibilities, high-coupling areas,
+- [x] Identify unclear ownership, mixed responsibilities, high-coupling areas,
       and architecture intent that differs from implementation.
 
 **Gate:** every major component has a responsibility, entry point, dependency,
@@ -270,16 +270,16 @@ and evidence reference.
 
 ### Phase 2: Correctness, security, reliability, and performance
 
-- [ ] Review all public command families and shared infrastructure for the
+- [x] Review all public command families and shared infrastructure for the
       required correctness and maintainability concerns.
-- [ ] Review authentication, authorization, secret handling, destructive
+- [x] Review authentication, authorization, secret handling, destructive
       operations, filesystem/network inputs, logging, TLS, and CI/release trust
       boundaries.
-- [ ] Review pagination, timeouts, retry/fallback behavior, partial failures,
+- [x] Review pagination, timeouts, retry/fallback behavior, partial failures,
       idempotency, concurrency, recovery, and failure visibility.
-- [ ] Review likely hot paths and resource bounds without proposing premature
+- [x] Review likely hot paths and resource bounds without proposing premature
       optimization.
-- [ ] Reproduce suspected defects with the smallest existing test, focused
+- [x] Reproduce suspected defects with the smallest existing test, focused
       command, fixture, or source-level execution trace practical.
 
 **Gate:** no candidate bug or vulnerability is called confirmed without a
@@ -287,16 +287,16 @@ current reachable path and reproducible evidence.
 
 ### Phase 3: Interfaces, Grafana integration, configuration, and observability
 
-- [ ] Review CLI parser/help/output/error contracts and destructive-action UX
+- [x] Review CLI parser/help/output/error contracts and destructive-action UX
       across command families.
-- [ ] Review TUI registry, route coverage, interaction state, terminal-size,
+- [x] Review TUI registry, route coverage, interaction state, terminal-size,
       scrolling, focus, search, modal, redaction, and fallback behavior.
-- [ ] Review the optional browser lane separately from the lean default build.
-- [ ] Review classic API and App Platform capability routing, namespaces,
+- [x] Review the optional browser lane separately from the lean default build.
+- [x] Review classic API and App Platform capability routing, namespaces,
       pagination, history, edition/version constraints, and compatibility.
-- [ ] Compare unstable Grafana claims with current official sources and label
+- [x] Compare unstable Grafana claims with current official sources and label
       inference, public support, experimental status, and edition constraints.
-- [ ] Review configuration precedence, validation, secrets, unsafe defaults,
+- [x] Review configuration precedence, validation, secrets, unsafe defaults,
       logging context, metrics, tracing, health, and diagnostic surfaces.
 
 **Gate:** public-surface findings are checked against command/docs contracts and
@@ -304,17 +304,17 @@ Grafana claims cite current authoritative sources.
 
 ### Phase 4: Python, contracts, dependencies, build, and delivery
 
-- [ ] Verify which Python modules are maintained product compatibility versus
+- [x] Verify which Python modules are maintained product compatibility versus
       repository tooling or historical implementation.
-- [ ] Review packaging/install behavior, Python 3.9 compatibility, YAML and
+- [x] Review packaging/install behavior, Python 3.9 compatibility, YAML and
       other runtime dependencies, Rust/Python/schema parity, and shared
       fixtures.
-- [ ] Review Rust and Python manifests and lock files for reproducibility,
+- [x] Review Rust and Python manifests and lock files for reproducibility,
       unnecessary direct dependencies, supportability, security relevance, and
       version-policy consistency.
-- [ ] Review Make targets, GitHub/GitLab workflows, feature matrices, quality
+- [x] Review Make targets, GitHub/GitLab workflows, feature matrices, quality
       gates, documentation generation, artifact creation, and release flow.
-- [ ] Distinguish environment failures from repository defects and record the
+- [x] Distinguish environment failures from repository defects and record the
       exact command, result, and interpretation for each failure.
 
 **Gate:** compatibility and delivery conclusions name the maintained boundary
@@ -322,15 +322,15 @@ and the validation environment.
 
 ### Phase 5: Tests, documentation, and operational readiness
 
-- [ ] Evaluate critical-path and failure-path test quality, isolation,
+- [x] Evaluate critical-path and failure-path test quality, isolation,
       determinism, fixtures, contract coverage, live-test boundaries, and CI
       execution rather than relying on test count.
-- [ ] Run the smallest relevant existing validation targets first, then broaden
+- [x] Run the smallest relevant existing validation targets first, then broaden
       only where evidence crosses subsystems.
-- [ ] Compare README, handbook, command reference, maintainer docs, generated
+- [x] Compare README, handbook, command reference, maintainer docs, generated
       outputs, architecture notes, troubleshooting, and release guidance with
       current code and contracts.
-- [ ] Assess deployment assumptions, rollback, backup/restore relevance,
+- [x] Assess deployment assumptions, rollback, backup/restore relevance,
       monitoring, alerting, capacity, recovery, auditability, upgrade strategy,
       and operator diagnostics.
 
@@ -358,9 +358,9 @@ and whether failure is a product defect, repository/tooling defect, generated
 drift, unavailable dependency, missing live service, or local environment
 limitation.
 
-- [ ] Run focused validations needed to confirm candidate findings.
-- [ ] Run the applicable broad validation matrix.
-- [ ] Check worktree status afterward and stop if any validation unexpectedly
+- [x] Run focused validations needed to confirm candidate findings.
+- [x] Run the applicable broad validation matrix.
+- [x] Check worktree status afterward and stop if any validation unexpectedly
       modified tracked files.
 
 **Gate:** the final assessment clearly separates static evidence, automated
@@ -368,18 +368,18 @@ validation, live behavior, and untested assumptions.
 
 ### Phase 7: Synthesis and backlog construction
 
-- [ ] Deduplicate candidates by root cause and assign stable finding IDs.
-- [ ] Record concrete strengths with the same evidence standard as defects.
-- [ ] Classify every finding by severity and confidence without inflating High
+- [x] Deduplicate candidates by root cause and assign stable finding IDs.
+- [x] Record concrete strengths with the same evidence standard as defects.
+- [x] Classify every finding by severity and confidence without inflating High
       or Critical counts.
-- [ ] Build the risk register from current findings and unresolved assumptions.
-- [ ] Convert actionable findings into atomic TODO items with objective
+- [x] Build the risk register from current findings and unresolved assumptions.
+- [x] Convert actionable findings into atomic TODO items with objective
       acceptance and validation criteria.
-- [ ] Group TODO items into safe implementation phases and give one exact,
+- [x] Group TODO items into safe implementation phases and give one exact,
       dependency-aware execution order.
-- [ ] Record quick wins, justified refactoring opportunities, missing tests,
+- [x] Record quick wins, justified refactoring opportunities, missing tests,
       documentation gaps, and deferred or rejected recommendations.
-- [ ] Self-review the final report for unsupported claims, duplicate findings,
+- [x] Self-review the final report for unsupported claims, duplicate findings,
       vague TODOs, inconsistent IDs, and scope violations.
 
 **Gate:** every TODO traces to evidence or a documented risk, can be implemented
@@ -496,31 +496,31 @@ then documentation.
 
 ## Acceptance Checks
 
-- [ ] The current commit and environment baseline are recorded.
-- [ ] Every indexed primary and maintained secondary project surface is mapped
+- [x] The current commit and environment baseline are recorded.
+- [x] Every indexed primary and maintained secondary project surface is mapped
       or explicitly excluded with rationale.
-- [ ] Representative read-only and mutation runtime flows are traced with
+- [x] Representative read-only and mutation runtime flows are traced with
       source evidence.
-- [ ] All required analysis categories are covered, including categories with
+- [x] All required analysis categories are covered, including categories with
       no current finding.
-- [ ] Historical Grafana 13 findings are individually revalidated and not
+- [x] Historical Grafana 13 findings are individually revalidated and not
       blindly carried forward.
-- [ ] Relevant existing tests, lint, build, contract, documentation, and
+- [x] Relevant existing tests, lint, build, contract, documentation, and
       feature-lane checks are executed or recorded as unavailable.
-- [ ] Every meaningful finding has current evidence, severity, confidence,
+- [x] Every meaningful finding has current evidence, severity, confidence,
       impact, minimal recommendation, and verification method.
-- [ ] Security findings distinguish reachable vulnerabilities from hardening
+- [x] Security findings distinguish reachable vulnerabilities from hardening
       opportunities and runtime-dependent hypotheses.
-- [ ] Performance findings distinguish measured problems, likely bottlenecks,
+- [x] Performance findings distinguish measured problems, likely bottlenecks,
       and profiling candidates.
-- [ ] Findings are deduplicated by root cause.
-- [ ] Every active recommendation becomes an atomic, objectively verifiable
+- [x] Findings are deduplicated by root cause.
+- [x] Every active recommendation becomes an atomic, objectively verifiable
       TODO or is explicitly deferred/rejected.
-- [ ] The risk register, phased roadmap, and exact recommended execution order
+- [x] The risk register, phased roadmap, and exact recommended execution order
       use consistent finding and TODO IDs.
-- [ ] The final recommendation identifies the first five TODO items, highest
+- [x] The final recommendation identifies the first five TODO items, highest
       unresolved assumptions, and whether incremental remediation is suitable.
-- [ ] The final worktree check confirms no source or generated artifacts were
+- [x] The final worktree check confirms no source or generated artifacts were
       modified by the analysis.
 
 ## Evidence Log
@@ -540,6 +540,459 @@ then documentation.
   present; the review clarified the docs-only commit boundary, aligned the
   Rust formatting command with repository guidance, and promoted the active
   roadmap above completed items in `todo/todo.md`.
+- 2026-07-17: Final analysis ran on branch `dev` at `b95ad250`, 17 commits
+  ahead of `origin/dev`. CodeGraph reported 1,038 files, 20,877 nodes, and
+  58,834 edges: Rust 815, Python 219, YAML 3, and JavaScript 1.
+- 2026-07-17: `cd rust && cargo test --quiet` completed with 1,887 passing,
+  one failing, and one ignored test. The failure was
+  `project_status_live_all_orgs_fans_out_across_visible_orgs`, whose suite run
+  observed an unscoped `/api/org/users` request where the assertion expected
+  scoped requests. The focused rerun passed: one passed, 1,925 filtered out.
+- 2026-07-17: `cd rust && cargo fmt --all --check` passed. `cd rust && cargo
+  check --features browser` passed without compiling additional crates.
+- 2026-07-17: `cd rust && cargo clippy --all-targets -- -D warnings` failed
+  with seven diagnostics: one `question_mark`, one `some_filter`, and five
+  redundant formatting references.
+- 2026-07-17: The previously supplied 392-test Python run had 33 import errors
+  and one `httpx`-dependent skip. `cd python && poetry run python -c 'import
+  yaml'` reproduced `ModuleNotFoundError`; `python/pyproject.toml` correctly
+  declares `PyYAML>=6,<7`, so this is a stale/incomplete local Poetry
+  environment, not a missing manifest dependency.
+- 2026-07-17: `make quality-ai-workflow`, `make quality-docs-surface`, `make
+  man-check`, and `make html-check` passed. This supersedes the earlier
+  transient docs-surface failure involving access browse documentation.
+- 2026-07-17: Current Grafana documentation confirms the standardized
+  `/apis/<GROUP>/<VERSION>/namespaces/<NAMESPACE>/<RESOURCE>` shape,
+  `resourceVersion` optimistic concurrency semantics, and dashboard v1/v2
+  resource discovery in Grafana CLI workflows. Relevant sources are
+  <https://grafana.com/docs/grafana/latest/developer-resources/api-reference/http-api/apis/>
+  and <https://grafana.com/docs/grafana/latest/as-code/observability-as-code/grafana-cli/grafanactl/grafanacli-workflows/>.
+- 2026-07-17: Final status inspection observed concurrent, out-of-scope
+  dashboard resource-v2 source and fixture changes associated with the
+  separately tracked 2026-07-17 import item. This analysis did not edit,
+  stage, revert, or evaluate those changes.
+
+## Executive Summary
+
+**Overall assessment: Generally healthy with targeted issues.**
+
+The Rust-first product has a coherent unified CLI, explicit domain ownership,
+safe mutation review patterns, extensive automated coverage, generated-doc
+contracts, a lean default build, and a separately verified browser feature.
+The completed Grafana 13 work remains substantially intact. No reachable
+Critical security, data-loss, or performance defect was confirmed.
+
+Release confidence is nevertheless reduced by four concrete delivery issues:
+the Rust lint gate currently fails, one network-style Rust test is
+suite-order-sensitive, the maintained Python suite is absent from GitHub CI
+and could not run in the stale local Poetry environment, and the GitLab
+pipeline references paths and binaries that no longer exist. Incremental
+remediation is appropriate; a rewrite or service split is not justified.
+
+## Project Overview
+
+`grafana-util` is an operator CLI for inventory, export, inspection, diff,
+preview, safe apply, sync, snapshot, status, and interactive Grafana workflows.
+Its primary deliverable is the Rust binary defined by
+`rust/src/bin/grafana-util.rs`; Python under `python/grafana_utils/` is the
+first-generation compatibility and repository-tooling surface. External trust
+boundaries are Grafana HTTP APIs, local profile and secret storage, staged
+filesystem artifacts, terminals, optional browser automation, CI runners, and
+release distribution.
+
+## Repository Map
+
+| Surface | Ownership and role | Primary evidence |
+|---|---|---|
+| `rust/src/bin`, `rust/src/cli` | binary entry, parsing, help, dispatch | `grafana-util.rs:main`, `cli/dispatch.rs` |
+| `rust/src/commands` | dashboard, alert, access, datasource, sync, snapshot, status, config, resource workflows | `rust/src/lib.rs` module map |
+| `rust/src/common`, `rust/src/grafana` | auth, profiles, HTTP transport, shared TUI/browser/output and Grafana clients | `common/auth.rs`, `grafana/http.rs`, `grafana/api/mod.rs` |
+| `python/grafana_utils`, `python/tests` | compatibility CLI, packaging, doc/tool support, secondary tests | `python/pyproject.toml`, `unified_cli.py` |
+| `tests/fixtures` | cross-language and schema contracts | fixture README and JSON cases |
+| `scripts/contracts`, `scripts/*.py` | command/docs/TUI contracts and generated-doc quality gates | `command-surface.json`, `docs-entrypoints.json` |
+| `docs`, `Makefile` | operator/maintainer sources, generated man/HTML, canonical tasks | `Makefile` targets |
+| `.github/workflows`, `.gitlab-ci.yml` | CI, live smoke, packaging, release | workflow definitions |
+
+`rust/target` was excluded. CodeGraph's 1,038-file view is the structural
+inventory used for this assessment.
+
+## Architecture Summary
+
+The normal flow is operator arguments -> Clap parsing/help -> shared dispatch
+-> domain command normalization -> profile/auth resolution -> `JsonHttpClient`
+and resource clients -> Grafana classic or App Platform API -> domain model ->
+text/table/JSON/TUI rendering. Mutations add plan/diff/review/approval gates;
+read-only browse and status commands reuse the same transport and scoped org
+headers. TUI state stays in domain-owned modules with common shell helpers.
+The optional browser dependencies are isolated behind the `browser` feature.
+
+Python repeats portions of the product surface for compatibility, while
+shared fixtures, command contracts, and documentation generators constrain
+cross-language drift. This duplication is manageable only if CI exercises the
+secondary lane. Persistence is file-based; network and filesystem failures are
+returned as command errors rather than hidden service state.
+
+## Strengths
+
+- `rust/src/lib.rs` documents and enforces recognizable domain boundaries.
+- The unified CLI taxonomy and bilingual docs are protected by 206-page docs
+  surface checks plus generated man and HTML drift checks.
+- Mutation commands use explicit preview/approval and safe-review contracts;
+  current review found no confirmed secret disclosure or authorization bypass.
+- Rust has broad focused and full-suite coverage, shared contract fixtures,
+  a live Grafana smoke lane, and a tag-gated release installer smoke.
+- Default and browser feature boundaries are explicit; the browser check passes.
+- Historical Grafana 13 fixes for PyYAML declaration, datasource fallback, TUI
+  registry precision, resource history, resource-only export, namespace
+  selection, and symlink cycles remain represented by current manifests,
+  source, regression tests, or passing contract/docs gates. Dashboard v2 import
+  remains a separate active item and is not duplicated below.
+
+## Findings by Category
+
+### CICD-001: Rust lint gate is red
+
+- Category: Build, CI/CD, packaging, and release
+- Severity: Medium
+- Confidence: Confirmed
+- Related baseline item: none
+
+#### Evidence
+
+- `rust/src/commands/access/service_account_workflows_sync.rs:import workflow` — one `question_mark` diagnostic.
+- `rust/src/commands/dashboard/browse/state.rs:selection key` — one `some_filter` diagnostic.
+- `rust/src/commands/status/overview/section_rows.rs:status rows` — five redundant formatting-reference diagnostics.
+- Validation: `cd rust && cargo clippy --all-targets -- -D warnings` — seven errors.
+
+#### Description and impact
+
+Behavioral tests may pass, but the canonical Rust quality gate and GitHub
+`rust-quality` job cannot pass. Tag release jobs depend on that job.
+
+#### Recommendation and verification
+
+Apply the semantics-preserving Clippy suggestions, retain focused tests for the
+touched paths, and rerun formatting, focused tests, Clippy, and full Rust tests.
+
+### TST-001: All-orgs live-status test is suite-order-sensitive
+
+- Category: Testing and functional correctness
+- Severity: Medium
+- Confidence: High confidence
+- Related baseline item: none
+
+#### Evidence
+
+- `rust/src/commands/status/overview/live_tests.rs:project_status_live_all_orgs_fans_out_across_visible_orgs` — expects org-scoped access requests.
+- Validation: full Rust suite — 1,887 pass, one fail, one ignored; focused rerun — pass.
+
+#### Description and impact
+
+The isolated pass rules out a deterministic endpoint-contract failure and
+points to test-server teardown, shared state, parallel scheduling, or request
+capture isolation. A flaky required suite weakens CI signal and can mask a real
+org-scoping regression.
+
+#### Recommendation and verification
+
+Reproduce under repeated parallel and single-threaded runs, identify the shared
+state, and make the test deterministic without weakening scoped assertions.
+
+### TST-002: Maintained Python tests lack a dependable CI lane
+
+- Category: Testing, dependencies, and compatibility
+- Severity: High
+- Confidence: Confirmed
+- Related baseline item: `todo/2026-07-10-grafana13-all-improvements.md` PyYAML packaging
+
+#### Evidence
+
+- `.github/workflows/ci.yml` — Rust quality/live/release jobs, no Python test job.
+- `.gitlab-ci.yml:python-static-analysis` — explicitly omits unit tests.
+- `python/pyproject.toml:project.dependencies` — declares PyYAML.
+- Validation: Python suite — 392 discovered, 33 import errors, one skip in the
+  existing environment; direct `import yaml` fails.
+
+#### Description and impact
+
+The manifest fix is present, but neither primary CI nor the stale local Poetry
+environment proves the secondary implementation. Compatibility regressions can
+merge undetected, and local failures are noisy rather than actionable.
+
+#### Recommendation and verification
+
+Add an installed Poetry or wheel-based Python test job using the canonical
+manifest and run all tests with an explicit, documented optional-`httpx` skip.
+
+### CICD-002: GitLab pipeline no longer matches repository layout
+
+- Category: Build, CI/CD, packaging, and release
+- Severity: High
+- Confidence: Confirmed
+- Related baseline item: none
+
+#### Evidence
+
+- `.gitlab-ci.yml:version-policy` reads root `pyproject.toml`, which is absent;
+  the manifest is `python/pyproject.toml`.
+- `.gitlab-ci.yml:python-static-analysis` targets root `grafana_utils`, which is absent.
+- `.gitlab-ci.yml:rust-package-*` publishes `grafana-access-utils`, while the
+  tracked Rust binary entry is only `rust/src/bin/grafana-util.rs`.
+
+#### Description and impact
+
+Any applicable GitLab branch or tag pipeline fails before providing useful
+quality evidence or produces an incomplete artifact set. The large explanatory
+header describes a design that is no longer true.
+
+#### Recommendation and verification
+
+Either repair GitLab jobs to call canonical Make targets and current paths, or
+remove the pipeline if GitLab is no longer supported. Validate the resulting
+configuration in GitLab CI lint and one non-release pipeline.
+
+### Categories with no confirmed active defect
+
+No current Critical/High finding was confirmed for security, secrets,
+authorization, performance, configuration precedence, observability, API
+pagination/history semantics, browser compilation, generated documentation,
+or runtime operations. These conclusions are static/test-backed; no live
+authenticated Grafana instance, destructive mutation, load test, package
+publication, rollback, or disaster-recovery exercise was performed.
+
+## Quick Wins
+
+1. Fix the seven Clippy diagnostics (`TODO-001`).
+2. Add a Poetry dependency preflight message to the Python test target as part
+   of `TODO-003`.
+3. Replace stale GitLab paths and binary names or formally retire the file
+   (`TODO-004`).
+
+## Major Refactoring Opportunities
+
+The only justified refactoring opportunity is CI convergence: GitHub, GitLab,
+and local automation should invoke the same Make targets rather than replicate
+path, dependency, binary, and version logic. No application rewrite, service
+split, async transport conversion, or Python removal is currently justified.
+
+## Missing Tests
+
+- Repeated parallel and `--test-threads=1` coverage for the all-org live-status
+  request-capture path.
+- A required Python CI test lane from a clean installed environment.
+- A GitLab pipeline smoke validating current manifest paths and artifact names.
+- Live dashboard resource-v2 import acceptance remains owned by the separate
+  2026-07-17 plan.
+
+## Documentation Gaps
+
+- `.gitlab-ci.yml` comments describe obsolete repository paths, artifacts, and
+  an intentionally test-free quality model.
+- The operator documentation is otherwise internally consistent under the
+  current command-surface, bilingual, man, and HTML checks.
+- Operational rollback/backup evidence remains procedural rather than proven
+  by this analysis because no live environment was authorized.
+
+## Risk Register
+
+| Risk | Likelihood | Impact | Evidence | Mitigation |
+|---|---|---|---|---|
+| Required Rust quality/release job blocked | High | Medium | CICD-001 | TODO-001 |
+| Org-scope regression hidden by flaky test | Medium | High | TST-001 | TODO-002 |
+| Python compatibility regression merges unseen | High | High | TST-002 | TODO-003 |
+| GitLab pipeline unusable or misleading | High | High | CICD-002 | TODO-004 |
+| Live App Platform behavior differs by version/edition | Medium | Medium | no live service | separate v2 plan/TODO-005 |
+| Concurrent v2 work changes the baseline | Medium | Medium | final worktree status | rebase/revalidate before implementation |
+
+## Prioritized TODO Backlog
+
+### TODO-001: Restore the Rust lint gate
+
+- Priority: High
+- Category: CI/CD and maintainability
+- Related findings: CICD-001
+- Objective: make canonical Rust lint green without behavior changes.
+- Scope: the three files and seven diagnostics named in CICD-001.
+- Out of scope: unrelated refactors or warning suppression.
+- Rationale: unblocks required quality and release jobs.
+- Affected files or modules: access service-account sync, dashboard browse state, status overview rows.
+- Proposed implementation: apply idiomatic `?`, condition-first option construction, and owned formatting arguments.
+- Acceptance criteria: zero Clippy warnings and unchanged focused-test behavior.
+- Validation steps: `cargo fmt --all --check`; focused tests; `cargo clippy --all-targets -- -D warnings`; `cargo test --quiet`.
+- Dependencies: none.
+- Estimated complexity: XS
+- Risk: Low
+- Breaking-change potential: None
+- Suggested owner profile: Rust maintainer
+- Rollback approach: revert the isolated lint commit.
+
+### TODO-002: Make the all-org live-status regression deterministic
+
+- Priority: High
+- Category: Correctness and testing
+- Related findings: TST-001
+- Objective: remove suite-order sensitivity while preserving org-scope assertions.
+- Scope: test server, request capture, teardown, and shared-state helpers for live status.
+- Out of scope: changing production org-scoping semantics without reproduced evidence.
+- Rationale: restore trustworthy full-suite signal.
+- Affected files or modules: `rust/src/commands/status/overview/live_tests.rs` and shared live test helpers.
+- Proposed implementation: reproduce repeatedly, isolate mutable state/ports, and guarantee server shutdown before assertion completion.
+- Acceptance criteria: 100 repeated focused parallel runs, 20 full-suite runs, and a single-threaded run pass.
+- Validation steps: repeated filtered `cargo test`, `cargo test -- --test-threads=1`, then `cargo test --quiet`.
+- Dependencies: TODO-001 only if CI requires lint first.
+- Estimated complexity: S
+- Risk: Medium
+- Breaking-change potential: None
+- Suggested owner profile: Rust test/runtime maintainer
+- Rollback approach: revert test-harness-only changes.
+
+### TODO-003: Add a clean Python compatibility test lane
+
+- Priority: High
+- Category: Testing and dependencies
+- Related findings: TST-002
+- Objective: continuously prove the maintained Python package from declared dependencies.
+- Scope: GitHub CI, canonical Python test target, optional-httpx skip reporting, installed package smoke.
+- Out of scope: expanding Python feature parity.
+- Rationale: 392 tests currently have no dependable required lane.
+- Affected files or modules: `.github/workflows/ci.yml`, `Makefile`, `python/pyproject.toml`, packaging tests.
+- Proposed implementation: create a clean Poetry environment, install with dev dependencies, run unit tests, build wheel/sdist, and smoke-import the wheel.
+- Acceptance criteria: all non-optional Python tests pass; the one optional-httpx skip is explicit; `yaml` imports from the installed artifact.
+- Validation steps: `make poetry-install`; `make poetry-test`; `make build-python`; isolated wheel import smoke.
+- Dependencies: none.
+- Estimated complexity: M
+- Risk: Low
+- Breaking-change potential: None
+- Suggested owner profile: Python packaging/CI maintainer
+- Rollback approach: revert the independent CI job while retaining local targets.
+
+### TODO-004: Repair or retire the GitLab pipeline
+
+- Priority: High
+- Category: CI/CD and release
+- Related findings: CICD-002
+- Objective: ensure every retained GitLab job uses current paths, targets, and artifacts.
+- Scope: `.gitlab-ci.yml` and any narrowly required shared Make targets.
+- Out of scope: changing GitHub release policy.
+- Rationale: current jobs deterministically reference absent inputs and output.
+- Affected files or modules: `.gitlab-ci.yml`, version tooling, build targets.
+- Proposed implementation: choose and document support status; if retained, call canonical Make targets and publish only actual artifacts.
+- Acceptance criteria: GitLab CI lint passes; a branch pipeline runs tests and packages; a dry-run/tag pipeline resolves the correct version and artifact names.
+- Validation steps: GitLab CI lint plus one branch pipeline and release-candidate pipeline.
+- Dependencies: TODO-001 and TODO-003 when retained jobs invoke those gates.
+- Estimated complexity: M
+- Risk: Medium
+- Breaking-change potential: Low
+- Suggested owner profile: release/CI maintainer
+- Rollback approach: revert pipeline changes; do not publish artifacts from a failed validation.
+
+### TODO-005: Revalidate live Grafana compatibility before release
+
+- Priority: Medium
+- Category: API and operations
+- Related findings: runtime limitation; separate dashboard v2 import plan
+- Objective: close the highest remaining runtime assumption on supported Grafana editions and versions.
+- Scope: non-destructive classic/API discovery, namespace, v1/v2 history, and approved v2 import dry-run/live acceptance owned by its plan.
+- Out of scope: unapproved destructive tests or duplicating the v2 implementation tracker.
+- Rationale: static and mock coverage cannot prove edition-specific live behavior.
+- Affected files or modules: live smoke scripts, Grafana API clients, release evidence.
+- Proposed implementation: run the documented live matrix against supported OSS/Cloud targets and retain sanitized evidence.
+- Acceptance criteria: classic compatibility and `/apis` capability routes pass; namespace and optimistic-concurrency behavior are demonstrated; blockers are edition-labeled.
+- Validation steps: project live smoke targets plus the v2 plan's acceptance commands.
+- Dependencies: separate v2 implementation item; TODO-001 through TODO-004 for release gating.
+- Estimated complexity: M
+- Risk: Medium
+- Breaking-change potential: None
+- Suggested owner profile: Grafana integration/release maintainer
+- Rollback approach: use dry-run first and delete only test-owned resources through approved cleanup.
+
+## Implementation Phases
+
+### Phase 0: Verification and baseline
+
+- Included: TODO-001 lint reproduction and TODO-002 deterministic reproduction.
+- Entry: v2 work is isolated and current branch state recorded.
+- Exit: exact failures are reproducible; no production behavior changes are mixed in.
+- Main risk: concurrent work invalidates line-level assumptions.
+- Expected outcome: stable remediation baseline.
+
+### Phase 1: Critical correctness and security fixes
+
+- Included: none; no Critical finding was confirmed.
+- Entry/exit: reopen only with reachable evidence and a regression test.
+- Main risk: severity inflation without runtime proof.
+- Expected outcome: focus remains on confirmed work.
+
+### Phase 2: Reliability and operational safety
+
+- Included: TODO-002.
+- Entry: failure mechanism identified.
+- Exit: repeated parallel, serial, and full-suite runs pass.
+- Main risk: hiding the failure by weakening assertions.
+- Expected outcome: trustworthy org-scoping coverage.
+
+### Phase 3: Test coverage and CI guardrails
+
+- Included: TODO-001, TODO-003, TODO-004.
+- Entry: focused behavior remains green.
+- Exit: Rust lint, Rust tests, Python tests/package smoke, and retained CI systems pass.
+- Main risk: divergent CI-specific logic.
+- Expected outcome: one dependable cross-language delivery gate.
+
+### Phase 4: Maintainability and architecture improvements
+
+- Included: CI convergence portion of TODO-004.
+- Entry: both CI support decisions are explicit.
+- Exit: workflows call shared project targets and duplicate logic is minimized.
+- Main risk: accidental release-policy changes.
+- Expected outcome: lower automation drift.
+
+### Phase 5: Performance and scalability
+
+- Included: none; no measured performance defect was found.
+- Entry: profiling or capacity evidence is available.
+- Exit: any future change has a before/after measurement.
+- Main risk: premature optimization.
+- Expected outcome: no speculative churn.
+
+### Phase 6: Documentation and developer experience
+
+- Included: GitLab support/comments in TODO-004 and release evidence in TODO-005.
+- Entry: final automation behavior is known.
+- Exit: maintainer and operator instructions describe only supported commands and lanes.
+- Main risk: documenting an unverified pipeline.
+- Expected outcome: accurate operational guidance.
+
+## Recommended Execution Order
+
+1. TODO-001 — restore the Rust quality gate.
+2. TODO-002 — stabilize the only observed Rust suite failure.
+3. TODO-003 — establish clean Python compatibility and packaging evidence.
+4. TODO-004 — repair or retire GitLab using the now-green shared gates.
+5. TODO-005 — run the supported live Grafana release matrix after the separate
+   dashboard v2 work is ready.
+
+## Deferred or Rejected Recommendations
+
+- Reject a Rust/Python rewrite or service split: no evidence shows incremental
+  remediation is impractical.
+- Defer async HTTP conversion, caching, and parallelism changes until profiling
+  identifies a bounded bottleneck.
+- Defer Python removal: it is explicitly maintained as compatibility/tooling
+  surface and still has substantial tests.
+- Do not reopen resolved Grafana 13 items solely because their historical plans
+  mention them. The dashboard v2 import gap is already tracked independently.
+- Defer destructive live, publication, rollback, backup/restore, and load tests
+  until credentials and an approved disposable environment are available.
+
+## Final Recommendation
+
+Proceed with incremental remediation in the exact order TODO-001 through
+TODO-005. The first four items restore deterministic, cross-language delivery
+evidence; the fifth closes edition/version runtime assumptions. The highest
+unresolved assumptions are live Grafana behavior across OSS/Enterprise/Cloud,
+the cause of the suite-only org-scope failure, and whether GitLab remains an
+official delivery channel. None requires an architectural rewrite.
 
 ## Completion Boundary
 
@@ -550,4 +1003,4 @@ an explicit evidence limitation, and `todo/todo.md` marks the item complete.
 Do not begin implementing any resulting TODO item without separate explicit
 approval. The completed analysis must end with:
 
-`Analysis complete. No source files were modified.`
+Analysis complete. No source files were modified.
