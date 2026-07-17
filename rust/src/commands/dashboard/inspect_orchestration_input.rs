@@ -52,6 +52,9 @@ where
                 _temp_dir: resolved.temp_dir,
             })
         }
+        DashboardImportInputFormat::ResourceV2 => Err(message(
+            "Dashboard resource-v2 input is supported only by dashboard import.",
+        )),
     }
 }
 

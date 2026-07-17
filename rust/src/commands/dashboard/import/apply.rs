@@ -27,6 +27,8 @@ mod apply_render;
 use apply_backend::{ClientImportBackend, LiveImportBackend, RequestImportBackend};
 use apply_live::run_live_import;
 use apply_prepare::{prepare_import_run, validate_import_args, PreparedImportRun};
+#[cfg(test)]
+pub(crate) use apply_prepare::{validate_import_output_columns, validate_resource_v2_import_args};
 use apply_render::render_dry_run_report;
 
 /// Purpose: implementation note.
@@ -45,13 +47,15 @@ pub(crate) fn import_dashboards_with_request<F>(
 where
     F: FnMut(Method, &str, &[(String, String)], Option<&Value>) -> Result<Option<Value>>,
 {
+    validate_import_args(args)?;
+    if args.input_format == crate::dashboard::DashboardImportInputFormat::ResourceV2 {
+        return super::resource_v2::run_dashboard_v2_import_with_request(&mut request_json, args);
+    }
     if args.dry_run {
-        validate_import_args(args)?;
         let report = collect_import_dry_run_report_with_request(&mut request_json, args)?;
         return render_dry_run_report(&report, args);
     }
 
-    validate_import_args(args)?;
     let mut lookup_cache = ImportLookupCache::default();
     let prepared = prepare_request_import_run(&mut request_json, args, &mut lookup_cache)?;
     if prepared.dashboard_files.is_empty() {
@@ -120,11 +124,17 @@ fn validate_live_import_backend<B: LiveImportBackend>(
 
 /// Purpose: implementation note.
 pub fn import_dashboards_with_client(client: &JsonHttpClient, args: &ImportArgs) -> Result<usize> {
+    validate_import_args(args)?;
+    if args.input_format == crate::dashboard::DashboardImportInputFormat::ResourceV2 {
+        return super::resource_v2::run_dashboard_v2_import_with_request(
+            &mut |method, path, params, payload| client.request_json(method, path, params, payload),
+            args,
+        );
+    }
     if args.dry_run {
         let report = collect_import_dry_run_report_with_client(client, args)?;
         return render_dry_run_report(&report, args);
     }
-    validate_import_args(args)?;
     let mut backend = ClientImportBackend::new(client);
     let mut lookup_cache = ImportLookupCache::default();
     let prepared = prepare_client_import_run(&mut backend, args, &mut lookup_cache)?;

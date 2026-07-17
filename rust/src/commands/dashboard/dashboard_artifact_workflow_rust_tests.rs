@@ -66,6 +66,7 @@ fn artifact_test_import_args() -> crate::dashboard::ImportArgs {
         run: None,
         run_id: None,
         input_format: DashboardImportInputFormat::Raw,
+        resource_namespace: None,
         import_folder_uid: None,
         ensure_folders: false,
         replace_existing: false,

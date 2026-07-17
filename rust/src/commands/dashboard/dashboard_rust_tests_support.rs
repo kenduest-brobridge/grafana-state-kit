@@ -136,6 +136,7 @@ pub(in crate::dashboard) fn make_import_args(input_dir: PathBuf) -> ImportArgs {
         run: None,
         run_id: None,
         input_format: DashboardImportInputFormat::Raw,
+        resource_namespace: None,
         import_folder_uid: None,
         ensure_folders: false,
         replace_existing: false,

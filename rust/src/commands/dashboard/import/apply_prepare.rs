@@ -25,6 +25,11 @@ pub(super) fn validate_import_args(args: &ImportArgs) -> Result<()> {
             "--json is only supported with --dry-run for import-dashboard.",
         ));
     }
+    if args.output_format.is_some() && !args.dry_run {
+        return Err(message(
+            "--output-format is only supported with --dry-run for import-dashboard.",
+        ));
+    }
     if args.table && args.json {
         return Err(message(
             "--table and --json are mutually exclusive for import-dashboard.",
@@ -40,6 +45,7 @@ pub(super) fn validate_import_args(args: &ImportArgs) -> Result<()> {
             "--output-columns is only supported with --dry-run --table or table-like --output-format for import-dashboard.",
         ));
     }
+    validate_import_output_columns(args)?;
     if args.require_matching_folder_path && args.import_folder_uid.is_some() {
         return Err(message(
             "--require-matching-folder-path cannot be combined with --import-folder-uid.",
@@ -49,6 +55,90 @@ pub(super) fn validate_import_args(args: &ImportArgs) -> Result<()> {
         return Err(message(
             "--ensure-folders cannot be combined with --import-folder-uid.",
         ));
+    }
+    validate_resource_v2_import_args(args)?;
+    Ok(())
+}
+
+pub(crate) fn validate_import_output_columns(args: &ImportArgs) -> Result<()> {
+    if args.output_columns.is_empty() {
+        return Ok(());
+    }
+    let (lane, supported): (&str, &[&str]) =
+        if args.input_format == crate::dashboard::DashboardImportInputFormat::ResourceV2 {
+            (
+                "resource-v2",
+                &[
+                    "all",
+                    "api_version",
+                    "namespace",
+                    "name",
+                    "source_path",
+                    "action",
+                    "folder",
+                    "ownership",
+                    "blocker",
+                    "changed_fields",
+                    "file",
+                    "reason",
+                ],
+            )
+        } else {
+            (
+                "classic",
+                &[
+                    "all",
+                    "uid",
+                    "destination",
+                    "action",
+                    "folder_path",
+                    "source_folder_path",
+                    "destination_folder_path",
+                    "reason",
+                    "file",
+                ],
+            )
+        };
+    if let Some(column) = args
+        .output_columns
+        .iter()
+        .find(|column| !supported.contains(&column.as_str()))
+    {
+        return Err(message(format!(
+            "--output-columns value {column:?} is not supported for {lane} dashboard import."
+        )));
+    }
+    Ok(())
+}
+
+pub(crate) fn validate_resource_v2_import_args(args: &ImportArgs) -> Result<()> {
+    if args.input_format != crate::dashboard::DashboardImportInputFormat::ResourceV2 {
+        return Ok(());
+    }
+    let incompatible = [
+        (args.org_id.is_some(), "--org-id"),
+        (!args.only_org_id.is_empty(), "--only-org-id"),
+        (args.create_missing_orgs, "--create-missing-orgs"),
+        (args.use_export_org, "--use-export-org"),
+        (
+            args.require_matching_export_org,
+            "--require-matching-export-org",
+        ),
+        (
+            args.require_matching_folder_path,
+            "--require-matching-folder-path",
+        ),
+        (args.ensure_folders, "--ensure-folders"),
+        (
+            args.target_schema_version.is_some(),
+            "--target-schema-version",
+        ),
+        (args.strict_schema, "--strict-schema"),
+    ];
+    if let Some((_, flag)) = incompatible.into_iter().find(|(enabled, _)| *enabled) {
+        return Err(message(format!(
+            "{flag} is not supported with --input-format resource-v2; resource-v2 import is single-namespace and uses native schema validation."
+        )));
     }
     Ok(())
 }

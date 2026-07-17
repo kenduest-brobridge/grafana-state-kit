@@ -88,6 +88,7 @@ fn select_expected_variant(
         None => match input_format {
             DashboardImportInputFormat::Raw => RAW_EXPORT_SUBDIR,
             DashboardImportInputFormat::Provisioning => PROVISIONING_EXPORT_SUBDIR,
+            DashboardImportInputFormat::ResourceV2 => super::RESOURCE_V2_EXPORT_SUBDIR,
         },
     }
 }
@@ -125,6 +126,18 @@ fn resolve_worktree_source(
     let expected_variant = select_expected_variant(input_format, input_type);
     let source_kind = DashboardSourceKind::from_expected_variant(expected_variant)
         .unwrap_or_else(|| DashboardSourceKind::from_import_input_format(input_format));
+
+    if input_format == DashboardImportInputFormat::ResourceV2 {
+        let resolved = resolve_dashboard_import_source(input_dir, input_format)?;
+        return Ok(LoadedDashboardSource {
+            workspace_root,
+            input_dir: input_dir.to_path_buf(),
+            expected_variant,
+            layout_kind: classify_dashboard_workspace_layout(input_dir, expected_variant),
+            resolved,
+            temp_dir: None,
+        });
+    }
 
     if resolve_dashboard_export_root(input_dir)?
         .map(|resolved| resolved.manifest.scope_kind.is_root())

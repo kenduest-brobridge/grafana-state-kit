@@ -53,6 +53,7 @@ pub use cli_defs_command_plan::{DashboardPlanOutputFormat, FolderPermissionMatch
 pub enum DashboardImportInputFormat {
     Raw,
     Provisioning,
+    ResourceV2,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]

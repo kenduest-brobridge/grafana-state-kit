@@ -101,6 +101,11 @@ fn resolve_local_browse_source(
     input_format: DashboardImportInputFormat,
     strict_workspace: bool,
 ) -> Result<LoadedDashboardSource> {
+    if input_format == DashboardImportInputFormat::ResourceV2 {
+        return Err(crate::common::message(
+            "Dashboard resource-v2 input is supported only by dashboard import.",
+        ));
+    }
     load_dashboard_source(input_dir, input_format, None, strict_workspace)
 }
 

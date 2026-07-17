@@ -131,6 +131,7 @@ pub(super) fn build_external_edit_import_args(args: &BrowseArgs, input_dir: Path
         run: None,
         run_id: None,
         input_format: DashboardImportInputFormat::Raw,
+        resource_namespace: None,
         import_folder_uid: None,
         ensure_folders: false,
         replace_existing: true,

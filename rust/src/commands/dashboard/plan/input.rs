@@ -345,6 +345,7 @@ fn build_export_routing_import_args(args: &super::super::PlanArgs) -> super::sup
         run: None,
         run_id: None,
         input_format: DashboardImportInputFormat::Raw,
+        resource_namespace: None,
         import_folder_uid: None,
         ensure_folders: false,
         replace_existing: false,

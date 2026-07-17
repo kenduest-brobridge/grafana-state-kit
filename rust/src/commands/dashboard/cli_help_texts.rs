@@ -142,7 +142,13 @@ pub(crate) const DASHBOARD_IMPORT_AFTER_HELP: &str = r#"Examples:
     grafana-util dashboard import --url http://localhost:3000 --token "$GRAFANA_API_TOKEN" --input-dir ./dashboards/raw --dry-run --table
 
   Interactively choose exported dashboards to restore/import:
-    grafana-util dashboard import --url http://localhost:3000 --basic-user admin --basic-password admin --input-dir ./dashboards/raw --interactive --replace-existing"#;
+    grafana-util dashboard import --url http://localhost:3000 --basic-user admin --basic-password admin --input-dir ./dashboards/raw --interactive --replace-existing
+
+  Preview native schema v2 resources in one authoritative namespace:
+    grafana-util dashboard import --url http://localhost:3000 --token "$GRAFANA_API_TOKEN" --input-dir ./dashboards/resource-v2 --input-format resource-v2 --resource-namespace default --dry-run --table
+
+  Apply native schema v2 creates and permitted updates through /apis only:
+    grafana-util dashboard import --url http://localhost:3000 --token "$GRAFANA_API_TOKEN" --input-dir ./dashboards/resource-v2 --input-format resource-v2 --resource-namespace default --replace-existing"#;
 
 pub(crate) const DASHBOARD_BROWSE_AFTER_HELP: &str = r#"What it does:
   Browse the dashboard tree in a terminal UI, with live-only actions for edit, raw JSON review/apply, history, and delete.

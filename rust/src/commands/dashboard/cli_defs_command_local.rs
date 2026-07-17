@@ -84,6 +84,13 @@ pub struct ImportArgs {
     pub input_format: super::DashboardImportInputFormat,
     #[arg(
         long,
+        value_name = "NAMESPACE",
+        help = "Import dashboard.grafana.app/v2 resources into this App Platform namespace.",
+        help_heading = "Routing Options"
+    )]
+    pub resource_namespace: Option<String>,
+    #[arg(
+        long,
         help = "Force every imported dashboard into one destination Grafana folder UID. This overrides any folder UID carried by the exported dashboard files.",
         help_heading = "Folder Options"
     )]
@@ -147,7 +154,7 @@ pub struct ImportArgs {
     #[arg(
         long,
         default_value_t = false,
-        help = "Open an interactive review picker to choose which exported dashboards to import from --input-dir and preview each file's create/update/skip action. With --dry-run, Enter runs the dry-run only for the selected dashboards.",
+        help = "Open an interactive review picker before import and preview each create/update/skip action. Classic input lets you choose which exported dashboards to import; resource-v2 reviews every action and confirms only create/update for live apply. With --dry-run, resource-v2 retains all reviewed rows in the output.",
         help_heading = "Review Output Options"
     )]
     pub interactive: bool,
@@ -175,6 +182,7 @@ pub struct ImportArgs {
     #[arg(
         long,
         value_enum,
+        requires = "dry_run",
         conflicts_with_all = ["table", "json"],
         help = "Alternative single-flag output selector for --dry-run output. Use text, table, or json.",
         help_heading = "Review Output Options"
@@ -192,7 +200,7 @@ pub struct ImportArgs {
         value_delimiter = ',',
         requires = "dry_run",
         value_parser = super::super::dashboard_runtime::parse_dashboard_import_output_column,
-        help = "For --dry-run --table only, render only these comma-separated columns. Supported values: uid, destination, action, folder_path, source_folder_path, destination_folder_path, reason, file.",
+        help = "For --dry-run --table only, render only comma-separated columns. Classic import supports uid, destination, action, folder_path, source_folder_path, destination_folder_path, reason, file; resource-v2 also supports api_version, namespace, name, source_path, folder, ownership, blocker, changed_fields.",
         help_heading = "Review Output Options"
     )]
     pub output_columns: Vec<String>,

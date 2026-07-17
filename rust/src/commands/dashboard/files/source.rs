@@ -10,6 +10,7 @@ pub(crate) enum DashboardSourceKind {
     LiveGrafana,
     RawExport,
     ProvisioningExport,
+    ResourceV2Import,
     HistoryArtifact,
 }
 
@@ -19,6 +20,7 @@ impl DashboardSourceKind {
         match input_format {
             DashboardImportInputFormat::Raw => Self::RawExport,
             DashboardImportInputFormat::Provisioning => Self::ProvisioningExport,
+            DashboardImportInputFormat::ResourceV2 => Self::ResourceV2Import,
         }
     }
 
@@ -41,6 +43,7 @@ impl DashboardSourceKind {
         match self {
             Self::RawExport => Some(RAW_EXPORT_SUBDIR),
             Self::ProvisioningExport => Some(PROVISIONING_EXPORT_SUBDIR),
+            Self::ResourceV2Import => Some(crate::dashboard::RESOURCE_V2_EXPORT_SUBDIR),
             Self::LiveGrafana | Self::HistoryArtifact => None,
         }
     }
@@ -50,13 +53,17 @@ impl DashboardSourceKind {
         match expected_variant {
             RAW_EXPORT_SUBDIR => Some(Self::RawExport),
             PROVISIONING_EXPORT_SUBDIR => Some(Self::ProvisioningExport),
+            crate::dashboard::RESOURCE_V2_EXPORT_SUBDIR => Some(Self::ResourceV2Import),
             _ => None,
         }
     }
 
     #[allow(dead_code)]
     pub(crate) fn is_file_backed(self) -> bool {
-        matches!(self, Self::RawExport | Self::ProvisioningExport)
+        matches!(
+            self,
+            Self::RawExport | Self::ProvisioningExport | Self::ResourceV2Import
+        )
     }
 }
 
@@ -212,5 +219,10 @@ pub(crate) fn resolve_dashboard_import_source(
                 input_dir.display()
             )))
         }
+        DashboardImportInputFormat::ResourceV2 => Ok(ResolvedDashboardImportSource {
+            source_kind: DashboardSourceKind::ResourceV2Import,
+            dashboard_dir: input_dir.to_path_buf(),
+            metadata_dir: input_dir.to_path_buf(),
+        }),
     }
 }

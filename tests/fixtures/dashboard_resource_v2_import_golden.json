@@ -1,0 +1,124 @@
+{
+  "source": {
+    "apiVersion": "dashboard.grafana.app/v2",
+    "kind": "Dashboard",
+    "metadata": {
+      "name": "cpu-overview",
+      "namespace": "source-namespace",
+      "uid": "server-uid",
+      "resourceVersion": "stale-version",
+      "generation": 7,
+      "creationTimestamp": "2026-07-01T00:00:00Z",
+      "updatedTimestamp": "2026-07-02T00:00:00Z",
+      "managedFields": [{"manager": "grafana"}],
+      "labels": {
+        "team": "platform"
+      },
+      "annotations": {
+        "custom.example/owner": "sre",
+        "grafana.app/folder": "source-folder",
+        "grafana.app/message": "stale message",
+        "grafana.app/createdBy": "user:source",
+        "grafana.app/updatedBy": "user:source",
+        "grafana.app/updatedTimestamp": "2026-07-02T00:00:00Z"
+      }
+    },
+    "spec": {
+      "title": "CPU Overview",
+      "elements": {
+        "panel-1": {
+          "kind": "Panel",
+          "spec": {
+            "title": "CPU",
+            "data": {
+              "kind": "QueryGroup",
+              "spec": {
+                "queries": [{"kind": "Prometheus", "spec": {"expr": "rate(cpu_total[5m])"}}]
+              }
+            }
+          }
+        }
+      },
+      "layout": {"kind": "GridLayout", "spec": {"items": [{"element": {"name": "panel-1"}}]}},
+      "variables": [{"kind": "QueryVariable", "spec": {"name": "cluster"}}]
+    },
+    "status": {"state": "Ready"}
+  },
+  "live": {
+    "apiVersion": "dashboard.grafana.app/v2",
+    "kind": "Dashboard",
+    "metadata": {
+      "name": "cpu-overview",
+      "namespace": "target",
+      "resourceVersion": "live-version"
+    },
+    "spec": {}
+  },
+  "create": {
+    "apiVersion": "dashboard.grafana.app/v2",
+    "kind": "Dashboard",
+    "metadata": {
+      "name": "cpu-overview",
+      "namespace": "target",
+      "labels": {"team": "platform"},
+      "annotations": {
+        "custom.example/owner": "sre",
+        "grafana.app/folder": "target-folder",
+        "grafana.app/message": "Promote v2 dashboard"
+      }
+    },
+    "spec": {
+      "title": "CPU Overview",
+      "elements": {
+        "panel-1": {
+          "kind": "Panel",
+          "spec": {
+            "title": "CPU",
+            "data": {
+              "kind": "QueryGroup",
+              "spec": {
+                "queries": [{"kind": "Prometheus", "spec": {"expr": "rate(cpu_total[5m])"}}]
+              }
+            }
+          }
+        }
+      },
+      "layout": {"kind": "GridLayout", "spec": {"items": [{"element": {"name": "panel-1"}}]}},
+      "variables": [{"kind": "QueryVariable", "spec": {"name": "cluster"}}]
+    }
+  },
+  "update": {
+    "apiVersion": "dashboard.grafana.app/v2",
+    "kind": "Dashboard",
+    "metadata": {
+      "name": "cpu-overview",
+      "namespace": "target",
+      "resourceVersion": "live-version",
+      "labels": {"team": "platform"},
+      "annotations": {
+        "custom.example/owner": "sre",
+        "grafana.app/folder": "target-folder",
+        "grafana.app/message": "Promote v2 dashboard"
+      }
+    },
+    "spec": {
+      "title": "CPU Overview",
+      "elements": {
+        "panel-1": {
+          "kind": "Panel",
+          "spec": {
+            "title": "CPU",
+            "data": {
+              "kind": "QueryGroup",
+              "spec": {
+                "queries": [{"kind": "Prometheus", "spec": {"expr": "rate(cpu_total[5m])"}}]
+              }
+            }
+          }
+        }
+      },
+      "layout": {"kind": "GridLayout", "spec": {"items": [{"element": {"name": "panel-1"}}]}},
+      "variables": [{"kind": "QueryVariable", "spec": {"name": "cluster"}}]
+    }
+  }
+}

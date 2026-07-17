@@ -60,6 +60,14 @@ const DASHBOARD_IMPORT_OUTPUT_COLUMNS: &[&str] = &[
     "destination_folder_path",
     "reason",
     "file",
+    "api_version",
+    "namespace",
+    "name",
+    "source_path",
+    "folder",
+    "ownership",
+    "blocker",
+    "changed_fields",
 ];
 
 fn print_supported_dashboard_report_columns() {

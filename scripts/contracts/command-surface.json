@@ -18,6 +18,16 @@
     "workspace"
   ],
   "public_flags": {
+    "dashboard import": {
+      "--input-format": [
+        "raw",
+        "provisioning",
+        "resource-v2"
+      ],
+      "--resource-namespace": [
+        "<namespace>"
+      ]
+    },
     "dashboard export": {
       "--resource-namespace": [
         "<namespace>"

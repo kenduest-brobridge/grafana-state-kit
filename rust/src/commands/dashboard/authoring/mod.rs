@@ -391,6 +391,7 @@ fn build_publish_import_args(temp_input: PathBuf, args: &PublishArgs) -> ImportA
         run: None,
         run_id: None,
         input_format: super::DashboardImportInputFormat::Raw,
+        resource_namespace: None,
         import_folder_uid: args.folder_uid.clone(),
         ensure_folders: false,
         replace_existing: args.replace_existing,

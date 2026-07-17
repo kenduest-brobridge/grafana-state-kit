@@ -25,7 +25,11 @@ pub(crate) use app_platform::{
 };
 pub(crate) use client::GrafanaApiClient;
 pub(crate) use connection::{AuthInputs, GrafanaConnection};
-pub(crate) use dashboard::{DashboardResourceApiVersion, DashboardResourceClient};
+pub(crate) use dashboard::{
+    dashboard_resource_item_path, dashboard_resource_path,
+    validate_dashboard_resource_v2_list_response, validate_dashboard_resource_v2_response,
+    DashboardResourceApiVersion, DashboardResourceClient,
+};
 pub(crate) use datasource::DatasourceResourceClient;
 pub(crate) use sync_live::{
     execute_live_apply_with_client as execute_sync_live_apply_with_client,

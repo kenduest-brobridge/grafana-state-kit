@@ -6,6 +6,10 @@ use serde_json::{Map, Value};
 use crate::common::{message, string_field, value_as_object, Result};
 use crate::http::JsonHttpClient;
 
+#[cfg(test)]
+#[path = "dashboard_resource_v2_tests.rs"]
+mod dashboard_resource_v2_tests;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum DashboardResourceApiVersion {
     V1,
@@ -19,6 +23,109 @@ impl DashboardResourceApiVersion {
             Self::V2 => Ok("v2"),
         }
     }
+}
+
+#[allow(dead_code)]
+fn encode_resource_path_segment(value: &str) -> String {
+    let mut encoded = String::with_capacity(value.len());
+    for byte in value.as_bytes() {
+        if byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'.' | b'_' | b'~') {
+            encoded.push(char::from(*byte));
+        } else {
+            use std::fmt::Write as _;
+            let _ = write!(&mut encoded, "%{byte:02X}");
+        }
+    }
+    encoded
+}
+
+#[allow(dead_code)]
+pub(crate) fn dashboard_resource_path(
+    version: DashboardResourceApiVersion,
+    namespace: &str,
+) -> Result<String> {
+    Ok(format!(
+        "/apis/dashboard.grafana.app/{}/namespaces/{}/dashboards",
+        version.path_segment()?,
+        encode_resource_path_segment(namespace)
+    ))
+}
+
+#[allow(dead_code)]
+pub(crate) fn dashboard_resource_item_path(
+    version: DashboardResourceApiVersion,
+    namespace: &str,
+    name: &str,
+) -> Result<String> {
+    Ok(format!(
+        "{}/{}",
+        dashboard_resource_path(version, namespace)?,
+        encode_resource_path_segment(name)
+    ))
+}
+
+#[allow(dead_code)]
+pub(crate) fn dashboard_resource_v2_name(payload: &Value) -> Result<&str> {
+    payload
+        .as_object()
+        .and_then(|object| object.get("metadata"))
+        .and_then(Value::as_object)
+        .and_then(|metadata| metadata.get("name"))
+        .and_then(Value::as_str)
+        .filter(|name| !name.is_empty())
+        .ok_or_else(|| message("Dashboard resource v2 payload is missing metadata.name."))
+}
+
+#[allow(dead_code)]
+pub(crate) fn validate_dashboard_resource_v2_response(
+    value: Option<Value>,
+    expected_namespace: &str,
+    expected_name: &str,
+) -> Result<Value> {
+    let Some(Value::Object(object)) = value else {
+        return Err(message(format!(
+            "Unexpected dashboard resource v2 response for {expected_name}."
+        )));
+    };
+    let response_name = object
+        .get("metadata")
+        .and_then(Value::as_object)
+        .and_then(|metadata| metadata.get("name"))
+        .and_then(Value::as_str);
+    let response_namespace = object
+        .get("metadata")
+        .and_then(Value::as_object)
+        .and_then(|metadata| metadata.get("namespace"))
+        .and_then(Value::as_str);
+    if object.get("apiVersion").and_then(Value::as_str) != Some("dashboard.grafana.app/v2")
+        || object.get("kind").and_then(Value::as_str) != Some("Dashboard")
+        || response_name != Some(expected_name)
+        || response_namespace != Some(expected_namespace)
+    {
+        return Err(message(format!(
+            "Unexpected dashboard resource v2 response for {expected_name}."
+        )));
+    }
+    Ok(Value::Object(object))
+}
+
+pub(crate) fn validate_dashboard_resource_v2_list_response(
+    value: Option<Value>,
+    namespace: &str,
+) -> Result<Value> {
+    let Some(Value::Object(object)) = value else {
+        return Err(message(format!(
+            "Unexpected dashboard resource v2 discovery payload for namespace {namespace}."
+        )));
+    };
+    if object.get("apiVersion").and_then(Value::as_str) != Some("dashboard.grafana.app/v2")
+        || object.get("kind").and_then(Value::as_str) != Some("DashboardList")
+    {
+        return Err(message(format!(
+            "Unexpected dashboard resource v2 discovery payload for namespace {namespace}."
+        )));
+    }
+    Ok(Value::Object(object))
 }
 
 pub(crate) struct DashboardResourceClient<'a> {
@@ -38,6 +145,73 @@ impl<'a> DashboardResourceClient<'a> {
         payload: Option<&Value>,
     ) -> Result<Option<Value>> {
         self.http.request_json(method, path, params, payload)
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn probe_dashboard_resource_v2(&self, namespace: &str) -> Result<bool> {
+        let path = dashboard_resource_path(DashboardResourceApiVersion::V2, namespace)?;
+        match self.request_json(
+            Method::GET,
+            &path,
+            &[("limit".to_string(), "1".to_string())],
+            None,
+        ) {
+            Ok(value) => {
+                validate_dashboard_resource_v2_list_response(value, namespace).map(|_| true)
+            }
+            Err(error) if error.status_code() == Some(404) => Ok(false),
+            Err(error) => Err(error),
+        }
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn fetch_dashboard_resource_v2_if_exists(
+        &self,
+        namespace: &str,
+        name: &str,
+    ) -> Result<Option<Value>> {
+        let path = dashboard_resource_item_path(DashboardResourceApiVersion::V2, namespace, name)?;
+        match self.request_json(Method::GET, &path, &[], None) {
+            Ok(value) => validate_dashboard_resource_v2_response(value, namespace, name).map(Some),
+            Err(error) if error.status_code() == Some(404) => Ok(None),
+            Err(error) => Err(error),
+        }
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn create_dashboard_resource_v2(
+        &self,
+        namespace: &str,
+        payload: &Value,
+    ) -> Result<Value> {
+        let expected_name = dashboard_resource_v2_name(payload)?;
+        let path = dashboard_resource_path(DashboardResourceApiVersion::V2, namespace)?;
+        validate_dashboard_resource_v2_response(
+            self.request_json(Method::POST, &path, &[], Some(payload))?,
+            namespace,
+            expected_name,
+        )
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn update_dashboard_resource_v2(
+        &self,
+        namespace: &str,
+        name: &str,
+        payload: &Value,
+    ) -> Result<Value> {
+        let payload_name = dashboard_resource_v2_name(payload)?;
+        if payload_name != name {
+            return Err(message(format!(
+                "Dashboard resource v2 payload name {payload_name} does not match request name {name}."
+            )));
+        }
+        let path = dashboard_resource_item_path(DashboardResourceApiVersion::V2, namespace, name)?;
+        validate_dashboard_resource_v2_response(
+            self.request_json(Method::PUT, &path, &[], Some(payload))?,
+            namespace,
+            name,
+        )
     }
 
     #[allow(dead_code)]

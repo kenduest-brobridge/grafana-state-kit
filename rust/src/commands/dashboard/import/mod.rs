@@ -7,6 +7,12 @@ pub(crate) mod compare;
 mod dry_run;
 pub(crate) mod lookup;
 pub(crate) mod render;
+mod resource_v2;
+mod resource_v2_apply;
+#[cfg(test)]
+#[path = "resource_v2_apply_tests.rs"]
+mod resource_v2_apply_tests;
+mod resource_v2_render;
 pub(crate) mod routed;
 pub(crate) mod target;
 pub(crate) mod validation;
@@ -34,6 +40,8 @@ use super::{
 pub use apply::{diff_dashboards_with_client, import_dashboards_with_client};
 #[allow(unused_imports)]
 pub(crate) use apply::{import_dashboards_with_org_clients, import_dashboards_with_request};
+#[cfg(test)]
+pub(crate) use apply::{validate_import_output_columns, validate_resource_v2_import_args};
 #[allow(unused_imports)]
 pub(crate) use compare::diff_dashboards_with_request;
 #[allow(unused_imports)]
@@ -46,6 +54,11 @@ pub(crate) use render::{
     format_routed_import_scope_summary_fields, render_folder_inventory_dry_run_table,
     render_import_dry_run_json, render_import_dry_run_table, render_routed_import_org_table,
     ImportDryRunReport,
+};
+#[cfg(test)]
+pub(crate) use resource_v2::{
+    dashboard_v2_managed_source, dashboard_v2_resources_equal, discover_dashboard_v2_resources,
+    normalize_dashboard_v2_create_payload, normalize_dashboard_v2_update_payload,
 };
 #[allow(unused_imports)]
 pub(crate) use routed::{
@@ -80,6 +93,11 @@ pub(crate) fn resolve_import_source(args: &super::ImportArgs) -> Result<LoadedIm
 }
 
 pub(crate) fn resolve_diff_source(args: &super::DiffArgs) -> Result<LoadedImportSource> {
+    if args.input_format == super::DashboardImportInputFormat::ResourceV2 {
+        return Err(crate::common::message(
+            "Dashboard resource-v2 input is supported only by dashboard import.",
+        ));
+    }
     Ok(LoadedImportSource {
         inner: super::load_dashboard_source(&args.input_dir, args.input_format, None, false)?,
     })
@@ -88,7 +106,7 @@ pub(crate) fn resolve_diff_source(args: &super::DiffArgs) -> Result<LoadedImport
 pub(crate) fn import_metadata_variant(args: &super::ImportArgs) -> &'static str {
     super::DashboardSourceKind::from_import_input_format(args.input_format)
         .expected_variant()
-        .expect("dashboard import source kind must map to an export variant")
+        .expect("file-backed dashboard import source kind must map to an export variant")
 }
 
 pub(crate) fn dashboard_files_for_import(input_dir: &Path) -> Result<Vec<PathBuf>> {

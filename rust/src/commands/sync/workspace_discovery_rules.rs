@@ -299,7 +299,9 @@ fn overlay_direct_workspace_dir(
             DashboardSourceKind::ProvisioningExport => {
                 discovered.dashboard_provisioning_dir = Some(base_dir.to_path_buf())
             }
-            DashboardSourceKind::LiveGrafana | DashboardSourceKind::HistoryArtifact => {}
+            DashboardSourceKind::LiveGrafana
+            | DashboardSourceKind::HistoryArtifact
+            | DashboardSourceKind::ResourceV2Import => {}
         }
         return;
     }

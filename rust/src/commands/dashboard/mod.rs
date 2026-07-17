@@ -39,6 +39,7 @@ mod import_interactive;
 mod import_interactive_context;
 mod import_interactive_loader;
 mod import_interactive_render;
+mod import_interactive_resource_v2;
 mod import_interactive_review;
 mod import_interactive_state;
 mod inspect;
@@ -209,11 +210,17 @@ mod dashboard_artifact_workflow_rust_tests;
 #[path = "dashboard_cli_rust_tests.rs"]
 mod dashboard_cli_rust_tests;
 #[cfg(test)]
+#[path = "dashboard_resource_v2_import_rust_tests.rs"]
+mod dashboard_resource_v2_import_rust_tests;
+#[cfg(test)]
 #[path = "rust_tests.rs"]
 mod dashboard_rust_tests;
 #[cfg(test)]
 #[path = "history_cli_rust_tests.rs"]
 mod history_cli_rust_tests;
+#[cfg(test)]
+#[path = "import_interactive_resource_v2_rust_tests.rs"]
+mod import_interactive_resource_v2_rust_tests;
 #[cfg(test)]
 #[path = "import_rust_tests.rs"]
 mod import_rust_tests;

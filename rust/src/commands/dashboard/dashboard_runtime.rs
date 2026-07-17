@@ -47,8 +47,16 @@ pub(super) fn parse_dashboard_import_output_column(
         }
         "reason" => Ok("reason".to_string()),
         "file" => Ok("file".to_string()),
+        "api_version" | "apiVersion" => Ok("api_version".to_string()),
+        "namespace" => Ok("namespace".to_string()),
+        "name" => Ok("name".to_string()),
+        "source_path" | "sourcePath" => Ok("source_path".to_string()),
+        "folder" => Ok("folder".to_string()),
+        "ownership" => Ok("ownership".to_string()),
+        "blocker" => Ok("blocker".to_string()),
+        "changed_fields" | "changedFields" => Ok("changed_fields".to_string()),
         _ => Err(format!(
-            "Unsupported --output-columns value '{value}'. Supported values: all, uid, destination, action, folder_path, source_folder_path, destination_folder_path, reason, file."
+            "Unsupported --output-columns value '{value}'. Supported values: all, uid, destination, action, folder_path, source_folder_path, destination_folder_path, reason, file, api_version, namespace, name, source_path, folder, ownership, blocker, changed_fields."
         )),
     }
 }
