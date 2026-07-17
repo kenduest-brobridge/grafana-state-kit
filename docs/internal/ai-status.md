@@ -26,6 +26,13 @@ Current AI-maintained status only.
 - Older entries moved to [`ai-status-archive-2026-05-28.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-05-28.md).
 - Older entries moved to [`ai-status-archive-2026-06-11.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-status-archive-2026-06-11.md).
 - Older entries moved to [`ai-status-archive-2026-07-12.md`](/Users/ken/work/grafana-utils/.worktrees/grafana13-all-improvements/docs/internal/archive/ai-status-archive-2026-07-12.md).
+- Older entries moved to [`ai-status-archive-2026-07-17.md`](archive/ai-status-archive-2026-07-17.md).
+
+## 2026-07-17 - Dashboard schema v2 resource import
+- State: Done
+- Scope: explicit resource-v2 dashboard import lane, single-namespace `/apis` mutation contract, operator docs, and command-surface contract
+- Current Update: Review/fix wired the production client entrypoint to the native lane, added strict collection and item/write response validation, lane-specific output columns, structured dry-run JSON, contained source discovery, terminal cancel semantics, secret-safe rendering and partial failures, guarded unknown ownership, stripped server-owned labels, and enforced dry-run-only output selectors.
+- Result: The public CLI now reaches only the namespaced v2 API for resource input, rejects malformed or escaped inputs before mutation, and reports an unchanged live replay as `no_change` on Grafana 13.1.
 
 ## 2026-07-12 - Grafana 13 App Platform integration
 - State: Done
@@ -56,9 +63,3 @@ Current AI-maintained status only.
 - Scope: rust/src/commands/datasource/browse/render.rs; rust/src/commands/datasource/browse/render_chrome.rs; rust/src/commands/datasource/mod.rs; docs/internal/tui-architecture-roadmap.md
 - Current Update: Moved datasource browse footer controls and search prompt rendering into a dedicated chrome module while preserving the existing renderer tests.
 - Result: `datasource/browse/render.rs` dropped below the architecture warning threshold; datasource browse rendering remains behavior-compatible and the remaining architecture warnings are datasource browse support, review_contract, and shared browser session.
-
-## 2026-06-11 - Status overview TUI support split
-- State: Done
-- Scope: rust/src/commands/status/overview/tui.rs; rust/src/commands/status/overview/tui_runtime.rs; rust/src/commands/status/overview/tui_tests.rs; docs/internal/tui-architecture-roadmap.md
-- Current Update: Split status overview TUI runtime and focused tests out of the state/search module while preserving existing keyboard behavior and render tests.
-- Result: `status/overview/tui.rs` dropped below the architecture warning threshold, `make quality-architecture` no longer reports it, and default plus no-default Rust gates pass.

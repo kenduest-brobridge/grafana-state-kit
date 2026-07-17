@@ -26,6 +26,14 @@ Current AI change log only.
 - Older entries moved to [`ai-changes-archive-2026-05-28.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-05-28.md).
 - Older entries moved to [`ai-changes-archive-2026-06-11.md`](/Users/ken/work/grafana-utils/docs/internal/archive/ai-changes-archive-2026-06-11.md).
 - Older entries moved to [`ai-changes-archive-2026-07-12.md`](/Users/ken/work/grafana-utils/.worktrees/grafana13-all-improvements/docs/internal/archive/ai-changes-archive-2026-07-12.md).
+- Older entries moved to [`ai-changes-archive-2026-07-17.md`](archive/ai-changes-archive-2026-07-17.md).
+
+## 2026-07-17 - Dashboard schema v2 resource import
+- Summary: Added explicit `dashboard import --input-format resource-v2` support, then review-fixed production dispatch, response identity validation, output-column isolation, structured JSON summaries, path containment, interactive cancellation and redaction, unknown ownership protection, server-owned label stripping, dry-run output-selector enforcement, failure redaction, and Grafana-added schema-default comparison.
+- Tests: focused resource-v2 import/API/interactive/render/apply suites; production-client HTTP regression; live Grafana 13.1 create/no-change/update/cleanup; full Rust TUI suite; docs/contracts/generated-output checks.
+- Impact: Resource-v2 import uses only the namespaced `/apis` v2 endpoint, never converts or falls back to classic import, rejects malformed identities and escaped sources, supports review-first create/update reconciliation, and retains Git Sync/file-provisioning ownership protection.
+- Rollback/Risk: Medium; the lane is opt-in and single-namespace, rejects incompatible classic org/folder/schema flags, and requires explicit update permission through `--replace-existing`.
+- Follow-up: Add multi-namespace routing or automatic folder-resource creation only after live acceptance evidence establishes their contracts.
 
 ## 2026-06-11 - Shared browser detail and test split
 - Summary: Moved shared browser detail projection helpers into common/browser/detail.rs and session behavior tests into common/browser/session_tests.rs while preserving the crate::interactive_browser helper surface.
@@ -89,10 +97,3 @@ Current AI change log only.
 - Impact: Operators entering status overview interactive mode can navigate the item list with arrow keys immediately. Project Home remains available via h and its handoff behavior is preserved. Public CLI paths, help text, generated docs, and command contracts are unchanged.
 - Rollback/Risk: Low. The change only adjusts initial TUI focus and focused tests cover immediate row movement plus Project Home access.
 - Follow-up: If operators prefer a visual home summary on launch, consider a visible non-focused home panel while keeping keyboard focus on Items.
-
-## 2026-05-25 - TUI completion audit
-- Summary: Replaced the open-ended TUI follow-up section with a completion audit that maps current evidence to the finished shared review/detail/diff projection work and records why domain-specific input loops remain local.
-- Tests: cargo test --quiet; cargo test --quiet user_browse; cargo test --quiet team_browse; cargo test --quiet datasource_browse; cargo test --quiet status_tui; cargo test --quiet review_contract; cargo test --quiet access (outside sandbox for local mock-server coverage after sandbox denied binding); RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; python3 scripts/tui_inventory_report.py --json; make quality-ai-workflow; git diff --check
-- Impact: The roadmap now has an evidence-backed completion audit instead of stale continue-follow-up items. Public CLI paths, help text, generated docs, Rust runtime behavior, and command contracts are unchanged.
-- Rollback/Risk: Low. Documentation-only audit update based on current inventory/search/test evidence.
-- Follow-up: Treat future TUI work as new scoped feature work unless a fresh inventory or user report identifies a concrete regression or duplication.
