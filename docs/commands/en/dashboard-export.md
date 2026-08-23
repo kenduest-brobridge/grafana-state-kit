@@ -18,6 +18,7 @@ Use this when you need a local export tree for later import, review, diff, Git r
 - `--overwrite`: replace existing export files.
 - `--without-raw`, `--without-prompt`, `--without-provisioning`: skip a variant.
 - `--include-history`: write per-version dashboard revision-history artifacts under `history/<uid>/vN.history.json` for each exported org scope.
+- `--native`: shortcut for `--resource-format all`; add every stable native dashboard resource lane served by the target. It is mutually exclusive with an explicit `--resource-format`.
 - `--resource-format`: add native App Platform resource lanes: `none` (default), `v1`, `v2`, or `all`.
 - `--resource-namespace`: override the App Platform namespace for resource export. It is required for resource-only export; mixed exports default to `default` for Grafana OSS org 1 and `org-<id>` for other orgs.
 - `--provider-name`, `--provider-org-id`, `--provider-path`: customize the generated provisioning provider file.
@@ -29,6 +30,7 @@ Use this when you need a local export tree for later import, review, diff, Git r
 ## Notes
 - Writes `raw/`, `prompt/`, and `provisioning/` by default.
 - Resource-enabled exports use a family layout: classic lanes move under `classic/`, while native envelopes are written unchanged under `resource-v1/objects/` and/or `resource-v2/objects/`.
+- The default export remains Classic-only and keeps the existing `raw/`, `prompt/`, and `provisioning/` behavior. Use `--native` when the next step is an auto-routed import that may prefer resource-v2.
 - Before writing a resource lane, the exporter probes its collection endpoint. Explicit `v1` or `v2` requests fail if that version returns 404; `all` keeps every served lane and skips only versions that return 404. Authorization and server errors are never treated as unsupported.
 - Resource artifacts are for `/apis/dashboard.grafana.app/...`, not Grafana UI import. In particular, v2 `spec.elements` is preserved and is not rewritten as classic `panels`.
 - A resource-only export (`--without-raw --without-prompt --without-provisioning --resource-format v1|v2|all`) requires `--resource-namespace`, then lists and writes the served App Platform collection directly without legacy dashboard, folder, datasource, or org API permissions.
@@ -124,8 +126,8 @@ grafana-util dashboard export --profile prod --run timestamp --overwrite
 ```
 
 ```bash
-# Export every dashboard resource API version served by Grafana 13.
-grafana-util dashboard export --profile prod --resource-format all --output-dir ./dashboards --overwrite
+# Export every stable dashboard resource API version served by Grafana 12+/13.
+grafana-util dashboard export --profile prod --native --output-dir ./dashboards --overwrite
 ```
 
 ```bash

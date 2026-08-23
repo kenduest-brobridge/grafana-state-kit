@@ -188,7 +188,7 @@ fn parser_accepts_resource_v2_input_format_and_namespace() {
 }
 
 #[test]
-fn parser_keeps_classic_import_defaults() {
+fn parser_defaults_dashboard_import_to_auto() {
     let args =
         match DashboardCliArgs::try_parse_from(["grafana-util", "import", "--input-dir", "./raw"])
             .unwrap()
@@ -197,8 +197,28 @@ fn parser_keeps_classic_import_defaults() {
             DashboardCommand::Import(args) => args,
             _ => panic!("expected dashboard import"),
         };
-    assert_eq!(args.input_format, DashboardImportInputFormat::Raw);
+    assert_eq!(args.input_format, DashboardImportInputFormat::Auto);
     assert_eq!(args.resource_namespace, None);
+}
+
+#[test]
+fn parser_preserves_explicit_classic_import_mode() {
+    let args = match DashboardCliArgs::try_parse_from([
+        "grafana-util",
+        "import",
+        "--input-dir",
+        "./raw",
+        "--input-format",
+        "raw",
+    ])
+    .unwrap()
+    .command
+    {
+        DashboardCommand::Import(args) => args,
+        _ => panic!("expected dashboard import"),
+    };
+
+    assert_eq!(args.input_format, DashboardImportInputFormat::Raw);
 }
 
 #[test]

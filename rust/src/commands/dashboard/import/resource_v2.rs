@@ -529,6 +529,17 @@ pub(crate) fn run_dashboard_v2_import_with_request<F>(
 where
     F: FnMut(Method, &str, &[(String, String)], Option<&Value>) -> Result<Option<Value>>,
 {
+    run_dashboard_v2_import_with_request_preflight(request, args, false)
+}
+
+pub(crate) fn run_dashboard_v2_import_with_request_preflight<F>(
+    request: &mut F,
+    args: &crate::dashboard::ImportArgs,
+    preflight_complete: bool,
+) -> Result<usize>
+where
+    F: FnMut(Method, &str, &[(String, String)], Option<&Value>) -> Result<Option<Value>>,
+{
     let resources = discover_dashboard_v2_resources(&args.input_dir)?;
     let namespace = args
         .resource_namespace
@@ -539,12 +550,14 @@ where
         return Err(message("--resource-namespace must be non-empty."));
     }
     let collection = dashboard_resource_path(DashboardResourceApiVersion::V2, namespace)?;
-    match request(Method::GET, &collection, &[("limit".into(), "1".into())], None) {
-        Ok(value) => {
-            validate_dashboard_resource_v2_list_response(value, namespace)?;
+    if !preflight_complete {
+        match request(Method::GET, &collection, &[("limit".into(), "1".into())], None) {
+            Ok(value) => {
+                validate_dashboard_resource_v2_list_response(value, namespace)?;
+            }
+            Err(error) if error.status_code() == Some(404) => return Err(message(format!("Grafana does not serve dashboard.grafana.app/v2 in namespace {namespace}; no classic API fallback was attempted."))),
+            Err(error) => return Err(error),
         }
-        Err(error) if error.status_code() == Some(404) => return Err(message(format!("Grafana does not serve dashboard.grafana.app/v2 in namespace {namespace}; no classic API fallback was attempted."))),
-        Err(error) => return Err(error),
     }
 
     let mut planned = Vec::new();

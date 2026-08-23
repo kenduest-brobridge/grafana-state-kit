@@ -4,7 +4,7 @@
 透過對應的 Grafana API 匯入 classic dashboard JSON 或原生 dashboard schema v2 resource JSON。
 
 ## 何時使用
-當您手上有屬於 Grafana API 狀態管理的本地匯出樹，想把儀表板推回 Grafana，無論是實際執行或 dry run，都可以使用這個指令。Classic 匯入使用 `raw/` 或 `provisioning/` 輸入。原生 schema v2 匯入只有在明確傳入 `--input-format resource-v2` 時，才會讀取 `resource-v2/` JSON resource；不會讀取 Grafana UI 的 `prompt/` lane。
+當您手上有屬於 Grafana API 狀態管理的本地匯出樹，想把儀表板推回 Grafana，無論是實際執行或 dry run，都可以使用這個指令。預設 `--input-format auto` 會先辨識匯出 lane，再選擇對應 API。Classic 匯入使用 `raw/` 或 `provisioning/`；當精確的 v2 collection endpoint 存在時，會使用 `resource-v2/` JSON resource。不會讀取 Grafana UI 的 `prompt/` lane。
 
 不要用這個指令繞過來源管理。如果目標 dashboard 是 Grafana Git Sync 或 file provisioning 管理，應該修改 Git repository、PR 或 provisioning source，再由該流程部署，而不是強制走 dashboard API 匯入。
 
@@ -14,8 +14,8 @@
 
 ## 重點旗標
 - `--input-dir`：classic lane、匯出的 `resource-v2/` 目錄或合併匯出根目錄。
-- `--input-format`：選擇 `raw`、`provisioning`，或明確指定原生 resource lane `resource-v2`。
-- `--resource-namespace`：`resource-v2` 匯入使用的 App Platform namespace，預設為 `default`；實際選定的值具有最終權威，會取代來源文件中的 namespace。
+- `--input-format`：預設為 `auto`；也可以選擇 `raw`、`provisioning`，或明確指定原生 resource lane `resource-v2` 以略過自動判斷。
+- `--resource-namespace`：`resource-v2` 匯入使用的最終 App Platform destination namespace。Auto mode 會推斷單一來源 namespace，只有來源文件省略時才使用 `default`；傳入此旗標可覆寫推斷結果。明確指定 `--input-format resource-v2` 且省略此旗標時則使用 `default`。
 - `--local`、`--run`、`--run-id`：不傳 `--input-dir`，改從 artifact workspace 的 dashboard lane 讀取來源。
 - `--org-id`、`--use-export-org`、`--only-org-id`、`--create-missing-orgs`：控制跨 org 路由。
 - `--import-folder-uid`：強制指定目的資料夾 UID。
@@ -24,11 +24,19 @@
 - `--import-message`：儲存在 Grafana 的修訂訊息。
 - `--interactive`、`--dry-run`、`--table`、`--json`、`--output-format`、`--output-columns`、`--list-columns`、`--no-header`、`--progress`、`--verbose`：預覽與回報控制。若想看完整 dry-run 表格欄位，可用 `--output-columns all`。
 
+## 自動選擇輸入 lane
+
+使用預設的 `--input-format auto` 時，匯入器會在任何 mutation 前先盤點指定目錄。若合併匯出同時含有 Classic raw 與 resource-v2，會先對
+`/apis/dashboard.grafana.app/v2/namespaces/<namespace>/dashboards?limit=1`
+執行有界線的 `DashboardList` 探測；只有真正的 `404` 才能退回同一個匯出根目錄內的 Classic raw。驗證或授權錯誤、格式錯誤的成功回應與 server error 都會保留為錯誤。只有 resource-v2 的輸入不會轉換成 Classic。路由決策會寫到 stderr，因此 JSON dry-run 的 stdout 仍保持合法 JSON。
+
+來源文件若只有一個非空 namespace，auto mode 會沿用它；若 namespace 衝突，請傳入 `--resource-namespace`。文件都沒有 namespace 時才使用 `default`。Classic-only 路由旗標會讓合併匯出留在 raw lane，且不探測 resource-v2。
+
 ## 成功判準
 - dry-run 先把 create/update 動作列清楚，再進入 live replay
 - dry-run 也會顯示目標 UID 的 live dashboard ownership evidence，包含 provisioned 或 managed-state 警告
 - 目的 org 與 folder 路由足夠明確，可以先 review
-- 這次匯入使用的是正確的輸入 lane：`raw`、`provisioning` 或明確指定的 `resource-v2`，不是 `prompt`
+- 這次匯入使用的是正確的輸入 lane：`raw`、`provisioning` 或 `resource-v2`，不是 `prompt`；auto mode 會在 stderr 顯示選擇結果
 - Git Sync 或 file-provisioned targets 會被視為 source-owned，應回到 repository 或 provisioning workflow 處理
 
 ## 原生 resource-v2 安全邊界
@@ -77,13 +85,18 @@ grafana-util dashboard import --profile prod --local --dry-run --table
 ```
 
 ```bash
-# 在具有最終權威的 default namespace 預覽原生 schema v2 resource。
-grafana-util dashboard import --profile prod --input-dir ./dashboards/resource-v2 --input-format resource-v2 --resource-namespace default --dry-run --table
+# 讓 importer 在 Grafana 12+/13 提供 v2 collection endpoint 時自動選擇 resource-v2。
+grafana-util dashboard import --profile prod --input-dir ./dashboards --dry-run --table
 ```
 
 ```bash
-# 透過原生 /apis v2 endpoint 執行建立與允許的更新。
-grafana-util dashboard import --profile prod --input-dir ./dashboards/resource-v2 --input-format resource-v2 --resource-namespace default --replace-existing
+# 透過自動選定的 native 或 Classic endpoint 執行建立與允許的更新。
+grafana-util dashboard import --profile prod --input-dir ./dashboards --replace-existing
+```
+
+```bash
+# 不使用 auto，明確指定 expert lane。
+grafana-util dashboard import --profile prod --input-dir ./dashboards/resource-v2 --input-format resource-v2 --resource-namespace default --dry-run --table
 ```
 
 ## 相關指令

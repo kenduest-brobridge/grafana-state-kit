@@ -128,6 +128,14 @@ pub struct ExportArgs {
     )]
     pub include_history: bool,
     #[arg(
+        long,
+        default_value_t = false,
+        conflicts_with = "resource_format",
+        help = "Also export every stable native dashboard resource format served by Grafana. This is a shortcut for --resource-format all.",
+        help_heading = "Export Variant Options"
+    )]
+    pub native: bool,
+    #[arg(
         long = "resource-format",
         value_enum,
         default_value_t = DashboardResourceFormat::None,

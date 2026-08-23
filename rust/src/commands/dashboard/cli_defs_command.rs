@@ -51,6 +51,8 @@ pub use cli_defs_command_plan::{DashboardPlanOutputFormat, FolderPermissionMatch
 /// Arguments for importing dashboards from a local export directory.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
 pub enum DashboardImportInputFormat {
+    #[value(skip)]
+    Auto,
     Raw,
     Provisioning,
     ResourceV2,

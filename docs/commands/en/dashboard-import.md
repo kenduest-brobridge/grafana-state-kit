@@ -4,7 +4,7 @@
 Import classic dashboard JSON or native dashboard schema v2 resource JSON through the matching Grafana API.
 
 ## When to use
-Use this when you have a local export tree for dashboards that are owned by Grafana's API state and need to push dashboards back into Grafana, either live or as a dry run. Classic import consumes `raw/` or `provisioning/` inputs. Native schema v2 import consumes `resource-v2/` JSON resources only when you explicitly pass `--input-format resource-v2`. The command does not consume the Grafana UI `prompt/` lane.
+Use this when you have a local export tree for dashboards that are owned by Grafana's API state and need to push dashboards back into Grafana, either live or as a dry run. The default `--input-format auto` detects the export lane and selects the matching API. Classic import consumes `raw/` or `provisioning/` inputs; native schema v2 import consumes `resource-v2/` JSON resources when the exact v2 collection endpoint is served. The command does not consume the Grafana UI `prompt/` lane.
 
 Do not use this command to bypass source-owned dashboards. If the target dashboard is managed by Grafana Git Sync or file provisioning, change the repository, PR, or provisioning source and let that workflow deploy it instead of forcing a direct dashboard API import.
 
@@ -14,8 +14,8 @@ Do not use this command to bypass source-owned dashboards. If the target dashboa
 
 ## Key flags
 - `--input-dir`: source directory for a classic lane, an exported `resource-v2/` directory, or a combined export root.
-- `--input-format`: choose `raw`, `provisioning`, or the explicit native resource lane `resource-v2`.
-- `--resource-namespace`: App Platform namespace for `resource-v2` import. It defaults to `default`; the effective value is authoritative and replaces any namespace carried in a source document.
+- `--input-format`: defaults to `auto`; choose `raw`, `provisioning`, or the explicit native resource lane `resource-v2` to bypass detection.
+- `--resource-namespace`: authoritative App Platform destination namespace for `resource-v2` import. Auto mode infers a single source namespace and uses `default` only when source documents omit it; pass this flag to override the inferred value. Explicit `--input-format resource-v2` uses `default` when the flag is omitted.
 - `--local`, `--run`, `--run-id`: read the source dashboard lane from the artifact workspace instead of passing `--input-dir`.
 - `--org-id`, `--use-export-org`, `--only-org-id`, `--create-missing-orgs`: control cross-org routing.
 - `--import-folder-uid`: force a destination folder UID.
@@ -24,11 +24,28 @@ Do not use this command to bypass source-owned dashboards. If the target dashboa
 - `--import-message`: revision message stored in Grafana.
 - `--interactive`, `--dry-run`, `--table`, `--json`, `--output-format`, `--output-columns`, `--list-columns`, `--no-header`, `--progress`, `--verbose`: preview and reporting controls. Use `--output-columns all` for the full dry-run table.
 
+## Automatic lane selection
+
+With the default `--input-format auto`, the importer inventories the selected
+directory before any mutation. A combined export containing both Classic raw
+and resource-v2 artifacts prefers resource-v2 after a bounded
+`DashboardList` probe at `/apis/dashboard.grafana.app/v2/namespaces/<namespace>/dashboards?limit=1`.
+Only a real `404` permits fallback to that same export root's Classic raw
+artifact. Authentication failures, authorization failures, malformed success
+payloads, and server errors remain errors. A resource-v2-only input never gets
+converted to Classic. The routing decision is written to stderr so JSON dry-run
+output on stdout remains valid.
+
+When the source documents contain one non-empty namespace, auto mode uses it.
+If they contain conflicting namespaces, pass `--resource-namespace`; documents
+without a namespace use `default`. Classic-only routing flags keep a combined
+export on its raw lane without probing resource-v2.
+
 ## What success looks like
 - dry-run shows the expected create/update actions before you touch the live server
 - dry-run also surfaces live dashboard target evidence when Grafana already owns the UID, including provisioned or managed-state warnings
 - the destination org and folder routing are explicit enough to review
-- the chosen input lane matches the replay goal: `raw`, `provisioning`, or explicit `resource-v2`, not `prompt`
+- the selected input lane matches the replay goal: `raw`, `provisioning`, or `resource-v2`, not `prompt`; auto mode reports its choice on stderr
 - Git Sync or file-provisioned targets are treated as source-owned and routed back to their repository or provisioning workflow
 
 ## Native resource-v2 safety boundary
@@ -72,13 +89,18 @@ grafana-util dashboard import --profile prod --local --dry-run --table
 ```
 
 ```bash
-# Preview native schema v2 resources in the authoritative default namespace.
-grafana-util dashboard import --profile prod --input-dir ./dashboards/resource-v2 --input-format resource-v2 --resource-namespace default --dry-run --table
+# Let the importer select resource-v2 when its Grafana 12+/13 collection endpoint is available.
+grafana-util dashboard import --profile prod --input-dir ./dashboards --dry-run --table
 ```
 
 ```bash
-# Apply creates and permitted updates through the native /apis v2 endpoint.
-grafana-util dashboard import --profile prod --input-dir ./dashboards/resource-v2 --input-format resource-v2 --resource-namespace default --replace-existing
+# Apply creates and permitted updates through the selected native or Classic endpoint.
+grafana-util dashboard import --profile prod --input-dir ./dashboards --replace-existing
+```
+
+```bash
+# Force one expert lane when auto detection is not desired.
+grafana-util dashboard import --profile prod --input-dir ./dashboards/resource-v2 --input-format resource-v2 --resource-namespace default --dry-run --table
 ```
 
 ## Related commands

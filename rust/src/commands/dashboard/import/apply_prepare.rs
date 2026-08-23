@@ -15,6 +15,13 @@ pub(super) struct PreparedImportRun {
 }
 
 pub(super) fn validate_import_args(args: &ImportArgs) -> Result<()> {
+    validate_import_common_args(args)?;
+    validate_import_output_columns(args)?;
+    validate_resource_v2_import_args(args)?;
+    Ok(())
+}
+
+pub(super) fn validate_import_common_args(args: &ImportArgs) -> Result<()> {
     if args.table && !args.dry_run {
         return Err(message(
             "--table is only supported with --dry-run for import-dashboard.",
@@ -45,7 +52,6 @@ pub(super) fn validate_import_args(args: &ImportArgs) -> Result<()> {
             "--output-columns is only supported with --dry-run --table or table-like --output-format for import-dashboard.",
         ));
     }
-    validate_import_output_columns(args)?;
     if args.require_matching_folder_path && args.import_folder_uid.is_some() {
         return Err(message(
             "--require-matching-folder-path cannot be combined with --import-folder-uid.",
@@ -56,7 +62,6 @@ pub(super) fn validate_import_args(args: &ImportArgs) -> Result<()> {
             "--ensure-folders cannot be combined with --import-folder-uid.",
         ));
     }
-    validate_resource_v2_import_args(args)?;
     Ok(())
 }
 

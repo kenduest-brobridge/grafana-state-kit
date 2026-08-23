@@ -18,6 +18,9 @@ impl DashboardSourceKind {
     #[allow(dead_code)]
     pub(crate) fn from_import_input_format(input_format: DashboardImportInputFormat) -> Self {
         match input_format {
+            DashboardImportInputFormat::Auto => {
+                unreachable!("auto dashboard input must be resolved before source loading")
+            }
             DashboardImportInputFormat::Raw => Self::RawExport,
             DashboardImportInputFormat::Provisioning => Self::ProvisioningExport,
             DashboardImportInputFormat::ResourceV2 => Self::ResourceV2Import,
@@ -174,6 +177,9 @@ pub(crate) fn resolve_dashboard_import_source(
     input_format: DashboardImportInputFormat,
 ) -> Result<ResolvedDashboardImportSource> {
     match input_format {
+        DashboardImportInputFormat::Auto => Err(message(
+            "Automatic dashboard input must be resolved before source loading.",
+        )),
         DashboardImportInputFormat::Raw => Ok(ResolvedDashboardImportSource {
             source_kind: DashboardSourceKind::RawExport,
             dashboard_dir: input_dir.to_path_buf(),

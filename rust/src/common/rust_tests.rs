@@ -3,9 +3,10 @@
 //! resolution logic for all Rust domains.
 use super::auth::resolve_auth_headers_with_prompt;
 use super::{
-    editor, emit_plain_output, invalid_header_name, invalid_header_value, invalid_url, parse_error,
-    resolve_auth_headers, sanitize_path_component, should_print_stdout, strip_ansi_codes, tui,
-    tui_feature_required, validation, write_plain_output_file, GrafanaCliError,
+    editor, emit_plain_output, encode_resource_path_segment, invalid_header_name,
+    invalid_header_value, invalid_url, parse_error, resolve_auth_headers, sanitize_path_component,
+    should_print_stdout, strip_ansi_codes, tui, tui_feature_required, validation,
+    write_plain_output_file, GrafanaCliError,
 };
 use std::fs;
 use std::path::Path;
@@ -15,6 +16,15 @@ use tempfile::tempdir;
 fn sanitize_path_component_normalizes_symbols_and_spaces() {
     assert_eq!(sanitize_path_component(" Ops / CPU % "), "Ops_CPU");
     assert_eq!(sanitize_path_component("..."), "untitled");
+}
+
+#[test]
+fn encode_resource_path_segment_preserves_unreserved_bytes_only() {
+    assert_eq!(
+        encode_resource_path_segment("team/ops?filter#name space%"),
+        "team%2Fops%3Ffilter%23name%20space%25"
+    );
+    assert_eq!(encode_resource_path_segment("cpu-main.~_"), "cpu-main.~_");
 }
 
 #[test]

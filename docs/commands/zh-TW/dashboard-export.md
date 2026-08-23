@@ -18,6 +18,7 @@
 - `--overwrite`：取代既有的匯出檔案。
 - `--without-raw`、`--without-prompt`、`--without-provisioning`：略過某個變體。
 - `--include-history`：把逐版本 dashboard 歷史成品寫到每個匯出 org 範圍下的 `history/<uid>/vN.history.json`。
+- `--native`：`--resource-format all` 的簡化寫法；加入目標實際提供的所有 stable native dashboard resource lane。不能和明確的 `--resource-format` 同時使用。
 - `--resource-format`：加入原生 App Platform resource lane，可選 `none`（預設）、`v1`、`v2`、`all`。
 - `--resource-namespace`：覆寫 resource export 使用的 App Platform namespace。resource-only export 必填；mixed export 未指定時，Grafana OSS 的 org 1 使用 `default`，其他 org 使用 `org-<id>`。
 - `--provider-name`、`--provider-org-id`、`--provider-path`：自訂產生的 provisioning provider 檔案。
@@ -29,6 +30,7 @@
 ## 說明
 - 預設會寫出 `raw/`、`prompt/`、`provisioning/`。
 - 啟用 resource lane 時會使用 family layout：classic lanes 放到 `classic/`，原生 envelope 則原樣寫到 `resource-v1/objects/` 與／或 `resource-v2/objects/`。
+- 預設 export 仍然只產生 Classic，保留既有 `raw/`、`prompt/` 與 `provisioning/` 行為。若下一步要讓 import 自動選擇可用的 resource-v2，請使用 `--native`。
 - 寫入前會先 probe collection endpoint。明確指定 `v1` 或 `v2` 時，404 會直接報錯；`all` 只略過回傳 404 的版本，權限與伺服器錯誤不會被誤判成 unsupported。
 - Resource artifact 是給 `/apis/dashboard.grafana.app/...` 使用，不是 Grafana UI import；v2 的 `spec.elements` 會完整保留，不會轉成 classic `panels`。
 - Resource-only export（`--without-raw --without-prompt --without-provisioning --resource-format v1|v2|all`）必須指定 `--resource-namespace`，之後會直接列舉並寫出 served 的 App Platform collection，不需要 legacy dashboard、folder、datasource 或 org API 權限。
@@ -121,6 +123,11 @@ grafana-util dashboard export --url http://localhost:3000 --basic-user admin --b
 ```bash
 # 使用時間戳 run id，將 dashboard 匯出到 profile artifact workspace。
 grafana-util dashboard export --profile prod --run timestamp --overwrite
+```
+
+```bash
+# 匯出 Grafana 12+/13 實際提供的所有 stable native resource lane。
+grafana-util dashboard export --profile prod --native --output-dir ./dashboards --overwrite
 ```
 
 ```bash

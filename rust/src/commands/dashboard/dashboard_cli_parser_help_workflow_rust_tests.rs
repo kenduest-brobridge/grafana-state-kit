@@ -199,7 +199,7 @@ fn import_help_mentions_interactive_review_picker() {
             "create/update/skip action",
             "With --dry-run",
             "--input-format",
-            "raw export files or Grafana file-provisioning artifacts",
+            "Classic raw, Grafana file-provisioning, or resource-v2 artifacts",
         ],
     );
 }

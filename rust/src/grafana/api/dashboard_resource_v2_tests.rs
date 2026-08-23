@@ -120,6 +120,25 @@ fn v2_probe_encodes_namespace_as_one_path_segment() {
 }
 
 #[test]
+fn v2_probe_rejects_a_collection_without_items() {
+    let Some((base_url, _, handle)) = spawn_server(vec![http_response(
+        "200 OK",
+        r#"{"apiVersion":"dashboard.grafana.app/v2","kind":"DashboardList","metadata":{}}"#,
+    )]) else {
+        return;
+    };
+    let api = test_api(base_url);
+
+    let error = api
+        .dashboard()
+        .probe_dashboard_resource_v2("default")
+        .expect_err("dashboard discovery must validate the collection items field");
+    handle.join().unwrap();
+
+    assert!(error.to_string().contains("items array"));
+}
+
+#[test]
 fn v2_probe_treats_only_not_found_as_unsupported() {
     let Some((base_url, _, handle)) = spawn_server(vec![
         http_response("404 Not Found", r#"{"message":"not found"}"#),

@@ -3,7 +3,7 @@ use std::collections::BTreeSet;
 use reqwest::Method;
 use serde_json::{Map, Value};
 
-use crate::common::{message, string_field, value_as_object, Result};
+use crate::common::{encode_resource_path_segment, message, string_field, value_as_object, Result};
 use crate::http::JsonHttpClient;
 
 #[cfg(test)]
@@ -23,20 +23,6 @@ impl DashboardResourceApiVersion {
             Self::V2 => Ok("v2"),
         }
     }
-}
-
-#[allow(dead_code)]
-fn encode_resource_path_segment(value: &str) -> String {
-    let mut encoded = String::with_capacity(value.len());
-    for byte in value.as_bytes() {
-        if byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'.' | b'_' | b'~') {
-            encoded.push(char::from(*byte));
-        } else {
-            use std::fmt::Write as _;
-            let _ = write!(&mut encoded, "%{byte:02X}");
-        }
-    }
-    encoded
 }
 
 #[allow(dead_code)]
@@ -120,9 +106,10 @@ pub(crate) fn validate_dashboard_resource_v2_list_response(
     };
     if object.get("apiVersion").and_then(Value::as_str) != Some("dashboard.grafana.app/v2")
         || object.get("kind").and_then(Value::as_str) != Some("DashboardList")
+        || object.get("items").and_then(Value::as_array).is_none()
     {
         return Err(message(format!(
-            "Unexpected dashboard resource v2 discovery payload for namespace {namespace}."
+            "Unexpected dashboard resource v2 discovery payload for namespace {namespace}; expected an items array."
         )));
     }
     Ok(Value::Object(object))
@@ -313,8 +300,10 @@ impl<'a> DashboardResourceClient<'a> {
         continue_token: Option<&str>,
     ) -> Result<Value> {
         let version = version.path_segment()?;
-        let path =
-            format!("/apis/dashboard.grafana.app/{version}/namespaces/{namespace}/dashboards");
+        let path = format!(
+            "/apis/dashboard.grafana.app/{version}/namespaces/{}/dashboards",
+            encode_resource_path_segment(namespace)
+        );
         let mut params = Vec::new();
         if let Some(limit) = limit {
             params.push(("limit".to_string(), limit.to_string()));
@@ -357,7 +346,9 @@ impl<'a> DashboardResourceClient<'a> {
     ) -> Result<Value> {
         let version = version.path_segment()?;
         let path = format!(
-            "/apis/dashboard.grafana.app/{version}/namespaces/{namespace}/dashboards/{name}"
+            "/apis/dashboard.grafana.app/{version}/namespaces/{}/dashboards/{}",
+            encode_resource_path_segment(namespace),
+            encode_resource_path_segment(name)
         );
         match self.request_json(Method::GET, &path, &[], None)? {
             Some(Value::Object(object)) => Ok(Value::Object(object)),

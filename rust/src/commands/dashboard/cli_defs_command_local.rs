@@ -6,6 +6,20 @@ use std::path::PathBuf;
 use super::super::super::DEFAULT_IMPORT_MESSAGE;
 use super::super::cli_defs_shared::{CommonCliArgs, DryRunOutputFormat, SimpleOutputFormat};
 
+fn parse_dashboard_import_input_format(
+    value: &str,
+) -> Result<super::DashboardImportInputFormat, String> {
+    match value.trim().to_ascii_lowercase().as_str() {
+        "auto" => Ok(super::DashboardImportInputFormat::Auto),
+        "raw" => Ok(super::DashboardImportInputFormat::Raw),
+        "provisioning" => Ok(super::DashboardImportInputFormat::Provisioning),
+        "resource-v2" => Ok(super::DashboardImportInputFormat::ResourceV2),
+        other => Err(format!(
+            "unsupported dashboard import input format {other:?}; use auto, raw, provisioning, or resource-v2"
+        )),
+    }
+}
+
 /// Arguments for importing dashboards from a local export directory.
 #[derive(Debug, Clone, Args)]
 pub struct ImportArgs {
@@ -46,7 +60,7 @@ pub struct ImportArgs {
         long = "input-dir",
         default_value = "",
         hide_default_value = true,
-        help = "Import dashboards from this directory. Use the raw/ export directory for single-org import, or the combined export root when --use-export-org is enabled.",
+        help = "Import dashboards from this directory. Auto detects Classic raw, Grafana file-provisioning, or resource-v2 artifacts. Use the raw/ export directory for single-org import, or the combined export root when --use-export-org is enabled.",
         help_heading = "Input Options"
     )]
     pub input_dir: PathBuf,
@@ -76,16 +90,16 @@ pub struct ImportArgs {
     pub run_id: Option<String>,
     #[arg(
         long,
-        value_enum,
-        default_value_t = super::DashboardImportInputFormat::Raw,
-        help = "Interpret --input-dir as raw export files or Grafana file-provisioning artifacts. Use provisioning to accept either the provisioning/ root or its dashboards/ subdirectory.",
+        value_parser = parse_dashboard_import_input_format,
+        default_value = "auto",
+        help = "Detect the dashboard input lane automatically, or force auto, raw, provisioning, or resource-v2.",
         help_heading = "Input Options"
     )]
     pub input_format: super::DashboardImportInputFormat,
     #[arg(
         long,
         value_name = "NAMESPACE",
-        help = "Import dashboard.grafana.app/v2 resources into this App Platform namespace.",
+        help = "Import dashboard.grafana.app/v2 resources into this App Platform namespace. Auto mode infers a single source namespace; use this flag to override it explicitly.",
         help_heading = "Routing Options"
     )]
     pub resource_namespace: Option<String>,

@@ -31,6 +31,9 @@ where
     F: FnMut(&Path) -> Result<InspectExportInputType>,
 {
     match input_format {
+        DashboardImportInputFormat::Auto => Err(message(
+            "Automatic dashboard input is supported only by dashboard import.",
+        )),
         DashboardImportInputFormat::Raw => resolve_raw_inspect_input(
             temp_root,
             input_dir,

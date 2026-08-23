@@ -112,6 +112,8 @@ pub(crate) const DASHBOARD_EXPORT_AFTER_HELP: &str = r#"Notes:
   - Use --flat for files directly under each variant directory.
   - Dashboard files use stable UID filenames for Git-friendly diffs.
   - Use --include-history to add per-version history/<uid>/vN.history.json artifacts under each exported org scope.
+  - The default export remains Classic-only; use --native as the shortcut for --resource-format all.
+  - --native and an explicit --resource-format cannot be combined.
   - The provider file is provisioning/provisioning/dashboards.yaml.
   - Keep raw/ for API import or diff, prompt/ for UI import, and provisioning/ for file provisioning.
 
@@ -131,7 +133,10 @@ Examples:
 
   Export dashboards from the current org with an API token:
     export GRAFANA_API_TOKEN='your-token'
-    grafana-util dashboard export --url http://localhost:3000 --token "$GRAFANA_API_TOKEN" --output-dir ./dashboards --overwrite"#;
+    grafana-util dashboard export --url http://localhost:3000 --token "$GRAFANA_API_TOKEN" --output-dir ./dashboards --overwrite
+
+  Export every stable native resource lane served by Grafana 12+/13:
+    grafana-util dashboard export --url http://localhost:3000 --token "$GRAFANA_API_TOKEN" --native --output-dir ./dashboards --overwrite"#;
 
 pub(crate) const DASHBOARD_IMPORT_AFTER_HELP: &str = r#"Examples:
 
@@ -144,7 +149,10 @@ pub(crate) const DASHBOARD_IMPORT_AFTER_HELP: &str = r#"Examples:
   Interactively choose exported dashboards to restore/import:
     grafana-util dashboard import --url http://localhost:3000 --basic-user admin --basic-password admin --input-dir ./dashboards/raw --interactive --replace-existing
 
-  Preview native schema v2 resources in one authoritative namespace:
+  Let auto mode choose resource-v2 when Grafana 12+/13 serves its collection endpoint:
+    grafana-util dashboard import --url http://localhost:3000 --token "$GRAFANA_API_TOKEN" --input-dir ./dashboards --dry-run --table
+
+  Preview native schema v2 resources with an explicit expert override:
     grafana-util dashboard import --url http://localhost:3000 --token "$GRAFANA_API_TOKEN" --input-dir ./dashboards/resource-v2 --input-format resource-v2 --resource-namespace default --dry-run --table
 
   Apply native schema v2 creates and permitted updates through /apis only:

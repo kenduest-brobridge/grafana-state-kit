@@ -3,6 +3,7 @@
 //! through the shared dashboard HTTP/auth context.
 
 mod apply;
+mod auto;
 pub(crate) mod compare;
 mod dry_run;
 pub(crate) mod lookup;

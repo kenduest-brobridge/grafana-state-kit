@@ -86,6 +86,7 @@ fn select_expected_variant(
         Some(InspectExportInputType::Raw) => RAW_EXPORT_SUBDIR,
         Some(InspectExportInputType::Source) => PROMPT_EXPORT_SUBDIR,
         None => match input_format {
+            DashboardImportInputFormat::Auto => "auto",
             DashboardImportInputFormat::Raw => RAW_EXPORT_SUBDIR,
             DashboardImportInputFormat::Provisioning => PROVISIONING_EXPORT_SUBDIR,
             DashboardImportInputFormat::ResourceV2 => super::RESOURCE_V2_EXPORT_SUBDIR,
@@ -122,6 +123,11 @@ fn resolve_worktree_source(
     input_type: Option<InspectExportInputType>,
     strict_workspace: bool,
 ) -> Result<LoadedDashboardSource> {
+    if input_format == DashboardImportInputFormat::Auto {
+        return Err(message(
+            "Automatic dashboard input must be resolved before source loading.",
+        ));
+    }
     let workspace_root = infer_dashboard_workspace_root(input_dir);
     let expected_variant = select_expected_variant(input_format, input_type);
     let source_kind = DashboardSourceKind::from_expected_variant(expected_variant)

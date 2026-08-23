@@ -1,4 +1,5 @@
 use super::*;
+use crate::dashboard::DashboardResourceFormat;
 
 #[test]
 fn parse_cli_supports_list_mode() {
@@ -160,6 +161,36 @@ fn parse_cli_supports_preferred_auth_aliases() {
         }
         _ => panic!("expected export command"),
     }
+}
+
+#[test]
+fn parse_cli_supports_native_export_shortcut() {
+    let args = parse_cli_from(["grafana-util", "export", "--native"]);
+
+    match args.command {
+        DashboardCommand::Export(export_args) => {
+            assert!(export_args.native);
+            assert_eq!(export_args.resource_format, DashboardResourceFormat::All);
+        }
+        _ => panic!("expected export command"),
+    }
+}
+
+#[test]
+fn native_export_shortcut_conflicts_with_explicit_resource_format() {
+    let error = DashboardCliArgs::try_parse_from([
+        "grafana-util",
+        "export",
+        "--native",
+        "--resource-format",
+        "v2",
+    ])
+    .unwrap_err()
+    .to_string();
+
+    assert!(error.contains("cannot be used with"), "{error}");
+    assert!(error.contains("--native"), "{error}");
+    assert!(error.contains("--resource-format"), "{error}");
 }
 
 #[test]
@@ -425,6 +456,7 @@ fn import_help_explains_common_operator_flags() {
     assert!(help.contains("--output-columns"));
     assert!(help.contains("--interactive"));
     assert!(help.contains("choose which exported dashboards to import"));
+    assert!(help.contains("Auto mode infers a single source namespace"));
 }
 
 #[test]

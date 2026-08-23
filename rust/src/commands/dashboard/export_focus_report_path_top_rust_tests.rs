@@ -30,6 +30,7 @@ fn make_history_only_export_args(
         without_dashboard_prompt: true,
         without_dashboard_provisioning: true,
         include_history: true,
+        native: false,
         resource_format: crate::dashboard::DashboardResourceFormat::None,
         resource_namespace: None,
         provisioning_provider_name: "grafana-utils-dashboards".to_string(),
@@ -61,6 +62,7 @@ fn export_dashboards_with_request_all_orgs_aggregates_results() {
         without_dashboard_prompt: true,
         without_dashboard_provisioning: true,
         include_history: false,
+        native: false,
         resource_format: crate::dashboard::DashboardResourceFormat::None,
         resource_namespace: None,
         provisioning_provider_name: "grafana-utils-dashboards".to_string(),
@@ -330,6 +332,8 @@ fn export_dashboards_writes_resource_v1_lane_without_classic_variants() {
             ) => {
                 assert_eq!(params, &[("limit".to_string(), "500".to_string())]);
                 Ok(Some(json!({
+                    "apiVersion": "dashboard.grafana.app/v1",
+                    "kind": "DashboardList",
                     "items": [{
                         "kind": "Dashboard",
                         "apiVersion": "dashboard.grafana.app/v1",
@@ -477,6 +481,8 @@ fn export_dashboards_writes_resource_v2_without_rewriting_elements() {
             ("GET", "/apis/dashboard.grafana.app/v2/namespaces/default/dashboards") => {
                 assert_eq!(params, &[("limit".to_string(), "500".to_string())]);
                 Ok(Some(json!({
+                    "apiVersion": "dashboard.grafana.app/v2",
+                    "kind": "DashboardList",
                     "items": [{
                         "kind": "Dashboard",
                         "apiVersion": "dashboard.grafana.app/v2",
@@ -539,6 +545,8 @@ fn export_dashboards_uses_explicit_resource_namespace_for_resource_only_export()
             ("GET", "/apis/dashboard.grafana.app/v2/namespaces/stacks-123/dashboards") => {
                 assert_eq!(params, &[("limit".to_string(), "500".to_string())]);
                 Ok(Some(json!({
+                    "apiVersion": "dashboard.grafana.app/v2",
+                    "kind": "DashboardList",
                     "items": [{
                         "kind": "Dashboard",
                         "apiVersion": "dashboard.grafana.app/v2",
@@ -588,6 +596,7 @@ fn export_dashboards_mirrors_nested_folder_paths_for_raw_and_prompt() {
         without_dashboard_prompt: false,
         without_dashboard_provisioning: false,
         include_history: false,
+        native: false,
         resource_format: crate::dashboard::DashboardResourceFormat::None,
         resource_namespace: None,
         provisioning_provider_name: "grafana-utils-dashboards".to_string(),
@@ -1036,6 +1045,7 @@ fn export_dashboards_with_dry_run_keeps_output_dir_empty() {
         without_dashboard_prompt: true,
         without_dashboard_provisioning: true,
         include_history: false,
+        native: false,
         resource_format: crate::dashboard::DashboardResourceFormat::None,
         resource_namespace: None,
         provisioning_provider_name: "grafana-utils-dashboards".to_string(),
@@ -1088,6 +1098,7 @@ fn export_dashboards_writes_provisioning_artifacts_in_separate_lane() {
         without_dashboard_prompt: true,
         without_dashboard_provisioning: false,
         include_history: false,
+        native: false,
         resource_format: crate::dashboard::DashboardResourceFormat::None,
         resource_namespace: None,
         provisioning_provider_name: "grafana-utils-dashboards".to_string(),
@@ -1206,6 +1217,7 @@ fn export_dashboards_writes_custom_provisioning_provider_settings() {
         without_dashboard_prompt: true,
         without_dashboard_provisioning: false,
         include_history: false,
+        native: false,
         resource_format: crate::dashboard::DashboardResourceFormat::None,
         resource_namespace: None,
         provisioning_provider_name: "grafana-utils-prod".to_string(),

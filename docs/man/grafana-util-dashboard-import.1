@@ -7,7 +7,7 @@ grafana\-util\-dashboard\-import \- Import classic dashboard JSON or native dash
 .SH DESCRIPTION
 Import classic dashboard JSON or native dashboard schema v2 resource JSON through the matching Grafana API.
 .PP
-Use this when you have a local export tree for dashboards that are owned by Grafana's API state and need to push dashboards back into Grafana, either live or as a dry run. Classic import consumes raw/ or provisioning/ inputs. Native schema v2 import consumes resource\-v2/ JSON resources only when you explicitly pass \-\-input\-format resource\-v2. The command does not consume the Grafana UI prompt/ lane.
+Use this when you have a local export tree for dashboards that are owned by Grafana's API state and need to push dashboards back into Grafana, either live or as a dry run. The default \-\-input\-format auto detects the export lane and selects the matching API. Classic import consumes raw/ or provisioning/ inputs; native schema v2 import consumes resource\-v2/ JSON resources when the exact v2 collection endpoint is served. The command does not consume the Grafana UI prompt/ lane.
 .SH BEFORE / AFTER
 .IP \(bu 2
 Before: import is a blind replay step, and you find folder, org, or schema problems only after the live call.
@@ -19,10 +19,10 @@ After: import becomes a controlled replay step that can be previewed first with 
 source directory for a classic lane, an exported resource\-v2/ directory, or a combined export root.
 .TP
 .B \-\-input\-format
-choose raw, provisioning, or the explicit native resource lane resource\-v2.
+defaults to auto; choose raw, provisioning, or the explicit native resource lane resource\-v2 to bypass detection.
 .TP
 .B \-\-resource\-namespace
-App Platform namespace for resource\-v2 import. It defaults to default; the effective value is authoritative and replaces any namespace carried in a source document.
+authoritative App Platform destination namespace for resource\-v2 import. Auto mode infers a single source namespace and uses default only when source documents omit it; pass this flag to override the inferred value. Explicit \-\-input\-format resource\-v2 uses default when the flag is omitted.
 .TP
 .B \-\-local, \-\-run, \-\-run\-id
 read the source dashboard lane from the artifact workspace instead of passing \-\-input\-dir.
@@ -52,7 +52,7 @@ dry\-run also surfaces live dashboard target evidence when Grafana already owns 
 .IP \(bu 2
 the destination org and folder routing are explicit enough to review
 .IP \(bu 2
-the chosen input lane matches the replay goal: raw, provisioning, or explicit resource\-v2, not prompt
+the selected input lane matches the replay goal: raw, provisioning, or resource\-v2, not prompt; auto mode reports its choice on stderr
 .IP \(bu 2
 Git Sync or file\-provisioned targets are treated as source\-owned and routed back to their repository or provisioning workflow
 .SH FAILURE CHECKS

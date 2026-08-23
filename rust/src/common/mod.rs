@@ -32,7 +32,7 @@ pub use json_output::{
     set_json_color_choice, strip_ansi_codes, CliColorChoice,
 };
 #[allow(unused_imports)]
-pub use normalize::sanitize_path_component;
+pub(crate) use normalize::{encode_resource_path_segment, sanitize_path_component};
 
 /// Print one supported column id per line for discoverability-style CLI flags.
 pub fn print_supported_columns(columns: &[&str]) {

@@ -212,6 +212,9 @@ pub fn normalize_dashboard_cli_args(mut args: DashboardCliArgs) -> DashboardCliA
             &mut import_args.json,
             import_args.output_format,
         ),
+        DashboardCommand::Export(export_args) if export_args.native => {
+            export_args.resource_format = super::DashboardResourceFormat::All;
+        }
         DashboardCommand::Delete(delete_args) => normalize_dry_run_output_format(
             &mut delete_args.table,
             &mut delete_args.json,
