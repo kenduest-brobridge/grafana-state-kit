@@ -2,6 +2,32 @@
 
 ## Active
 
+- [x] [2026-08-23 worktree review, fix, and commit](2026-08-23-worktree-review-fix-commit.md) -
+  Review every current change, fix confirmed defects, verify with external
+  build caches, and commit the completed concerns without mixing open roadmap
+  work.
+
+- [x] [2026-08-13 dashboard auto routing and native export shortcut](2026-08-13-dashboard-auto-routing.md) -
+  Make import auto-detect Classic versus resource-v2 safely, add one native
+  export shortcut, preserve Grafana 12 defaults, then review and verify.
+
+- [ ] [2026-08-12 stable Grafana compatibility plan](2026-08-12-stable-grafana-compatibility-plan.md) -
+  Preserve a Grafana 12.0+ compatibility floor, migrate datasource mutation to
+  UID routes, test released 12.x/13.x lanes, and capability-gate new features.
+
+- [x] [2026-08-12 upstream Grafana compatibility review](2026-08-12-upstream-grafana-compatibility-review.md) -
+  Found required datasource UID migration and Grafana 13.1.3 test-matrix work;
+  beta APIs and unreleased upstream-main behavior are excluded from the plan.
+
+- [x] [2026-07-18 project review fixes](2026-07-18-project-review-fixes.md) -
+  Fixed the confirmed runtime, URL, output, lint, CI/CD, Python quality, and
+  interactive-review findings; full Rust/Python/docs verification passes.
+
+- [x] [2026-07-18 project review: bugs and improvements](2026-07-18-project-review.md) -
+  Review complete: Rust quality and GitLab delivery blockers, resource API-mode
+  and text-output bugs, path encoding, and Python quality/coverage gaps are
+  ranked with evidence; fixes remain separate follow-up work.
+
 - [ ] [2026-07-17 dashboard import auto detection and server capability negotiation](2026-07-17-dashboard-import-auto-capability-negotiation.md) -
   Plan backward-compatible source classification, shared server discovery,
   explainable endpoint routing, and status reporting across Grafana 12, 13,
