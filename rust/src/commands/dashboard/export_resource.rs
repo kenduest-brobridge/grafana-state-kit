@@ -4,9 +4,11 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use reqwest::Method;
-use serde_json::Value;
+use serde_json::{Map, Value};
 
-use crate::common::{message, sanitize_path_component, string_field, Result};
+use crate::common::{
+    encode_resource_path_segment, message, sanitize_path_component, string_field, Result,
+};
 use crate::grafana_api::DashboardResourceApiVersion;
 
 use super::super::{
@@ -51,8 +53,9 @@ impl ResourceExportLane {
 
     fn collection_path(self, namespace: &str) -> String {
         format!(
-            "/apis/dashboard.grafana.app/{}/namespaces/{namespace}/dashboards",
-            self.version_segment()
+            "/apis/dashboard.grafana.app/{}/namespaces/{}/dashboards",
+            self.version_segment(),
+            encode_resource_path_segment(namespace)
         )
     }
 }
@@ -71,18 +74,9 @@ where
         let path = lane.collection_path(namespace);
         let params = [("limit".to_string(), "1".to_string())];
         match request_json(Method::GET, &path, &params, None) {
-            Ok(Some(Value::Object(_))) => served.push(lane),
-            Ok(Some(_)) => {
-                return Err(message(format!(
-                    "Unexpected dashboard resource discovery payload for {}.",
-                    lane.api_version
-                )))
-            }
-            Ok(None) => {
-                return Err(message(format!(
-                    "Unexpected empty dashboard resource discovery payload for {}.",
-                    lane.api_version
-                )))
+            Ok(value) => {
+                dashboard_resource_collection_object(value, lane)?;
+                served.push(lane);
             }
             Err(error)
                 if error.status_code() == Some(404) && format == DashboardResourceFormat::All => {}
@@ -148,21 +142,10 @@ where
         if let Some(token) = continuation.as_ref() {
             params.push(("continue".to_string(), token.clone()));
         }
-        let object = match request_json(Method::GET, &path, &params, None)? {
-            Some(Value::Object(object)) => object,
-            Some(_) => {
-                return Err(message(format!(
-                    "Unexpected dashboard resource collection payload for {}.",
-                    lane.api_version
-                )))
-            }
-            None => {
-                return Err(message(format!(
-                    "Unexpected empty dashboard resource collection payload for {}.",
-                    lane.api_version
-                )))
-            }
-        };
+        let object = dashboard_resource_collection_object(
+            request_json(Method::GET, &path, &params, None)?,
+            lane,
+        )?;
         let items = object
             .get("items")
             .and_then(Value::as_array)
@@ -190,6 +173,33 @@ where
         }
     }
     Ok(resources)
+}
+
+fn dashboard_resource_collection_object(
+    value: Option<Value>,
+    lane: ResourceExportLane,
+) -> Result<Map<String, Value>> {
+    let Some(Value::Object(object)) = value else {
+        return Err(message(format!(
+            "Unexpected empty or non-object dashboard resource collection payload for {}.",
+            lane.api_version
+        )));
+    };
+    if object.get("apiVersion").and_then(Value::as_str) != Some(lane.api_version)
+        || object.get("kind").and_then(Value::as_str) != Some("DashboardList")
+    {
+        return Err(message(format!(
+            "Unexpected dashboard resource collection identity for {}.",
+            lane.api_version
+        )));
+    }
+    if object.get("items").and_then(Value::as_array).is_none() {
+        return Err(message(format!(
+            "Dashboard resource collection payload for {} is missing an items array.",
+            lane.api_version
+        )));
+    }
+    Ok(object)
 }
 
 pub(crate) fn selected_resource_lanes(
@@ -228,10 +238,53 @@ where
     F: FnMut(Method, &str, &[(String, String)], Option<&Value>) -> Result<Option<Value>>,
 {
     let version = lane.version_segment();
-    let path =
-        format!("/apis/dashboard.grafana.app/{version}/namespaces/{namespace}/dashboards/{name}");
+    let path = format!(
+        "/apis/dashboard.grafana.app/{version}/namespaces/{}/dashboards/{}",
+        encode_resource_path_segment(namespace),
+        encode_resource_path_segment(name)
+    );
     match request_json(Method::GET, &path, &[], None)? {
-        Some(Value::Object(object)) => Ok(Value::Object(object)),
+        Some(Value::Object(object)) => {
+            let response_name = object
+                .get("metadata")
+                .and_then(Value::as_object)
+                .and_then(|metadata| metadata.get("name"))
+                .and_then(Value::as_str);
+            if response_name != Some(name) {
+                return Err(message(format!(
+                    "Dashboard resource response belongs to `{}`; expected `{name}`.",
+                    response_name.unwrap_or("<missing name>")
+                )));
+            }
+            if let Some(response_namespace) = object
+                .get("metadata")
+                .and_then(Value::as_object)
+                .and_then(|metadata| metadata.get("namespace"))
+                .and_then(Value::as_str)
+            {
+                if response_namespace != namespace {
+                    return Err(message(format!(
+                        "Dashboard resource `{name}` belongs to namespace `{response_namespace}`; expected `{namespace}`."
+                    )));
+                }
+            }
+            if let Some(response_api_version) = object.get("apiVersion").and_then(Value::as_str) {
+                if response_api_version != lane.api_version {
+                    return Err(message(format!(
+                        "Dashboard resource `{name}` has API version `{response_api_version}`; expected `{}`.",
+                        lane.api_version
+                    )));
+                }
+            }
+            if let Some(response_kind) = object.get("kind").and_then(Value::as_str) {
+                if response_kind != "Dashboard" {
+                    return Err(message(format!(
+                        "Dashboard resource `{name}` has kind `{response_kind}`; expected `Dashboard`."
+                    )));
+                }
+            }
+            Ok(Value::Object(object))
+        }
         Some(_) => Err(message(format!(
             "Unexpected dashboard resource payload for {namespace}/{name}."
         ))),
@@ -373,7 +426,12 @@ mod tests {
                         json!({"message":"not found"}).to_string(),
                     ))
                 } else {
-                    Ok(Some(json!({"items":[], "metadata":{}})))
+                    Ok(Some(json!({
+                        "apiVersion": "dashboard.grafana.app/v1",
+                        "kind": "DashboardList",
+                        "items":[],
+                        "metadata":{}
+                    })))
                 }
             },
             DashboardResourceFormat::All,
@@ -384,6 +442,66 @@ mod tests {
         assert_eq!(lanes.len(), 1);
         assert_eq!(lanes[0].version, DashboardResourceApiVersion::V1);
         assert_eq!(paths.len(), 2);
+    }
+
+    #[test]
+    fn discovery_rejects_a_malformed_collection_object() {
+        let error = discover_resource_lanes_with_request(
+            |_method, _path, _params, _| {
+                Ok(Some(json!({
+                    "apiVersion": "dashboard.grafana.app/v2",
+                    "kind": "DashboardList",
+                    "metadata": {}
+                })))
+            },
+            DashboardResourceFormat::V2,
+            "default",
+        )
+        .expect_err("resource discovery must validate the collection contract");
+
+        assert!(error.to_string().contains("items array"));
+    }
+
+    #[test]
+    fn resource_paths_encode_namespace_and_name_as_segments() {
+        let lane = ResourceExportLane::for_version(DashboardResourceApiVersion::V2).unwrap();
+        let mut requested_path = String::new();
+        fetch_dashboard_resource_with_request(
+            &mut |_method, path, _params, _| {
+                requested_path = path.to_string();
+                Ok(Some(json!({"metadata": {"name": "dash#1%"}})))
+            },
+            lane,
+            "team/ops?filter",
+            "dash#1%",
+        )
+        .unwrap();
+
+        assert_eq!(
+            requested_path,
+            "/apis/dashboard.grafana.app/v2/namespaces/team%2Fops%3Ffilter/dashboards/dash%231%25"
+        );
+    }
+
+    #[test]
+    fn resource_fetch_rejects_a_mismatched_identity() {
+        let lane = ResourceExportLane::for_version(DashboardResourceApiVersion::V2).unwrap();
+        let error = fetch_dashboard_resource_with_request(
+            &mut |_method, _path, _params, _| {
+                Ok(Some(json!({
+                    "apiVersion": "dashboard.grafana.app/v2",
+                    "kind": "Dashboard",
+                    "metadata": {"name": "other-dashboard", "namespace": "default"}
+                })))
+            },
+            lane,
+            "default",
+            "cpu-main",
+        )
+        .expect_err("resource export must not attribute another dashboard");
+
+        assert!(error.to_string().contains("cpu-main"));
+        assert!(error.to_string().contains("other-dashboard"));
     }
 
     #[test]
@@ -413,11 +531,15 @@ mod tests {
                 request_count += 1;
                 if params.iter().any(|(key, _)| key == "continue") {
                     Ok(Some(json!({
+                        "apiVersion": "dashboard.grafana.app/v2",
+                        "kind": "DashboardList",
                         "items": [{"metadata": {"name": "second"}}],
                         "metadata": {}
                     })))
                 } else {
                     Ok(Some(json!({
+                        "apiVersion": "dashboard.grafana.app/v2",
+                        "kind": "DashboardList",
                         "items": [{"metadata": {"name": "first"}}],
                         "metadata": {"continue": "page-2"}
                     })))
@@ -438,6 +560,8 @@ mod tests {
         let error = list_dashboard_resources_with_request(
             |_method, _path, _params, _| {
                 Ok(Some(json!({
+                    "apiVersion": "dashboard.grafana.app/v2",
+                    "kind": "DashboardList",
                     "items": [],
                     "metadata": {"continue": "loop"}
                 })))

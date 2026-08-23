@@ -11,6 +11,7 @@ from ..profile_config import resolve_input_lane_path
 from .inspection_dispatch import (
     resolve_inspect_dispatch_args,
     run_inspection_dispatch,
+    run_inspection_interactive,
 )
 
 
@@ -428,10 +429,6 @@ def run_inspect_export(args, deps):
             Path(tmpdir),
             deps,
         )
-        if bool(getattr(args, "interactive", False)):
-            raise deps["GrafanaError"](
-                "Dashboard summary interactive mode is not implemented in Python yet."
-            )
         metadata = deps["load_export_metadata"](
             resolved_import_dir, expected_variant=None
         )
@@ -441,5 +438,9 @@ def run_inspect_export(args, deps):
                 Path(tmpdir),
                 deps,
             )
+            if bool(getattr(args, "interactive", False)):
+                return run_inspection_interactive(merged_raw_dir, deps)
             return run_inspection_dispatch(merged_raw_dir, deps, settings)
+        if bool(getattr(args, "interactive", False)):
+            return run_inspection_interactive(resolved_import_dir, deps)
         return run_inspection_dispatch(resolved_import_dir, deps, settings)

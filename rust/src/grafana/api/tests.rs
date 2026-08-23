@@ -655,6 +655,7 @@ fn app_platform_discovery_treats_only_404_as_unsupported() {
         "dashboard.grafana.app",
         AppPlatformApiVersion::V2,
         "dashboards",
+        "Dashboard",
     );
 
     assert!(api.app_platform().is_served(resource, "default").unwrap());
@@ -674,15 +675,93 @@ fn app_platform_discovery_treats_only_404_as_unsupported() {
 }
 
 #[test]
+fn app_platform_discovery_rejects_an_object_without_items() {
+    let responses = vec![http_response(
+        "200 OK",
+        r#"{"apiVersion":"dashboard.grafana.app/v2","kind":"DashboardList","metadata":{}}"#,
+    )];
+    let (base_url, _requests, handle) = sequence_server_or_skip!(responses);
+    let api = build_test_api(base_url);
+    let resource = AppPlatformResource::new(
+        "dashboard.grafana.app",
+        AppPlatformApiVersion::V2,
+        "dashboards",
+        "Dashboard",
+    );
+
+    let error = api
+        .app_platform()
+        .is_served(resource, "default")
+        .expect_err("discovery must reject a malformed collection object");
+
+    handle.join().unwrap();
+    assert!(error.to_string().contains("items array"));
+}
+
+#[test]
+fn app_platform_discovery_rejects_a_collection_with_wrong_identity() {
+    let responses = vec![http_response(
+        "200 OK",
+        r#"{"apiVersion":"folder.grafana.app/v1","kind":"FolderList","items":[]}"#,
+    )];
+    let (base_url, _requests, handle) = sequence_server_or_skip!(responses);
+    let api = build_test_api(base_url);
+    let resource = AppPlatformResource::new(
+        "dashboard.grafana.app",
+        AppPlatformApiVersion::V2,
+        "dashboards",
+        "Dashboard",
+    );
+
+    let error = api
+        .app_platform()
+        .is_served(resource, "default")
+        .expect_err("discovery must validate the resource collection identity");
+    handle.join().unwrap();
+
+    assert!(error.to_string().contains("apiVersion"));
+}
+
+#[test]
+fn app_platform_paths_encode_namespace_and_name_as_segments() {
+    let responses = vec![http_response(
+        "200 OK",
+        r#"{"apiVersion":"dashboard.grafana.app/v2","kind":"Dashboard","metadata":{"name":"dash#1%","namespace":"team/ops?filter"}}"#,
+    )];
+    let (base_url, requests, handle) = sequence_server_or_skip!(responses);
+    let api = build_test_api(base_url);
+    let resource = AppPlatformResource::new(
+        "dashboard.grafana.app",
+        AppPlatformApiVersion::V2,
+        "dashboards",
+        "Dashboard",
+    );
+
+    api.app_platform()
+        .get(resource, "team/ops?filter", "dash#1%")
+        .unwrap();
+
+    handle.join().unwrap();
+    let requests = requests.lock().unwrap();
+    assert!(
+        requests[0].starts_with(
+            "GET /apis/dashboard.grafana.app/v2/namespaces/team%2Fops%3Ffilter/dashboards/dash%231%25 HTTP/1.1"
+        ),
+        "unexpected request: {:?}",
+        requests[0]
+    );
+}
+
+#[test]
 fn app_platform_list_all_follows_continue_tokens() {
     let responses = vec![
         http_response(
             "200 OK",
-            r#"{"items":[{"metadata":{"name":"cpu"}}],"metadata":{"continue":"page two"}}"#,
+            r#"{"apiVersion":"dashboard.grafana.app/v2","kind":"DashboardList","items":[{"apiVersion":"dashboard.grafana.app/v2","kind":"Dashboard","metadata":{"name":"cpu","namespace":"default"}}],"metadata":{"continue":"page two"}}"#,
         ),
         http_response(
             "200 OK",
-            r#"{"items":[{"metadata":{"name":"memory"}}],"metadata":{"continue":""}}"#,
+            r#"{"apiVersion":"dashboard.grafana.app/v2","kind":"DashboardList","items":[{"apiVersion":"dashboard.grafana.app/v2","kind":"Dashboard","metadata":{"name":"memory","namespace":"default"}}],"metadata":{"continue":""}}"#,
         ),
     ];
     let (base_url, requests, handle) = sequence_server_or_skip!(responses);
@@ -691,6 +770,7 @@ fn app_platform_list_all_follows_continue_tokens() {
         "dashboard.grafana.app",
         AppPlatformApiVersion::V2,
         "dashboards",
+        "Dashboard",
     );
 
     let items = api
@@ -712,19 +792,144 @@ fn app_platform_list_all_follows_continue_tokens() {
 }
 
 #[test]
+fn app_platform_list_rejects_an_item_with_the_wrong_kind() {
+    let responses = vec![http_response(
+        "200 OK",
+        r#"{"apiVersion":"dashboard.grafana.app/v2","kind":"DashboardList","items":[{"apiVersion":"dashboard.grafana.app/v2","kind":"Folder","metadata":{"name":"cpu","namespace":"default"}}],"metadata":{}}"#,
+    )];
+    let (base_url, _requests, handle) = sequence_server_or_skip!(responses);
+    let api = build_test_api(base_url);
+    let resource = AppPlatformResource::new(
+        "dashboard.grafana.app",
+        AppPlatformApiVersion::V2,
+        "dashboards",
+        "Dashboard",
+    );
+
+    let error = api
+        .app_platform()
+        .list_all(resource, "default", None)
+        .expect_err("collection items must match the requested resource kind");
+    handle.join().unwrap();
+
+    assert!(error.to_string().contains("kind"));
+    assert!(error.to_string().contains("Dashboard"));
+}
+
+#[test]
+fn app_platform_list_rejects_an_item_with_the_wrong_api_version() {
+    let responses = vec![http_response(
+        "200 OK",
+        r#"{"apiVersion":"dashboard.grafana.app/v2","kind":"DashboardList","items":[{"apiVersion":"dashboard.grafana.app/v1","kind":"Dashboard","metadata":{"name":"cpu","namespace":"default"}}],"metadata":{}}"#,
+    )];
+    let (base_url, _requests, handle) = sequence_server_or_skip!(responses);
+    let api = build_test_api(base_url);
+    let resource = AppPlatformResource::new(
+        "dashboard.grafana.app",
+        AppPlatformApiVersion::V2,
+        "dashboards",
+        "Dashboard",
+    );
+
+    let error = api
+        .app_platform()
+        .list_all(resource, "default", None)
+        .expect_err("collection items must match the requested API version");
+    handle.join().unwrap();
+
+    assert!(error.to_string().contains("apiVersion"));
+    assert!(error.to_string().contains("dashboard.grafana.app/v2"));
+}
+
+#[test]
+fn app_platform_list_rejects_an_item_from_another_namespace() {
+    let responses = vec![http_response(
+        "200 OK",
+        r#"{"apiVersion":"dashboard.grafana.app/v2","kind":"DashboardList","items":[{"apiVersion":"dashboard.grafana.app/v2","kind":"Dashboard","metadata":{"name":"cpu","namespace":"other"}}],"metadata":{}}"#,
+    )];
+    let (base_url, _requests, handle) = sequence_server_or_skip!(responses);
+    let api = build_test_api(base_url);
+    let resource = AppPlatformResource::new(
+        "dashboard.grafana.app",
+        AppPlatformApiVersion::V2,
+        "dashboards",
+        "Dashboard",
+    );
+
+    let error = api
+        .app_platform()
+        .list_all(resource, "default", None)
+        .expect_err("collection items must stay in the requested namespace");
+    handle.join().unwrap();
+
+    assert!(error.to_string().contains("namespace"));
+    assert!(error.to_string().contains("default"));
+}
+
+#[test]
+fn app_platform_get_rejects_a_different_resource_name() {
+    let responses = vec![http_response(
+        "200 OK",
+        r#"{"apiVersion":"dashboard.grafana.app/v2","kind":"Dashboard","metadata":{"name":"memory","namespace":"default"}}"#,
+    )];
+    let (base_url, _requests, handle) = sequence_server_or_skip!(responses);
+    let api = build_test_api(base_url);
+    let resource = AppPlatformResource::new(
+        "dashboard.grafana.app",
+        AppPlatformApiVersion::V2,
+        "dashboards",
+        "Dashboard",
+    );
+
+    let error = api
+        .app_platform()
+        .get(resource, "default", "cpu")
+        .expect_err("get must validate the requested resource name");
+    handle.join().unwrap();
+
+    assert!(error.to_string().contains("metadata.name"));
+    assert!(error.to_string().contains("cpu"));
+}
+
+#[test]
+fn app_platform_history_rejects_a_different_resource_name() {
+    let responses = vec![http_response(
+        "200 OK",
+        r#"{"apiVersion":"dashboard.grafana.app/v1","kind":"DashboardList","items":[{"apiVersion":"dashboard.grafana.app/v1","kind":"Dashboard","metadata":{"name":"memory","namespace":"default"}}],"metadata":{}}"#,
+    )];
+    let (base_url, _requests, handle) = sequence_server_or_skip!(responses);
+    let api = build_test_api(base_url);
+    let resource = AppPlatformResource::new(
+        "dashboard.grafana.app",
+        AppPlatformApiVersion::V1,
+        "dashboards",
+        "Dashboard",
+    );
+
+    let error = api
+        .app_platform()
+        .list_history(resource, "default", "cpu", None)
+        .expect_err("history must validate the selected resource name");
+    handle.join().unwrap();
+
+    assert!(error.to_string().contains("metadata.name"));
+    assert!(error.to_string().contains("cpu"));
+}
+
+#[test]
 fn app_platform_get_and_history_use_resource_version_contract() {
     let responses = vec![
         http_response(
             "200 OK",
-            r#"{"kind":"Dashboard","metadata":{"name":"cpu-main","resourceVersion":"9"}}"#,
+            r#"{"apiVersion":"dashboard.grafana.app/v1","kind":"Dashboard","metadata":{"name":"cpu-main","namespace":"default","resourceVersion":"9"}}"#,
         ),
         http_response(
             "200 OK",
-            r#"{"items":[{"metadata":{"name":"cpu-main","resourceVersion":"8"}},{"metadata":{"name":"cpu-main","resourceVersion":"9"}}],"metadata":{}}"#,
+            r#"{"apiVersion":"dashboard.grafana.app/v1","kind":"DashboardList","items":[{"apiVersion":"dashboard.grafana.app/v1","kind":"Dashboard","metadata":{"name":"cpu-main","namespace":"default","resourceVersion":"8"}},{"apiVersion":"dashboard.grafana.app/v1","kind":"Dashboard","metadata":{"name":"cpu-main","namespace":"default","resourceVersion":"9"}}],"metadata":{}}"#,
         ),
         http_response(
             "200 OK",
-            r#"{"kind":"Dashboard","metadata":{"name":"cpu-main","resourceVersion":"8"}}"#,
+            r#"{"apiVersion":"dashboard.grafana.app/v1","kind":"Dashboard","metadata":{"name":"cpu-main","namespace":"default","resourceVersion":"8"}}"#,
         ),
     ];
     let (base_url, requests, handle) = sequence_server_or_skip!(responses);
@@ -733,6 +938,7 @@ fn app_platform_get_and_history_use_resource_version_contract() {
         "dashboard.grafana.app",
         AppPlatformApiVersion::V1,
         "dashboards",
+        "Dashboard",
     );
     let client = api.app_platform();
 

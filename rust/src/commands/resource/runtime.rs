@@ -235,11 +235,14 @@ pub(crate) fn get_resource_item(
                 "Unexpected datasource payload from Grafana.",
             )?))
         }
-        ResourceKind::AlertRules => Ok(Value::Object(resolve_with_api_mode(
-            ResourceApiMode::Auto,
-            &|| client.alerting().get_alert_rule(&selector.identity),
-            None,
-        )?)),
+        ResourceKind::AlertRules => {
+            ensure_legacy_only_mode(selector.kind, api_mode)?;
+            Ok(Value::Object(resolve_with_api_mode(
+                api_mode,
+                &|| client.alerting().get_alert_rule(&selector.identity),
+                None,
+            )?))
+        }
         ResourceKind::Orgs => {
             ensure_legacy_only_mode(selector.kind, api_mode)?;
             let object = resolve_with_api_mode(
@@ -281,15 +284,35 @@ fn app_platform_resource(
     kind: ResourceKind,
     version: AppPlatformApiVersion,
 ) -> Result<AppPlatformResource> {
-    let (group, plural) = match kind {
-        ResourceKind::Dashboards => ("dashboard.grafana.app", "dashboards"),
-        ResourceKind::Folders => ("folder.grafana.app", "folders"),
-        ResourceKind::Receivers => ("notifications.alerting.grafana.app", "receivers"),
-        ResourceKind::RoutingTrees => ("notifications.alerting.grafana.app", "routingtrees"),
-        ResourceKind::TemplateGroups => ("notifications.alerting.grafana.app", "templategroups"),
-        ResourceKind::TimeIntervals => ("notifications.alerting.grafana.app", "timeintervals"),
-        ResourceKind::InhibitionRules => ("notifications.alerting.grafana.app", "inhibitionrules"),
-        ResourceKind::SecureValues => ("secret.grafana.app", "securevalues"),
+    let (group, plural, resource_kind) = match kind {
+        ResourceKind::Dashboards => ("dashboard.grafana.app", "dashboards", "Dashboard"),
+        ResourceKind::Folders => ("folder.grafana.app", "folders", "Folder"),
+        ResourceKind::Receivers => (
+            "notifications.alerting.grafana.app",
+            "receivers",
+            "Receiver",
+        ),
+        ResourceKind::RoutingTrees => (
+            "notifications.alerting.grafana.app",
+            "routingtrees",
+            "RoutingTree",
+        ),
+        ResourceKind::TemplateGroups => (
+            "notifications.alerting.grafana.app",
+            "templategroups",
+            "TemplateGroup",
+        ),
+        ResourceKind::TimeIntervals => (
+            "notifications.alerting.grafana.app",
+            "timeintervals",
+            "TimeInterval",
+        ),
+        ResourceKind::InhibitionRules => (
+            "notifications.alerting.grafana.app",
+            "inhibitionrules",
+            "InhibitionRule",
+        ),
+        ResourceKind::SecureValues => ("secret.grafana.app", "securevalues", "SecureValue"),
         _ => {
             return Err(message(format!(
                 "{} has no App Platform API.",
@@ -297,7 +320,12 @@ fn app_platform_resource(
             )))
         }
     };
-    Ok(AppPlatformResource::new(group, version, plural))
+    Ok(AppPlatformResource::new(
+        group,
+        version,
+        plural,
+        resource_kind,
+    ))
 }
 
 fn list_app_resource(
@@ -525,7 +553,7 @@ mod tests {
             http_response("404 Not Found", r#"{"message":"not found"}"#),
             http_response(
                 "200 OK",
-                r#"{"items":[{"metadata":{"name":"cpu-main"},"spec":{"title":"CPU Main"}}],"metadata":{}}"#,
+                r#"{"apiVersion":"dashboard.grafana.app/v1","kind":"DashboardList","items":[{"apiVersion":"dashboard.grafana.app/v1","kind":"Dashboard","metadata":{"name":"cpu-main","namespace":"default"},"spec":{"title":"CPU Main"}}],"metadata":{}}"#,
             ),
         ];
         let Some((base_url, requests, handle)) = spawn_sequence_server(responses) else {
@@ -554,7 +582,7 @@ mod tests {
     fn receiver_get_uses_explicit_notification_v1beta1_path() {
         let responses = vec![http_response(
             "200 OK",
-            r#"{"metadata":{"name":"oncall"},"spec":{"integrations":[]}}"#,
+            r#"{"apiVersion":"notifications.alerting.grafana.app/v1beta1","kind":"Receiver","metadata":{"name":"oncall","namespace":"default"},"spec":{"integrations":[]}}"#,
         )];
         let Some((base_url, requests, handle)) = spawn_sequence_server(responses) else {
             return;
@@ -590,6 +618,27 @@ mod tests {
         .expect_err("preview resources must not be auto-probed");
 
         assert!(error.to_string().contains("requires --api-mode v1beta1"));
+    }
+
+    #[test]
+    fn alert_rule_get_rejects_unsupported_explicit_api_modes_before_transport() {
+        let api = build_test_api("http://127.0.0.1:9".to_string());
+        for mode in [
+            ResourceApiMode::V1,
+            ResourceApiMode::V2,
+            ResourceApiMode::V1Beta1,
+        ] {
+            let error = super::get_resource_item(
+                &api,
+                &selector(ResourceKind::AlertRules, "rule-1"),
+                mode,
+                "default",
+            )
+            .expect_err("unsupported alert-rule API mode must fail before transport");
+            assert!(error
+                .to_string()
+                .contains("Resource kind alert-rules does not support API mode"));
+        }
     }
 
     #[test]
@@ -655,7 +704,20 @@ mod tests {
         ];
         let responses = kinds
             .iter()
-            .map(|_| http_response("200 OK", r#"{"items":[],"metadata":{}}"#))
+            .map(|(kind, _)| {
+                let list_kind = match kind {
+                    ResourceKind::Receivers => "ReceiverList",
+                    ResourceKind::RoutingTrees => "RoutingTreeList",
+                    ResourceKind::TemplateGroups => "TemplateGroupList",
+                    ResourceKind::TimeIntervals => "TimeIntervalList",
+                    ResourceKind::InhibitionRules => "InhibitionRuleList",
+                    _ => unreachable!("notification preview test only covers App Platform kinds"),
+                };
+                let body = format!(
+                    r#"{{"apiVersion":"notifications.alerting.grafana.app/v1beta1","kind":"{list_kind}","items":[],"metadata":{{}}}}"#
+                );
+                http_response("200 OK", &body)
+            })
             .collect();
         let Some((base_url, requests, handle)) = spawn_sequence_server(responses) else {
             return;

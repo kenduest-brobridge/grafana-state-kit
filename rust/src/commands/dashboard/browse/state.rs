@@ -513,13 +513,14 @@ impl BrowserState {
 }
 
 fn selection_key_for_node(node: &DashboardBrowseNode) -> Option<String> {
-    Some(selection_key(
-        node.kind.clone(),
-        node.uid.as_deref(),
-        &node.path,
-        &node.org_id,
-    ))
-    .filter(|_| BrowseSelectionTarget::from_node(node).is_some())
+    BrowseSelectionTarget::from_node(node).map(|_| {
+        selection_key(
+            node.kind.clone(),
+            node.uid.as_deref(),
+            &node.path,
+            &node.org_id,
+        )
+    })
 }
 
 fn selection_key(

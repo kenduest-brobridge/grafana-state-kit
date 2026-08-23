@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import shlex
 import sys
@@ -15,7 +16,6 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SURFACE_PATH = REPO_ROOT / "scripts" / "contracts" / "command-surface.json"
-DEBUG_BINARY = REPO_ROOT / "rust" / "target" / "debug" / "grafana-util"
 COMMAND_DOC_ROOT = REPO_ROOT / "docs" / "commands"
 DEFAULT_COMMAND_DOC_LOCALES = ("en", "zh-TW")
 DOC_ROOTS = (
@@ -43,6 +43,17 @@ HEADING_COMMAND_RE = re.compile(r"^# `(?P<command>grafana-util(?: [^`]+)?)`$")
 HEADING_PLAIN_COMMAND_RE = re.compile(r"^# (?P<command>grafana-util .+)$")
 HEADING_BARE_PATH_RE = re.compile(r"^# (?P<command>[a-z0-9][a-z0-9 -]*)$")
 HELP_CACHE: dict[tuple[tuple[str, ...], str], bool] = {}
+
+
+def debug_binary_path() -> Path:
+    configured_target = os.environ.get("CARGO_TARGET_DIR")
+    if configured_target:
+        target_dir = Path(configured_target)
+        if not target_dir.is_absolute():
+            target_dir = REPO_ROOT / target_dir
+    else:
+        target_dir = REPO_ROOT / "rust" / "target"
+    return target_dir / "debug" / "grafana-util"
 
 
 @dataclass(frozen=True)
@@ -319,8 +330,9 @@ def validate_command_doc_locale_parity(surface: dict[str, object]) -> list[Findi
 
 
 def run_help(path_tokens: tuple[str, ...], help_flag: str) -> bool:
-    if DEBUG_BINARY.exists():
-        command = [str(DEBUG_BINARY), *path_tokens, help_flag]
+    debug_binary = debug_binary_path()
+    if debug_binary.exists():
+        command = [str(debug_binary), *path_tokens, help_flag]
     else:
         command = [
             "cargo",

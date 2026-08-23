@@ -1,4 +1,5 @@
 import importlib.util
+import os
 import sys
 import tempfile
 import unittest
@@ -23,6 +24,17 @@ def load_module():
 
 
 class CheckDocsSurfaceTests(unittest.TestCase):
+    def test_debug_binary_path_honors_external_cargo_target_dir(self):
+        module = load_module()
+
+        with patch.dict(os.environ, {"CARGO_TARGET_DIR": "/tmp/grafana-utils-target"}):
+            path = module.debug_binary_path()
+
+        self.assertEqual(
+            path,
+            Path("/tmp/grafana-utils-target/debug/grafana-util"),
+        )
+
     def test_validate_command_doc_locale_parity_accepts_mirrored_pages(self):
         module = load_module()
         with tempfile.TemporaryDirectory() as tmpdir:

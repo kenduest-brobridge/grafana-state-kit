@@ -399,3 +399,80 @@ def run_inspection_dispatch(import_dir, deps, settings):
     if output and (not settings["output_file"] or settings["also_stdout"]):
         sys.stdout.write(output)
     return 0
+
+
+def run_inspection_interactive(import_dir, deps):
+    """Browse the dashboard summary document without mutating export files."""
+    is_tty = deps.get("is_tty") or (lambda: sys.stdin.isatty() and sys.stdout.isatty())
+    if not is_tty() and not sys.stdin.isatty():
+        raise deps["GrafanaError"](
+            "Dashboard summary interactive mode requires an interactive input terminal (TTY)."
+        )
+    input_reader = deps.get("input_reader") or input
+    output_writer = deps.get("output_writer") or print
+    document = deps["build_export_inspection_document"](import_dir)
+    dashboards = [
+        dashboard
+        for dashboard in document.get("dashboards") or []
+        if isinstance(dashboard, dict)
+    ]
+    if not dashboards:
+        output_writer("No dashboards matched.")
+        return 0
+    filtered = list(dashboards)
+
+    def render_rows(rows):
+        output_writer(
+            "Dashboard summary: number=view JSON, /text=filter, r=reset, q=quit."
+        )
+        output_writer("Dashboards: %d" % len(rows))
+        for index, dashboard in enumerate(rows, 1):
+            output_writer(
+                "%d. %s | %s | %s | panels=%s queries=%s"
+                % (
+                    index,
+                    str(dashboard.get("uid") or "-"),
+                    str(dashboard.get("title") or "-"),
+                    str(dashboard.get("folderPath") or "General"),
+                    int(dashboard.get("panelCount") or 0),
+                    int(dashboard.get("queryCount") or 0),
+                )
+            )
+
+    render_rows(filtered)
+    while True:
+        try:
+            choice = input_reader("dashboard> ").strip()
+        except EOFError:
+            return 0
+        if choice.lower() in {"q", "quit", "exit"}:
+            return 0
+        if choice.lower() in {"r", "reset"}:
+            filtered = list(dashboards)
+            render_rows(filtered)
+            continue
+        if choice.startswith("/"):
+            needle = choice[1:].strip().lower()
+            filtered = [
+                dashboard
+                for dashboard in dashboards
+                if needle in json.dumps(dashboard, sort_keys=True).lower()
+            ]
+            render_rows(filtered)
+            continue
+        try:
+            selected_index = int(choice) - 1
+        except ValueError:
+            output_writer("Unknown command. Use a number, /filter, r, or q.")
+            continue
+        if selected_index < 0 or selected_index >= len(filtered):
+            output_writer("Selection out of range.")
+            continue
+        output_writer(
+            json.dumps(
+                filtered[selected_index],
+                indent=2,
+                sort_keys=False,
+                ensure_ascii=False,
+            )
+        )

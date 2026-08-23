@@ -248,16 +248,16 @@ fn build_access_roster_view(artifact: &OverviewArtifact) -> Option<OverviewSecti
                 };
                 let meta = match access_kind {
                     OverviewArtifactKind::AccessUserExport => {
-                        format!("email={} teams={}", &email, teams)
+                        format!("email={} teams={}", email, teams)
                     }
                     OverviewArtifactKind::AccessTeamExport => {
-                        format!("email={} members={} admins={}", &email, members, admins)
+                        format!("email={} members={} admins={}", email, members, admins)
                     }
                     OverviewArtifactKind::AccessOrgExport => {
-                        format!("id={} users={}", &id, users)
+                        format!("id={} users={}", id, users)
                     }
                     OverviewArtifactKind::AccessServiceAccountExport => {
-                        format!("role={} disabled={}", &role, &disabled)
+                        format!("role={} disabled={}", role, disabled)
                     }
                     _ => String::new(),
                 };

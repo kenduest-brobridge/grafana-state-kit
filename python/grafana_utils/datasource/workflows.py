@@ -1765,14 +1765,12 @@ def list_datasources(args):
             raise GrafanaError(
                 "Datasource list with --input-dir does not support --org-id or --all-orgs."
             )
-        if bool(getattr(args, "interactive", False)):
-            raise GrafanaError(
-                "Datasource list interactive mode is not implemented in Python yet."
-            )
         bundle = load_local_datasource_bundle(
             input_dir, getattr(args, "input_format", "inventory")
         )
         records = bundle["records"]
+        if bool(getattr(args, "interactive", False)):
+            return browse_local_datasources(records)
         if getattr(args, "list_columns", False):
             for column in LIST_OUTPUT_COLUMN_HEADERS:
                 print(column)
@@ -2116,6 +2114,66 @@ def browse_datasources(args, input_reader=input, output_writer=print, is_tty=Non
             output_writer(error)
             continue
         output_writer(json.dumps(selected, indent=2, sort_keys=False))
+
+
+def browse_local_datasources(
+    records, input_reader=input, output_writer=print, is_tty=None
+):
+    """Browse local datasource records without allowing live mutations."""
+    is_tty = is_tty or (lambda: sys.stdin.isatty() and sys.stdout.isatty())
+    if not is_tty():
+        raise GrafanaError("Datasource browse requires an interactive terminal (TTY).")
+    all_records = [record for record in records if isinstance(record, dict)]
+    if not all_records:
+        output_writer("No datasources matched.")
+        return 0
+    filtered = list(all_records)
+
+    def render_rows(rows):
+        output_writer(
+            "Datasource inventory: number=view JSON, /text=filter, r=reset, q=quit."
+        )
+        for index, record in enumerate(rows, 1):
+            output_writer(
+                "%d. %s | %s | %s"
+                % (
+                    index,
+                    str(record.get("uid") or "-"),
+                    str(record.get("name") or "-"),
+                    str(record.get("type") or "-"),
+                )
+            )
+
+    render_rows(filtered)
+    while True:
+        try:
+            choice = input_reader("datasource> ").strip()
+        except EOFError:
+            return 0
+        if choice.lower() in {"q", "quit", "exit"}:
+            return 0
+        if choice.lower() in {"r", "reset"}:
+            filtered = list(all_records)
+            render_rows(filtered)
+            continue
+        if choice.startswith("/"):
+            needle = choice[1:].strip().lower()
+            filtered = [
+                record
+                for record in all_records
+                if needle in json.dumps(record, sort_keys=True).lower()
+            ]
+            render_rows(filtered)
+            continue
+        try:
+            selected_index = int(choice) - 1
+        except ValueError:
+            output_writer("Unknown command. Use a number, /filter, r, or q.")
+            continue
+        if selected_index < 0 or selected_index >= len(filtered):
+            output_writer("Selection out of range.")
+            continue
+        output_writer(json.dumps(filtered[selected_index], indent=2, sort_keys=False))
 
 
 def export_datasources(args):

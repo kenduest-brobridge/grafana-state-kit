@@ -3,7 +3,7 @@ use std::collections::BTreeSet;
 use reqwest::Method;
 use serde_json::Value;
 
-use crate::common::{message, Result};
+use crate::common::{encode_resource_path_segment, message, Result};
 use crate::http::JsonHttpClient;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -28,6 +28,7 @@ pub(crate) struct AppPlatformResource {
     group: &'static str,
     version: AppPlatformApiVersion,
     plural: &'static str,
+    kind: &'static str,
 }
 
 impl AppPlatformResource {
@@ -35,11 +36,13 @@ impl AppPlatformResource {
         group: &'static str,
         version: AppPlatformApiVersion,
         plural: &'static str,
+        kind: &'static str,
     ) -> Self {
         Self {
             group,
             version,
             plural,
+            kind,
         }
     }
 
@@ -50,15 +53,20 @@ impl AppPlatformResource {
 
     fn collection_path(self, namespace: &str) -> String {
         format!(
-            "/apis/{}/{}/namespaces/{namespace}/{}",
+            "/apis/{}/{}/namespaces/{}/{}",
             self.group,
             self.version.path_segment(),
+            encode_resource_path_segment(namespace),
             self.plural
         )
     }
 
     fn item_path(self, namespace: &str, name: &str) -> String {
-        format!("{}/{name}", self.collection_path(namespace))
+        format!(
+            "{}/{}",
+            self.collection_path(namespace),
+            encode_resource_path_segment(name)
+        )
     }
 }
 
@@ -80,13 +88,7 @@ impl<'a> AppPlatformResourceClient<'a> {
             &[("limit".to_string(), "1".to_string())],
             None,
         ) {
-            Ok(Some(Value::Object(_))) => Ok(true),
-            Ok(Some(_)) => Err(message(format!(
-                "Unexpected App Platform discovery payload from {path}."
-            ))),
-            Ok(None) => Err(message(format!(
-                "Unexpected empty App Platform discovery payload from {path}."
-            ))),
+            Ok(value) => collection_object(value, resource, namespace, &path).map(|_| true),
             Err(error) if error.status_code() == Some(404) => Ok(false),
             Err(error) => Err(error),
         }
@@ -98,7 +100,7 @@ impl<'a> AppPlatformResourceClient<'a> {
         namespace: &str,
         limit: Option<usize>,
     ) -> Result<Vec<Value>> {
-        self.list_all_with_params(resource, namespace, limit, Vec::new())
+        self.list_all_with_params(resource, namespace, limit, Vec::new(), None)
     }
 
     pub(crate) fn get(
@@ -148,6 +150,7 @@ impl<'a> AppPlatformResourceClient<'a> {
                     "grafana.app/get-history=true".to_string(),
                 ),
             ],
+            Some(name),
         )
     }
 
@@ -178,6 +181,7 @@ impl<'a> AppPlatformResourceClient<'a> {
         namespace: &str,
         limit: Option<usize>,
         base_params: Vec<(String, String)>,
+        expected_name: Option<&str>,
     ) -> Result<Vec<Value>> {
         let path = resource.collection_path(namespace);
         let mut items = Vec::new();
@@ -192,20 +196,12 @@ impl<'a> AppPlatformResourceClient<'a> {
             if let Some(token) = continuation.as_deref() {
                 params.push(("continue".to_string(), token.to_string()));
             }
-            let response = self.http.request_json(Method::GET, &path, &params, None)?;
-            let object = match response {
-                Some(Value::Object(object)) => object,
-                Some(_) => {
-                    return Err(message(format!(
-                        "Unexpected App Platform collection payload from {path}."
-                    )))
-                }
-                None => {
-                    return Err(message(format!(
-                        "Unexpected empty App Platform collection payload from {path}."
-                    )))
-                }
-            };
+            let object = collection_object(
+                self.http.request_json(Method::GET, &path, &params, None)?,
+                resource,
+                namespace,
+                &path,
+            )?;
             let page_items = object
                 .get("items")
                 .and_then(Value::as_array)
@@ -214,6 +210,11 @@ impl<'a> AppPlatformResourceClient<'a> {
                         "App Platform collection payload from {path} is missing an items array."
                     ))
                 })?;
+            if let Some(expected_name) = expected_name {
+                for item in page_items {
+                    resource_object(item, resource, namespace, Some(expected_name), &path)?;
+                }
+            }
             items.extend(page_items.iter().cloned());
 
             continuation = object
@@ -245,7 +246,10 @@ impl<'a> AppPlatformResourceClient<'a> {
     ) -> Result<Value> {
         let path = resource.item_path(namespace, name);
         match self.http.request_json(Method::GET, &path, params, None)? {
-            Some(Value::Object(object)) => Ok(Value::Object(object)),
+            Some(value @ Value::Object(_)) => {
+                resource_object(&value, resource, namespace, Some(name), &path)?;
+                Ok(value)
+            }
             Some(_) => Err(message(format!(
                 "Unexpected App Platform resource payload from {path}."
             ))),
@@ -254,4 +258,94 @@ impl<'a> AppPlatformResourceClient<'a> {
             ))),
         }
     }
+}
+
+fn collection_object(
+    value: Option<Value>,
+    resource: AppPlatformResource,
+    namespace: &str,
+    path: &str,
+) -> Result<serde_json::Map<String, Value>> {
+    let Some(Value::Object(object)) = value else {
+        return Err(message(format!(
+            "Unexpected empty or non-object App Platform collection payload from {path}."
+        )));
+    };
+    let expected_api_version = format!("{}/{}", resource.group, resource.version.path_segment());
+    let expected_kind = format!("{}List", resource.kind);
+    if object.get("apiVersion").and_then(Value::as_str) != Some(&expected_api_version)
+        || object.get("kind").and_then(Value::as_str) != Some(&expected_kind)
+    {
+        return Err(message(format!(
+            "App Platform collection payload from {path} has unexpected apiVersion or kind; expected {expected_api_version}/{expected_kind}."
+        )));
+    }
+    if object.get("items").and_then(Value::as_array).is_none() {
+        return Err(message(format!(
+            "App Platform collection payload from {path} is missing an items array."
+        )));
+    }
+    for item in object
+        .get("items")
+        .and_then(Value::as_array)
+        .expect("items array was validated above")
+    {
+        resource_object(item, resource, namespace, None, path)?;
+    }
+    Ok(object)
+}
+
+fn resource_object(
+    value: &Value,
+    resource: AppPlatformResource,
+    namespace: &str,
+    expected_name: Option<&str>,
+    path: &str,
+) -> Result<()> {
+    let object = value.as_object().ok_or_else(|| {
+        message(format!(
+            "App Platform resource payload from {path} must be a JSON object."
+        ))
+    })?;
+    let expected_api_version = format!("{}/{}", resource.group, resource.version.path_segment());
+    if object.get("apiVersion").and_then(Value::as_str) != Some(&expected_api_version) {
+        return Err(message(format!(
+            "App Platform resource payload from {path} has unexpected apiVersion; expected {expected_api_version}."
+        )));
+    }
+    if object.get("kind").and_then(Value::as_str) != Some(resource.kind) {
+        return Err(message(format!(
+            "App Platform resource payload from {path} has unexpected kind; expected {}.",
+            resource.kind
+        )));
+    }
+    let metadata = object
+        .get("metadata")
+        .and_then(Value::as_object)
+        .ok_or_else(|| {
+            message(format!(
+                "App Platform resource payload from {path} is missing metadata."
+            ))
+        })?;
+    let name = metadata
+        .get("name")
+        .and_then(Value::as_str)
+        .filter(|name| !name.is_empty())
+        .ok_or_else(|| {
+            message(format!(
+                "App Platform resource payload from {path} is missing metadata.name."
+            ))
+        })?;
+    if expected_name.is_some_and(|expected| name != expected) {
+        return Err(message(format!(
+            "App Platform resource payload from {path} has metadata.name {name:?}; expected {:?}.",
+            expected_name.expect("expected name is present")
+        )));
+    }
+    if metadata.get("namespace").and_then(Value::as_str) != Some(namespace) {
+        return Err(message(format!(
+            "App Platform resource payload from {path} has an unexpected namespace; expected {namespace}."
+        )));
+    }
+    Ok(())
 }

@@ -204,10 +204,7 @@ pub(crate) fn render_list(args: &ResourceListArgs) -> Result<()> {
     };
     match args.output_format {
         ResourceOutputFormat::Text => {
-            let lines = vec![
-                format!("Resource list: {}", document.kind),
-                format!("Count: {}", document.count),
-            ];
+            let lines = render_list_text_lines(args.kind, &document.items);
             print_lines(&lines);
         }
         ResourceOutputFormat::Table => {
@@ -227,6 +224,19 @@ pub(crate) fn render_list(args: &ResourceListArgs) -> Result<()> {
         }
     }
     Ok(())
+}
+
+fn render_list_text_lines(kind: ResourceKind, items: &[Map<String, Value>]) -> Vec<String> {
+    let mut lines = vec![
+        format!("Resource list: {}", kind.as_str()),
+        format!("Count: {}", items.len()),
+    ];
+    lines.extend(
+        items
+            .iter()
+            .map(|item| format!("- {}", list_row(kind, item).join(" | "))),
+    );
+    lines
 }
 
 pub(crate) fn render_get(args: &ResourceGetArgs) -> Result<()> {
@@ -302,6 +312,27 @@ pub(crate) fn render_get(args: &ResourceGetArgs) -> Result<()> {
 mod tests {
     use super::*;
     use serde_json::json;
+
+    #[test]
+    fn render_list_text_lines_includes_each_resource_row() {
+        let item = json!({
+            "uid": "cpu-main",
+            "title": "CPU Main",
+            "folderTitle": "General"
+        })
+        .as_object()
+        .cloned()
+        .unwrap();
+
+        assert_eq!(
+            render_list_text_lines(ResourceKind::Dashboards, &[item]),
+            vec![
+                "Resource list: dashboards",
+                "Count: 1",
+                "- cpu-main | CPU Main | General"
+            ]
+        );
+    }
 
     #[test]
     fn app_platform_dashboard_row_reads_nested_metadata_and_spec() {

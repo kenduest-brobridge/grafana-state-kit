@@ -1539,6 +1539,27 @@ class DatasourceCliTests(unittest.TestCase):
         ):
             datasource_cli.browse_datasources(args)
 
+    def test_local_datasource_interactive_review_lists_and_selects_records(self):
+        records = [
+            {
+                "uid": "prom_uid",
+                "name": "Prometheus Main",
+                "type": "prometheus",
+            }
+        ]
+        output = []
+
+        result = datasource_cli.datasource_workflows.browse_local_datasources(
+            records,
+            input_reader=mock.Mock(side_effect=["1", "q"]),
+            output_writer=output.append,
+            is_tty=lambda: True,
+        )
+
+        self.assertEqual(result, 0)
+        self.assertIn("Prometheus Main", "\n".join(output))
+        self.assertIn('"uid": "prom_uid"', "\n".join(output))
+
     def test_datasource_browse_lists_and_prints_selected_json(self):
         args = datasource_cli.parse_args(["browse"])
         client = FakeDatasourceClient(
@@ -1755,6 +1776,27 @@ class DatasourceCliTests(unittest.TestCase):
         self.assertIn("NAME", output)
         self.assertIn("prom_uid", output)
         self.assertIn("Prometheus Main", output)
+
+    def test_datasource_list_local_interactive_dispatches_to_read_only_browser(self):
+        args = datasource_cli.parse_args(
+            ["list", "--input-dir", "./datasources", "--interactive"]
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            self._write_datasource_bundle(
+                Path(tmpdir),
+                [{"uid": "prom_uid", "name": "Prometheus Main", "type": "prometheus"}],
+            )
+            args.input_dir = tmpdir
+            with mock.patch.object(
+                datasource_cli.datasource_workflows,
+                "browse_local_datasources",
+                return_value=0,
+            ) as browse:
+                result = datasource_cli.list_datasources(args)
+
+        self.assertEqual(result, 0)
+        browse.assert_called_once()
+        self.assertEqual(browse.call_args.args[0][0]["uid"], "prom_uid")
 
     def test_datasource_list_datasources_from_local_artifact_run(self):
         with tempfile.TemporaryDirectory() as tmpdir:

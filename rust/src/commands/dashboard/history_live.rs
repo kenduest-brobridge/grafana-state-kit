@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 
-use crate::common::{message, value_as_object, Result};
+use crate::common::{encode_resource_path_segment, message, value_as_object, Result};
 use rayon::prelude::*;
 use rayon::ThreadPoolBuilder;
 use reqwest::Method;
@@ -132,6 +132,56 @@ fn resource_history_metadata(resource: &Value, key: &str, fallback: &str) -> Str
         .to_string()
 }
 
+fn validate_dashboard_resource_history_item(
+    resource: &Value,
+    source: DashboardHistorySource,
+    expected_namespace: &str,
+    expected_uid: &str,
+) -> Result<()> {
+    let object = resource
+        .as_object()
+        .ok_or_else(|| message("Dashboard resource history item must be a JSON object."))?;
+    let metadata = object
+        .get("metadata")
+        .and_then(Value::as_object)
+        .ok_or_else(|| message("Dashboard resource history item is missing metadata."))?;
+    let actual_uid = metadata
+        .get("name")
+        .and_then(Value::as_str)
+        .ok_or_else(|| message("Dashboard resource history item is missing metadata.name."))?;
+    if actual_uid != expected_uid {
+        return Err(message(format!(
+            "Dashboard resource history item belongs to `{actual_uid}`, expected `{expected_uid}`."
+        )));
+    }
+    if let Some(actual_namespace) = metadata.get("namespace").and_then(Value::as_str) {
+        if actual_namespace != expected_namespace {
+            return Err(message(format!(
+                "Dashboard resource history item `{expected_uid}` belongs to namespace `{actual_namespace}`, expected `{expected_namespace}`."
+            )));
+        }
+    }
+    let expected_api_version = format!(
+        "dashboard.grafana.app/{}",
+        resource_history_version_segment(source)?
+    );
+    if let Some(actual_api_version) = object.get("apiVersion").and_then(Value::as_str) {
+        if actual_api_version != expected_api_version {
+            return Err(message(format!(
+                "Dashboard resource history item `{expected_uid}` has API version `{actual_api_version}`, expected `{expected_api_version}`."
+            )));
+        }
+    }
+    if let Some(actual_kind) = object.get("kind").and_then(Value::as_str) {
+        if actual_kind != "Dashboard" {
+            return Err(message(format!(
+                "Dashboard resource history item `{expected_uid}` has kind `{actual_kind}`, expected `Dashboard`."
+            )));
+        }
+    }
+    Ok(())
+}
+
 fn list_dashboard_resource_history_values_with_request<F>(
     request_json: &mut F,
     source: DashboardHistorySource,
@@ -143,7 +193,10 @@ where
     F: FnMut(Method, &str, &[(String, String)], Option<&Value>) -> Result<Option<Value>>,
 {
     let version = resource_history_version_segment(source)?;
-    let path = format!("/apis/dashboard.grafana.app/{version}/namespaces/{namespace}/dashboards");
+    let path = format!(
+        "/apis/dashboard.grafana.app/{version}/namespaces/{}/dashboards",
+        encode_resource_path_segment(namespace)
+    );
     let mut resources = Vec::new();
     let mut continuation: Option<String> = None;
     let mut seen_tokens = BTreeSet::new();
@@ -179,6 +232,9 @@ where
             .ok_or_else(|| {
                 message("Dashboard resource history collection is missing an items array.")
             })?;
+        for resource in items {
+            validate_dashboard_resource_history_item(resource, source, namespace, uid)?;
+        }
         resources.extend(items.iter().cloned());
         if resources.len() >= limit {
             resources.truncate(limit);
@@ -252,10 +308,14 @@ where
     F: FnMut(Method, &str, &[(String, String)], Option<&Value>) -> Result<Option<Value>>,
 {
     let version = resource_history_version_segment(source)?;
-    let path =
-        format!("/apis/dashboard.grafana.app/{version}/namespaces/{namespace}/dashboards/{uid}");
+    let path = format!(
+        "/apis/dashboard.grafana.app/{version}/namespaces/{}/dashboards/{}",
+        encode_resource_path_segment(namespace),
+        encode_resource_path_segment(uid)
+    );
     let current = request_json(Method::GET, &path, &[], None)?
         .ok_or_else(|| message("Current dashboard resource was not returned."))?;
+    validate_dashboard_resource_history_item(&current, source, namespace, uid)?;
     let current_version = resource_history_version(&current)?;
     let current_title = current
         .get("spec")
@@ -736,6 +796,26 @@ mod resource_history_tests {
                 .collect::<Vec<_>>(),
             vec!["ops", "sre"]
         );
+    }
+
+    #[test]
+    fn resource_history_rejects_an_item_for_a_different_dashboard() {
+        let error = build_dashboard_resource_history_list_document_with_request(
+            |_method, _path, _params, _| {
+                Ok(Some(json!({
+                    "items": [{"metadata": {"name": "other-dashboard", "generation": 1}}],
+                    "metadata": {}
+                })))
+            },
+            DashboardHistorySource::V2,
+            "default",
+            "cpu-main",
+            20,
+        )
+        .expect_err("history must not attribute another dashboard's revision");
+
+        assert!(error.to_string().contains("cpu-main"));
+        assert!(error.to_string().contains("other-dashboard"));
     }
 
     #[test]

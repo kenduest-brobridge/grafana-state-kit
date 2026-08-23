@@ -5,6 +5,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 PYTHON_ROOT = REPO_ROOT / "python"
 MAKEFILE_PATH = REPO_ROOT / "Makefile"
 CI_WORKFLOW_PATH = REPO_ROOT / ".github" / "workflows" / "ci.yml"
+GITLAB_CI_PATH = REPO_ROOT / ".gitlab-ci.yml"
 PYPROJECT_PATH = PYTHON_ROOT / "pyproject.toml"
 MODULE_ENTRYPOINT_PATH = REPO_ROOT / "python" / "grafana_utils" / "__main__.py"
 POETRY_LOCK_PATH = PYTHON_ROOT / "poetry.lock"
@@ -22,11 +23,25 @@ class PackagingTests(unittest.TestCase):
         self.assertTrue(SET_VERSION_SCRIPT_PATH.is_file())
         self.assertTrue(VERSION_PATH.is_file())
 
-    def test_packaging_ci_does_not_run_python_quality_gate(self):
+    def test_packaging_ci_runs_python_quality_and_test_gate(self):
         content = CI_WORKFLOW_PATH.read_text(encoding="utf-8")
 
-        self.assertNotIn("python3 -m pip install --upgrade pip ./python", content)
-        self.assertNotIn("quality-python", content)
+        self.assertIn("python-quality:", content)
+        self.assertIn("make test-python quality-python", content)
+
+    def test_packaging_gitlab_ci_uses_current_layout_and_binary_surface(self):
+        content = GITLAB_CI_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("python/pyproject.toml", content)
+        self.assertNotIn('(root / "pyproject.toml")', content)
+        self.assertIn("cd python", content)
+        self.assertNotIn("grafana-access-utils", content)
+        self.assertIn("grafana-util", content)
+        self.assertNotIn("    - make test-python", content)
+        self.assertIn(
+            "PYTHONPATH=python python3 -m unittest discover -s python/tests -v",
+            content,
+        )
 
     def test_packaging_pyproject_declares_console_scripts(self):
         content = PYPROJECT_PATH.read_text(encoding="utf-8")

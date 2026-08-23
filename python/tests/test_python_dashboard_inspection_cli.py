@@ -555,7 +555,7 @@ class DashboardInspectionTests(unittest.TestCase):
             self.assertEqual(output_file.read_text(encoding="utf-8"), output)
             self.assertIn("Dashboards: 1", output)
 
-    def test_dashboard_inspection_summary_interactive_fails_explicitly(self):
+    def test_dashboard_inspection_summary_interactive_reviews_dashboards(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             import_dir = Path(tmpdir)
             self.write_summary_fixture(
@@ -573,19 +573,27 @@ class DashboardInspectionTests(unittest.TestCase):
                 ],
             )
 
-            with self.assertRaisesRegex(
-                exporter.GrafanaError, "interactive mode is not implemented"
-            ):
-                self.run_inspect(
-                    exporter.parse_args(
-                        [
-                            "summary",
-                            "--import-dir",
-                            str(import_dir),
-                            "--interactive",
-                        ]
-                    )
-                )
+            with mock.patch("builtins.input", side_effect=["1", "q"]):
+                with mock.patch.object(
+                    __import__("sys").stdin, "isatty", return_value=True
+                ):
+                    with mock.patch.object(
+                        __import__("sys").stdout, "isatty", return_value=True
+                    ):
+                        result, output = self.run_inspect(
+                            exporter.parse_args(
+                                [
+                                    "summary",
+                                    "--import-dir",
+                                    str(import_dir),
+                                    "--interactive",
+                                ]
+                            )
+                        )
+
+            self.assertEqual(result, 0)
+            self.assertIn("Dashboard summary", output)
+            self.assertIn("cpu-main", output)
 
     def test_dashboard_inspection_summary_local_reads_latest_artifact_run(self):
         with tempfile.TemporaryDirectory() as tmpdir:

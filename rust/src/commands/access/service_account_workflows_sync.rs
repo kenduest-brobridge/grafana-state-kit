@@ -216,10 +216,8 @@ where
                 }
                 continue;
             }
-            let desired_role = match normalize_service_account_import_role(&desired_role_raw) {
-                Ok(role) => role.unwrap_or_else(|| "Viewer".to_string()),
-                Err(error) => return Err(error),
-            };
+            let desired_role = normalize_service_account_import_role(&desired_role_raw)?
+                .unwrap_or_else(|| "Viewer".to_string());
             let payload = Value::Object(Map::from_iter(vec![
                 ("name".to_string(), Value::String(identity.clone())),
                 (
