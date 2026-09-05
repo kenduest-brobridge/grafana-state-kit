@@ -34,7 +34,7 @@ The public first-run CLI is organized around a small task-first surface:
 - [config](./config.md): repo-local configuration workflows and profile management
 - [export](./export.md): common backup and local-inventory capture
 - [workspace](./workspace.md): scan, test, preview, package, and apply local Grafana workspaces
-- [dashboard](./dashboard.md): browse, get, clone, export/import, summary, dependencies, policy, and screenshot workflows
+- [dashboard](./dashboard.md): browse, get, clone, export/import, summary, dependencies, and policy workflows
 - [alert](./alert.md): alert inventory, authoring, review, and apply workflows
 - [datasource](./datasource.md): datasource inventory and lifecycle workflows
 - [access](./access.md): user, team, org, and service-account workflows

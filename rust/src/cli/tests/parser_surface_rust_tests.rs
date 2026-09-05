@@ -483,14 +483,6 @@ fn parse_dashboard_cli_supports_flat_dashboard_surface() {
     ]);
     let analyze_args =
         parse_dashboard_cli_from(["grafana-util", "summary", "--input-dir", "./dashboards/raw"]);
-    let screenshot_args = parse_dashboard_cli_from([
-        "grafana-util",
-        "screenshot",
-        "--dashboard-uid",
-        "cpu-main",
-        "--output",
-        "./cpu-main.png",
-    ]);
 
     match browse_args.command {
         DashboardCommand::Browse(inner) => {
@@ -515,14 +507,6 @@ fn parse_dashboard_cli_supports_flat_dashboard_surface() {
         }
         _ => panic!("expected dashboard summary"),
     }
-
-    match screenshot_args.command {
-        DashboardCommand::Screenshot(inner) => {
-            assert_eq!(inner.dashboard_uid.as_deref(), Some("cpu-main"));
-            assert_eq!(inner.output, Path::new("./cpu-main.png"));
-        }
-        _ => panic!("expected dashboard screenshot"),
-    }
 }
 
 #[test]
@@ -535,6 +519,7 @@ fn parse_dashboard_cli_rejects_legacy_grouped_and_compatibility_paths() {
         vec!["grafana-util", "sync", "export"],
         vec!["grafana-util", "analyze", "summary"],
         vec!["grafana-util", "capture", "screenshot"],
+        vec!["grafana-util", "screenshot"],
     ] {
         let _error = DashboardCliArgs::try_parse_from(args).unwrap_err();
     }

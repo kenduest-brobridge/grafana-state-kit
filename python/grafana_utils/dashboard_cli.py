@@ -189,9 +189,6 @@ from .dashboard_authoring import (
     run_dashboard_serve,
     validate_dashboard_export_tree,
 )
-from .dashboards.screenshot import (
-    capture_dashboard_screenshot as run_capture_dashboard_screenshot,
-)
 from .http_transport import build_json_http_transport
 from .dashboards.variable_inspection import (
     render_dashboard_variable_document,
@@ -343,9 +340,6 @@ INSPECT_OUTPUT_FORMAT_CHOICES = (
     "queries-json",
 )
 VARIABLE_OUTPUT_FORMAT_CHOICES = ("table", "csv", "json")
-SCREENSHOT_OUTPUT_FORMAT_CHOICES = ("png", "jpeg", "pdf")
-SCREENSHOT_FULL_PAGE_OUTPUT_CHOICES = ("single", "tiles", "manifest")
-SCREENSHOT_THEME_CHOICES = ("light", "dark")
 AUTHORING_OUTPUT_FORMAT_CHOICES = ("text", "table", "json", "yaml")
 HISTORY_OUTPUT_FORMAT_CHOICES = ("text", "table", "json", "yaml")
 PLAN_OUTPUT_FORMAT_CHOICES = ("text", "table", "json")
@@ -1460,146 +1454,6 @@ def add_topology_cli_args(parser: argparse.ArgumentParser) -> None:
         "--interactive",
         action="store_true",
         help="Open an interactive terminal browser over the topology nodes and edges.",
-    )
-
-
-def add_screenshot_cli_args(parser: argparse.ArgumentParser) -> None:
-    """Add screenshot cli args implementation."""
-    add_common_cli_args(parser)
-    target_group = parser.add_argument_group("Target Options")
-    state_group = parser.add_argument_group("State Options")
-    rendering_group = parser.add_argument_group("Rendering Options")
-    output_group = parser.add_argument_group("Output Options")
-    header_group = parser.add_argument_group("Header Options")
-    target_group.add_argument(
-        "--dashboard-uid",
-        default=None,
-        help="Grafana dashboard UID to capture from the browser-rendered UI. Required unless --dashboard-url is provided.",
-    )
-    target_group.add_argument(
-        "--dashboard-url",
-        default=None,
-        help="Full Grafana dashboard URL. When provided, the runtime can reuse URL state such as var-*, from, to, orgId, and panelId.",
-    )
-    target_group.add_argument(
-        "--slug",
-        default=None,
-        help="Optional dashboard slug. When omitted, the runtime falls back to the dashboard UID.",
-    )
-    output_group.add_argument(
-        "--output",
-        required=True,
-        help="Write the captured browser output to this file path.",
-    )
-    target_group.add_argument(
-        "--panel-id",
-        default=None,
-        help="Capture only this Grafana panel ID through the solo dashboard route.",
-    )
-    target_group.add_argument(
-        "--org-id",
-        default=None,
-        help="Scope the browser session to this Grafana org ID by sending X-Grafana-Org-Id.",
-    )
-    state_group.add_argument(
-        "--from",
-        dest="from_value",
-        default=None,
-        help="Grafana time range start, for example now-6h.",
-    )
-    state_group.add_argument(
-        "--to",
-        default=None,
-        help="Grafana time range end, for example now.",
-    )
-    state_group.add_argument(
-        "--vars-query",
-        default=None,
-        help="Grafana variable query-string fragment, for example 'var-env=prod&var-host=web01'.",
-    )
-    state_group.add_argument(
-        "--var",
-        dest="vars",
-        action="append",
-        default=None,
-        help="Repeatable Grafana template variable assignment. Example: --var env=prod --var region=us-east-1.",
-    )
-    rendering_group.add_argument(
-        "--theme",
-        choices=SCREENSHOT_THEME_CHOICES,
-        default="dark",
-        help="Override the Grafana UI theme used for the browser capture (default: dark).",
-    )
-    output_group.add_argument(
-        "--output-format",
-        choices=SCREENSHOT_OUTPUT_FORMAT_CHOICES,
-        default=None,
-        help="Force the output format instead of inferring it from the output filename.",
-    )
-    rendering_group.add_argument(
-        "--width",
-        type=int,
-        default=1440,
-        help="Browser viewport width in pixels.",
-    )
-    rendering_group.add_argument(
-        "--height",
-        type=int,
-        default=1024,
-        help="Browser viewport height in pixels.",
-    )
-    rendering_group.add_argument(
-        "--device-scale-factor",
-        type=float,
-        default=1.0,
-        help="Browser device scale factor for higher-density raster capture (default: 1.0).",
-    )
-    rendering_group.add_argument(
-        "--full-page",
-        action="store_true",
-        help="Capture the full scrollable page instead of only the initial viewport.",
-    )
-    output_group.add_argument(
-        "--full-page-output",
-        choices=SCREENSHOT_FULL_PAGE_OUTPUT_CHOICES,
-        default="single",
-        help="When --full-page is enabled, write one stitched file, a tiles directory, or a tiles directory plus manifest metadata.",
-    )
-    rendering_group.add_argument(
-        "--wait-ms",
-        type=int,
-        default=5000,
-        help="Extra wait time in milliseconds after navigation so Grafana panels can finish rendering.",
-    )
-    rendering_group.add_argument(
-        "--browser-path",
-        default=None,
-        help="Optional Chromium or Chrome executable path for browser-driven capture.",
-    )
-    output_group.add_argument(
-        "--print-capture-url",
-        action="store_true",
-        help="Print the resolved Grafana capture URL before the browser capture starts.",
-    )
-    header_group.add_argument(
-        "--header-title",
-        default=None,
-        help="Optional header title text to prepend above PNG/JPEG captures. Use __auto__ to derive a title from the dashboard metadata.",
-    )
-    header_group.add_argument(
-        "--header-url",
-        default=None,
-        help="Optional header URL line to prepend above PNG/JPEG captures. Use __auto__ to render the resolved Grafana capture URL.",
-    )
-    header_group.add_argument(
-        "--header-captured-at",
-        action="store_true",
-        help="Append one capture timestamp line in the generated PNG/JPEG header block.",
-    )
-    header_group.add_argument(
-        "--header-text",
-        default=None,
-        help="Optional free-form note text to append below other generated PNG/JPEG header lines.",
     )
 
 
@@ -3187,13 +3041,6 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     add_inspect_vars_cli_args(inspect_vars_parser)
-    screenshot_parser = subparsers.add_parser(
-        "screenshot",
-        help="Capture one Grafana dashboard or panel through a browser backend.",
-        epilog=SCREENSHOT_HELP_EXAMPLES,
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-    add_screenshot_cli_args(screenshot_parser)
     topology_parser = subparsers.add_parser(
         "dependencies",
         help="Build a deterministic dashboard topology graph from JSON artifacts.",
@@ -3492,14 +3339,6 @@ INSPECT_VARS_HELP_EXAMPLES = (
     '    grafana-util dashboard variables --url http://localhost:3000 --token "$GRAFANA_API_TOKEN" --dashboard-uid cpu-main\n\n'
     "  Overlay current variable values from a dashboard URL:\n"
     "    grafana-util dashboard variables --dashboard-url 'https://grafana.example.com/d/cpu-main/cpu-overview?var-cluster=prod-a' --token \"$GRAFANA_API_TOKEN\" --output-format json"
-)
-
-SCREENSHOT_HELP_EXAMPLES = (
-    "Examples:\n\n"
-    "  Capture a full dashboard screenshot:\n"
-    "    grafana-util dashboard screenshot --dashboard-url 'https://grafana.example.com/d/cpu-main/cpu-overview?var-cluster=prod-a' --token \"$GRAFANA_API_TOKEN\" --output ./cpu-main.png --full-page\n\n"
-    "  Capture a solo panel with a custom header:\n"
-    "    grafana-util dashboard screenshot --url https://grafana.example.com --dashboard-uid rYdddlPWk --panel-id 20 --token \"$GRAFANA_API_TOKEN\" --output ./panel.png --header-title 'CPU Busy'"
 )
 
 TOPOLOGY_HELP_EXAMPLES = (
@@ -4118,15 +3957,6 @@ def impact_command(args: argparse.Namespace) -> int:
     return 0
 
 
-def screenshot_dashboard(args: argparse.Namespace) -> int:
-    """Capture one browser-rendered dashboard or panel image/PDF."""
-    client = build_client(args)
-    result = run_capture_dashboard_screenshot(args, client=client)
-    if isinstance(result, dict) and result.get("output"):
-        print(str(result["output"]))
-    return 0
-
-
 def _build_import_workflow_deps() -> dict[str, Any]:
     """Internal helper for build import workflow deps."""
     return build_import_workflow_deps_from_runtime(
@@ -4302,8 +4132,6 @@ def main(argv: Optional[list[str]] = None) -> int:
             return inspect_live(args)
         if args.command == "variables":
             return list_vars_command(args)
-        if args.command == "screenshot":
-            return screenshot_dashboard(args)
         if args.command == "delete":
             return delete_dashboards(args)
         if args.command == "import":

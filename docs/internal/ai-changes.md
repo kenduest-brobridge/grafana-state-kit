@@ -1,6 +1,14 @@
 # ai-changes.md
 
 Current AI change log only.
+- Older entries moved to [`ai-changes-archive-2026-09-05.md`](/Users/ken/work/grafana-utils/.worktrees/grafana12-screenshot-retirement/docs/internal/archive/ai-changes-archive-2026-09-05.md).
+
+## 2026-09-05 - Grafana 12 compatibility and screenshot retirement
+- Summary: Removed the dashboard screenshot command and browser/Pillow release dependencies from Rust and Python, migrated maintained datasource writes to `/api/datasources/uid/{uid}`, and added pinned Grafana 12.0.10, 12.4.9, and 13.2.0 smoke lanes in Make and CI.
+- Tests: targeted and full Rust/Python suites; generated man/HTML and docs-surface checks; live Rust 12.0.10/12.4.9/13.2.0 and Python datasource 12.0.10/13.2.0 smoke lanes.
+- Impact: The ordinary CLI contract is Grafana 12.0+; optional capabilities remain 404-only discovery. Screenshot automation is no longer a supported public surface, and datasource update/delete/import/sync/browse writes have no numeric-ID fallback.
+- Rollback/Risk: Medium; screenshot command removal is intentionally breaking, while UID routing targets Grafana's stable datasource API. Grafana 13.2.0 org deletion is skipped only for affected test fixtures because the upstream server returns 500.
+- Follow-up: Re-enable the Grafana 13 missing-org and access-org-replay smoke cases when the upstream organization deletion regression is fixed.
 
 - Older detailed history moved to [`archive/ai-changes-archive-2026-03-24.md`](docs/internal/archive/ai-changes-archive-2026-03-24.md).
 - Detailed 2026-03-27 entries moved to [`archive/ai-changes-archive-2026-03-27.md`](docs/internal/archive/ai-changes-archive-2026-03-27.md).
@@ -90,10 +98,3 @@ Current AI change log only.
 - Impact: Datasource browse, access user browse, and access team browse now treat empty edit/delete key presses as in-browser no-selection states.
 - Rollback/Risk: Low; changes are limited to empty-selection branches and regression tests cover the key paths.
 - Follow-up: none
-
-## 2026-05-25 - Status overview starts on items
-- Summary: Changed status overview interactive mode to start with the Items pane focused so Up/Down moves rows immediately after launch instead of requiring Tab first.
-- Tests: cargo test --quiet overview_tui_starts_on_items_so_arrow_keys_move_rows_immediately; cargo test --quiet project_home_is_available_and_hands_off_to_first_blocked_section; cargo test --quiet interactive_render_starts_on_project_home_surface; cargo test --quiet status_overview; cargo test --quiet status_tui; RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; git diff --check
-- Impact: Operators entering status overview interactive mode can navigate the item list with arrow keys immediately. Project Home remains available via h and its handoff behavior is preserved. Public CLI paths, help text, generated docs, and command contracts are unchanged.
-- Rollback/Risk: Low. The change only adjusts initial TUI focus and focused tests cover immediate row movement plus Project Home access.
-- Follow-up: If operators prefer a visual home summary on launch, consider a visible non-focused home panel while keeping keyboard focus on Items.

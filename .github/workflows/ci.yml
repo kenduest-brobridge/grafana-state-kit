@@ -41,10 +41,20 @@ jobs:
       - name: Run Python tests and quality gate
         run: make test-python quality-python
 
-  rust-live-smoke:
+  rust-live-compatibility:
     runs-on: ubuntu-latest
     needs:
       - rust-quality
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - lane: grafana-12-floor
+            image: grafana/grafana:12.0.10
+          - lane: grafana-12-current
+            image: grafana/grafana:12.4.9
+          - lane: grafana-13-current
+            image: grafana/grafana:13.2.0
     steps:
       - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
@@ -52,15 +62,41 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y jq curl lsof
-      - name: Run Rust live smoke
-        run: make test-rust-live
+      - name: Run Rust live compatibility smoke (${{ matrix.lane }})
+        run: GRAFANA_IMAGE=${{ matrix.image }} make test-rust-live
+
+  python-datasource-live-compatibility:
+    runs-on: ubuntu-latest
+    needs:
+      - python-quality
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - lane: grafana-12-floor
+            image: grafana/grafana:12.0.10
+          - lane: grafana-13-current
+            image: grafana/grafana:13.2.0
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install datasource smoke dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq curl lsof
+          python -m pip install --upgrade pip
+          python -m pip install -e ./python
+      - name: Run Python datasource compatibility smoke (${{ matrix.lane }})
+        run: GRAFANA_IMAGE=${{ matrix.image }} PYTHON_BIN=python bash ./scripts/test-python-datasource-live-grafana.sh
 
   rust-release-linux-amd64:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     needs:
       - rust-quality
-      - rust-live-smoke
+      - rust-live-compatibility
     env:
       RUSTFLAGS: -C debuginfo=0
     steps:
@@ -81,38 +117,12 @@ jobs:
           path: release-assets/rust/grafana-utils-rust-linux-amd64-${{ github.ref_name }}.tar.gz
           if-no-files-found: error
 
-  rust-release-linux-amd64-browser:
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs:
-      - rust-quality
-      - rust-live-smoke
-    env:
-      RUSTFLAGS: -C debuginfo=0
-    steps:
-      - uses: actions/checkout@v5
-      - uses: dtolnay/rust-toolchain@stable
-      - name: Build Linux amd64 browser-enabled Rust release binary
-        run: cargo build --release --manifest-path rust/Cargo.toml --bin grafana-util --features browser
-      - name: Package Linux amd64 browser-enabled Rust release archive
-        run: |
-          mkdir -p release-assets/rust
-          tar -C rust/target/release -czf \
-            "release-assets/rust/grafana-utils-rust-linux-amd64-browser-${GITHUB_REF_NAME}.tar.gz" \
-            grafana-util
-      - name: Upload Linux amd64 browser-enabled Rust release archive
-        uses: actions/upload-artifact@v7
-        with:
-          name: rust-release-linux-amd64-browser-${{ github.ref_name }}-${{ github.sha }}
-          path: release-assets/rust/grafana-utils-rust-linux-amd64-browser-${{ github.ref_name }}.tar.gz
-          if-no-files-found: error
-
   rust-release-macos-arm64:
     runs-on: macos-14
     if: startsWith(github.ref, 'refs/tags/v')
     needs:
       - rust-quality
-      - rust-live-smoke
+      - rust-live-compatibility
     env:
       RUSTFLAGS: -C debuginfo=0
     steps:
@@ -133,40 +143,12 @@ jobs:
           path: release-assets/rust/grafana-utils-rust-macos-arm64-${{ github.ref_name }}.tar.gz
           if-no-files-found: error
 
-  rust-release-macos-arm64-browser:
-    runs-on: macos-14
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs:
-      - rust-quality
-      - rust-live-smoke
-    env:
-      RUSTFLAGS: -C debuginfo=0
-    steps:
-      - uses: actions/checkout@v5
-      - uses: dtolnay/rust-toolchain@stable
-      - name: Build macOS arm64 browser-enabled Rust release binary
-        run: cargo build --release --manifest-path rust/Cargo.toml --bin grafana-util --features browser
-      - name: Package macOS arm64 browser-enabled Rust release archive
-        run: |
-          mkdir -p release-assets/rust
-          tar -C rust/target/release -czf \
-            "release-assets/rust/grafana-utils-rust-macos-arm64-browser-${GITHUB_REF_NAME}.tar.gz" \
-            grafana-util
-      - name: Upload macOS arm64 browser-enabled Rust release archive
-        uses: actions/upload-artifact@v7
-        with:
-          name: rust-release-macos-arm64-browser-${{ github.ref_name }}-${{ github.sha }}
-          path: release-assets/rust/grafana-utils-rust-macos-arm64-browser-${{ github.ref_name }}.tar.gz
-          if-no-files-found: error
-
   github-release:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     needs:
       - rust-release-linux-amd64
-      - rust-release-linux-amd64-browser
       - rust-release-macos-arm64
-      - rust-release-macos-arm64-browser
     permissions:
       contents: write
     steps:
@@ -175,20 +157,10 @@ jobs:
         with:
           name: rust-release-linux-amd64-${{ github.ref_name }}-${{ github.sha }}
           path: release-assets/rust
-      - name: Download Linux amd64 browser-enabled Rust release archive
-        uses: actions/download-artifact@v8
-        with:
-          name: rust-release-linux-amd64-browser-${{ github.ref_name }}-${{ github.sha }}
-          path: release-assets/rust
       - name: Download macOS arm64 Rust release archive
         uses: actions/download-artifact@v8
         with:
           name: rust-release-macos-arm64-${{ github.ref_name }}-${{ github.sha }}
-          path: release-assets/rust
-      - name: Download macOS arm64 browser-enabled Rust release archive
-        uses: actions/download-artifact@v8
-        with:
-          name: rust-release-macos-arm64-browser-${{ github.ref_name }}-${{ github.sha }}
           path: release-assets/rust
       - name: Publish or update GitHub release
         env:

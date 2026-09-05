@@ -5,7 +5,7 @@ use clap::{Parser, Subcommand, ValueEnum};
 
 use super::cli_defs_inspect::{
     GovernanceGateArgs, ImpactArgs, InspectExportArgs, InspectLiveArgs, InspectVarsArgs,
-    ScreenshotArgs, SummaryArgs, TopologyArgs, ValidateExportArgs,
+    SummaryArgs, TopologyArgs, ValidateExportArgs,
 };
 use super::{
     DASHBOARD_BROWSE_AFTER_HELP, DASHBOARD_CLI_AFTER_HELP, DASHBOARD_CLONE_FOLDER_AFTER_HELP,
@@ -14,9 +14,9 @@ use super::{
     DASHBOARD_GOVERNANCE_GATE_AFTER_HELP, DASHBOARD_IMPACT_AFTER_HELP, DASHBOARD_IMPORT_AFTER_HELP,
     DASHBOARD_LIST_AFTER_HELP, DASHBOARD_LIST_VARS_AFTER_HELP, DASHBOARD_PATCH_FILE_AFTER_HELP,
     DASHBOARD_PLAN_AFTER_HELP, DASHBOARD_PUBLISH_AFTER_HELP, DASHBOARD_REVIEW_AFTER_HELP,
-    DASHBOARD_SCREENSHOT_AFTER_HELP, DASHBOARD_SERVE_AFTER_HELP, DASHBOARD_SUMMARY_AFTER_HELP,
-    DASHBOARD_SUMMARY_EXPORT_AFTER_HELP, DASHBOARD_SUMMARY_LIVE_AFTER_HELP,
-    DASHBOARD_TOPOLOGY_AFTER_HELP, DASHBOARD_VALIDATE_EXPORT_AFTER_HELP,
+    DASHBOARD_SERVE_AFTER_HELP, DASHBOARD_SUMMARY_AFTER_HELP, DASHBOARD_SUMMARY_EXPORT_AFTER_HELP,
+    DASHBOARD_SUMMARY_LIVE_AFTER_HELP, DASHBOARD_TOPOLOGY_AFTER_HELP,
+    DASHBOARD_VALIDATE_EXPORT_AFTER_HELP,
 };
 
 #[path = "cli_defs_command_export.rs"]
@@ -217,12 +217,6 @@ pub enum DashboardCommand {
         after_help = DASHBOARD_VALIDATE_EXPORT_AFTER_HELP
     )]
     ValidateExport(ValidateExportArgs),
-    #[command(
-        name = "screenshot",
-        about = "Open one Grafana dashboard in a headless browser and capture PNG, JPEG, or PDF output.",
-        after_help = DASHBOARD_SCREENSHOT_AFTER_HELP
-    )]
-    Screenshot(ScreenshotArgs),
 }
 
 #[cfg(test)]

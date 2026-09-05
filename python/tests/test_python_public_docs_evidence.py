@@ -470,7 +470,6 @@ class PublicDocsEvidenceTests(unittest.TestCase):
                 "### Browse & Inspect",
                 "### Export & Import",
                 "### Review & Diff",
-                "### Operate & Capture",
             ],
             REPO_ROOT
             / "docs"
@@ -500,7 +499,6 @@ class PublicDocsEvidenceTests(unittest.TestCase):
                 "### 瀏覽與檢視",
                 "### 匯出與匯入",
                 "### 審查與比對",
-                "### 操作與截圖",
             ],
             REPO_ROOT
             / "docs"

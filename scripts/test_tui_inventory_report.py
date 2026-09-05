@@ -88,7 +88,7 @@ pub(crate) fn control_line(items: &[(&str, Color, &str)]) -> Line<'static> {
                 self.assertGreater(len(entry["parser_paths"]), 0)
                 self.assertIsInstance(entry["test_paths"], list)
                 self.assertGreater(len(entry["test_paths"]), 0)
-                self.assertIn(entry["feature_gate"], {"tui", "browser"})
+                self.assertEqual(entry["feature_gate"], "tui")
 
     def test_registry_claims_user_and_team_browse_surfaces(self) -> None:
         commands = {entry["command"] for entry in load_registry()["surfaces"]}

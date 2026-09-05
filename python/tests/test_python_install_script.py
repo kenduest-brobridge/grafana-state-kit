@@ -20,13 +20,11 @@ class InstallScriptTests(unittest.TestCase):
         self.assertIn('REPO="${REPO:-kenduest-brobridge/grafana-util}"', content)
         self.assertIn("https://api.github.com/repos/${REPO}/releases/latest", content)
         self.assertIn(
-            'archive_name="grafana-utils-rust-${PLATFORM}${ARTIFACT_SUFFIX}-${release_tag}.tar.gz"',
+            'archive_name="grafana-utils-rust-${PLATFORM}-${release_tag}.tar.gz"',
             content,
         )
-        self.assertIn(
-            'RUST_ARTIFACT_FLAVOR="${RUST_ARTIFACT_FLAVOR:-standard}"', content
-        )
-        self.assertIn("browser) printf '%s\\n' \"-browser\" ;;", content)
+        self.assertNotIn("RUST_ARTIFACT_FLAVOR", content)
+        self.assertNotIn("browser-enabled", content)
         self.assertIn(
             'archive_url="https://github.com/${REPO}/releases/download/${release_tag}/${archive_name}"',
             content,

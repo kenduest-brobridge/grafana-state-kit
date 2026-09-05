@@ -82,7 +82,6 @@ fn wrap_dashboard_root(command: DashboardRootCommand) -> DashboardCommand {
         DashboardRootCommand::Dependencies(inner) => DashboardCommand::Topology(inner),
         DashboardRootCommand::Impact(inner) => DashboardCommand::Impact(inner),
         DashboardRootCommand::Policy(inner) => DashboardCommand::GovernanceGate(inner),
-        DashboardRootCommand::Screenshot(inner) => DashboardCommand::Screenshot(inner),
     }
 }
 

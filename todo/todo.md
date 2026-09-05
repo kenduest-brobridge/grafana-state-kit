@@ -2,6 +2,10 @@
 
 ## Active
 
+- [x] [2026-09-05 Grafana 12 UID mutations and screenshot retirement](2026-09-05-grafana12-uid-and-screenshot-retirement.md) -
+  Retire screenshot capture, establish the Grafana 12.0+ compatibility contract,
+  use UID-only datasource mutations, and add released-version test lanes.
+
 - [x] [2026-08-23 worktree review, fix, and commit](2026-08-23-worktree-review-fix-commit.md) -
   Review every current change, fix confirmed defects, verify with external
   build caches, and commit the completed concerns without mixing open roadmap

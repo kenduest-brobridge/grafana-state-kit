@@ -1684,7 +1684,7 @@ def modify_datasource(args):
         )
     payload = result.get("payload") or {}
     client.request_json(
-        "/api/datasources/%s" % payload["id"],
+        "/api/datasources/uid/%s" % parse.quote(str(payload["uid"]), safe=""),
         method="PUT",
         payload=payload,
     )
@@ -1983,11 +1983,9 @@ def _browse_confirm_delete(base_client, record, input_reader, output_writer):
         output_writer("Cancelled datasource delete.")
         return False
     scoped_client = _browse_record_client(base_client, record)
-    target = fetch_datasource_by_uid_if_exists(scoped_client, uid) or record
-    target_id = target.get("id") or record.get("id")
-    if not target_id:
-        raise GrafanaError("Datasource browse delete requires a live datasource id.")
-    scoped_client.request_json("/api/datasources/%s" % target_id, method="DELETE")
+    scoped_client.request_json(
+        "/api/datasources/uid/%s" % parse.quote(uid, safe=""), method="DELETE"
+    )
     output_writer("Deleted datasource %s." % uid)
     return True
 
@@ -2027,11 +2025,8 @@ def _browse_edit_selected(base_client, record, input_reader, output_writer):
         output_writer("No datasource changes detected for %s." % uid)
         return False
     payload = build_modify_datasource_payload(existing, updates)
-    target_id = payload.get("id")
-    if not target_id:
-        raise GrafanaError("Datasource browse edit requires a live datasource id.")
     scoped_client.request_json(
-        "/api/datasources/%s" % target_id,
+        "/api/datasources/uid/%s" % parse.quote(uid, safe=""),
         method="PUT",
         payload=payload,
     )
@@ -3016,13 +3011,13 @@ def _run_import_datasources_for_single_org(args):
             )
         payload = build_import_payload(record, match.get("target"))
         if action == "would-update":
-            datasource_id = payload.get("id")
-            if datasource_id is None:
+            datasource_uid = str((match.get("target") or {}).get("uid") or "").strip()
+            if not datasource_uid:
                 raise GrafanaError(
-                    "Datasource import could not determine destination datasource id for update."
+                    "Datasource import could not determine destination datasource UID for update."
                 )
             client.request_json(
-                "/api/datasources/%s" % datasource_id,
+                "/api/datasources/uid/%s" % parse.quote(datasource_uid, safe=""),
                 method="PUT",
                 payload=payload,
             )

@@ -1,4 +1,5 @@
 use super::*;
+use clap::Parser;
 
 #[test]
 fn browse_help_mentions_live_tree_controls() {
@@ -36,40 +37,19 @@ fn parse_cli_supports_browse_all_orgs() {
 }
 
 #[test]
-fn parse_cli_supports_screenshot_command() {
-    let args = parse_cli_from([
+fn parse_cli_rejects_retired_screenshot_command() {
+    let error = DashboardCliArgs::try_parse_from([
         "grafana-util",
         "screenshot",
         "--dashboard-uid",
         "cpu-main",
         "--output",
         "./cpu-main.png",
-    ]);
+    ])
+    .expect_err("retired screenshot command must be rejected");
 
-    match args.command {
-        DashboardCommand::Screenshot(screenshot_args) => {
-            assert_eq!(screenshot_args.dashboard_uid.as_deref(), Some("cpu-main"));
-            assert_eq!(
-                screenshot_args.output,
-                std::path::Path::new("./cpu-main.png")
-            );
-            assert_eq!(screenshot_args.dashboard_url, None);
-            assert!(!screenshot_args.full_page);
-        }
-        _ => panic!("expected screenshot command"),
-    }
-}
-
-#[test]
-fn screenshot_help_mentions_capture_options() {
-    let help = render_dashboard_subcommand_help("screenshot");
-    assert!(help.contains("--dashboard-uid"));
-    assert!(help.contains("--dashboard-url"));
-    assert!(help.contains("--output"));
-    assert!(help.contains("--full-page"));
-    assert!(help.contains("--browser-path"));
-    assert!(help.contains("Capture a full dashboard from a browser URL"));
-    assert!(help.contains("Capture a solo panel with a vars-query fragment"));
+    let rendered = error.to_string();
+    assert!(rendered.contains("unrecognized subcommand 'screenshot'"));
 }
 
 #[test]

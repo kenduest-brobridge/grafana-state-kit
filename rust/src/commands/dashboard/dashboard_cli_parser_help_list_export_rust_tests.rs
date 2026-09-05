@@ -470,7 +470,7 @@ fn top_level_help_includes_examples() {
     assert!(help.contains("grafana-util dashboard list"));
     assert!(help.contains("grafana-util dashboard diff"));
     assert!(help.contains("grafana-util dashboard publish"));
-    assert!(help.contains("grafana-util dashboard screenshot"));
+    assert!(!help.contains("grafana-util dashboard screenshot"));
     assert!(help.contains("--all-orgs"));
     assert!(!help.contains("grafana-util export"));
     assert!(!help.contains("grafana-util list"));

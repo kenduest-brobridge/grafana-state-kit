@@ -941,18 +941,18 @@ code[class*="language-"],pre[class*="language-"]{color:#ccc;background:none;font
 </div>
 <div class="command-intro-block">
   <p class="command-intro-label">When to open this page</p>
-  <ul class="command-intro-list"><li>Use this when you need to list variable state, feed a screenshot workflow, debug variable-scoped dashboard URLs, or inspect a rendered local dashboard file.</li></ul>
+  <ul class="command-intro-list"><li>Use this when you need to list variable state, debug variable-scoped dashboard URLs, or inspect a rendered local dashboard file.</li></ul>
 </div>
 <div class="command-intro-block">
   <p class="command-intro-label">Who this page is for</p>
-  <p class="command-intro-text">Best for SREs, Grafana operators, and responders working with dashboard inventory, inspection, export, policy, or screenshots.</p>
+  <p class="command-intro-text">Best for SREs, Grafana operators, and responders working with dashboard inventory, inspection, export, or policy.</p>
 </div>
 </div>
 </section>
 <h2 id="purpose">Purpose</h2>
 <p>List dashboard templating variables and datasource-like choices from live Grafana, a local dashboard file, or a local export tree.</p>
 <h2 id="when-to-use">When to use</h2>
-<p>Use this when you need to list variable state, feed a screenshot workflow, debug variable-scoped dashboard URLs, or inspect a rendered local dashboard file.</p>
+<p>Use this when you need to list variable state, debug variable-scoped dashboard URLs, or inspect a rendered local dashboard file.</p>
 <h2 id="key-flags">Key flags</h2>
 <ul><li><code>--dashboard-uid</code> or <code>--dashboard-url</code>: choose the dashboard to inspect for variable values.</li><li><code>--input</code>: read one local dashboard JSON file instead of calling Grafana.</li><li><code>--input-dir</code>: read a dashboard from a local export tree instead of calling Grafana.</li><li><code>--input-format</code>: interpret <code>--input-dir</code> as <code>raw</code> or <code>provisioning</code>.</li><li><code>--vars-query</code>: overlay a variable query string such as <code>var-env=prod&amp;var-host=web01</code>.</li><li><code>--org-id</code>: scope the inspection to one org.</li><li><code>--output-format</code>: render table, csv, text, json, or yaml.</li><li><code>--no-header</code>: suppress table or CSV headers.</li><li><code>--output-file</code>: write a copy of the output to disk.</li></ul>
 <h2 id="examples">Examples</h2>
@@ -963,7 +963,7 @@ grafana-util dashboard variables --url https://grafana.example.com --dashboard-u
 <pre><code># List dashboard templating variables and datasource-like choices from a local dashboard file.
 grafana-util dashboard variables --input ./dashboards/raw/cpu-main.json --output-format yaml</code></pre>
 <h2 id="related-commands">Related commands</h2>
-<ul><li><a href="dashboard-screenshot.html">dashboard screenshot</a></li><li><a href="dashboard-summary.html">dashboard summary</a></li><li><a href="dashboard-browse.html">dashboard browse</a></li></ul>
+<ul><li><a href="dashboard-summary.html">dashboard summary</a></li><li><a href="dashboard-browse.html">dashboard browse</a></li></ul>
 
 </article>
 <aside class="sidebar">

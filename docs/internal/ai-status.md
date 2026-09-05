@@ -1,6 +1,13 @@
 # ai-status.md
 
 Current AI-maintained status only.
+- Older entries moved to [`ai-status-archive-2026-09-05.md`](/Users/ken/work/grafana-utils/.worktrees/grafana12-screenshot-retirement/docs/internal/archive/ai-status-archive-2026-09-05.md).
+
+## 2026-09-05 - Grafana 12 compatibility and screenshot retirement
+- State: done
+- Scope: retire dashboard screenshot/browser artifacts, use UID-only datasource writes, and pin released Grafana 12.0/12.x/13.x live lanes.
+- Current Update: Screenshot commands and dependencies are removed from both maintained CLIs; datasource mutation flows use UID routes without numeric write fallback; the live matrix records health versions for 12.0.10, 12.4.9, and 13.2.0.
+- Boundary: Grafana 13.2.0 has an upstream organization-delete regression, so only the dependent missing-org/replay fixtures are skipped after the exact server response is observed; ordinary datasource and dashboard workflows remain covered.
 
 - Older trace history moved to [`archive/ai-status-archive-2026-03-24.md`](docs/internal/archive/ai-status-archive-2026-03-24.md).
 - Detailed 2026-03-27 entries moved to [`archive/ai-status-archive-2026-03-27.md`](docs/internal/archive/ai-status-archive-2026-03-27.md).
@@ -57,9 +64,3 @@ Current AI-maintained status only.
 - Scope: rust/src/commands/datasource/browse/support.rs; rust/src/commands/datasource/browse/support_review.rs; rust/src/commands/datasource/mod.rs; docs/internal/tui-architecture-roadmap.md
 - Current Update: Moved datasource browse review-evidence projection and safe changed-field filtering into a dedicated support review module while preserving existing detail/review tests.
 - Result: `datasource/browse/support.rs` dropped below the architecture warning threshold; the remaining architecture warnings are review_contract and shared browser session.
-
-## 2026-06-11 - Datasource browse TUI chrome split
-- State: Done
-- Scope: rust/src/commands/datasource/browse/render.rs; rust/src/commands/datasource/browse/render_chrome.rs; rust/src/commands/datasource/mod.rs; docs/internal/tui-architecture-roadmap.md
-- Current Update: Moved datasource browse footer controls and search prompt rendering into a dedicated chrome module while preserving the existing renderer tests.
-- Result: `datasource/browse/render.rs` dropped below the architecture warning threshold; datasource browse rendering remains behavior-compatible and the remaining architecture warnings are datasource browse support, review_contract, and shared browser session.

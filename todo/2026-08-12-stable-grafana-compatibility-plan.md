@@ -2,7 +2,7 @@
 
 ## Status
 
-- State: planned
+- State: in progress (SGC-000 through SGC-002 complete; SGC-003 and SGC-004 remain separate slices)
 - Date: 2026-08-12
 - Source review: `todo/2026-08-12-upstream-grafana-compatibility-review.md`
 - Scope: Grafana 12.x and 13.x using released, stable APIs and officially
@@ -28,74 +28,74 @@ explicit, testable, and safe for operators.
 
 ### `SGC-000` - Grafana 12.x compatibility floor
 
-- [ ] Declare Grafana 12.0 as the minimum supported major/minor floor in the
+- [x] Declare Grafana 12.0 as the minimum supported major/minor floor in the
   maintainer compatibility contract and operator documentation.
-- [ ] Keep workflows shared by Grafana 12.x and 13.x on stable APIs available
+- [x] Keep workflows shared by Grafana 12.x and 13.x on stable APIs available
   in both lines.
-- [ ] Use capability discovery for stable features that are not present across
+- [x] Use capability discovery for stable features that are not present across
   every supported 12.x and 13.x release.
-- [ ] Return an explicit unsupported-capability result when a stable resource
+- [x] Return an explicit unsupported-capability result when a stable resource
   is unavailable; do not treat `401`, `403`, malformed success, or `5xx` as an
   absence signal.
-- [ ] Preserve the existing Grafana 12 dashboard, datasource, alert, access,
+- [x] Preserve the existing Grafana 12 dashboard, datasource, alert, access,
   status, import/export, and sync paths while adding Grafana 13 behavior.
-- [ ] Document feature availability separately from the minimum server version
+- [x] Document feature availability separately from the minimum server version
   so a 13-only feature does not make the whole CLI 13-only.
 
 Acceptance:
 
-- [ ] Core Rust and maintained Python workflows pass against a released
+- [x] Core Rust and maintained Python workflows pass against a released
   Grafana 12.x floor image and the current Grafana 13.x image.
-- [ ] Feature-specific commands explain when a stable API is unavailable on a
+- [x] Feature-specific commands explain when a stable API is unavailable on a
   particular supported server.
-- [ ] No common workflow unconditionally selects a Grafana 13-only route.
+- [x] No common workflow unconditionally selects a Grafana 13-only route.
 
 ### `SGC-001` - Datasource UID-only mutation
 
-- [ ] Change Rust datasource update/delete behavior to use
+- [x] Change Rust datasource update/delete behavior to use
   `/api/datasources/uid/{uid}` without automatic numeric-ID fallback.
-- [ ] Change maintained Python modify, browse edit/delete, import, and sync
+- [x] Change maintained Python modify, browse edit/delete, import, and sync
   mutation paths to use datasource UIDs.
-- [ ] Return the original UID not-found/error result without issuing a second
+- [x] Return the original UID not-found/error result without issuing a second
   numeric-ID request.
-- [ ] Verify the UID mutation route against both Grafana 12.x and 13.x; retain
+- [x] Verify the UID mutation route against both Grafana 12.x and 13.x; retain
   a numeric-ID path only if a supported 12.x server actually requires it, and
   then only behind an explicit compatibility option rather than auto mode.
-- [ ] Add Rust and Python regression tests covering request paths and the
+- [x] Add Rust and Python regression tests covering request paths and the
   no-fallback contract.
 
 Acceptance:
 
-- [ ] Rust focused datasource tests pass.
-- [ ] Python focused datasource and sync tests pass.
-- [ ] Live add/update/delete succeeds against the Grafana 12.x floor and
+- [x] Rust focused datasource tests pass.
+- [x] Python focused datasource and sync tests pass.
+- [x] Live add/update/delete succeeds against the Grafana 12.x floor and
   Grafana 13.1.3 using UID routes.
-- [ ] Captured requests show no `/api/datasources/{numeric-id}` mutation in the
+- [x] Captured requests show no `/api/datasources/{numeric-id}` mutation in the
   default path.
 
 ### `SGC-002` - Released-version compatibility matrix
 
-- [ ] Define Grafana 12.0 as the compatibility floor in one maintainer-facing
+- [x] Define Grafana 12.0 as the compatibility floor in one maintainer-facing
   source of truth.
-- [ ] Add a blocking floor lane using the latest released patch in the oldest
+- [x] Add a blocking floor lane using the latest released patch in the oldest
   supported Grafana 12.0 minor line.
-- [ ] Add a blocking current-12 lane using the latest reviewed Grafana 12.x
+- [x] Add a blocking current-12 lane using the latest reviewed Grafana 12.x
   release.
-- [ ] Pin the current stable live-smoke lane to `grafana/grafana:13.1.3` or a
+- [x] Pin the current stable live-smoke lane to `grafana/grafana:13.1.3` or a
   newer reviewed 13.1 patch.
-- [ ] Run the maintained Rust live suite in the floor-12, current-12, and
+- [x] Run the maintained Rust live suite in the floor-12, current-12, and
   current-13 lanes.
-- [ ] Run the Python datasource live suite in at least the floor-12 and
+- [x] Run the Python datasource live suite in at least the floor-12 and
   current-13 lanes.
-- [ ] Record the container image and `/api/health.version` in test evidence.
-- [ ] Keep release gating independent of unpinned `latest` images.
+- [x] Record the container image and `/api/health.version` in test evidence.
+- [x] Keep release gating independent of unpinned `latest` images.
 
 Acceptance:
 
-- [ ] CI and local scripts select versions explicitly.
-- [ ] All three released Rust lanes pass.
-- [ ] Both required Python datasource lanes pass.
-- [ ] Failure output identifies the exact Grafana version and failing workflow.
+- [x] CI and local scripts select versions explicitly.
+- [x] All three released Rust lanes pass.
+- [x] Both required Python datasource lanes pass.
+- [x] Failure output identifies the exact Grafana version and failing workflow.
 
 ### `SGC-003` - Stable playlist read support
 

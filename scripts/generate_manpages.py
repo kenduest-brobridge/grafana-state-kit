@@ -43,7 +43,7 @@ NAMESPACE_SPECS: tuple[NamespaceSpec, ...] = (
     NamespaceSpec(
         stem="grafana-util-dashboard",
         cli_path="grafana-util dashboard",
-        title="dashboard browse, export, import, summary, dependencies, policy, and screenshot workflows",
+        title="dashboard browse, export, import, summary, dependencies, and policy workflows",
         root_doc="dashboard.md",
         aliases=("grafana-util db",),
         sub_docs=(
@@ -66,7 +66,6 @@ NAMESPACE_SPECS: tuple[NamespaceSpec, ...] = (
             "dashboard-variables.md",
             "dashboard-policy.md",
             "dashboard-impact.md",
-            "dashboard-screenshot.md",
             "dashboard-convert-raw-to-prompt.md",
         ),
         related_manpages=(
@@ -78,7 +77,7 @@ NAMESPACE_SPECS: tuple[NamespaceSpec, ...] = (
         workflow_notes=(
             "Dashboard export intentionally separates output lanes for different workflows. Treat the raw export tree as the canonical replay or import source unless a command explicitly asks for another lane.",
             "summary and dependencies are read-only analysis commands, not mutation paths.",
-            "browse and screenshot operate against live Grafana state.",
+            "browse operates against live Grafana state.",
         ),
     ),
     NamespaceSpec(

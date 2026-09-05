@@ -139,10 +139,6 @@ pub(crate) const DASHBOARD_HELP_SPEC: GroupedHelpSpec = GroupedHelpSpec {
                 row!("delete", "Delete live dashboards after explicit selection."),
             ]
         ),
-        section!(
-            "Operate & Capture",
-            [row!("screenshot", "Capture dashboard evidence.")]
-        ),
     ],
     footer: &[
         "More help:",

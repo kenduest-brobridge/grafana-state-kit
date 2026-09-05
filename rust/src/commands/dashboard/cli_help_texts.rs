@@ -399,14 +399,6 @@ pub(crate) const DASHBOARD_VALIDATE_EXPORT_AFTER_HELP: &str = r#"Examples:
   Write the validation report as JSON:
     grafana-util dashboard validate-export --input-dir ./dashboards/raw --output-format json --output-file ./dashboard-validation.json"#;
 
-pub(crate) const DASHBOARD_SCREENSHOT_AFTER_HELP: &str = r#"Examples:
-
-  Capture a full dashboard from a browser URL and add an auto title/header block:
-    grafana-util dashboard screenshot --dashboard-url 'https://grafana.example.com/d/cpu-main/cpu-overview?var-cluster=prod-a' --token "$GRAFANA_API_TOKEN" --output ./cpu-main.png --full-page --header-title --header-url --header-captured-at
-
-  Capture a solo panel with a vars-query fragment and custom header note:
-    grafana-util dashboard screenshot --url https://grafana.example.com --dashboard-uid rYdddlPWk --panel-id 20 --vars-query 'var-datasource=prom-main&var-job=node-exporter&var-node=host01:9100' --token "$GRAFANA_API_TOKEN" --output ./panel.png --header-title 'CPU Busy' --header-text 'Solo panel debug capture'"#;
-
 pub(crate) const DASHBOARD_CLI_AFTER_HELP: &str = r#"Examples:
 
   Fetch one live dashboard into a local draft:
@@ -435,10 +427,7 @@ pub(crate) const DASHBOARD_CLI_AFTER_HELP: &str = r#"Examples:
     grafana-util dashboard patch --input ./dashboards/raw/cpu-main.json --name 'CPU Overview' --folder-uid infra --tag prod --tag sre
 
   Publish one local draft to Grafana:
-    grafana-util dashboard publish --url http://localhost:3000 --basic-user admin --basic-password admin --input ./drafts/cpu-main.json --dry-run --table
-
-  Capture a browser-rendered dashboard screenshot:
-    grafana-util dashboard screenshot --url http://localhost:3000 --token "$GRAFANA_API_TOKEN" --dashboard-uid cpu-main --output ./cpu-main.png --from now-6h --to now"#;
+    grafana-util dashboard publish --url http://localhost:3000 --basic-user admin --basic-password admin --input ./drafts/cpu-main.json --dry-run --table"#;
 
 pub(crate) const DASHBOARD_HISTORY_LIST_AFTER_HELP: &str = r#"Examples:
 

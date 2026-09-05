@@ -40,7 +40,7 @@
 
 ### Dashboard
 
-處理 browse、export、summary、review、patch、publish 與 screenshot。
+處理 browse、export、summary、review、patch 與 publish。
 
 - [Dashboard 管理](../user-guide/zh-TW/dashboard.md)
 - [Dashboard 指令參考](../commands/zh-TW/dashboard.md)

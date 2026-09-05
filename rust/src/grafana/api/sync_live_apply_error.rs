@@ -50,12 +50,6 @@ pub(crate) fn datasource_sync_target_not_resolved(identity: &str) -> GrafanaCliE
     ))
 }
 
-pub(crate) fn datasource_sync_requires_live_id(action: &str) -> GrafanaCliError {
-    message(format!(
-        "Datasource sync {action} requires a live datasource id."
-    ))
-}
-
 pub(crate) fn alert_sync_delete_requires_uid() -> GrafanaCliError {
     message("Alert sync delete requires a stable uid identity for live apply.")
 }
@@ -109,10 +103,6 @@ mod tests {
         assert_eq!(
             datasource_sync_target_not_resolved("ds-uid").to_string(),
             "Could not resolve live datasource target ds-uid during sync apply."
-        );
-        assert_eq!(
-            datasource_sync_requires_live_id("update").to_string(),
-            "Datasource sync update requires a live datasource id."
         );
         assert_eq!(
             alert_sync_delete_requires_uid().to_string(),

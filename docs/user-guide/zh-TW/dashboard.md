@@ -4,7 +4,7 @@
 
 ## 適用對象
 
-- 需要盤點、搬移、審查或截圖 dashboard 的 SRE / 平台工程師
+- 需要盤點、搬移或審查 dashboard 的 SRE / 平台工程師
 - 想把 dashboard 放進 Git、review 或 CI 流程的人
 - 需要先看 live 現況，再決定要不要匯出、匯入或刪除的人
 
@@ -21,7 +21,7 @@
 
 ## 成功判準
 
-- 你知道目前這個任務應該走資產盤點、單一 dashboard authoring、export/import replay、summary、dependencies、policy 還是 screenshot。
+- 你知道目前這個任務應該走資產盤點、單一 dashboard authoring、export/import replay、summary、dependencies 或 policy。
 - 你能在動 live state 前先說清楚自己走的是哪條 lane。
 - 你能證明 dashboard 已經適合 replay 或 publish，而不是只是「看起來差不多」。
 
@@ -29,7 +29,7 @@
 
 - 如果匯出樹不完整，先修 source path，再談 replay。
 - 如果 inspect 顯示查詢或變數缺失，先處理這些問題，再進入匯入流程。
-- 如果你說不出 screenshot 或 dependencies 在證明什麼，可能是開錯工作流了。
+- 如果你說不出 dependencies 在證明什麼，可能是開錯工作流了。
 
 ## Dashboard 工作流地圖
 
@@ -42,10 +42,9 @@ Dashboard 子命令不是一串平行功能，而是圍繞幾種不同資料來�
 | 釋出草稿 | `review`, `publish`, `edit-live` | 本地 dashboard JSON | dry-run / publish 結果 | apply 後再 list / get |
 | 備份與回放 | `export`, `import`, `diff` | live Grafana 或 export tree | `raw/`, `prompt/`, `provisioning/` | diff / dry-run / import |
 | 分析依賴 | `summary`, `dependencies`, `variables`, `policy` | live 或本地 dashboard | query、data source、變數、policy 摘要 | 修 dashboard 或 data source |
-| 留存證據 | `screenshot` | live dashboard URL / UID | dashboard 或 panel 截圖 | 放進 incident、PR 或文件 |
 | 歷史恢復 | `history list`, `history export`, `history restore` | dashboard UID 與版本 | 歷史清單、版本成品或新 revision | review 後 restore |
 
-如果你手上只有 dashboard UID，通常先 `get` 或 `clone`。如果你手上是一整包 export tree，先 `summary` / `diff`，不要直接 `import`。如果你要的是人可以看懂的交付物，`prompt/` 與 screenshot 比 `raw/` 更適合；如果你要的是可重播與可審計，`raw/` 才是主資料路徑。
+如果你手上只有 dashboard UID，通常先 `get` 或 `clone`。如果你手上是一整包 export tree，先 `summary` / `diff`，不要直接 `import`。如果你要的是人可以看懂的交付物，`prompt/` 比 `raw/` 更適合；如果你要的是可重播與可審計，`raw/` 才是主資料路徑。
 
 ## 草稿 authoring 工作流
 
@@ -110,27 +109,23 @@ Dashboard 相關功能主要是為了處理大規模維運而設計：
 - **資產盤點**：了解跨一個或多個組織的 Dashboard 現況。
 - **結構化匯出**：用分開的資料路徑在環境間遷移 Dashboard。
 - **深度檢視**：離線分析查詢 (Queries) 與 data source 依賴。
-- **截圖與視覺檢查**：產出可重現的 dashboard 或 panel 截圖，用於文件、事件處理紀錄與除錯。
 - **差異審查 (Drift Review)**：在套用變更前，比對本地暫存檔案與 live Grafana。
 - **受控變更**：用強制性的 Dry-run 執行匯入或刪除。
 
 ---
 
-## 🔎 檢視與截圖工作流
+## 🔎 檢視工作流
 
 如果你的目標不是匯入或匯出，而是先看清楚 dashboard 目前長什麼樣、依賴哪些 data source、變數怎麼帶入，這一組指令應該先看。
 
 - `dashboard summary（即時）`：直接分析 live dashboard 的結構、查詢與依賴。
 - `dashboard summary（本地）`：離線分析已匯出的 dashboard 樹。
 - `dashboard variables`：確認變數、data source 選項與 URL 帶入值。
-- `dashboard screenshot`：用 headless browser 產生可重現的 dashboard 或 panel 截圖。
 - `dashboard dependencies`：快速掌握 dashboard 與上游依賴之間的關係。
 
 常見情境：
 
-- 事件處理後需要補一張當下畫面的截圖
 - 想先確認某個 panel 是不是吃到正確的變數與 data source
-- 要整理文件或 review 附圖，但不想手動截圖
 - 想在變更前先看 dashboard 依賴與查詢結構
 
 ---
@@ -234,11 +229,11 @@ Dashboard 工作常常從一個模糊線索開始：某個畫面、某個 folder
 
 `dashboard publish --dry-run` 適合放在 PR 或人工變更前；`--watch` 適合本地反覆改同一份草稿。真正 publish 後，再回到 `dashboard get` 或 `dashboard list` 驗證 live state，而不是只相信 publish 的終端輸出。
 
-## 分析與證據：不只是看起來有沒有變
+## 分析：不只是看起來有沒有變
 
-`dashboard summary`、`dependencies`、`variables`、`policy` 與 `screenshot` 不是附屬功能。它們回答的是 review 裡常見的問題：這個 dashboard 查哪些 data source、變數是否會改變查詢結果、policy 是否允許進 production、以及畫面證據能不能放進 incident 或 PR。
+`dashboard summary`、`dependencies`、`variables` 與 `policy` 不是附屬功能。它們回答的是 review 裡常見的問題：這個 dashboard 查哪些 data source、變數是否會改變查詢結果、policy 是否允許進 production。
 
-當 review 的目標是「證明這次變更不會破壞查詢或變數」，先用 `summary`、`variables`、`dependencies`。當目標是「留下一張人能看懂的證據」，才用 `screenshot`。截圖不能取代結構檢查；結構檢查也不能取代需要交給人的視覺證據。
+當 review 的目標是「證明這次變更不會破壞查詢或變數」，先用 `summary`、`variables`、`dependencies`。
 
 ## 何時切到指令參考
 
@@ -265,7 +260,6 @@ Dashboard 工作常常從一個模糊線索開始：某個畫面、某個 folder
 - [dashboard history](../../commands/zh-TW/dashboard-history.md)
 - [dashboard policy](../../commands/zh-TW/dashboard-policy.md)
 - [dashboard dependencies](../../commands/zh-TW/dashboard-dependencies.md)
-- [dashboard screenshot](../../commands/zh-TW/dashboard-screenshot.md)
 - [指令參考](../../commands/zh-TW/index.md)
 
 ---

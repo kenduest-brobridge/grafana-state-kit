@@ -106,13 +106,6 @@
           { "command": "grafana-util dashboard convert raw-to-prompt", "target": "dashboard-convert-raw-to-prompt.html" },
           { "command": "grafana-util dashboard convert export-layout", "target": "dashboard-convert-export-layout.html" }
         ]
-      },
-      {
-        "title_en": "Capture",
-        "title_zh_tw": "截圖與證據",
-        "links": [
-          { "command": "grafana-util dashboard screenshot", "target": "dashboard-screenshot.html" }
-        ]
       }
     ],
     "datasource": [

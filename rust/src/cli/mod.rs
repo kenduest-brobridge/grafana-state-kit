@@ -27,7 +27,7 @@ use crate::dashboard::{
     BrowseArgs, CloneLiveArgs, DashboardHistoryArgs, DeleteArgs, DiffArgs, EditLiveArgs,
     ExportArgs as DashboardExportArgs, ExportLayoutArgs, GetArgs, GovernanceGateArgs, ImpactArgs,
     ImportArgs, InspectVarsArgs, ListArgs, PatchFileArgs, PlanArgs as DashboardPlanArgs,
-    PublishArgs, RawToPromptArgs, ReviewArgs, ScreenshotArgs, ServeArgs, SummaryArgs, TopologyArgs,
+    PublishArgs, RawToPromptArgs, ReviewArgs, ServeArgs, SummaryArgs, TopologyArgs,
 };
 use crate::datasource::{DatasourceExportArgs, DatasourceGroupCommand};
 use crate::overview::{OverviewArgs, OverviewCommand};
@@ -267,11 +267,6 @@ pub enum DashboardRootCommand {
         about = "Evaluate governance policy against dashboard summary JSON artifacts."
     )]
     Policy(GovernanceGateArgs),
-    #[command(
-        name = "screenshot",
-        about = "Open one dashboard in a headless browser and capture image or PDF output."
-    )]
-    Screenshot(ScreenshotArgs),
 }
 
 #[derive(Debug, Clone, Subcommand)]

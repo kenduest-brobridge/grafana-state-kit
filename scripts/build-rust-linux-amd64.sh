@@ -11,14 +11,6 @@ TARGET_TRIPLE="x86_64-unknown-linux-gnu"
 CARGO_BUILD_JOBS="${CARGO_BUILD_JOBS:-2}"
 RUST_RELEASE_RUSTFLAGS="${RUST_RELEASE_RUSTFLAGS:--C debuginfo=0}"
 BUILD_RUSTFLAGS="${RUSTFLAGS:+${RUSTFLAGS} }${RUST_RELEASE_RUSTFLAGS}"
-BUILD_BROWSER="${BUILD_BROWSER:-0}"
-CARGO_FEATURE_ARGS=""
-
-if [[ "${BUILD_BROWSER}" != "0" ]]; then
-  OUTPUT_DIR="${REPO_ROOT}/dist/linux-amd64-browser"
-  RUST_BUILD_CONTAINER_NAME="${RUST_BUILD_CONTAINER_NAME:-grafana-utils-rust-linux-amd64-browser-build}"
-  CARGO_FEATURE_ARGS="--features browser"
-fi
 
 if ! command -v docker >/dev/null 2>&1; then
   echo "Error: docker is required for Linux amd64 Rust builds." >&2
@@ -44,13 +36,9 @@ docker run --rm \
     if command -v rustup >/dev/null 2>&1; then
       rustup target add ${TARGET_TRIPLE}
     fi
-    cargo build --release --jobs \"\${CARGO_BUILD_JOBS}\" --target ${TARGET_TRIPLE} ${CARGO_FEATURE_ARGS}
+    cargo build --release --jobs \"\${CARGO_BUILD_JOBS}\" --target ${TARGET_TRIPLE}
   "
 
 cp "${RUST_DIR}/target/${TARGET_TRIPLE}/release/grafana-util" "${OUTPUT_DIR}/grafana-util"
-if [[ "${BUILD_BROWSER}" != "0" ]]; then
-  echo "Built Linux amd64 browser-enabled Rust binaries:"
-else
-  echo "Built Linux amd64 Rust binaries:"
-fi
+echo "Built Linux amd64 Rust binaries:"
 echo "  ${OUTPUT_DIR}/grafana-util"

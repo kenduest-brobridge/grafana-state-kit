@@ -11,8 +11,7 @@ pub(super) use crate::dashboard::cli_defs::{
     HistoryExportArgs, HistoryListArgs, HistoryOutputFormat, HistoryRestoreArgs, ImpactArgs,
     ImpactOutputFormat, ImportArgs, InspectExportArgs, InspectExportReportFormat, InspectLiveArgs,
     InspectOutputFormat, InspectVarsArgs, ListArgs, RawToPromptArgs, RawToPromptLogFormat,
-    RawToPromptOutputFormat, RawToPromptResolution, ScreenshotArgs, ScreenshotFullPageOutput,
-    ScreenshotOutputFormat, ScreenshotTheme, SimpleOutputFormat, TopologyArgs,
+    RawToPromptOutputFormat, RawToPromptResolution, SimpleOutputFormat, TopologyArgs,
     TopologyOutputFormat, ValidateExportArgs, ValidationOutputFormat,
 };
 pub(super) use crate::dashboard::export::{
@@ -142,10 +141,6 @@ pub(super) use crate::dashboard::models::{
     FolderInventoryItem, RootExportIndex, RootExportVariants, VariantIndexEntry,
 };
 pub(super) use crate::dashboard::raw_to_prompt::run_raw_to_prompt;
-pub(super) use crate::dashboard::screenshot::{
-    build_dashboard_capture_url, infer_screenshot_output_format, resolve_manifest_title,
-    validate_screenshot_args,
-};
 pub(super) use crate::dashboard::topology::{
     build_impact_browser_items, build_impact_document, build_topology_document, render_impact_text,
     render_topology_dot, render_topology_mermaid, ImpactAlertResource, ImpactDashboard,

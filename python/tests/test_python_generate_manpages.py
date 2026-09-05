@@ -26,29 +26,12 @@ class GenerateManpagesTests(unittest.TestCase):
 
         generated = module.generate_manpages()
 
-        self.assertIn("grafana-util-dashboard-screenshot.1", generated)
+        self.assertNotIn("grafana-util-dashboard-screenshot.1", generated)
         self.assertIn("grafana-util-access-service-account-token.1", generated)
         self.assertIn("grafana-util-status.1", generated)
         self.assertIn("grafana-util-workspace.1", generated)
         self.assertNotIn("grafana-util-overview.1", generated)
         self.assertIn("grafana-util-config-profile.1", generated)
-
-    def test_subcommand_manpage_contains_command_sections(self):
-        module = load_module()
-
-        generated = module.generate_manpages()
-        screenshot_manpage = generated["grafana-util-dashboard-screenshot.1"]
-
-        self.assertIn(".SH SYNOPSIS", screenshot_manpage)
-        self.assertIn(
-            ".B grafana-util dashboard screenshot [\\fIOPTIONS\\fR]", screenshot_manpage
-        )
-        self.assertIn(".SH DESCRIPTION", screenshot_manpage)
-        self.assertIn(
-            "Open one dashboard in a headless browser and capture image or PDF output.",
-            screenshot_manpage,
-        )
-        self.assertIn(".SH EXAMPLES", screenshot_manpage)
 
     def test_subcommand_manpage_projects_before_after_success_and_failure_sections(
         self,
@@ -133,12 +116,8 @@ class GenerateManpagesTests(unittest.TestCase):
 
         self.assertIn(".SH SUBCOMMAND MANPAGES", top_level_manpage)
         self.assertIn(".SS dashboard", top_level_manpage)
-        self.assertIn(
+        self.assertNotIn(
             ".B grafana\\-util\\-dashboard\\-screenshot(1)", top_level_manpage
-        )
-        self.assertIn(
-            "Open one dashboard in a headless browser and capture image or PDF output.",
-            top_level_manpage,
         )
         self.assertNotIn(
             "especially for docs, incident notes, or visual debugging",

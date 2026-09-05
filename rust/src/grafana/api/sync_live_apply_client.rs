@@ -82,24 +82,17 @@ impl<'a> SyncLiveClient<'a> {
     pub(crate) fn update_datasource(
         &self,
         datasource_uid: &str,
-        fallback_datasource_id: Option<&str>,
         payload: &Map<String, Value>,
     ) -> Result<Map<String, Value>> {
-        self.api.datasource().update_datasource_by_uid(
-            datasource_uid,
-            fallback_datasource_id,
-            payload,
-        )
-    }
-
-    pub(crate) fn delete_datasource(
-        &self,
-        datasource_uid: &str,
-        fallback_datasource_id: Option<&str>,
-    ) -> Result<Value> {
         self.api
             .datasource()
-            .delete_datasource_by_uid(datasource_uid, fallback_datasource_id)
+            .update_datasource_by_uid(datasource_uid, payload)
+    }
+
+    pub(crate) fn delete_datasource(&self, datasource_uid: &str) -> Result<Value> {
+        self.api
+            .datasource()
+            .delete_datasource_by_uid(datasource_uid)
     }
 
     pub(crate) fn create_alert_rule(

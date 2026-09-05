@@ -2,8 +2,6 @@ use serde_json::{Map, Value};
 
 use crate::common::Result;
 
-use super::sync_live_apply_error::datasource_sync_requires_live_id;
-
 pub(crate) fn resolve_live_datasource_target(
     datasources: &[Map<String, Value>],
     identity: &str,
@@ -24,20 +22,6 @@ pub(crate) fn resolve_live_datasource_target(
         }
     }
     Ok(None)
-}
-
-pub(crate) fn resolve_live_datasource_id(
-    target: &Map<String, Value>,
-    action: &str,
-) -> Result<String> {
-    target
-        .get("id")
-        .map(|value| match value {
-            Value::String(text) => text.clone(),
-            _ => value.to_string(),
-        })
-        .filter(|value: &String| !value.is_empty())
-        .ok_or_else(|| datasource_sync_requires_live_id(action))
 }
 
 #[cfg(test)]
@@ -79,33 +63,5 @@ mod tests {
 
         assert_eq!(target["uid"], json!("uid-a"));
         assert_eq!(target["name"], json!("shared-name"));
-    }
-
-    #[test]
-    fn resolves_datasource_id_from_string_or_number() {
-        let string_id = datasource("uid-a", "name-a", Value::String("17".to_string()));
-        let number_id = datasource("uid-b", "name-b", Value::from(21));
-
-        assert_eq!(
-            resolve_live_datasource_id(&string_id, "update").unwrap(),
-            "17"
-        );
-        assert_eq!(
-            resolve_live_datasource_id(&number_id, "delete").unwrap(),
-            "21"
-        );
-    }
-
-    #[test]
-    fn rejects_missing_datasource_id() {
-        let mut target = datasource("uid-a", "name-a", Value::from(1));
-        target.remove("id");
-
-        assert_eq!(
-            resolve_live_datasource_id(&target, "update")
-                .unwrap_err()
-                .to_string(),
-            "Datasource sync update requires a live datasource id."
-        );
     }
 }

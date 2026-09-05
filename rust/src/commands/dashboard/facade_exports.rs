@@ -13,9 +13,8 @@ pub(crate) mod pub_exports {
         InspectExportArgs, InspectExportInputType, InspectExportReportFormat, InspectLiveArgs,
         InspectOutputFormat, InspectVarsArgs, ListArgs, PatchFileArgs, PlanArgs, PublishArgs,
         RawToPromptArgs, RawToPromptLogFormat, RawToPromptOutputFormat, RawToPromptResolution,
-        ReviewArgs, ScreenshotArgs, ScreenshotFullPageOutput, ScreenshotOutputFormat,
-        ScreenshotTheme, ServeArgs, SimpleOutputFormat, SummaryArgs, TopologyArgs,
-        TopologyOutputFormat, ValidateExportArgs, ValidationOutputFormat,
+        ReviewArgs, ServeArgs, SimpleOutputFormat, SummaryArgs, TopologyArgs, TopologyOutputFormat,
+        ValidateExportArgs, ValidationOutputFormat,
     };
     pub use super::super::command_runner::{
         execute_dashboard_inspect_export, execute_dashboard_inspect_live,
@@ -36,7 +35,6 @@ pub(crate) mod pub_exports {
         delete_dashboard_request, delete_folder_request, fetch_dashboard, import_dashboard_request,
         list_dashboard_summaries, list_datasources,
     };
-    pub use super::super::screenshot::capture_dashboard_screenshot;
 }
 
 pub(crate) mod crate_exports {

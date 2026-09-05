@@ -42,11 +42,19 @@ Common uses:
 
 The CLI is organized around these command families: `status`, `workspace`, `dashboard`, `datasource`, `alert`, `access`, and `config profile`. Use the handbook for workflow context and the command reference for exact syntax.
 
+## Grafana version support
+
+`grafana-util` supports Grafana **12.0+**. The compatibility matrix covers the
+Grafana 12.0 floor, current released Grafana 12, and current released Grafana
+13. Optional APIs that are absent on a supported version are reported as
+unavailable only for HTTP `404`; authentication, authorization, malformed
+response, and server failures remain errors.
+
 Supported Grafana surfaces:
 
 | Area | What is covered | Good first command |
 | :--- | :--- | :--- |
-| Dashboards | Browse, list, export/import, diff, review, patch, publish, history, dependency analysis, policy checks, screenshots, and dashboard conversion for reuse across environments. | `grafana-util dashboard browse` |
+| Dashboards | Browse, list, export/import, diff, review, patch, publish, history, dependency analysis, policy checks, and dashboard conversion for reuse across environments. | `grafana-util dashboard browse` |
 | Datasources | Inventory, export/import, diff, create/modify/delete, secret-aware recovery, and type discovery. | `grafana-util datasource list` |
 | Alerting | Rules, contact points, mute timings, templates, notification routes, review plans, apply flows, and route previews. | `grafana-util alert plan` |
 | Access | Orgs, users, teams, service accounts, service-account tokens, export/import, diff, and delete review. | `grafana-util access user list` |
@@ -107,7 +115,7 @@ make install-local-interactive
 
 - **Releases**: [GitHub releases](https://github.com/kenduest-brobridge/grafana-state-kit/releases)
 - **Latest vs pinned installs**: `VERSION=latest` follows the repository's latest published GitHub release; if you need one fixed installer and one fixed asset version, fetch `scripts/install.sh` from the same release tag path
-- **Binaries**: standard `linux-amd64` and `macos-arm64`; screenshot-enabled builds use `*-browser-*`
+- **Binaries**: standard `linux-amd64` and `macos-arm64` artifacts
 - **Default path**: `/usr/local/bin` if writable, otherwise `$HOME/.local/bin`
 - **Completion**: set `INSTALL_COMPLETION=auto`, `INSTALL_COMPLETION=bash`, or `INSTALL_COMPLETION=zsh` to install completion from the downloaded binary
 - **Interactive install**: use `sh -s -- --interactive` after the pipe to answer install directory and completion prompts; Zsh installs can also update `~/.zshrc` so `~/.zfunc` loads before `compinit`

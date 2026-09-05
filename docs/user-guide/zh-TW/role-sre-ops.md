@@ -290,7 +290,7 @@ grafana-util status overview live --url http://localhost:3000 --token "$GRAFANA_
 
 ## 什麼時候切到更深的文件
 
-- **inventory、export / import、inspect、screenshot** 類問題：切到 [Dashboard 管理](dashboard.md)
+- **inventory、export / import、inspect** 類問題：切到 [Dashboard 管理](dashboard.md)
 - **rule、route、contact point、plan / apply** 類問題：切到 [告警治理](alert.md)
 - **org、user、team、service account** 類問題：切到 [Access 管理](access.md)
 - **已經知道流程，只差精確旗標**：切到 [指令參考](../../commands/zh-TW/index.md)

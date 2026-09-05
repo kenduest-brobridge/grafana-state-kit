@@ -10,11 +10,10 @@
 | 想比對草稿與 live 差異 | [dashboard diff](./dashboard-diff.md) / [dashboard review](./dashboard-review.md) | 先做 review，再決定是否 publish |
 | 想先看本地匯出樹套到 live 會改什麼 | [dashboard plan](./dashboard-plan.md) | 先產生 create/update/delete/review hints，再決定是否 import |
 | 想做本地草稿與釋出 | [dashboard get](./dashboard-get.md) / [dashboard clone](./dashboard-clone.md) / [dashboard publish](./dashboard-publish.md) | 先進 authoring 路徑，不要直接在 live 上亂改 |
-| 想補事故、報告或交接素材 | [dashboard screenshot](./dashboard-screenshot.md) | 先拿可重現的視覺證據 |
 
 ## 這個入口是做什麼的
 
-`grafana-util dashboard` 把 dashboard 相關工作收在同一個入口：從瀏覽、草稿、匯出、匯入、比對，到相依性、影響面、政策和截圖。它也可用 `grafana-util db` 呼叫。命令本身維持扁平，help 和文件用分組降低閱讀壓力。
+`grafana-util dashboard` 把 dashboard 相關工作收在同一個入口：從瀏覽、草稿、匯出、匯入、比對，到相依性、影響面與政策。它也可用 `grafana-util db` 呼叫。命令本身維持扁平，help 和文件用分組降低閱讀壓力。
 
 這組頁面採用扁平 command path，例如 `grafana-util dashboard list`、`grafana-util dashboard summary`、`grafana-util dashboard publish`，不再另外包一層 author / migrate / summary namespace。
 
@@ -91,7 +90,7 @@ grafana-util dashboard list --profile prod
 ```
 
 ```bash
-# 先做 live 分析，再決定要不要匯出或截圖。
+# 先做 live 分析，再決定要不要匯出。
 grafana-util dashboard summary --url http://localhost:3000 --basic-user admin --basic-password admin --interactive
 ```
 
@@ -156,7 +155,3 @@ grafana-util dashboard edit-live --profile prod --dashboard-uid cpu-main --outpu
 - [dashboard edit-live](./dashboard-edit-live.md)
 - [dashboard publish](./dashboard-publish.md)
 - [dashboard delete](./dashboard-delete.md)
-
-### 操作與截圖
-
-- [dashboard screenshot](./dashboard-screenshot.md)

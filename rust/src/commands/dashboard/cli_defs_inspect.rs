@@ -4,12 +4,9 @@
 mod cli_defs_inspect_analysis;
 #[path = "cli_defs_inspect_policy.rs"]
 mod cli_defs_inspect_policy;
-#[path = "cli_defs_inspect_screenshot.rs"]
-mod cli_defs_inspect_screenshot;
 
 pub use cli_defs_inspect_analysis::*;
 pub use cli_defs_inspect_policy::*;
-pub use cli_defs_inspect_screenshot::*;
 
 fn parse_dashboard_summary_input_format(
     value: &str,

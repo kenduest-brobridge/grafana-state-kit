@@ -251,13 +251,13 @@ def delete_datasource(client, uid=None, name=None, dry_run=False):
             )
         )
     target = plan.get("target") or {}
-    datasource_id = target.get("id")
-    if datasource_id is None:
-        raise GrafanaError("Datasource delete requires a live datasource id.")
+    datasource_uid = _normalize_string(target.get("uid"))
+    if not datasource_uid:
+        raise GrafanaError("Datasource delete requires a live datasource UID.")
     if dry_run:
         return plan
     response = client.request_json(
-        "/api/datasources/%s" % datasource_id,
+        "/api/datasources/uid/%s" % datasource_uid,
         method="DELETE",
     )
     return {"action": "deleted", "target": target, "response": response}

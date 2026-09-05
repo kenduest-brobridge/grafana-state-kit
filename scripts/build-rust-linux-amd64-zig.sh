@@ -12,7 +12,6 @@ RUST_RELEASE_RUSTFLAGS="${RUST_RELEASE_RUSTFLAGS:--C debuginfo=0}"
 ZIG_BUILD_EXTRA_RUSTFLAGS="${ZIG_BUILD_EXTRA_RUSTFLAGS:--C codegen-units=1}"
 BUILD_RUSTFLAGS="${RUSTFLAGS:+${RUSTFLAGS} }${RUST_RELEASE_RUSTFLAGS} ${ZIG_BUILD_EXTRA_RUSTFLAGS}"
 VERBOSE="${VERBOSE:-0}"
-BUILD_BROWSER="${BUILD_BROWSER:-0}"
 ZIG_RELEASE_LTO="${ZIG_RELEASE_LTO:-off}"
 
 export PATH="${HOME}/.cargo/bin:/opt/homebrew/opt/rustup/bin:${PATH}"
@@ -54,21 +53,7 @@ configure_zig_cache() {
 }
 
 resolve_output_dir() {
-  if [[ "${BUILD_BROWSER}" != "0" ]]; then
-    printf '%s\n' "${REPO_ROOT}/dist/linux-amd64-browser"
-    return 0
-  fi
-
   printf '%s\n' "${REPO_ROOT}/dist/linux-amd64"
-}
-
-build_flavor_label() {
-  if [[ "${BUILD_BROWSER}" != "0" ]]; then
-    printf '%s\n' "browser-enabled"
-    return 0
-  fi
-
-  printf '%s\n' "default"
 }
 
 configure_archive_tool() {
@@ -99,10 +84,6 @@ run_zigbuild() {
     cargo_args=(-vv "${cargo_args[@]}")
   fi
 
-  if [[ "${BUILD_BROWSER}" != "0" ]]; then
-    cargo_args+=(--features browser)
-  fi
-
   (
     cd "${RUST_DIR}"
     CARGO_PROFILE_RELEASE_LTO="${ZIG_RELEASE_LTO}" \
@@ -122,15 +103,13 @@ copy_artifact() {
 
 print_summary() {
   local output_dir="$1"
-  local flavor_label="$2"
 
-  echo "Built Linux amd64 ${flavor_label} Rust binary with zig:"
+  echo "Built Linux amd64 Rust binary with zig:"
   echo "  ${output_dir}/${BINARY_NAME}"
 }
 
 main() {
   local output_dir
-  local flavor_label
 
   require_tool "zig" "non-Docker Linux amd64 Rust builds"
   require_tool "rustup" "non-Docker Linux amd64 Rust builds"
@@ -138,13 +117,12 @@ main() {
   require_rust_target
 
   output_dir="$(resolve_output_dir)"
-  flavor_label="$(build_flavor_label)"
 
   configure_zig_cache
   configure_archive_tool
   run_zigbuild
   copy_artifact "${output_dir}"
-  print_summary "${output_dir}" "${flavor_label}"
+  print_summary "${output_dir}"
 }
 
 main "$@"

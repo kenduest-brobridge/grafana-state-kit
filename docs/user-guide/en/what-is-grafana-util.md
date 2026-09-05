@@ -70,7 +70,7 @@ These tools can overlap. The useful question is which working style you need fir
 | :--- | :--- | :--- |
 | Readiness and health checks | `status live` / `status staged` | Check whether live or staged state is healthy enough to move forward |
 | Estate-wide overview | `status overview` | Get a fast picture of the Grafana estate and decide where to drill in next |
-| Dashboard operations | `dashboard` | Browse, list, export/import, diff, review, patch, summary, dependencies, policy, screenshot, and raw-to-prompt conversion |
+| Dashboard operations | `dashboard` | Browse, list, export/import, diff, review, patch, summary, dependencies, policy, and raw-to-prompt conversion |
 | Data source operations | `datasource` | Inventory, export, import, diff, mutation, and recovery for data sources |
 | Alert governance | `alert` | Alert rules, notification routing, contact points, and plan/apply workflows |
 | Identity and access | `access` | Manage orgs, users, teams, service accounts, and tokens |
@@ -84,7 +84,7 @@ If all you need is “where do I start?”, use this table first, then move into
 Keep the README and handbook home pages short. Show the lanes people reach for first, then leave the deeper command tree in the docs index.
 
 - Show on the README/home page: `status live`, `status overview`, `export dashboard|alert|datasource`, `workspace scan/test/preview/apply`, `config profile`, `dashboard browse/list/export/import/diff/review/patch/summary/dependencies/policy`, `alert`, `datasource`, and `access`.
-- Keep in the docs index and per-command pages: `dashboard get/clone/serve/edit-live/delete/history/variables/impact/screenshot/convert raw-to-prompt`, `datasource browse/types/list/add/modify/delete`, `snapshot`, `resource`, and the compatibility alias pages.
+- Keep in the docs index and per-command pages: `dashboard get/clone/serve/edit-live/delete/history/variables/impact/convert raw-to-prompt`, `datasource browse/types/list/add/modify/delete`, `snapshot`, `resource`, and the compatibility alias pages.
 
 ---
 

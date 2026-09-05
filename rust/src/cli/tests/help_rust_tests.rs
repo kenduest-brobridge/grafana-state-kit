@@ -341,7 +341,7 @@ fn dashboard_help_uses_flat_paths_and_short_help() {
     assert!(help.contains("Export & Import:"));
     assert!(help.contains("Review & Diff:"));
     assert!(help.contains("Edit & Publish:"));
-    assert!(help.contains("Operate & Capture:"));
+    assert!(!help.contains("Operate & Capture:"));
     assert!(help.contains("browse"));
     assert!(help.contains("variables"));
     assert!(help.contains("get"));
@@ -357,7 +357,7 @@ fn dashboard_help_uses_flat_paths_and_short_help() {
     assert!(help.contains("dependencies"));
     assert!(help.contains("impact"));
     assert!(help.contains("policy"));
-    assert!(help.contains("screenshot"));
+    assert!(!help.contains("screenshot"));
     assert!(!help.contains("live         browse, list, vars, fetch, clone, edit, delete, history"));
     assert!(!help.contains("draft        review, patch, serve, publish"));
     assert!(!help.contains("sync         export, import, diff, convert"));
@@ -738,7 +738,7 @@ fn dashboard_short_help_uses_flat_paths_only() {
     assert!(help.contains("Export & Import:"));
     assert!(help.contains("Review & Diff:"));
     assert!(help.contains("Edit & Publish:"));
-    assert!(help.contains("Operate & Capture:"));
+    assert!(!help.contains("Operate & Capture:"));
     assert!(help.contains("browse"));
     assert!(help.contains("variables"));
     assert!(help.contains("get"));
@@ -757,7 +757,7 @@ fn dashboard_short_help_uses_flat_paths_only() {
     assert!(help.contains("dependencies"));
     assert!(help.contains("impact"));
     assert!(help.contains("policy"));
-    assert!(help.contains("screenshot"));
+    assert!(!help.contains("screenshot"));
     assert_eq!(help.matches("\n  get").count(), 1);
     assert!(!help.contains("live         browse, list, vars, fetch, clone, edit, delete, history"));
     assert!(!help.contains("draft        review, patch, serve, publish"));

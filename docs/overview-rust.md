@@ -65,7 +65,7 @@ execution plans、gap lists、或 progress snapshots，改到 `docs/internal/arc
 
 - `rust/src/commands/dashboard/mod.rs`
   - 導出 dashboard 的 parser 型別、client helper、runner、以及 `rust/src/commands/dashboard/` 子模組共用型別。
-  - `run_dashboard_cli` 是核心 runtime 執行入口：normalize、建 client、分派到 export/import/diff/inspect/list/topology/impact/governance/screenshot/validate/vars 的子流程。
+  - `run_dashboard_cli` 是核心 runtime 執行入口：normalize、建 client、分派到 export/import/diff/inspect/list/topology/impact/governance/validate/vars 的子流程。
   - inspect 的 query extraction 與 query analysis helper 主要落在 `inspect_query.rs`，live inspect 的 command 路由與 TUI 分工則分別落在 `inspect_live.rs` 與 `inspect_live_tui.rs`。
   - `run_dashboard_cli_with_client` 提供已有 client 的測試/整合替代路徑。
   - `dashboard export` 的 raw metadata contract 會備份 `permissions.json`，但 `dashboard import` 目前仍忽略權限 bundle，只還原 dashboard/folder 與既有 raw inventory。
@@ -140,7 +140,7 @@ execution plans、gap lists、或 progress snapshots，改到 `docs/internal/arc
 
 ### 2.4 Domain 子模組（實作重點）
 
-- `rust/src/commands/dashboard/`：`cli_defs`, `export`, `files`, `governance_gate`, `governance_gate_tui`, `help`, `impact_tui`, `import`, `inspect`, `inspect_analyzer_*`, `inspect_governance`, `inspect_live`, `inspect_live_tui`, `inspect_query`, `inspect_render`, `inspect_report`, `inspect_summary`, `list`, `live`, `models`, `prompt`, `screenshot`, `topology`, `topology_tui`, `validate`, `vars`；typed inspect summary/report contract surfaces are split across `inspect_summary.rs` and `inspect_report.rs`.
+- `rust/src/commands/dashboard/`：`cli_defs`, `export`, `files`, `governance_gate`, `governance_gate_tui`, `help`, `impact_tui`, `import`, `inspect`, `inspect_analyzer_*`, `inspect_governance`, `inspect_live`, `inspect_live_tui`, `inspect_query`, `inspect_render`, `inspect_report`, `inspect_summary`, `list`, `live`, `models`, `prompt`, `topology`, `topology_tui`, `validate`, `vars`；typed inspect summary/report contract surfaces are split across `inspect_summary.rs` and `inspect_report.rs`.
 - `rust/src/commands/alert/`：`cli`, `client`, `list`, `export`, `diff`, `import_diff`, `project_status`, `support`, `sync`。
 - `rust/src/commands/access/`：`cli_defs`, `org`, `pending_delete`, `render`, `service_account`, `team`, `user`。
 - `rust/src/commands/sync/`：`audit`, `audit_tui`, `bundle_alert_contracts`, `bundle_inputs`, `bundle_preflight`, `cli`, `json`, `live`, `preflight`, `review_tui`, `staged_documents`, `workbench`；typed apply/live contract boundaries are split across `live.rs`, `staged_documents.rs`, and `workbench.rs`.

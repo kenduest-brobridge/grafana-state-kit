@@ -1024,16 +1024,13 @@ fn datasource_resource_client_crud_requests() {
     let updated = datasource
         .update_datasource_by_uid(
             "prom-main",
-            Some("7"),
             &serde_json::json!({"uid":"prom-main","name":"Prometheus Updated"})
                 .as_object()
                 .unwrap()
                 .clone(),
         )
         .unwrap();
-    let deleted = datasource
-        .delete_datasource_by_uid("prom-main", Some("7"))
-        .unwrap();
+    let deleted = datasource.delete_datasource_by_uid("prom-main").unwrap();
 
     handle.join().unwrap();
 
@@ -1049,45 +1046,47 @@ fn datasource_resource_client_crud_requests() {
 }
 
 #[test]
-fn datasource_resource_client_falls_back_to_id_when_uid_write_endpoint_is_missing() {
-    let responses = vec![
-        http_response("404 Not Found", r#"{"message":"Not found"}"#),
-        http_response(
-            "200 OK",
-            r#"{"uid":"prom-main","name":"Prometheus Updated"}"#,
-        ),
-        http_response("404 Not Found", r#"{"message":"Not found"}"#),
-        http_response("200 OK", r#"{"status":"deleted"}"#),
-    ];
+fn datasource_resource_client_propagates_uid_update_error_without_id_fallback() {
+    let responses = vec![http_response("404 Not Found", r#"{"message":"Not found"}"#)];
     let (base_url, requests, handle) = sequence_server_or_skip!(responses);
     let api = build_test_api(base_url);
     let datasource = DatasourceResourceClient::new(api.http_client());
 
-    let updated = datasource
+    let error = datasource
         .update_datasource_by_uid(
             "prom-main",
-            Some("7"),
             &serde_json::json!({"uid":"prom-main","name":"Prometheus Updated"})
                 .as_object()
                 .unwrap()
                 .clone(),
         )
-        .unwrap();
-    let deleted = datasource
-        .delete_datasource_by_uid("prom-main", Some("7"))
-        .unwrap();
+        .expect_err("UID update failure must propagate");
 
     handle.join().unwrap();
 
-    assert_eq!(updated["name"], "Prometheus Updated");
-    assert_eq!(deleted["status"], "deleted");
-
+    assert_eq!(error.status_code(), Some(404));
     let requests = requests.lock().unwrap().clone();
-    assert_eq!(requests.len(), 4);
+    assert_eq!(requests.len(), 1);
     assert!(requests[0].starts_with("PUT /api/datasources/uid/prom-main "));
-    assert!(requests[1].starts_with("PUT /api/datasources/7 "));
-    assert!(requests[2].starts_with("DELETE /api/datasources/uid/prom-main "));
-    assert!(requests[3].starts_with("DELETE /api/datasources/7 "));
+}
+
+#[test]
+fn datasource_resource_client_propagates_uid_delete_error_without_id_fallback() {
+    let responses = vec![http_response("404 Not Found", r#"{"message":"Not found"}"#)];
+    let (base_url, requests, handle) = sequence_server_or_skip!(responses);
+    let api = build_test_api(base_url);
+    let datasource = DatasourceResourceClient::new(api.http_client());
+
+    let error = datasource
+        .delete_datasource_by_uid("prom-main")
+        .expect_err("UID delete failure must propagate");
+
+    handle.join().unwrap();
+
+    assert_eq!(error.status_code(), Some(404));
+    let requests = requests.lock().unwrap().clone();
+    assert_eq!(requests.len(), 1);
+    assert!(requests[0].starts_with("DELETE /api/datasources/uid/prom-main "));
 }
 
 #[test]

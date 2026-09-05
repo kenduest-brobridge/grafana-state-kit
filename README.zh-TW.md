@@ -44,11 +44,15 @@ Grafana 本身對 Dashboard Developer、SRE 或內部使用者來說，還沒有
 
 CLI 主要圍繞這幾個指令家族：`status`、`workspace`、`dashboard`、`datasource`、`alert`、`access`、`config profile`。工作流程脈絡請看 handbook，精確語法請看 command reference。
 
+## Grafana 版本支援
+
+`grafana-util` 支援 Grafana **12.0+**。相容性矩陣涵蓋 Grafana 12.0 下限、目前已發布的 Grafana 12，以及目前已發布的 Grafana 13。只有 HTTP `404` 才表示支援版本中可選 API 不可用；驗證、授權、格式錯誤回應與伺服器錯誤仍會明確回報為錯誤。
+
 支援的 Grafana 面向：
 
 | 面向 | 目前涵蓋 | 建議先跑 |
 | :--- | :--- | :--- |
-| Dashboards | 瀏覽、列表、匯出/匯入、比對、審查、修補、發布、歷史版本、相依性分析、政策檢查、截圖、面板轉換成不同環境再次匯入支援。 | `grafana-util dashboard browse` |
+| Dashboards | 瀏覽、列表、匯出/匯入、比對、審查、修補、發布、歷史版本、相依性分析、政策檢查、面板轉換成不同環境再次匯入支援。 | `grafana-util dashboard browse` |
 | Datasources | 盤點、匯出/匯入、比對、建立/修改/刪除、密鑰感知復原、類型探索。 | `grafana-util datasource list` |
 | Alerting | 規則、contact points、mute timings、templates、notification routes、審查計畫、套用流程、route 預覽。 | `grafana-util alert plan` |
 | Access | org、user、team、service accounts、service-account tokens、匯出/匯入、比對、刪除前審查。 | `grafana-util access user list` |
@@ -109,7 +113,7 @@ make install-local-interactive
 
 - **Releases**：[GitHub releases](https://github.com/kenduest-brobridge/grafana-state-kit/releases)
 - **最新與固定版本**：`VERSION=latest` 會跟著 repository 當下最新 published 的 GitHub release；若需要固定 installer 與固定 asset 版本，請直接抓同一個 release tag 路徑下的 `scripts/install.sh`
-- **執行檔**：標準版提供 `linux-amd64` 與 `macos-arm64`；需要截圖功能請選 `*-browser-*`
+- **執行檔**：提供 `linux-amd64` 與 `macos-arm64`
 - **預設路徑**：優先 `/usr/local/bin`，否則改用 `$HOME/.local/bin`
 - **Completion**：設定 `INSTALL_COMPLETION=auto`、`INSTALL_COMPLETION=bash` 或 `INSTALL_COMPLETION=zsh`，即可用下載後的 binary 產生並安裝 completion
 - **互動安裝**：pipe 後使用 `sh -s -- --interactive`，即可依提示選擇安裝目錄與 completion 設定；Zsh 安裝也可以協助更新 `~/.zshrc`，讓 `~/.zfunc` 在 `compinit` 前載入

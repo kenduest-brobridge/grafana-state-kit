@@ -18,7 +18,7 @@
             { "label": "config", "target": "./config.md", "summary": "repo-local configuration workflows and profile management" },
             { "label": "export", "target": "./export.md", "summary": "common backup and local-inventory capture" },
             { "label": "workspace", "target": "./workspace.md", "summary": "scan, test, preview, package, and apply local Grafana workspaces" },
-            { "label": "dashboard", "target": "./dashboard.md", "summary": "browse, get, clone, export/import, summary, dependencies, policy, and screenshot workflows" },
+            { "label": "dashboard", "target": "./dashboard.md", "summary": "browse, get, clone, export/import, summary, dependencies, and policy workflows" },
             { "label": "alert", "target": "./alert.md", "summary": "alert inventory, authoring, review, and apply workflows" },
             { "label": "datasource", "target": "./datasource.md", "summary": "datasource inventory and lifecycle workflows" },
             { "label": "access", "target": "./access.md", "summary": "user, team, org, and service-account workflows" }

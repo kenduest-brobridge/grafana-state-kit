@@ -1,11 +1,11 @@
 # Dashboard Operator Handbook
 
-This guide is for operators who need to inventory dashboards, export or import them safely, inspect dependencies, capture screenshots, or review drift before a live workspace.
+This guide is for operators who need to inventory dashboards, export or import them safely, inspect dependencies, or review drift before a live workspace.
 
 ## Who It Is For
 
 - SREs and platform engineers responsible for dashboard inventory, promotion, or review.
-- Operators who need screenshots, dependency checks, or export trees before a workspace.
+- Operators who need dependency checks or export trees before a workspace.
 - Teams that want dashboard work to fit into Git, review, and CI flows.
 
 ## Primary Goals
@@ -21,7 +21,7 @@ This guide is for operators who need to inventory dashboards, export or import t
 
 ## What success looks like
 
-- You know whether the current task belongs in inventory, single-dashboard authoring, export/import replay, summary, dependencies, policy, or screenshot.
+- You know whether the current task belongs in inventory, single-dashboard authoring, export/import replay, summary, dependencies, or policy.
 - You can explain which lane you are using before mutating anything.
 - You can prove the dashboard is ready to replay or publish before you touch live state.
 
@@ -29,7 +29,7 @@ This guide is for operators who need to inventory dashboards, export or import t
 
 - If the export tree is incomplete, fix the source path before replaying.
 - If inspect output shows missing queries or variables, stop and resolve that before import.
-- If you cannot explain what a screenshot or dependencies output is proving, you are probably in the wrong workflow lane.
+- If you cannot explain what a dependencies output is proving, you are probably in the wrong workflow lane.
 
 ## Dashboard Workflow Map
 
@@ -42,10 +42,9 @@ Dashboard subcommands are not a flat feature list. They are organized around dif
 | Publish a draft | `review`, `publish`, `edit-live` | local dashboard JSON | dry-run / publish result | list / get after apply |
 | Back up and replay | `export`, `import`, `diff` | live Grafana or export tree | `raw/`, `prompt/`, `provisioning/` | diff / dry-run / import |
 | Inspect dependencies | `summary`, `dependencies`, `variables`, `policy` | live or local dashboard | query, datasource, variable, policy summary | fix dashboard or datasource |
-| Capture evidence | `screenshot` | live dashboard URL / UID | dashboard or panel screenshot | incident, PR, or docs evidence |
 | Recover history | `history list`, `history export`, `history restore` | dashboard UID and version | history list, version artifact, or new revision | review before restore |
 
-If you only have a dashboard UID, start with `get` or `clone`. If you have an export tree, start with `summary` / `diff`, not `import`. Use `prompt/` or screenshots for human handoff; use `raw/` for replay and audit.
+If you only have a dashboard UID, start with `get` or `clone`. If you have an export tree, start with `summary` / `diff`, not `import`. Use `prompt/` for human handoff; use `raw/` for replay and audit.
 
 ## Draft authoring workflow
 
@@ -110,27 +109,23 @@ Use the dashboard area for estate-level governance:
 - **Inventory**: Understand what exists across one or many organizations.
 - **Structured Export**: Move dashboards between environments with dedicated "lanes".
 - **Deep Inspection**: Inspect queries and datasource dependencies offline.
-- **Screenshots and visual checks**: Produce reproducible dashboard or panel captures for docs, incident notes, and debugging.
 - **Drift Review**: Compare staged files against live Grafana before applying.
 - **Controlled Mutation**: Import or delete dashboards with mandatory dry-runs.
 
 ---
 
-## 🔎 Inspection and screenshot workflows
+## 🔎 Inspection workflows
 
 If your goal is not export or import, but understanding what a dashboard currently looks like, which dependencies it carries, and how variables resolve, start here.
 
 - `dashboard summary`: review live dashboard structure, queries, and dependencies.
 - `dashboard dependencies`: review an exported dashboard tree offline.
 - `dashboard variables`: verify variables, datasource choices, and URL-scoped inputs.
-- `dashboard screenshot`: generate a reproducible dashboard or panel capture with a headless browser.
 - `dashboard dependencies`: trace the dashboard's upstream relationships at a glance.
 
 Common cases:
 
-- attaching a screenshot to an incident or runbook
 - checking whether one panel resolves the intended variables and datasources
-- producing docs or review captures without manual screenshots
 - reviewing query/dependency structure before making changes
 
 ---
@@ -210,7 +205,7 @@ spring-jmx-node-unified  Spring JMX + Node Unified Dashboard (VM)  Demo    ffhrm
 
 ## Inventory and Get: Confirm the Target First
 
-Dashboard work often starts from a fuzzy clue: a screen, a folder, a team name, or a screenshot left in an incident. Do not start by exporting the whole estate or publishing a local file. First identify the dashboard UID, folder, org, and title.
+Dashboard work often starts from a fuzzy clue: a screen, a folder, a team name, or an incident note. Do not start by exporting the whole estate or publishing a local file. First identify the dashboard UID, folder, org, and title.
 
 Use `dashboard browse` when the folder view matters, `dashboard list` when you need sortable inventory, and `dashboard get` when you need the full JSON for one UID. Once you know the target, decide whether to `clone` it into a draft, `export` it into the replay lane, or use `summary` / `dependencies` for impact review.
 
@@ -234,11 +229,11 @@ For Git Sync-owned folders, keep the dashboard JSON in the synced repository and
 
 Use `dashboard publish --dry-run` before PRs or manual change windows. Use `--watch` while iterating on the same local draft. After publishing, verify live state with `dashboard get` or `dashboard list` instead of trusting only the publish output.
 
-## Analysis and Evidence
+## Analysis
 
-`dashboard summary`, `dependencies`, `variables`, `policy`, and `screenshot` are not side features. They answer common review questions: which datasources does this dashboard query, do variables change query behavior, does policy allow production promotion, and is there visual evidence suitable for an incident or PR?
+`dashboard summary`, `dependencies`, `variables`, and `policy` are not side features. They answer common review questions: which datasources does this dashboard query, do variables change query behavior, and does policy allow production promotion?
 
-When the review question is structural, start with `summary`, `variables`, and `dependencies`. When the review question needs a human-readable artifact, use `screenshot`. A screenshot does not replace structural review, and structural review does not replace a visual artifact when one is required.
+When the review question is structural, start with `summary`, `variables`, and `dependencies` before making a change.
 
 ## When To Use Command Reference
 
@@ -265,7 +260,6 @@ This chapter helps you choose the workflow. Once you know which command you need
 - [dashboard history](../../commands/en/dashboard-history.md)
 - [dashboard policy](../../commands/en/dashboard-policy.md)
 - [dashboard dependencies](../../commands/en/dashboard-dependencies.md)
-- [dashboard screenshot](../../commands/en/dashboard-screenshot.md)
 - [full command index](../../commands/en/index.md)
 
 ---

@@ -131,7 +131,7 @@ class GrafanaDatasourceClient:
             raise GrafanaError("Unexpected datasource create response from Grafana.")
         return data
 
-    def delete_datasource(self, datasource_id: Any) -> dict[str, Any]:
+    def delete_datasource(self, datasource_uid: Any) -> dict[str, Any]:
         # Purpose: implementation note.
         # Args: see function signature.
         # Returns: see implementation.
@@ -141,13 +141,13 @@ class GrafanaDatasourceClient:
         #   Downstream callees: 51
 
         data = self.request_json(
-            "/api/datasources/%s" % parse.quote(str(datasource_id), safe=""),
+            "/api/datasources/uid/%s" % parse.quote(str(datasource_uid), safe=""),
             method="DELETE",
         )
         if not isinstance(data, dict):
             raise GrafanaError(
-                "Unexpected datasource delete response for Grafana datasource %s."
-                % datasource_id
+                "Unexpected datasource delete response for Grafana datasource UID %s."
+                % datasource_uid
             )
         return data
 

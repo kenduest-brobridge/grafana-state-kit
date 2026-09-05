@@ -34,6 +34,5 @@ grafana-util dashboard variables --input ./dashboards/raw/cpu-main.json --output
 ```
 
 ## 相關指令
-- [dashboard screenshot](./dashboard-screenshot.md)
 - [dashboard summary](./dashboard-summary.md)
 - [dashboard browse](./dashboard-browse.md)

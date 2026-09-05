@@ -38,15 +38,13 @@ When a reader asks for something like `alert list-rules` user guidance, add or i
 
 ## Supported Rust Feature Matrix
 
-Generated docs checks validate the maintained Rust release surfaces only:
-default features and `--features browser`.
-`--no-default-features` is not a supported release surface, so do not describe it
-as a lean operator artifact in generated docs or examples unless the TUI feature
-boundary is completed first.
+Generated docs checks validate the maintained Rust default release surface.
+`--no-default-features` compiles as a supported verification surface, but is
+not a separately packaged operator artifact; generated docs and examples must
+describe the default TUI-enabled CLI.
 
 Use `make quality-rust-feature-matrix` when changing Cargo features, release
-artifact wording, browser support, or generated docs that mention Rust feature
-support.
+artifact wording, or generated docs that mention Rust feature support.
 
 ## Standard Validation Loop
 
@@ -266,17 +264,17 @@ Do not patch one generator around the parser unless the behavior is truly output
 
 Supported Rust feature matrix:
 
-- default features: TUI-enabled CLI, without browser screenshot dependencies
-- `--features browser`: default surface plus browser screenshot support
+- default features: TUI-enabled CLI
 
-`--no-default-features` is not a supported release surface. Do not describe it
-as a lean artifact in generated docs, command docs, or maintainer notes unless
-the Rust feature boundary has first been made compile-clean and test-clean.
+`--no-default-features` compiles as a supported verification surface. Do not
+describe it as a separately packaged operator artifact in generated docs,
+command docs, or maintainer notes; the supported release is the default
+TUI-enabled CLI.
 
 Process:
 
 1. update the Cargo feature policy and release artifact wording together
-2. run `make quality-rust-feature-matrix` for supported default/browser checks
+2. run `make quality-rust-feature-matrix` for the supported default check
 3. run `make quality-architecture` so docs policy drift is caught
 4. regenerate docs only when public docs or generated output source changed
 

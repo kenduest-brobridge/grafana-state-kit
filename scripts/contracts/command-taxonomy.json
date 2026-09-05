@@ -15,8 +15,8 @@
   },
   "audience_hints_by_root": {
     "dashboard": {
-      "en": "Best for SREs, Grafana operators, and responders working with dashboard inventory, inspection, export, policy, or screenshots.",
-      "zh-TW": "適合 SRE、Grafana 維運人員，以及要處理 dashboard 盤點、檢查、匯出、政策或截圖的人。"
+      "en": "Best for SREs, Grafana operators, and responders working with dashboard inventory, inspection, export, or policy.",
+      "zh-TW": "適合 SRE、Grafana 維運人員，以及要處理 dashboard 盤點、檢查、匯出或政策的人。"
     },
     "datasource": {
       "en": "Best for operators who manage Grafana data source configuration, dependency checks, and recovery paths.",

@@ -805,22 +805,6 @@ class ExporterTests(unittest.TestCase):
         self.assertIn("Target Options", help_text)
         self.assertIn("Output Options", help_text)
 
-    def test_dashboard_screenshot_help_includes_examples_and_grouped_sections(self):
-        stream = io.StringIO()
-
-        with redirect_stdout(stream):
-            with self.assertRaises(SystemExit):
-                exporter.parse_args(["screenshot", "-h"])
-
-        help_text = stream.getvalue()
-        self.assertIn("Examples:", help_text)
-        self.assertIn("grafana-util dashboard screenshot", help_text)
-        self.assertIn("Target Options", help_text)
-        self.assertIn("State Options", help_text)
-        self.assertIn("Rendering Options", help_text)
-        self.assertIn("Output Options", help_text)
-        self.assertIn("Header Options", help_text)
-
     def test_dashboard_governance_gate_help_includes_examples(self):
         stream = io.StringIO()
 
@@ -2365,6 +2349,10 @@ class ExporterTests(unittest.TestCase):
     def test_dashboard_parse_args_rejects_old_list_subcommand_name(self):
         with self.assertRaises(SystemExit):
             exporter.parse_args(["list-dashboard"])
+
+    def test_dashboard_parse_args_rejects_retired_screenshot_subcommand(self):
+        with self.assertRaises(SystemExit):
+            exporter.parse_args(["screenshot", "--output", "capture.png"])
 
     def test_dashboard_build_json_http_transport_defaults_to_requests(self):
         transport = exporter.build_json_http_transport(

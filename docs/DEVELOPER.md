@@ -111,6 +111,21 @@ Keep the doc families separate:
 If a change starts crossing those boundaries, use
 `docs/internal/docs-architecture-guardrails.md`.
 
+## Grafana Compatibility Contract
+
+The maintained compatibility floor is **Grafana 12.0+**. Public workflows must
+remain usable on released Grafana 12 and 13 images; do not make a feature
+Grafana-13-only without an explicitly documented replacement for Grafana 12.
+
+Optional Grafana APIs are discovered by capability. Treat an HTTP `404` as
+"capability unavailable" only. Authentication and authorization failures,
+malformed responses, and server errors are operational failures and must not be
+silently downgraded to an unavailable capability.
+
+The maintained image matrix and the operator-facing version statement live in
+the top-level `Makefile` and `README.md`; run the matching live targets when a
+change crosses a Grafana API boundary.
+
 ## Validation Defaults
 
 Prefer repo-owned commands over ad hoc one-offs.

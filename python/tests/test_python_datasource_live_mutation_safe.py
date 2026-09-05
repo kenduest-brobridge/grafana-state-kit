@@ -103,7 +103,7 @@ class DatasourceLiveMutationSafeTests(unittest.TestCase):
         result = safe_mutation.delete_datasource(client, uid="prom-main")
 
         self.assertEqual(result["action"], "deleted")
-        self.assertEqual(client.calls, [("delete", 7)])
+        self.assertEqual(client.calls, [("delete", "prom-main")])
 
     def test_datasource_live_mutation_delete_datasource_surfaces_specific_mismatch_action(
         self,

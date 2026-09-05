@@ -2272,6 +2272,74 @@ class SyncCliTests(unittest.TestCase):
                 )
             )
 
+    def test_sync_apply_datasource_update_uses_uid_route(self):
+        client = FakeSyncGrafanaClient(
+            datasources=[
+                {
+                    "id": 7,
+                    "uid": "prom-main",
+                    "name": "Prometheus Main",
+                    "type": "prometheus",
+                    "access": "proxy",
+                    "url": "http://prometheus:9090",
+                }
+            ]
+        )
+        operation = sync_cli.SyncOperation(
+            kind="datasource",
+            identity="prom-main",
+            title="Prometheus Main",
+            action="would-update",
+            reason="changed-live",
+            changed_fields=("url",),
+            managed_fields=("url",),
+            desired={"type": "prometheus", "url": "http://prometheus-v2:9090"},
+            live=None,
+            source_path="datasources/prom-main.json",
+        )
+
+        sync_cli._apply_datasource_operation(client, operation)
+
+        request = [
+            item
+            for item in client.calls
+            if item["kind"] == "request" and item["method"] == "PUT"
+        ][0]
+        self.assertEqual(request["path"], "/api/datasources/uid/prom-main")
+
+    def test_sync_apply_datasource_delete_uses_uid_route(self):
+        client = FakeSyncGrafanaClient(
+            datasources=[
+                {
+                    "id": 7,
+                    "uid": "prom-main",
+                    "name": "Prometheus Main",
+                    "type": "prometheus",
+                }
+            ]
+        )
+        operation = sync_cli.SyncOperation(
+            kind="datasource",
+            identity="prom-main",
+            title="Prometheus Main",
+            action="would-delete",
+            reason="missing-desired",
+            changed_fields=(),
+            managed_fields=(),
+            desired={},
+            live=None,
+            source_path="datasources/prom-main.json",
+        )
+
+        sync_cli._apply_datasource_operation(client, operation)
+
+        request = [
+            item
+            for item in client.calls
+            if item["kind"] == "request" and item["method"] == "DELETE"
+        ][0]
+        self.assertEqual(request["path"], "/api/datasources/uid/prom-main")
+
     def test_sync_apply_execute_live_creates_alert_rule(self):
         reviewed_document = {
             "kind": "grafana-utils-sync-plan",

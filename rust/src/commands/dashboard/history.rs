@@ -34,8 +34,7 @@ pub use super::cli_defs::{
     HistoryOutputFormat, HistoryRestoreArgs, ImpactArgs, ImpactOutputFormat, ImportArgs,
     InspectExportArgs, InspectExportInputType, InspectExportReportFormat, InspectLiveArgs,
     InspectOutputFormat, InspectVarsArgs, ListArgs, PatchFileArgs, PublishArgs, RawToPromptArgs,
-    RawToPromptLogFormat, RawToPromptOutputFormat, RawToPromptResolution, ReviewArgs,
-    ScreenshotArgs, ScreenshotFullPageOutput, ScreenshotOutputFormat, ScreenshotTheme, ServeArgs,
+    RawToPromptLogFormat, RawToPromptOutputFormat, RawToPromptResolution, ReviewArgs, ServeArgs,
     SimpleOutputFormat, SummaryArgs, TopologyArgs, TopologyOutputFormat, ValidateExportArgs,
     ValidationOutputFormat,
 };
@@ -97,7 +96,6 @@ pub(crate) use super::models::{
 };
 pub(crate) use super::project_status::build_dashboard_domain_status;
 pub(crate) use super::raw_to_prompt::run_raw_to_prompt;
-pub use super::screenshot::capture_dashboard_screenshot;
 pub(crate) use super::source_loader::{
     infer_dashboard_workspace_root, load_dashboard_source, resolve_dashboard_workspace_variant_dir,
     LoadedDashboardSource,

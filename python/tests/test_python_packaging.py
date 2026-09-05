@@ -12,6 +12,9 @@ POETRY_LOCK_PATH = PYTHON_ROOT / "poetry.lock"
 SET_VERSION_SCRIPT_PATH = REPO_ROOT / "scripts" / "set-version.sh"
 BUILD_RUST_MACOS_ARM64_SCRIPT_PATH = REPO_ROOT / "scripts" / "build-rust-macos-arm64.sh"
 VERSION_PATH = REPO_ROOT / "VERSION"
+DEVELOPER_GUIDE_PATH = REPO_ROOT / "docs" / "DEVELOPER.md"
+RUST_LIVE_SMOKE_PATH = REPO_ROOT / "scripts" / "test-rust-live-grafana.sh"
+PYTHON_DATASOURCE_LIVE_SMOKE_PATH = REPO_ROOT / "scripts" / "test-python-datasource-live-grafana.sh"
 
 
 class PackagingTests(unittest.TestCase):
@@ -105,6 +108,60 @@ class PackagingTests(unittest.TestCase):
             content,
         )
         self.assertIn('codesign --force --sign - "${OUTPUT_DIR}/grafana-util"', content)
+
+    def test_compatibility_matrix_uses_pinned_released_grafana_images(self):
+        makefile = MAKEFILE_PATH.read_text(encoding="utf-8")
+        workflow = CI_WORKFLOW_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("GRAFANA_12_FLOOR_IMAGE ?= grafana/grafana:12.0.10", makefile)
+        self.assertIn("GRAFANA_12_CURRENT_IMAGE ?= grafana/grafana:12.4.9", makefile)
+        self.assertIn("GRAFANA_13_CURRENT_IMAGE ?= grafana/grafana:13.2.0", makefile)
+        self.assertIn("test-rust-live-12-floor:", makefile)
+        self.assertIn("test-rust-live-12-current:", makefile)
+        self.assertIn("test-rust-live-13-current:", makefile)
+        self.assertIn("test-python-datasource-live-12-floor:", makefile)
+        self.assertIn("test-python-datasource-live-13-current:", makefile)
+        self.assertIn("bash ./scripts/test-python-datasource-live-grafana.sh", makefile)
+        self.assertIn("poetry run python -m grafana_utils datasource", PYTHON_DATASOURCE_LIVE_SMOKE_PATH.read_text(encoding="utf-8"))
+        self.assertIn("rust-live-compatibility:", workflow)
+        self.assertIn("python-datasource-live-compatibility:", workflow)
+        self.assertIn("bash ./scripts/test-python-datasource-live-grafana.sh", workflow)
+        self.assertIn("grafana/grafana:12.0.10", workflow)
+        self.assertIn("grafana/grafana:12.4.9", workflow)
+        self.assertIn("grafana/grafana:13.2.0", workflow)
+
+    def test_developer_guide_declares_grafana_12_compatibility_floor(self):
+        content = DEVELOPER_GUIDE_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("Grafana 12.0+", content)
+        self.assertIn("404", content)
+        self.assertIn("capability", content.lower())
+
+    def test_rust_feature_matrix_probes_no_default_features_as_a_verification_surface(self):
+        content = (REPO_ROOT / "scripts" / "check_rust_feature_matrix.py").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("no-default-features verification check: ok", content)
+        self.assertNotIn("probe unexpectedly succeeded", content)
+
+    def test_grafana_13_org_delete_regression_is_scoped_to_missing_org_matrix_cases(self):
+        content = RUST_LIVE_SMOKE_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("ORG_DELETE_UNAVAILABLE", content)
+        self.assertIn("Grafana 13 organization deletion regression", content)
+        self.assertIn("skip access org delete/replay smoke", content)
+        self.assertIn("skip missing-org datasource matrix", content)
+        self.assertIn("skip missing-org dashboard matrix", content)
+        self.assertIn('if [[ "${ORG_DELETE_UNAVAILABLE}" -eq 1 ]]; then', content)
+        self.assertNotIn(
+            'if [[ "${GRAFANA_VERSION}" == 13.* ]]; then\n'
+            "    printf '%s\\n' 'Grafana 13 organization deletion regression: skip access org delete/replay smoke.'",
+            content,
+        )
+        python_content = PYTHON_DATASOURCE_LIVE_SMOKE_PATH.read_text(encoding="utf-8")
+        self.assertIn("ORG_DELETE_UNAVAILABLE", python_content)
+        self.assertIn("skip missing-org datasource matrix", python_content)
 
 
 if __name__ == "__main__":

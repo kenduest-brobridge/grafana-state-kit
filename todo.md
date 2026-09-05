@@ -20,9 +20,9 @@ Last cleaned: 2026-06-20.
 - Release `v0.11.0` is cut at `6ab7ab03`.
 - `dev` and `main` include the post-release Grafana 13 datasource API CI fix at
   `18f6f355`.
-- GitHub Actions `rust-quality` and `rust-live-smoke` were green for
+- GitHub Actions `rust-quality` and the live compatibility smoke were green for
   `18f6f355`.
-- Default Rust builds include `tui`; `browser` remains opt-in.
+- Default Rust builds include `tui`; the browser screenshot feature is retired.
 - `--no-default-features` is not claimed as a supported release artifact.
 - Recent dashboard re-layering reduced the immediate directory-structure risk.
   Do not continue mechanical file splitting unless a fresh boundary review

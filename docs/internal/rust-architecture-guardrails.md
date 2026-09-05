@@ -31,20 +31,18 @@ Keep each layer focused on one job:
 
 ## Supported Rust Feature Matrix
 
-The maintained Rust release surfaces are intentionally narrow:
+The maintained Rust release surface is intentionally narrow:
 
-- default features: TUI-enabled CLI, without browser screenshot dependencies
-- `--features browser`: default surface plus browser screenshot support
+- default features: TUI-enabled CLI
 
-`--no-default-features` is not a supported release surface. It currently
-removes the TUI dependencies while several TUI modules and tests remain part of
-the crate-level test graph, so it must not be advertised as a lean supported
-artifact until the TUI code and tests are split behind a complete feature
-boundary.
+`--no-default-features` compiles as a supported verification surface. The
+published operator artifact remains the default TUI-enabled CLI; do not present
+the no-default build as a separately packaged release variant.
 
 Use `make quality-rust-feature-matrix` when touching Cargo features, release
-artifact policy, browser support, or TUI gating. Use `make quality-architecture`
-for the faster policy drift check that prevents accidental no-default claims.
+artifact policy or TUI gating. Use `make quality-architecture` for the faster
+policy drift check that keeps the default and no-default verification surfaces
+explicit.
 
 ## Anti-Patterns
 

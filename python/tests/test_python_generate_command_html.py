@@ -765,53 +765,21 @@ class GenerateCommandHtmlTests(unittest.TestCase):
         self.assertIn('class="nav-command-leaf-link"', rendered)
         self.assertNotIn('<section class="nav-section"><h2>', rendered)
 
-    def test_render_command_page_includes_intro_panel_from_command_doc_metadata(self):
+    def test_retired_dashboard_screenshot_command_docs_are_absent(self):
         module = load_module()
-        labels = load_script_module("docsite_html_command_pages").command_intro_labels(
-            "en"
-        )
-
         config = module.HtmlBuildConfig(
             source_root=REPO_ROOT,
             command_docs_root=REPO_ROOT / "docs" / "commands",
             handbook_root=REPO_ROOT / "docs" / "user-guide",
             version="9.9.0",
         )
-        source = REPO_ROOT / "docs" / "commands" / "en" / "dashboard-screenshot.md"
 
-        rendered = module.render_command_page(
-            "en", source, "commands/en/dashboard-screenshot.html", config
+        self.assertFalse(
+            (config.command_docs_root / "en" / "dashboard-screenshot.md").exists()
         )
-
-        self.assertIn(labels["what"], rendered)
-        self.assertIn(labels["when"], rendered)
-        self.assertIn(labels["who"], rendered)
-        self.assertIn(
-            "Open one dashboard in a headless browser and capture image or PDF output.",
-            rendered,
+        self.assertFalse(
+            (config.command_docs_root / "zh-TW" / "dashboard-screenshot.md").exists()
         )
-
-    def test_render_command_page_includes_intro_panel_for_zh_tw_command_docs(self):
-        module = load_module()
-        labels = load_script_module("docsite_html_command_pages").command_intro_labels(
-            "zh-TW"
-        )
-
-        config = module.HtmlBuildConfig(
-            source_root=REPO_ROOT,
-            command_docs_root=REPO_ROOT / "docs" / "commands",
-            handbook_root=REPO_ROOT / "docs" / "user-guide",
-            version="9.9.0",
-        )
-        source = REPO_ROOT / "docs" / "commands" / "zh-TW" / "dashboard-screenshot.md"
-
-        rendered = module.render_command_page(
-            "zh-TW", source, "commands/zh-TW/dashboard-screenshot.html", config
-        )
-
-        self.assertIn(labels["what"], rendered)
-        self.assertIn(labels["when"], rendered)
-        self.assertIn(labels["who"], rendered)
 
     def test_render_developer_page_collapses_empty_nav_and_sidebar_sections(self):
         module = load_module()

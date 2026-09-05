@@ -1,13 +1,13 @@
 # dashboard
 
 ## Purpose
-`grafana-util dashboard` is the namespace for dashboard workflows. It keeps dashboard commands flat for fast terminal use, but groups the help and docs by task: browse and inspect, export and import, review and diff, edit and publish, and capture. The same namespace is also available as `grafana-util db`.
+`grafana-util dashboard` is the namespace for dashboard workflows. It keeps dashboard commands flat for fast terminal use, but groups the help and docs by task: browse and inspect, export and import, review and diff, and edit and publish. The same namespace is also available as `grafana-util db`.
 
 ## When to use
 Use this namespace when you need to inspect dashboards, pull one live dashboard into a local draft, compare local files with Grafana, normalize dashboard JSON for UI upload, or publish a prepared dashboard back to Grafana.
 
 ## Description
-Open this page first when the work is about the full dashboard workflow rather than one isolated flag. The `dashboard` namespace brings together the tasks that usually travel together in real operator work: inventory reads, export and backup, review before apply, live summary, dependency checks, policy checks, and reproducible screenshots.
+Open this page first when the work is about the full dashboard workflow rather than one isolated flag. The `dashboard` namespace brings together the tasks that usually travel together in real operator work: inventory reads, export and backup, review before apply, live summary, dependency checks, and policy checks.
 
 If you are an SRE, Grafana operator, or responder, this page should help you decide which dashboard path to open next. If you already know the exact action, jump from here into the matching subcommand page for the concrete flags and examples.
 
@@ -19,7 +19,6 @@ The command path stays flat, such as `grafana-util dashboard list`, so experienc
 - Export & Import: move dashboard artifacts between Grafana, raw JSON, prompt JSON, or provisioning files. Commands: `export`, `import`, `convert raw-to-prompt`.
 - Review & Diff: collect proof, compare state, plan local-vs-live reconciliation, review dependencies, review blast radius, or run governance checks. Commands: `plan`, `diff`, `review`, `summary`, `dependencies`, `impact`, `policy`.
 - Edit & Publish: create or change one local draft, then publish or delete deliberately. Commands: `get`, `clone`, `patch`, `serve`, `edit-live`, `publish`, `delete`.
-- Operate & Capture: capture visual evidence for reports, incidents, or handoff. Commands: `screenshot`.
 
 For single-dashboard authoring, the local draft path is:
 - `dashboard get` or `dashboard clone` to start from one live dashboard
@@ -31,18 +30,18 @@ For single-dashboard authoring, the local draft path is:
 
 `review`, `patch`, and `publish` also accept `--input -` for one wrapped or bare dashboard JSON document from standard input. Use that when an external generator already writes the dashboard JSON to stdout. `patch --input -` requires `--output`, and `publish --watch` is the local-file variant for repeated save-and-preview loops and does not support `--input -`.
 
-Choose this page when the task is dashboard work but you are still deciding whether the next step is to summarize, review, normalize, or capture.
+Choose this page when the task is dashboard work but you are still deciding whether the next step is to summarize, review, or normalize.
 
 ## Before / After
 
-- **Before**: dashboard work is often split across UI browsing, one-off exports, local JSON edits, and ad hoc screenshot or review steps.
-- **After**: the `dashboard` namespace keeps browse, summary, review, normalize, and capture in one place, with grouped help so you can pick the lane first and then jump to the matching flat subcommand.
+- **Before**: dashboard work is often split across UI browsing, one-off exports, local JSON edits, and ad hoc review steps.
+- **After**: the `dashboard` namespace keeps browse, summary, review, and normalize in one place, with grouped help so you can pick the lane first and then jump to the matching flat subcommand.
 
 ## What success looks like
 
-- you can tell whether the task is summarize, review, normalize, or capture before opening a subcommand
+- you can tell whether the task is summarize, review, or normalize before opening a subcommand
 - inventory reads, export/import flows, and review surfaces share the same auth and bundle conventions
-- screenshot and dependency-review paths stay available when you need proof instead of only a final JSON blob
+- dependency-review paths stay available when you need proof instead of only a final JSON blob
 
 ## Failure checks
 
@@ -153,7 +152,3 @@ grafana-util dashboard summary --url http://localhost:3000 --basic-user admin --
 - [dashboard edit-live](./dashboard-edit-live.md)
 - [dashboard publish](./dashboard-publish.md)
 - [dashboard delete](./dashboard-delete.md)
-
-### Operate & Capture
-
-- [dashboard screenshot](./dashboard-screenshot.md)

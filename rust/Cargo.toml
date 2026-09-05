@@ -8,7 +8,6 @@ description = "Rust CLI for reviewing Grafana changes with live inventory, diff,
 [features]
 default = ["tui"]
 tui = ["dep:crossterm", "dep:ratatui"]
-browser = ["dep:font8x8", "dep:headless_chrome", "dep:image"]
 
 [dependencies]
 base64 = "0.22"
@@ -17,9 +16,6 @@ clap = { version = "4.5", features = ["derive"] }
 clap_complete = "4.5"
 crossterm = { version = "0.28", optional = true }
 dialoguer = "0.11"
-font8x8 = { version = "0.3", optional = true }
-headless_chrome = { version = "1", optional = true }
-image = { version = "0.25", default-features = false, features = ["jpeg", "png"], optional = true }
 indicatif = "0.17"
 aes-gcm-siv = "0.11"
 notify = "6"

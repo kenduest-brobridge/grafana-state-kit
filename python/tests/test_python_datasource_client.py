@@ -103,9 +103,11 @@ class DatasourceClientTests(unittest.TestCase):
         self.assertEqual(response["id"], 7)
         self.assertEqual(transport.calls[0]["method"], "POST")
 
-    def test_datasource_client_delete_datasource_issues_delete(self):
+    def test_datasource_client_delete_datasource_issues_uid_delete(self):
         transport = StubTransport(
-            responses={("DELETE", "/api/datasources/7"): {"message": "deleted"}}
+            responses={
+                ("DELETE", "/api/datasources/uid/prom-main"): {"message": "deleted"}
+            }
         )
         client = datasource_client.GrafanaDatasourceClient(
             base_url="http://grafana.example.com",
@@ -115,10 +117,12 @@ class DatasourceClientTests(unittest.TestCase):
             transport=transport,
         )
 
-        response = client.delete_datasource(7)
+        response = client.delete_datasource("prom-main")
 
         self.assertEqual(response["message"], "deleted")
-        self.assertEqual(transport.calls[0]["path"], "/api/datasources/7")
+        self.assertEqual(
+            transport.calls[0]["path"], "/api/datasources/uid/prom-main"
+        )
 
     def test_datasource_client_with_org_id_clones_client_headers(self):
         client = datasource_client.GrafanaDatasourceClient(

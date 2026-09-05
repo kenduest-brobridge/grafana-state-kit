@@ -66,7 +66,6 @@ DASHBOARD_COMMAND_HELP = {
     "policy": "Evaluate dashboard governance policy against inspect artifacts.",
     "dependencies": "Build a deterministic dashboard topology graph from governance artifacts.",
     "impact": "Summarize which dashboards and alerts would be affected by one datasource.",
-    "screenshot": "Capture one Grafana dashboard or panel through a browser backend.",
 }
 UNIFIED_DASHBOARD_COMMAND_MAP = {
     "get": "get",
@@ -91,7 +90,6 @@ UNIFIED_DASHBOARD_COMMAND_MAP = {
     "policy": "policy",
     "dependencies": "dependencies",
     "impact": "impact",
-    "screenshot": "screenshot",
 }
 DATASOURCE_COMMAND_HELP = {
     "types": "Show the built-in supported datasource type catalog.",
@@ -150,8 +148,7 @@ def _print_dashboard_group_help() -> None:
         "  variables          List dashboard templating variables from live Grafana.\n"
         "  policy             Evaluate dashboard governance policy against inspect artifacts.\n"
         "  dependencies       Build a deterministic dashboard topology graph from JSON artifacts.\n"
-        "  impact             Summarize which dashboards and alerts would be affected by one datasource.\n"
-        "  screenshot         Capture one Grafana dashboard or panel through a browser backend."
+        "  impact             Summarize which dashboards and alerts would be affected by one datasource."
     )
 
 

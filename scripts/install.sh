@@ -8,7 +8,6 @@ VERSION="${VERSION:-latest}"
 BIN_DIR="${BIN_DIR:-}"
 ASSET_URL="${ASSET_URL:-}"
 INSTALL_TMPDIR="${TMPDIR:-/tmp}"
-RUST_ARTIFACT_FLAVOR="${RUST_ARTIFACT_FLAVOR:-standard}"
 INSTALL_COMPLETION="${INSTALL_COMPLETION:-}"
 COMPLETION_DIR="${COMPLETION_DIR:-}"
 INSTALL_TTY="${INSTALL_TTY:-/dev/tty}"
@@ -37,8 +36,6 @@ Environment overrides:
   REPO=owner/repo         Override the GitHub repository source.
   ASSET_URL=file:///...   Install from one explicit archive URL.
   BINARY_NAME=name        Override the binary name inside the archive.
-  RUST_ARTIFACT_FLAVOR=browser
-                          Install the browser-enabled archive lane.
   INSTALL_COMPLETION=auto Install shell completion after the binary.
                           Supported values: auto, bash, zsh.
   COMPLETION_DIR=/custom  Override the completion output directory.
@@ -102,14 +99,6 @@ require_tools() {
   require_tool tar
   require_tool install
   require_tool mktemp
-}
-
-resolve_artifact_suffix() {
-  case "$RUST_ARTIFACT_FLAVOR" in
-    standard) printf '%s\n' "" ;;
-    browser) printf '%s\n' "-browser" ;;
-    *) fail "unsupported RUST_ARTIFACT_FLAVOR: ${RUST_ARTIFACT_FLAVOR}; supported values: standard, browser" ;;
-  esac
 }
 
 normalize_tag() {
@@ -541,7 +530,6 @@ resolve_platform() {
 }
 
 resolve_archive_url() {
-  ARTIFACT_SUFFIX="$(resolve_artifact_suffix)"
 
   if [ -n "$ASSET_URL" ]; then
     release_tag="$VERSION"
@@ -552,7 +540,7 @@ resolve_archive_url() {
     else
       release_tag=$(normalize_tag "$VERSION")
     fi
-    archive_name="grafana-utils-rust-${PLATFORM}${ARTIFACT_SUFFIX}-${release_tag}.tar.gz"
+    archive_name="grafana-utils-rust-${PLATFORM}-${release_tag}.tar.gz"
     archive_url="https://github.com/${REPO}/releases/download/${release_tag}/${archive_name}"
   fi
 

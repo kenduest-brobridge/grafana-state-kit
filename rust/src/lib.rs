@@ -59,7 +59,7 @@ pub(crate) mod cli_help_examples;
 /// Shared error, auth, JSON, and filesystem helpers reused across domains.
 #[path = "common/mod.rs"]
 pub mod common;
-/// Dashboard export/import/inspect/screenshot/topology workflows.
+/// Dashboard export/import/inspect/topology workflows.
 #[path = "commands/dashboard/mod.rs"]
 pub mod dashboard;
 /// Internal contract types for dashboard dependency inspection documents.
@@ -110,7 +110,7 @@ pub(crate) mod help_styles;
 /// Replaceable JSON HTTP client used by all live Grafana operations.
 #[path = "grafana/http.rs"]
 pub mod http;
-/// Internal browser/session helpers for screenshot and interactive flows.
+/// Internal browser/session helpers for interactive flows.
 #[path = "common/browser/session.rs"]
 pub(crate) mod interactive_browser;
 /// Shared browser/detail projection helpers used by interactive flows.

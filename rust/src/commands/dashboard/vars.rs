@@ -1,7 +1,6 @@
 //! Live dashboard templating variable inspection helpers.
 //! Fetches one dashboard JSON document and summarizes `dashboard.templating.list`
-//! so operators know which `--var name=value` assignments to pass to screenshot
-//! or other URL-based workflows.
+//! so operators can inspect and override local variable selections.
 mod render;
 
 use reqwest::Url;
@@ -12,7 +11,6 @@ use std::path::PathBuf;
 use crate::common::{message, object_field, string_field, value_as_object, Result};
 use crate::http::JsonHttpClient;
 
-use super::screenshot::parse_vars_query;
 use super::source_loader::load_dashboard_source;
 use super::{build_http_client, build_http_client_for_org, fetch_dashboard, InspectVarsArgs};
 use crate::dashboard::files::{discover_dashboard_files, extract_dashboard_object, load_json_file};
@@ -298,6 +296,31 @@ fn apply_vars_query_overrides(rows: &mut [DashboardVariableRow], vars_query: &st
         }
     }
     Ok(())
+}
+
+fn parse_vars_query(query: &str) -> Result<Vec<(String, String)>> {
+    let trimmed = query.trim().trim_start_matches('?');
+    if trimmed.is_empty() {
+        return Ok(Vec::new());
+    }
+    let parsed = Url::parse(&format!("http://localhost/?{trimmed}"))
+        .map_err(|error| message(format!("Invalid --vars-query value: {error}")))?;
+    let mut vars = Vec::new();
+    for (key, value) in parsed.query_pairs() {
+        if !key.starts_with("var-") {
+            continue;
+        }
+        let name = key.trim_start_matches("var-").trim().to_string();
+        let value = value.trim().to_string();
+        if name.is_empty() || value.is_empty() {
+            return Err(message(
+                "Invalid --vars-query value. Each var-* item must have a non-empty name and value.",
+            ));
+        }
+        vars.retain(|(existing_name, _)| existing_name != &name);
+        vars.push((name, value));
+    }
+    Ok(vars)
 }
 
 /// extract dashboard variables.

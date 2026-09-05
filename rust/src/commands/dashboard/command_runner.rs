@@ -25,7 +25,6 @@ pub use super::run_inspect::{
     execute_dashboard_inspect_vars,
 };
 pub use super::run_list::execute_dashboard_list;
-use super::screenshot::capture_dashboard_screenshot;
 use super::serve::run_dashboard_serve;
 use super::topology::{run_dashboard_impact, run_dashboard_topology};
 use super::validate::run_dashboard_validate_export;
@@ -379,9 +378,6 @@ pub fn run_dashboard_cli_with_client(
         DashboardCommand::ValidateExport(validate_args) => {
             run_dashboard_validate_export(&validate_args)
         }
-        DashboardCommand::Screenshot(screenshot_args) => {
-            capture_dashboard_screenshot(&screenshot_args)
-        }
     }
 }
 
@@ -567,9 +563,6 @@ pub fn run_dashboard_cli(args: DashboardCliArgs) -> Result<()> {
         },
         DashboardCommand::ValidateExport(validate_args) => {
             run_dashboard_validate_export(&validate_args)
-        }
-        DashboardCommand::Screenshot(screenshot_args) => {
-            capture_dashboard_screenshot(&screenshot_args)
         }
     }
 }

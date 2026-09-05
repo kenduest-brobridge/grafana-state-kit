@@ -4,7 +4,7 @@
 List dashboard templating variables and datasource-like choices from live Grafana, a local dashboard file, or a local export tree.
 
 ## When to use
-Use this when you need to list variable state, feed a screenshot workflow, debug variable-scoped dashboard URLs, or inspect a rendered local dashboard file.
+Use this when you need to list variable state, debug variable-scoped dashboard URLs, or inspect a rendered local dashboard file.
 
 ## Key flags
 - `--dashboard-uid` or `--dashboard-url`: choose the dashboard to inspect for variable values.
@@ -34,6 +34,5 @@ grafana-util dashboard variables --input ./dashboards/raw/cpu-main.json --output
 ```
 
 ## Related commands
-- [dashboard screenshot](./dashboard-screenshot.md)
 - [dashboard summary](./dashboard-summary.md)
 - [dashboard browse](./dashboard-browse.md)

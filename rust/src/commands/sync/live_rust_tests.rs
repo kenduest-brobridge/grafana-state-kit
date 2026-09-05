@@ -689,24 +689,17 @@ fn execute_live_apply_with_request_allows_api_managed_and_managed_unknown_dashbo
 }
 
 #[test]
-fn execute_live_apply_with_request_supports_datasource_update_and_delete_uid_with_id_fallback() {
+fn execute_live_apply_with_request_propagates_datasource_uid_update_error_without_id_fallback() {
     let mut calls = Vec::new();
-    let operations = load_apply_operations(vec![
-        json!({
-            "kind": "datasource",
-            "identity": "prom-main",
-            "action": "would-update",
-            "desired": {
-                "type": "prometheus",
-                "url": "http://prometheus:9090"
-            }
-        }),
-        json!({
-            "kind": "datasource",
-            "identity": "prom-main",
-            "action": "would-delete"
-        }),
-    ]);
+    let operations = load_apply_operations(vec![json!({
+        "kind": "datasource",
+        "identity": "prom-main",
+        "action": "would-update",
+        "desired": {
+            "type": "prometheus",
+            "url": "http://prometheus:9090"
+        }
+    })]);
 
     let result = execute_live_apply_with_request(
         |method, path, _, payload| {
@@ -722,17 +715,6 @@ fn execute_live_apply_with_request_supports_datasource_update_and_delete_uid_wit
                         "not found",
                     ))
                 }
-                (Method::PUT, "/api/datasources/7") => {
-                    Ok(Some(json!({"uid": "prom-main", "status": "updated"})))
-                }
-                (Method::DELETE, "/api/datasources/uid/prom-main") => {
-                    Err(crate::common::api_response(
-                        404,
-                        "http://grafana.local/api/datasources/uid/prom-main",
-                        "not found",
-                    ))
-                }
-                (Method::DELETE, "/api/datasources/7") => Ok(None),
                 _ => Err(crate::common::message("unexpected request")),
             }
         },
@@ -740,9 +722,9 @@ fn execute_live_apply_with_request_supports_datasource_update_and_delete_uid_wit
         false,
         false,
     )
-    .unwrap();
+    .expect_err("UID update failure must propagate");
 
-    assert_eq!(result["appliedCount"], json!(2));
+    assert_eq!(result.status_code(), Some(404));
     assert!(calls.iter().any(|(method, path, payload)| {
         *method == Method::PUT
             && path == "/api/datasources/uid/prom-main"
@@ -755,15 +737,10 @@ fn execute_live_apply_with_request_supports_datasource_update_and_delete_uid_wit
                 .and_then(|value| value.get("name"))
                 .is_some_and(|value| value == "prom-main")
     }));
-    assert!(calls
+    assert_eq!(calls.len(), 2);
+    assert!(!calls
         .iter()
-        .any(|(method, path, _)| *method == Method::PUT && path == "/api/datasources/7"));
-    assert!(calls.iter().any(|(method, path, _)| {
-        *method == Method::DELETE && path == "/api/datasources/uid/prom-main"
-    }));
-    assert!(calls
-        .iter()
-        .any(|(method, path, _)| *method == Method::DELETE && path == "/api/datasources/7"));
+        .any(|(_, path, _)| path == "/api/datasources/7"));
 }
 
 #[test]

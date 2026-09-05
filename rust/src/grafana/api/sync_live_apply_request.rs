@@ -9,9 +9,7 @@ use crate::sync::live::SyncApplyOperation;
 
 use super::super::sync_live_apply_alert::apply_alert_operation_with_request;
 use super::super::sync_live_apply_dashboard::apply_dashboard_operation_with_request;
-use super::super::sync_live_apply_datasource::{
-    resolve_live_datasource_id, resolve_live_datasource_target,
-};
+use super::super::sync_live_apply_datasource::resolve_live_datasource_target;
 use super::super::sync_live_apply_error::{
     datasource_sync_target_not_resolved, unsupported_datasource_sync_action,
     unsupported_sync_resource_kind,
@@ -105,31 +103,14 @@ where
             let target = resolve_live_datasource_target(&datasources, identity)?
                 .ok_or_else(|| datasource_sync_target_not_resolved(identity))?;
             let datasource_uid = resolve_live_datasource_uid(&target, identity)?;
-            let datasource_id = resolve_live_datasource_id(&target, "update").ok();
             let body_value = Value::Object(body);
-            let response = request_json(
+            Ok(request_json(
                 Method::PUT,
                 &format!("/api/datasources/uid/{datasource_uid}"),
                 &[],
                 Some(&body_value),
-            );
-            match response {
-                Ok(value) => Ok(value.unwrap_or(Value::Null)),
-                Err(error) if error.status_code() == Some(404) => {
-                    if let Some(datasource_id) = datasource_id {
-                        Ok(request_json(
-                            Method::PUT,
-                            &format!("/api/datasources/{datasource_id}"),
-                            &[],
-                            Some(&body_value),
-                        )?
-                        .unwrap_or(Value::Null))
-                    } else {
-                        Err(error)
-                    }
-                }
-                Err(error) => Err(error),
-            }
+            )?
+            .unwrap_or(Value::Null))
         }
         REVIEW_ACTION_WOULD_DELETE => {
             let datasources = match request_json(Method::GET, "/api/datasources", &[], None)? {
@@ -150,30 +131,13 @@ where
             let target = resolve_live_datasource_target(&datasources, identity)?
                 .ok_or_else(|| datasource_sync_target_not_resolved(identity))?;
             let datasource_uid = resolve_live_datasource_uid(&target, identity)?;
-            let datasource_id = resolve_live_datasource_id(&target, "delete").ok();
-            let response = request_json(
+            Ok(request_json(
                 Method::DELETE,
                 &format!("/api/datasources/uid/{datasource_uid}"),
                 &[],
                 None,
-            );
-            match response {
-                Ok(value) => Ok(value.unwrap_or(Value::Null)),
-                Err(error) if error.status_code() == Some(404) => {
-                    if let Some(datasource_id) = datasource_id {
-                        Ok(request_json(
-                            Method::DELETE,
-                            &format!("/api/datasources/{datasource_id}"),
-                            &[],
-                            None,
-                        )?
-                        .unwrap_or(Value::Null))
-                    } else {
-                        Err(error)
-                    }
-                }
-                Err(error) => Err(error),
-            }
+            )?
+            .unwrap_or(Value::Null))
         }
         _ => Err(unsupported_datasource_sync_action(action)),
     }

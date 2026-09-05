@@ -1,7 +1,7 @@
 //! Dashboard domain orchestrator for the unified dashboard CLI.
 //!
 //! This file is the boundary between unified command parsing and the lower-level
-//! dashboard modules that implement export/import/live/inspect/screenshot logic.
+//! dashboard modules that implement export/import/live/inspect logic.
 use crate::common::Result;
 use crate::http::JsonHttpClient;
 use serde::Serialize;
@@ -80,7 +80,6 @@ mod raw_to_prompt;
 mod review_source;
 mod run_inspect;
 mod run_list;
-mod screenshot;
 mod serve;
 mod source_loader;
 mod topology;
@@ -242,9 +241,6 @@ mod inspect_vars_rust_tests;
 #[cfg(test)]
 #[path = "raw_to_prompt/rust_tests.rs"]
 mod raw_to_prompt_rust_tests;
-#[cfg(test)]
-#[path = "screenshot_rust_tests.rs"]
-mod screenshot_rust_tests;
 #[cfg(test)]
 mod test_support;
 #[cfg(test)]

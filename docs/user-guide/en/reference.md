@@ -472,7 +472,7 @@ Why these examples matter:
 | Direct format selectors | `--text`, `--table`, `--csv`, `--json`, `--yaml` | `text` / `table` / `csv` / `json` / `yaml` | Common on list, review, inspect, and some dry-run mutation surfaces. |
 | Single selector for common formats | `--output-format <FORMAT>` | `text` / `table` / `csv` / `json` / `yaml` | Some commands also define command-specific values such as `governance`, `governance-json`, `queries-json`, `mermaid`, or `dot`. |
 | Live `status` entrypoint | `--output-format <FORMAT>` | `table` / `csv` / `text` / `json` / `yaml` / `interactive` | These live entrypoints now use the same standard selector. |
-| Write the rendered result to a file | `--output-file <PATH>` or a command-specific flag | command-specific | Common on dependencies, policy, screenshot, and similar output-producing commands. |
+| Write the rendered result to a file | `--output-file <PATH>` or a command-specific flag | command-specific | Common on dependencies, policy, and similar output-producing commands. |
 
 ### 1. Table or JSON selection
 ```bash

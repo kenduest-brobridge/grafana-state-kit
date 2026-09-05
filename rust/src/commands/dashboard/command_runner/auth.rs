@@ -40,9 +40,6 @@ pub(crate) fn materialize_dashboard_command_auth(args: &mut DashboardCliArgs) ->
         DashboardCommand::Diff(inner) => {
             inner.common = materialize_dashboard_common_auth(inner.common.clone())?
         }
-        DashboardCommand::Screenshot(inner) => {
-            inner.common = materialize_dashboard_common_auth(inner.common.clone())?
-        }
         DashboardCommand::Delete(inner) => {
             inner.common = materialize_dashboard_common_auth(inner.common.clone())?
         }

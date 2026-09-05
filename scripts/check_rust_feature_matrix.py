@@ -37,12 +37,12 @@ def validate_policy_text() -> list[str]:
         errors.append(
             "rust/Cargo.toml default features must stay exactly [\"tui\"] for the supported default artifact"
         )
-    if 'browser = ["dep:font8x8", "dep:headless_chrome", "dep:image"]' not in manifest:
-        errors.append("rust/Cargo.toml must keep browser as an explicit opt-in feature")
+    if re.search(r"(?m)^browser\s*=", manifest):
+        errors.append("rust/Cargo.toml must not expose the retired browser feature")
 
     required_phrases = [
         "Supported Rust Feature Matrix",
-        "`--no-default-features` is not a supported release surface",
+        "`--no-default-features` compiles as a supported verification surface",
     ]
     for doc in POLICY_DOCS:
         text = read_text(doc)
@@ -65,12 +65,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--check-cargo",
         action="store_true",
-        help="Also compile-check the supported default and browser feature surfaces.",
+        help="Also compile-check the supported default feature surface.",
     )
     parser.add_argument(
         "--probe-no-default-features",
         action="store_true",
-        help="Also run the explicit unsupported no-default-features probe.",
+        help="Also compile-check the no-default-features verification surface.",
     )
     args = parser.parse_args(argv)
 
@@ -81,10 +81,6 @@ def main(argv: list[str] | None = None) -> int:
             errors.append("default Rust feature check failed")
         else:
             print("check_rust_feature_matrix: default Rust feature check: ok")
-        if run_cargo_check(["--features", "browser"]) != 0:
-            errors.append("browser-enabled Rust feature check failed")
-        else:
-            print("check_rust_feature_matrix: browser-enabled Rust feature check: ok")
 
     if args.probe_no_default_features:
         no_default_features_rc = subprocess.run(
@@ -101,11 +97,11 @@ def main(argv: list[str] | None = None) -> int:
             capture_output=True,
             text=True,
         ).returncode
-        if no_default_features_rc == 0:
-            errors.append("--no-default-features probe unexpectedly succeeded")
+        if no_default_features_rc != 0:
+            errors.append("--no-default-features verification check failed")
         else:
             print(
-                "check_rust_feature_matrix: no-default-features probe: expected unsupported"
+                "check_rust_feature_matrix: no-default-features verification check: ok"
             )
 
     if errors:

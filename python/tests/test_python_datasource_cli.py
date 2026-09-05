@@ -1676,7 +1676,9 @@ class DatasourceCliTests(unittest.TestCase):
 
         self.assertEqual(result, 0)
         self.assertEqual(client.imported_payloads[0]["method"], "PUT")
-        self.assertEqual(client.imported_payloads[0]["path"], "/api/datasources/7")
+        self.assertEqual(
+            client.imported_payloads[0]["path"], "/api/datasources/uid/prom_uid"
+        )
         payload = client.imported_payloads[0]["payload"]
         self.assertEqual(payload["name"], "Prometheus Updated")
         self.assertEqual(payload["url"], "http://prometheus:9091")
@@ -1736,7 +1738,7 @@ class DatasourceCliTests(unittest.TestCase):
                 )
 
         self.assertEqual(result, 0)
-        self.assertEqual(client.deleted_paths, ["/api/datasources/7"])
+        self.assertEqual(client.deleted_paths, ["/api/datasources/uid/prom_uid"])
         self.assertIn("Deleted datasource prom_uid.", stdout.getvalue())
 
     def test_datasource_list_datasources_from_local_input_dir_renders_table(self):
@@ -2341,7 +2343,7 @@ class DatasourceCliTests(unittest.TestCase):
             "Deleted datasource uid=prom-main name=Prometheus Main id=7",
             stdout.getvalue(),
         )
-        self.assertEqual(client.deleted_paths, ["/api/datasources/7"])
+        self.assertEqual(client.deleted_paths, ["/api/datasources/uid/prom-main"])
 
     def test_datasource_modify_datasource_dry_run_renders_table(self):
         args = datasource_cli.parse_args(
@@ -2587,7 +2589,9 @@ class DatasourceCliTests(unittest.TestCase):
         )
         payload = client.imported_payloads[0]["payload"]
         self.assertEqual(client.imported_payloads[0]["method"], "PUT")
-        self.assertEqual(client.imported_payloads[0]["path"], "/api/datasources/7")
+        self.assertEqual(
+            client.imported_payloads[0]["path"], "/api/datasources/uid/prom-main"
+        )
         self.assertEqual(payload["url"], "http://prometheus-v2:9090")
         self.assertEqual(payload["access"], "proxy")
         self.assertTrue(payload["basicAuth"])
@@ -3693,6 +3697,52 @@ class DatasourceCliTests(unittest.TestCase):
                     "action=would-fail-uid-mismatch",
                 ):
                     datasource_cli.import_datasources(args)
+
+    def test_datasource_import_updates_existing_datasource_by_uid_route(self):
+        args = datasource_cli.parse_args(
+            ["import", "--import-dir", "ignored", "--replace-existing"]
+        )
+        client = FakeDatasourceClient(
+            datasources=[
+                {
+                    "id": 7,
+                    "uid": "prom-main",
+                    "name": "Prometheus Main",
+                    "type": "prometheus",
+                    "access": "proxy",
+                    "url": "http://prometheus:9090",
+                    "isDefault": True,
+                }
+            ]
+        )
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            import_dir = Path(tmpdir)
+            args.import_dir = str(import_dir)
+            self._write_datasource_bundle(
+                import_dir,
+                [
+                    {
+                        "uid": "prom-main",
+                        "name": "Prometheus Main",
+                        "type": "prometheus",
+                        "access": "proxy",
+                        "url": "http://prometheus-v2:9090",
+                        "isDefault": "true",
+                        "org": "Main Org.",
+                        "orgId": "1",
+                    }
+                ],
+            )
+
+            with mock.patch.object(datasource_cli, "build_client", return_value=client):
+                result = datasource_cli.import_datasources(args)
+
+        self.assertEqual(result, 0)
+        self.assertEqual(client.imported_payloads[0]["method"], "PUT")
+        self.assertEqual(
+            client.imported_payloads[0]["path"], "/api/datasources/uid/prom-main"
+        )
 
     def test_datasource_diff_datasources_returns_zero_when_inventory_matches(self):
         client = FakeDatasourceClient(

@@ -8,7 +8,6 @@ use crate::sync::live::SyncApplyOperation;
 
 use super::sync_live_apply_alert::apply_alert_operation_with_client;
 use super::sync_live_apply_dashboard::apply_dashboard_operation_with_client;
-use super::sync_live_apply_datasource::resolve_live_datasource_id;
 use super::sync_live_apply_error::{
     datasource_sync_target_not_resolved, unsupported_datasource_sync_action,
     unsupported_sync_resource_kind,
@@ -62,10 +61,9 @@ fn apply_datasource_operation_with_client(
                 .resolve_datasource_target(identity)?
                 .ok_or_else(|| datasource_sync_target_not_resolved(identity))?;
             let datasource_uid = resolve_live_datasource_uid(&target, identity)?;
-            let datasource_id = resolve_live_datasource_id(&target, "update").ok();
             Ok(Value::Object(
                 client
-                    .update_datasource(&datasource_uid, datasource_id.as_deref(), &body)?
+                    .update_datasource(&datasource_uid, &body)?
                     .into_iter()
                     .collect(),
             ))
@@ -75,8 +73,7 @@ fn apply_datasource_operation_with_client(
                 .resolve_datasource_target(identity)?
                 .ok_or_else(|| datasource_sync_target_not_resolved(identity))?;
             let datasource_uid = resolve_live_datasource_uid(&target, identity)?;
-            let datasource_id = resolve_live_datasource_id(&target, "delete").ok();
-            Ok(client.delete_datasource(&datasource_uid, datasource_id.as_deref())?)
+            Ok(client.delete_datasource(&datasource_uid)?)
         }
         _ => Err(unsupported_datasource_sync_action(action)),
     }

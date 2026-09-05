@@ -2857,20 +2857,20 @@ def _apply_datasource_operation(client, operation):
         )
     if operation.action == "would-update":
         payload = build_modify_datasource_payload(target, body)
-        datasource_id = target.get("id")
-        if datasource_id is None:
-            raise GrafanaError("Datasource sync update requires a live datasource id.")
+        datasource_uid = _normalize_string(target.get("uid"))
+        if not datasource_uid:
+            raise GrafanaError("Datasource sync update requires a live datasource UID.")
         return client.request_json(
-            "/api/datasources/%s" % datasource_id,
+            "/api/datasources/uid/%s" % parse.quote(datasource_uid, safe=""),
             method="PUT",
             payload=payload,
         )
     if operation.action == "would-delete":
-        datasource_id = target.get("id")
-        if datasource_id is None:
-            raise GrafanaError("Datasource sync delete requires a live datasource id.")
+        datasource_uid = _normalize_string(target.get("uid"))
+        if not datasource_uid:
+            raise GrafanaError("Datasource sync delete requires a live datasource UID.")
         return client.request_json(
-            "/api/datasources/%s" % datasource_id,
+            "/api/datasources/uid/%s" % parse.quote(datasource_uid, safe=""),
             method="DELETE",
         )
     raise GrafanaError("Unsupported datasource sync action %s." % operation.action)

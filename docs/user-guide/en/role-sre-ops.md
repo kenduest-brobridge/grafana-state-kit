@@ -136,7 +136,7 @@ You are in a good operator posture when:
 
 ## When to switch to deeper docs
 
-- Switch to [Dashboard Management](dashboard.md) when the issue is inventory, export/import, inspection, or screenshot workflow.
+- Switch to [Dashboard Management](dashboard.md) when the issue is inventory, export/import, or inspection.
 - Switch to [Alerting Governance](alert.md) when the problem is rule ownership, contact points, routes, or plan/apply flow.
 - Switch to [Access Management](access.md) when org, user, team, or service-account scope becomes part of the incident or maintenance task.
 - Switch to the [Command Reference](../../commands/en/index.md) when you already know the workflow and just need the exact flags.

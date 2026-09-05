@@ -32,7 +32,7 @@
   - `grafana-util access ...`
   - `grafana-util status ...`
   - `grafana-util config profile ...`
-- Default Rust builds stay lean and do not include the `browser` feature unless the task explicitly targets the browser-enabled artifact lane.
+- Default Rust builds stay lean and expose the maintained TUI feature surface only.
 - In Rust, use `///` only for public API surfaces and `//` for local implementation notes.
 - Keep comments short and behavior-focused.
 

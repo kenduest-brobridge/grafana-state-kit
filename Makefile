@@ -1,11 +1,11 @@
 VERSIONING_TARGETS := help print-version sync-version set-release-version set-dev-version
 PYTHON_TARGETS := poetry-install poetry-lock poetry-test poetry-quality-python build-python
 DOC_TARGETS := man man-check html html-check pages-site schema schema-check quality-docs-surface docs-diff-classify
-RUST_BUILD_TARGETS := build-rust build-rust-browser build-rust-native build-rust-native-browser build-rust-host build-rust-host-browser build-rust-macos-arm64 build-rust-macos-arm64-browser build-rust-linux-amd64 build-rust-linux-amd64-browser build-rust-linux-amd64-docker build-rust-linux-amd64-browser-docker build-rust-linux-amd64-zig validate-rust-linux-amd64-artifact validate-rust-linux-amd64-browser-artifact
+RUST_BUILD_TARGETS := build-rust build-rust-native build-rust-host build-rust-macos-arm64 build-rust-linux-amd64 build-rust-linux-amd64-docker build-rust-linux-amd64-zig validate-rust-linux-amd64-artifact
 INSTALLER_TARGETS := install-local install-local-interactive test-installer-local
 QUALITY_TARGETS := test test-python test-rust fmt-rust-check lint-rust quality quality-python quality-rust quality-rust-feature-matrix quality-rust-feature-matrix-full quality-output-contracts quality-ai-workflow quality-architecture quality-docs-surface quality-alert-rust quality-sync-rust quality-workspace-noise
 REPORT_TARGETS := contract-promotion-report
-LIVE_TARGETS := seed-grafana-sample-data destroy-grafana-sample-data reset-grafana-all-data test-rust-live test-sync-live test-alert-live test-alert-live-artifact test-alert-live-replay test-python-live test-combined-live
+LIVE_TARGETS := seed-grafana-sample-data destroy-grafana-sample-data reset-grafana-all-data test-rust-live test-rust-live-12-floor test-rust-live-12-current test-rust-live-13-current test-grafana-compatibility-matrix test-sync-live test-alert-live test-alert-live-artifact test-alert-live-replay test-python-live test-python-datasource-live-12-floor test-python-datasource-live-13-current test-combined-live
 META_TARGETS := build
 
 .PHONY: $(VERSIONING_TARGETS) $(PYTHON_TARGETS) $(DOC_TARGETS) $(RUST_BUILD_TARGETS) $(INSTALLER_TARGETS) $(QUALITY_TARGETS) $(REPORT_TARGETS) $(LIVE_TARGETS) $(META_TARGETS)
@@ -19,6 +19,9 @@ RUST_DIR ?= rust
 PYTHON_DIST_DIR ?= dist
 DEV_ITERATION ?= 1
 RUST_RELEASE_RUSTFLAGS ?= -C debuginfo=0
+GRAFANA_12_FLOOR_IMAGE ?= grafana/grafana:12.0.10
+GRAFANA_12_CURRENT_IMAGE ?= grafana/grafana:12.4.9
+GRAFANA_13_CURRENT_IMAGE ?= grafana/grafana:13.2.0
 HOST_OS := $(shell uname -s)
 PYTHON_DIR := python
 ESC := \033
@@ -78,16 +81,11 @@ endef
 
 define HELP_RUST_BUILD
 $(NL)$(BLUE)$(BOLD)Rust build:$(RESET)
-  $(GREEN)make build-rust$(RESET)  Build the default native, host release artifact, and Linux amd64 Rust artifacts $(CYAN)(no browser feature)$(RESET)
-  $(GREEN)make build-rust-browser$(RESET)  Build the browser-enabled native, host release artifact, and Linux amd64 Rust artifacts
+  $(GREEN)make build-rust$(RESET)  Build the native, host release artifact, and Linux amd64 Rust artifacts
   $(GREEN)make build-rust-native$(RESET)  Build the default native Rust release binary in rust/target/release/
-  $(GREEN)make build-rust-native-browser$(RESET)  Build the browser-enabled native Rust release binary in rust/target/release/
   $(GREEN)make build-rust-macos-arm64$(RESET)  Build the default macOS Apple Silicon artifact into dist/macos-arm64/
-  $(GREEN)make build-rust-macos-arm64-browser$(RESET)  Build the browser-enabled macOS Apple Silicon artifact into dist/macos-arm64-browser/
   $(GREEN)make build-rust-linux-amd64$(RESET)  Build the default Linux amd64 artifact with local zig into dist/linux-amd64/ $(CYAN)(preferred; defaults to LTO off and codegen-units=1 for cross-link stability)$(RESET)
-  $(GREEN)make build-rust-linux-amd64-browser$(RESET)  Build the browser-enabled Linux amd64 artifact with local zig into dist/linux-amd64-browser/
   $(GREEN)make build-rust-linux-amd64-docker$(RESET)  Build the default Linux amd64 artifact with Docker into dist/linux-amd64/ $(CYAN)(fallback)$(RESET)
-  $(GREEN)make build-rust-linux-amd64-browser-docker$(RESET)  Build the browser-enabled Linux amd64 artifact with Docker into dist/linux-amd64-browser/ $(CYAN)(fallback)$(RESET)
   $(GREEN)make build-rust-linux-amd64-zig$(RESET)  Alias for the preferred local zig Linux amd64 build path $(CYAN)(same as build-rust-linux-amd64)$(RESET)
 
 endef
@@ -95,7 +93,6 @@ endef
 define HELP_ARTIFACT_VALIDATION
 $(NL)$(BLUE)$(BOLD)Artifact validation:$(RESET)
   $(GREEN)make validate-rust-linux-amd64-artifact$(RESET)  Run the default Linux amd64 artifact in a fixed-name Linux Docker container
-  $(GREEN)make validate-rust-linux-amd64-browser-artifact$(RESET)  Run the browser-enabled Linux amd64 artifact in a fixed-name Linux Docker container
   $(GREEN)make install-local$(RESET)  Build a local debug binary and install it through scripts/install.sh
   $(GREEN)make install-local-interactive$(RESET)  Build a local debug binary and run the interactive installer flow
   $(GREEN)make test-installer-local$(RESET)  Build a local binary, pack a local archive, and test install.sh with INSTALL_COMPLETION=auto
@@ -112,8 +109,8 @@ $(NL)$(BLUE)$(BOLD)Quality and tests:$(RESET)
   $(GREEN)make quality$(RESET)  Run the repo quality gate scripts
   $(GREEN)make quality-python$(RESET)  Run the Python quality gate script
   $(GREEN)make quality-rust$(RESET)  Run the Rust quality gate script
-  $(GREEN)make quality-rust-feature-matrix$(RESET)  Validate supported Rust feature surfaces and the no-default policy
-  $(GREEN)make quality-rust-feature-matrix-full$(RESET)  Run default and browser Cargo checks, then probe no-default-features as an explicit unsupported surface
+  $(GREEN)make quality-rust-feature-matrix$(RESET)  Validate the supported Rust feature surface and the no-default policy
+  $(GREEN)make quality-rust-feature-matrix-full$(RESET)  Run the default Cargo check, then probe no-default-features as an explicit unsupported surface
   $(GREEN)make quality-output-contracts$(RESET)  Validate core JSON output contract fixtures and registry shape
   $(GREEN)make contract-promotion-report$(RESET)  Report overlap and gaps between schema manifests and runtime output contracts
   $(GREEN)make quality-ai-workflow$(RESET)  Run lightweight AI workflow drift and public naming policy checks for the current change set
@@ -131,6 +128,7 @@ $(NL)$(BLUE)$(BOLD)Live smoke and sample data:$(RESET)
   $(GREEN)make destroy-grafana-sample-data$(RESET)  Remove the developer sample orgs, datasources, folders, and dashboards seeded by the repo script
   $(GREEN)make reset-grafana-all-data$(RESET)  $(YELLOW)Danger:$(RESET) delete repo-relevant test data from a disposable local Grafana instance
   $(GREEN)make test-rust-live$(RESET)  Start Grafana in Docker and run the Rust live smoke test, including dashboard stdin/watch authoring
+  $(GREEN)make test-grafana-compatibility-matrix$(RESET)  Run Rust and datasource mutation smokes against Grafana 12.0, current 12, and current 13
   $(GREEN)make test-sync-live$(RESET)  Start Grafana in Docker and run the Rust sync live smoke path
   $(GREEN)make test-alert-live$(RESET)  Start Grafana in Docker and run the Rust alert live smoke path
   $(GREEN)make test-alert-live-artifact$(RESET)  Start Grafana in Docker and run the Rust alert artifact live smoke path
@@ -224,22 +222,9 @@ ifeq ($(HOST_OS),Darwin)
 endif
 	@printf '%s\n' "dist/linux-amd64/grafana-util"
 
-build-rust-browser: build-rust-native-browser build-rust-host-browser build-rust-linux-amd64-browser
-	@printf '%s\n' 'Rust browser-enabled build outputs:'
-	@printf '%s\n' "$(RUST_DIR)/target/release/grafana-util"
-ifeq ($(HOST_OS),Darwin)
-	@printf '%s\n' "dist/macos-arm64-browser/grafana-util"
-endif
-	@printf '%s\n' "dist/linux-amd64-browser/grafana-util"
-
 build-rust-native:
 	$(RUST_RUN) RUSTFLAGS="$(RUST_RELEASE_RUSTFLAGS)" $(CARGO) build --release
 	@printf '%s\n' 'Rust native build outputs:'
-	@find $(RUST_DIR)/target/release -maxdepth 1 -type f -perm -111 | sort
-
-build-rust-native-browser:
-	$(RUST_RUN) RUSTFLAGS="$(RUST_RELEASE_RUSTFLAGS)" $(CARGO) build --release --features browser
-	@printf '%s\n' 'Rust native browser-enabled build outputs:'
 	@find $(RUST_DIR)/target/release -maxdepth 1 -type f -perm -111 | sort
 
 build-rust-host:
@@ -249,38 +234,19 @@ else
 	@printf '%s\n' "Skipping host packaged Rust artifact: unsupported host OS $(HOST_OS)"
 endif
 
-build-rust-host-browser:
-ifeq ($(HOST_OS),Darwin)
-	@$(MAKE) --no-print-directory build-rust-macos-arm64-browser
-else
-	@printf '%s\n' "Skipping host packaged browser Rust artifact: unsupported host OS $(HOST_OS)"
-endif
-
 build-rust-macos-arm64:
 	RUSTFLAGS="$(RUST_RELEASE_RUSTFLAGS)" bash ./scripts/build-rust-macos-arm64.sh
 
-build-rust-macos-arm64-browser:
-	BUILD_BROWSER=1 RUSTFLAGS="$(RUST_RELEASE_RUSTFLAGS)" bash ./scripts/build-rust-macos-arm64.sh
-
 build-rust-linux-amd64: build-rust-linux-amd64-zig
-
-build-rust-linux-amd64-browser:
-	BUILD_BROWSER=1 RUSTFLAGS="$(RUST_RELEASE_RUSTFLAGS)" bash ./scripts/build-rust-linux-amd64-zig.sh
 
 build-rust-linux-amd64-docker:
 	RUSTFLAGS="$(RUST_RELEASE_RUSTFLAGS)" bash ./scripts/build-rust-linux-amd64.sh
-
-build-rust-linux-amd64-browser-docker:
-	BUILD_BROWSER=1 RUSTFLAGS="$(RUST_RELEASE_RUSTFLAGS)" bash ./scripts/build-rust-linux-amd64.sh
 
 build-rust-linux-amd64-zig:
 	RUSTFLAGS="$(RUST_RELEASE_RUSTFLAGS)" bash ./scripts/build-rust-linux-amd64-zig.sh
 
 validate-rust-linux-amd64-artifact:
 	bash ./scripts/validate-rust-linux-amd64-artifact.sh --version
-
-validate-rust-linux-amd64-browser-artifact:
-	BUILD_BROWSER=1 bash ./scripts/validate-rust-linux-amd64-artifact.sh --version
 
 install-local:
 	bash ./scripts/install-local.sh
@@ -362,6 +328,23 @@ quality-workspace-noise:
 
 test-rust-live:
 	./scripts/test-rust-live-grafana.sh
+
+test-rust-live-12-floor:
+	GRAFANA_IMAGE=$(GRAFANA_12_FLOOR_IMAGE) GRAFANA_PORT=43012 GRAFANA_CONTAINER_NAME=grafana-util-live-grafana-12-floor ./scripts/test-rust-live-grafana.sh
+
+test-rust-live-12-current:
+	GRAFANA_IMAGE=$(GRAFANA_12_CURRENT_IMAGE) GRAFANA_PORT=43013 GRAFANA_CONTAINER_NAME=grafana-util-live-grafana-12-current ./scripts/test-rust-live-grafana.sh
+
+test-rust-live-13-current:
+	GRAFANA_IMAGE=$(GRAFANA_13_CURRENT_IMAGE) GRAFANA_PORT=43014 GRAFANA_CONTAINER_NAME=grafana-util-live-grafana-13-current ./scripts/test-rust-live-grafana.sh
+
+test-python-datasource-live-12-floor:
+	GRAFANA_IMAGE=$(GRAFANA_12_FLOOR_IMAGE) GRAFANA_PORT=43015 GRAFANA_CONTAINER_NAME=grafana-util-python-datasource-live-12-floor bash ./scripts/test-python-datasource-live-grafana.sh
+
+test-python-datasource-live-13-current:
+	GRAFANA_IMAGE=$(GRAFANA_13_CURRENT_IMAGE) GRAFANA_PORT=43016 GRAFANA_CONTAINER_NAME=grafana-util-python-datasource-live-13-current bash ./scripts/test-python-datasource-live-grafana.sh
+
+test-grafana-compatibility-matrix: test-rust-live-12-floor test-rust-live-12-current test-rust-live-13-current test-python-datasource-live-12-floor test-python-datasource-live-13-current
 
 test-sync-live:
 	./scripts/test-rust-sync-live-grafana.sh

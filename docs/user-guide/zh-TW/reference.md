@@ -469,7 +469,7 @@ grafana-util status overview live --profile ci --output-format json
 | 直接切換常見格式 | `--text`、`--table`、`--csv`、`--json`、`--yaml` | `text` / `table` / `csv` / `json` / `yaml` | 適合 list、review、inspect、部分 import / delete dry-run 這類輸出面。 |
 | 用單一旗標切換格式 | `--output-format <FORMAT>` | `text` / `table` / `csv` / `json` / `yaml` | 也可能出現 command 專用值，例如 `governance`、`governance-json`、`queries-json`、`mermaid`、`dot`。 |
 | status live / overview 類入口 | `--output-format <FORMAT>` | `table` / `csv` / `text` / `json` / `yaml` / `interactive` | 這條路徑現在也統一使用 `--output-format`。 |
-| 將結果另外寫入檔案 | `--output-file <PATH>` 或 command 專用旗標 | 視指令而定 | 常見於 dependencies、policy、screenshot 這類輸出型指令。 |
+| 將結果另外寫入檔案 | `--output-file <PATH>` 或 command 專用旗標 | 視指令而定 | 常見於 dependencies、policy 這類輸出型指令。 |
 
 ### 1. 表格或 JSON 的選擇
 ```bash
