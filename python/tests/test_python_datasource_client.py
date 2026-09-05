@@ -120,9 +120,7 @@ class DatasourceClientTests(unittest.TestCase):
         response = client.delete_datasource("prom-main")
 
         self.assertEqual(response["message"], "deleted")
-        self.assertEqual(
-            transport.calls[0]["path"], "/api/datasources/uid/prom-main"
-        )
+        self.assertEqual(transport.calls[0]["path"], "/api/datasources/uid/prom-main")
 
     def test_datasource_client_with_org_id_clones_client_headers(self):
         client = datasource_client.GrafanaDatasourceClient(

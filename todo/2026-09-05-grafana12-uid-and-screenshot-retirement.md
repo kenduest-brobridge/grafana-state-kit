@@ -102,6 +102,11 @@
 
 ## Evidence
 
+- The [subsequent review](2026-09-05-compatibility-retirement-review.md)
+  supersedes the initial quality and live evidence below: it repaired Cargo
+  artifact selection and cleanup, narrowed the org-delete exception further,
+  restored independent org checks, and reran the full quality/live matrix.
+
 - Rust live smoke passed against `grafana/grafana:12.0.10`, `12.4.9`, and
   `13.2.0`; Python datasource smoke passed against `12.0.10` and `13.2.0`.
   Each run reports the corresponding `/api/health.version`.

@@ -69,7 +69,7 @@ Acceptance:
 - [x] Rust focused datasource tests pass.
 - [x] Python focused datasource and sync tests pass.
 - [x] Live add/update/delete succeeds against the Grafana 12.x floor and
-  Grafana 13.1.3 using UID routes.
+  Grafana 13.2.0 using UID routes (see the 2026-09-05 execution evidence).
 - [x] Captured requests show no `/api/datasources/{numeric-id}` mutation in the
   default path.
 
@@ -81,8 +81,8 @@ Acceptance:
   supported Grafana 12.0 minor line.
 - [x] Add a blocking current-12 lane using the latest reviewed Grafana 12.x
   release.
-- [x] Pin the current stable live-smoke lane to `grafana/grafana:13.1.3` or a
-  newer reviewed 13.1 patch.
+- [x] Pin the current stable live-smoke lane to the reviewed released image
+  `grafana/grafana:13.2.0`.
 - [x] Run the maintained Rust live suite in the floor-12, current-12, and
   current-13 lanes.
 - [x] Run the Python datasource live suite in at least the floor-12 and

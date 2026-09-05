@@ -13,11 +13,14 @@ GRAFANA_VERSION=""
 ORG_DELETE_UNAVAILABLE=0
 CONTAINER_NAME="${GRAFANA_CONTAINER_NAME:-grafana-util-live-grafana}"
 WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/grafana-util-python-datasource-live.XXXXXX")"
+CONTAINER_ID_FILE="${WORK_DIR}/grafana-container.cid"
 DATASOURCE_EXPORT_DIR="${WORK_DIR}/datasources"
 DATASOURCE_MULTI_ORG_EXPORT_DIR="${WORK_DIR}/datasources-all-orgs"
 
 cleanup() {
-  docker rm -f "${CONTAINER_NAME}" >/dev/null 2>&1 || true
+  if [[ -s "${CONTAINER_ID_FILE}" ]]; then
+    docker rm -f "$(<"${CONTAINER_ID_FILE}")" >/dev/null 2>&1 || true
+  fi
   rm -rf "${WORK_DIR}"
 }
 
@@ -96,6 +99,7 @@ start_grafana() {
   publish_args=(-p "127.0.0.1:${GRAFANA_PORT}:3000")
 
   docker run -d \
+    --cidfile "${CONTAINER_ID_FILE}" \
     --name "${CONTAINER_NAME}" \
     "${publish_args[@]}" \
     -e "GF_SECURITY_ADMIN_USER=${GRAFANA_USER}" \
@@ -107,6 +111,7 @@ start_grafana() {
   wait_for_grafana
   GRAFANA_VERSION="$(api GET /api/health | jq -r '.version // empty')"
   [[ -n "${GRAFANA_VERSION}" ]] || fail "Grafana health response did not include a version"
+  printf 'Live Grafana: image=%s health.version=%s\n' "${GRAFANA_IMAGE}" "${GRAFANA_VERSION}"
 }
 
 create_api_token() {
@@ -185,20 +190,27 @@ create_org() {
 
 delete_org() {
   local org_id="$1"
-  local response=""
+  local response_file="${WORK_DIR}/delete-org-response.json"
+  local response_status="" curl_status=0
 
-  if response="$(api DELETE "/api/orgs/${org_id}" 2>/dev/null)"; then
+  if response_status="$(curl --silent --show-error --fail-with-body \
+    -u "${GRAFANA_USER}:${GRAFANA_PASSWORD}" -X DELETE \
+    --output "${response_file}" --write-out '%{http_code}' \
+    "${GRAFANA_URL}/api/orgs/${org_id}")"; then
     return
+  else
+    curl_status=$?
   fi
 
-  if [[ "${GRAFANA_VERSION}" == 13.* ]] && \
-    [[ "${response}" == *'"message":"Failed to delete organization"'* ]]; then
+  # https://github.com/grafana/grafana/issues/127386; verified on this pinned patch.
+  if [[ "${GRAFANA_VERSION}" == "13.2.0" && "${curl_status}" -eq 22 && "${response_status}" == "500" ]] \
+    && jq -se 'length == 1 and .[0].message == "Failed to delete organization"' "${response_file}" >/dev/null 2>&1; then
     ORG_DELETE_UNAVAILABLE=1
     printf '%s\n' 'Grafana 13 organization deletion regression: skip missing-org datasource matrix.' >&2
     return
   fi
 
-  fail "failed to delete org ${org_id}: ${response}"
+  fail "failed to delete org ${org_id} (image=${GRAFANA_IMAGE} version=${GRAFANA_VERSION} HTTP=${response_status} curl=${curl_status})"
 }
 
 find_org_id_by_name() {
@@ -408,6 +420,8 @@ run_datasource_smoke() {
 
 main() {
   trap cleanup EXIT
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
 
   command -v docker >/dev/null || fail "docker is required"
   command -v curl >/dev/null || fail "curl is required"

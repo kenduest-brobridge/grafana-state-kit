@@ -1,10 +1,11 @@
 # ai-changes.md
 
 Current AI change log only.
-- Older entries moved to [`ai-changes-archive-2026-09-05.md`](/Users/ken/work/grafana-utils/.worktrees/grafana12-screenshot-retirement/docs/internal/archive/ai-changes-archive-2026-09-05.md).
+- Older entries moved to [`ai-changes-archive-2026-09-05.md`](archive/ai-changes-archive-2026-09-05.md).
 
 ## 2026-09-05 - Grafana 12 compatibility and screenshot retirement
 - Summary: Removed the dashboard screenshot command and browser/Pillow release dependencies from Rust and Python, migrated maintained datasource writes to `/api/datasources/uid/{uid}`, and added pinned Grafana 12.0.10, 12.4.9, and 13.2.0 smoke lanes in Make and CI.
+- Review fixes: Select the executable from Cargo build artifacts; clean temporary resources on exit using Docker's recorded container ID even after startup failure; require the recorded 13.2.0 HTTP 500 JSON error before skipping only deletion-dependent org steps; fix Python quality formatting and document the verification boundary.
 - Tests: targeted and full Rust/Python suites; generated man/HTML and docs-surface checks; live Rust 12.0.10/12.4.9/13.2.0 and Python datasource 12.0.10/13.2.0 smoke lanes.
 - Impact: The ordinary CLI contract is Grafana 12.0+; optional capabilities remain 404-only discovery. Screenshot automation is no longer a supported public surface, and datasource update/delete/import/sync/browse writes have no numeric-ID fallback.
 - Rollback/Risk: Medium; screenshot command removal is intentionally breaking, while UID routing targets Grafana's stable datasource API. Grafana 13.2.0 org deletion is skipped only for affected test fixtures because the upstream server returns 500.

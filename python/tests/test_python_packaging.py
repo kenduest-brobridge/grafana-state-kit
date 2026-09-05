@@ -14,7 +14,9 @@ BUILD_RUST_MACOS_ARM64_SCRIPT_PATH = REPO_ROOT / "scripts" / "build-rust-macos-a
 VERSION_PATH = REPO_ROOT / "VERSION"
 DEVELOPER_GUIDE_PATH = REPO_ROOT / "docs" / "DEVELOPER.md"
 RUST_LIVE_SMOKE_PATH = REPO_ROOT / "scripts" / "test-rust-live-grafana.sh"
-PYTHON_DATASOURCE_LIVE_SMOKE_PATH = REPO_ROOT / "scripts" / "test-python-datasource-live-grafana.sh"
+PYTHON_DATASOURCE_LIVE_SMOKE_PATH = (
+    REPO_ROOT / "scripts" / "test-python-datasource-live-grafana.sh"
+)
 
 
 class PackagingTests(unittest.TestCase):
@@ -122,7 +124,10 @@ class PackagingTests(unittest.TestCase):
         self.assertIn("test-python-datasource-live-12-floor:", makefile)
         self.assertIn("test-python-datasource-live-13-current:", makefile)
         self.assertIn("bash ./scripts/test-python-datasource-live-grafana.sh", makefile)
-        self.assertIn("poetry run python -m grafana_utils datasource", PYTHON_DATASOURCE_LIVE_SMOKE_PATH.read_text(encoding="utf-8"))
+        self.assertIn(
+            "poetry run python -m grafana_utils datasource",
+            PYTHON_DATASOURCE_LIVE_SMOKE_PATH.read_text(encoding="utf-8"),
+        )
         self.assertIn("rust-live-compatibility:", workflow)
         self.assertIn("python-datasource-live-compatibility:", workflow)
         self.assertIn("bash ./scripts/test-python-datasource-live-grafana.sh", workflow)
@@ -137,7 +142,9 @@ class PackagingTests(unittest.TestCase):
         self.assertIn("404", content)
         self.assertIn("capability", content.lower())
 
-    def test_rust_feature_matrix_probes_no_default_features_as_a_verification_surface(self):
+    def test_rust_feature_matrix_probes_no_default_features_as_a_verification_surface(
+        self,
+    ):
         content = (REPO_ROOT / "scripts" / "check_rust_feature_matrix.py").read_text(
             encoding="utf-8"
         )
@@ -145,7 +152,9 @@ class PackagingTests(unittest.TestCase):
         self.assertIn("no-default-features verification check: ok", content)
         self.assertNotIn("probe unexpectedly succeeded", content)
 
-    def test_grafana_13_org_delete_regression_is_scoped_to_missing_org_matrix_cases(self):
+    def test_grafana_13_org_delete_regression_is_scoped_to_missing_org_matrix_cases(
+        self,
+    ):
         content = RUST_LIVE_SMOKE_PATH.read_text(encoding="utf-8")
 
         self.assertIn("ORG_DELETE_UNAVAILABLE", content)

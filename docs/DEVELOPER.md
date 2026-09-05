@@ -126,6 +126,21 @@ The maintained image matrix and the operator-facing version statement live in
 the top-level `Makefile` and `README.md`; run the matching live targets when a
 change crosses a Grafana API boundary.
 
+Run `make test-grafana-compatibility-matrix` for Rust on Grafana 12.0.10,
+12.4.9, and 13.2.0 plus Python datasource coverage on 12.0.10 and 13.2.0.
+The Rust smoke uses the executable reported by its Cargo build, including when
+`CARGO_TARGET_DIR` is set. Both smoke scripts clean their temporary data and
+containers on exit and report the image and health version before workflows run.
+Cleanup uses Docker's recorded container ID, including when container creation
+succeeds but startup fails.
+
+Grafana 13.2.0 has a known [organization deletion regression](https://github.com/grafana/grafana/issues/127386).
+The smoke skips deletion-dependent organization recreation only when that exact
+patch returns HTTP 500 with the expected JSON error. Other versions, transport
+failures, malformed JSON, and other HTTP errors fail the smoke. Organization
+creation, export, diff, and existing-organization import remain covered. This is
+a test-fixture exception; the production CLI still propagates the server error.
+
 ## Validation Defaults
 
 Prefer repo-owned commands over ad hoc one-offs.

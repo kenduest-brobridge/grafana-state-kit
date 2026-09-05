@@ -1,12 +1,13 @@
 # ai-status.md
 
 Current AI-maintained status only.
-- Older entries moved to [`ai-status-archive-2026-09-05.md`](/Users/ken/work/grafana-utils/.worktrees/grafana12-screenshot-retirement/docs/internal/archive/ai-status-archive-2026-09-05.md).
+- Older entries moved to [`ai-status-archive-2026-09-05.md`](archive/ai-status-archive-2026-09-05.md).
 
 ## 2026-09-05 - Grafana 12 compatibility and screenshot retirement
 - State: done
 - Scope: retire dashboard screenshot/browser artifacts, use UID-only datasource writes, and pin released Grafana 12.0/12.x/13.x live lanes.
 - Current Update: Screenshot commands and dependencies are removed from both maintained CLIs; datasource mutation flows use UID routes without numeric write fallback; the live matrix records health versions for 12.0.10, 12.4.9, and 13.2.0.
+- Review Update: Smoke uses Cargo's reported executable, cleans owned containers by recorded ID even after startup failure, and validates HTTP status plus JSON before allowing the pinned 13.2.0 org-delete exception. Independent org export/diff/update coverage remains enabled.
 - Boundary: Grafana 13.2.0 has an upstream organization-delete regression, so only the dependent missing-org/replay fixtures are skipped after the exact server response is observed; ordinary datasource and dashboard workflows remain covered.
 
 - Older trace history moved to [`archive/ai-status-archive-2026-03-24.md`](docs/internal/archive/ai-status-archive-2026-03-24.md).

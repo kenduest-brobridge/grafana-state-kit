@@ -162,7 +162,9 @@ class DatasourceLiveMutationTests(unittest.TestCase):
         self.assertEqual(plan["match"], "exists-uid")
         self.assertEqual(plan["target"]["id"], 7)
 
-    def test_datasource_live_mutation_delete_datasource_issues_delete_for_live_uid(self):
+    def test_datasource_live_mutation_delete_datasource_issues_delete_for_live_uid(
+        self,
+    ):
         client = FakeDatasourceClient(
             datasources=[
                 {

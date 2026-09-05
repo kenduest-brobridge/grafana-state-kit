@@ -2,6 +2,10 @@
 
 ## Active
 
+- [x] [2026-09-05 compatibility and screenshot retirement review](2026-09-05-compatibility-retirement-review.md) -
+  Fix smoke artifact selection, cleanup and exception boundaries; verify code,
+  documentation, and all five live compatibility lanes.
+
 - [x] [2026-09-05 Grafana 12 UID mutations and screenshot retirement](2026-09-05-grafana12-uid-and-screenshot-retirement.md) -
   Retire screenshot capture, establish the Grafana 12.0+ compatibility contract,
   use UID-only datasource mutations, and add released-version test lanes.

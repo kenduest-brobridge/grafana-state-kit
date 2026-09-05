@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RUST_DIR="$ROOT_DIR/rust"
 CARGO_BIN="${CARGO_BIN:-cargo}"
+RUST_BINARY=""
 RUST_LIVE_SCOPE="${RUST_LIVE_SCOPE:-full}"
 GRAFANA_IMAGE="${GRAFANA_IMAGE:-grafana/grafana:13.2.0}"
 GRAFANA_PORT="${GRAFANA_PORT:-43011}"
@@ -15,6 +16,7 @@ GRAFANA_VERSION=""
 ORG_DELETE_UNAVAILABLE=0
 CONTAINER_NAME="${GRAFANA_CONTAINER_NAME:-grafana-util-live-grafana}"
 WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/grafana-util-rust-live.XXXXXX")"
+CONTAINER_ID_FILE="${WORK_DIR}/grafana-container.cid"
 DASHBOARD_EXPORT_DIR="${WORK_DIR}/dashboards"
 DASHBOARD_DRY_RUN_DIR="${WORK_DIR}/dashboards-dry-run"
 DASHBOARD_INSPECTION_EXPORT_DIR="${WORK_DIR}/dashboards-inspection"
@@ -40,7 +42,9 @@ ALERT_RULE_FILE=""
 ALERT_RULE_UID=""
 
 cleanup() {
-  docker rm -f "${CONTAINER_NAME}" >/dev/null 2>&1 || true
+  if [[ -s "${CONTAINER_ID_FILE}" ]]; then
+    docker rm -f "$(<"${CONTAINER_ID_FILE}")" >/dev/null 2>&1 || true
+  fi
   rm -rf "${WORK_DIR}"
 }
 
@@ -478,6 +482,7 @@ start_grafana() {
   publish_args=(-p "127.0.0.1:${GRAFANA_PORT}:3000")
 
   docker run -d \
+    --cidfile "${CONTAINER_ID_FILE}" \
     --name "${CONTAINER_NAME}" \
     "${publish_args[@]}" \
     -e "GF_SECURITY_ADMIN_USER=${GRAFANA_USER}" \
@@ -489,13 +494,17 @@ start_grafana() {
   wait_for_grafana
   GRAFANA_VERSION="$(api GET /api/health | jq -r '.version // empty')"
   [[ -n "${GRAFANA_VERSION}" ]] || fail "Grafana health response did not include a version"
+  printf 'Live Grafana: image=%s health.version=%s\n' "${GRAFANA_IMAGE}" "${GRAFANA_VERSION}"
 }
 
 build_rust_bins() {
-  "${CARGO_BIN}" build --quiet \
+  RUST_BINARY="$("${CARGO_BIN}" build --quiet --message-format=json \
     --manifest-path "${RUST_DIR}/Cargo.toml" \
-    --bin grafana-util \
-    --bin grafana-util
+    --bin grafana-util | jq -sr '
+      [.[] | select(.reason == "compiler-artifact" and .target.name == "grafana-util")
+       | .executable // empty] | last // empty
+    ')"
+  [[ -n "${RUST_BINARY}" ]] || fail "Cargo did not report the grafana-util executable"
 }
 
 seed_datasource() {
@@ -703,21 +712,28 @@ create_org() {
 
 delete_org() {
   local org_id="$1"
-  local response=""
+  local response_file="${WORK_DIR}/delete-org-response.json"
+  local response_status="" curl_status=0
 
-  if response="$(api DELETE "/api/orgs/${org_id}" 2>/dev/null)"; then
+  if response_status="$(curl --silent --show-error --fail-with-body \
+    -u "${GRAFANA_USER}:${GRAFANA_PASSWORD}" -X DELETE \
+    --output "${response_file}" --write-out '%{http_code}' \
+    "${GRAFANA_URL}/api/orgs/${org_id}")"; then
     return 0
+  else
+    curl_status=$?
   fi
 
-  if [[ "${GRAFANA_VERSION}" == 13.* ]] \
-    && [[ "${response}" == *'"message":"Failed to delete organization"'* ]]; then
+  # https://github.com/grafana/grafana/issues/127386; verified on this pinned patch.
+  if [[ "${GRAFANA_VERSION}" == "13.2.0" && "${curl_status}" -eq 22 && "${response_status}" == "500" ]] \
+    && jq -se 'length == 1 and .[0].message == "Failed to delete organization"' "${response_file}" >/dev/null 2>&1; then
     ORG_DELETE_UNAVAILABLE=1
     printf '%s\n' \
       'Grafana 13 organization deletion regression: skip missing-org matrix cases.' >&2
     return 0
   fi
 
-  fail "failed to delete org ${org_id}: ${response}"
+  fail "failed to delete org ${org_id} (image=${GRAFANA_IMAGE} version=${GRAFANA_VERSION} HTTP=${response_status} curl=${curl_status})"
 }
 
 find_org_id_by_name() {
@@ -876,19 +892,19 @@ seed_alert_resources() {
 }
 
 dashboard_bin() {
-  printf '%s\n' "${RUST_DIR}/target/debug/grafana-util"
+  printf '%s\n' "${RUST_BINARY}"
 }
 
 alert_bin() {
-  printf '%s\n' "${RUST_DIR}/target/debug/grafana-util"
+  printf '%s\n' "${RUST_BINARY}"
 }
 
 datasource_bin() {
-  printf '%s\n' "${RUST_DIR}/target/debug/grafana-util"
+  printf '%s\n' "${RUST_BINARY}"
 }
 
 access_bin() {
-  printf '%s\n' "${RUST_DIR}/target/debug/grafana-util"
+  printf '%s\n' "${RUST_BINARY}"
 }
 
 wait_for_rust_team_absent() {
@@ -916,7 +932,7 @@ wait_for_rust_team_absent() {
 }
 
 sync_bin() {
-  printf '%s\n' "${RUST_DIR}/target/debug/grafana-util"
+  printf '%s\n' "${RUST_BINARY}"
 }
 
 run_access_smoke() {
@@ -1471,6 +1487,7 @@ run_access_smoke() {
   )"
   [[ "$(printf '%s' "${list_json}" | jq 'length')" == "0" ]] \
     || fail "rust access org delete did not remove the target organization"
+  fi
 
   org_replay_json="$(
     "$(access_bin)" access org add \
@@ -1584,6 +1601,7 @@ run_access_smoke() {
   grep -q 'No org differences across ' "${org_diff_same_log}" \
     || fail "rust access org diff did not return to same-state after import replay"
 
+  if [[ "${ORG_DELETE_UNAVAILABLE}" -eq 0 ]]; then
   "$(access_bin)" access org delete \
     --url "${GRAFANA_URL}" \
     --basic-user "${GRAFANA_USER}" \
@@ -2733,6 +2751,10 @@ run_sync_smoke() {
 }
 
 main() {
+  trap cleanup EXIT
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
+
   command -v docker >/dev/null || fail "docker is required"
   command -v curl >/dev/null || fail "curl is required"
   command -v jq >/dev/null || fail "jq is required"
