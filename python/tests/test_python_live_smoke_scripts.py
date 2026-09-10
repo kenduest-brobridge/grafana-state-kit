@@ -121,6 +121,11 @@ main
     def test_org_delete_skips_only_the_recorded_server_failure(self):
         known_body = '{"message":"Failed to delete organization"}'
         cases = [
+            ("13.2.1", "500", known_body, 0, True),
+            ("13.2.1", "403", known_body, 1, False),
+            ("13.2.1", "503", known_body, 1, False),
+            ("13.2.1", "500", known_body + known_body, 1, False),
+            ("13.2.2", "500", known_body, 1, False),
             ("13.2.0", "500", known_body, 0, True),
             (
                 "13.2.0",

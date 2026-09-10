@@ -117,7 +117,7 @@ class PackagingTests(unittest.TestCase):
 
         self.assertIn("GRAFANA_12_FLOOR_IMAGE ?= grafana/grafana:12.0.10", makefile)
         self.assertIn("GRAFANA_12_CURRENT_IMAGE ?= grafana/grafana:12.4.9", makefile)
-        self.assertIn("GRAFANA_13_CURRENT_IMAGE ?= grafana/grafana:13.2.0", makefile)
+        self.assertIn("GRAFANA_13_CURRENT_IMAGE ?= grafana/grafana:13.2.1", makefile)
         self.assertIn("test-rust-live-12-floor:", makefile)
         self.assertIn("test-rust-live-12-current:", makefile)
         self.assertIn("test-rust-live-13-current:", makefile)
@@ -133,7 +133,13 @@ class PackagingTests(unittest.TestCase):
         self.assertIn("bash ./scripts/test-python-datasource-live-grafana.sh", workflow)
         self.assertIn("grafana/grafana:12.0.10", workflow)
         self.assertIn("grafana/grafana:12.4.9", workflow)
-        self.assertIn("grafana/grafana:13.2.0", workflow)
+        self.assertIn("grafana/grafana:13.2.1", workflow)
+        self.assertNotIn("grafana/grafana:13.2.0", workflow)
+        for script in (RUST_LIVE_SMOKE_PATH, PYTHON_DATASOURCE_LIVE_SMOKE_PATH):
+            self.assertIn(
+                'GRAFANA_IMAGE="${GRAFANA_IMAGE:-grafana/grafana:13.2.1}"',
+                script.read_text(encoding="utf-8"),
+            )
 
     def test_developer_guide_declares_grafana_12_compatibility_floor(self):
         content = DEVELOPER_GUIDE_PATH.read_text(encoding="utf-8")

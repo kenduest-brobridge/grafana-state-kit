@@ -2,6 +2,10 @@
 
 ## Active
 
+- [x] [2026-09-10 stable upstream review and execution](2026-09-10-upstream-stable-review.md) -
+  Verify Grafana 13.2.1, fix confirmed compatibility issues, add regression
+  coverage, review and commit; retain Grafana 12.x compatibility.
+
 - [x] [2026-09-05 compatibility and screenshot retirement review](2026-09-05-compatibility-retirement-review.md) -
   Fix smoke artifact selection, cleanup and exception boundaries; verify code,
   documentation, and all five live compatibility lanes.

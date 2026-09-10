@@ -2,6 +2,14 @@
 
 Current AI-maintained status only.
 - Older entries moved to [`ai-status-archive-2026-09-05.md`](archive/ai-status-archive-2026-09-05.md).
+- Older entries moved to [`ai-status-archive-2026-09-10.md`](archive/ai-status-archive-2026-09-10.md).
+
+## 2026-09-10 - Grafana 13.2.1 compatibility verification
+- State: done
+- Scope: Refresh the maintained 13.x image to 13.2.1 while retaining 12.0.10 and 12.4.9 regression lanes.
+- Current Update: Both live clients reproduced the org-delete HTTP 500; only 13.2.0 and 13.2.1 qualify for the exact-response fixture exception. Added dashboard JSON-preservation and permission-error regression coverage.
+- Result: Full Rust/Python quality, generated-doc checks, the five-lane live matrix, and independent diff review passed.
+- Boundary: Native-v2 preservation tests exercise client payloads, not server validation of unknown fields. Prompt exports still require Grafana UI datasource selection; beta and optional feature expansion remain out of scope.
 
 ## 2026-09-05 - Grafana 12 compatibility and screenshot retirement
 - State: done
@@ -59,9 +67,3 @@ Current AI-maintained status only.
 - Scope: rust/src/commands/review_contract.rs; rust/src/commands/review_contract_tests.rs; docs/internal/tui-architecture-roadmap.md
 - Current Update: Moved shared review contract inline tests into a file-backed test module while preserving the same private-helper coverage.
 - Result: `review_contract.rs` dropped below the architecture warning threshold; the only remaining architecture warning is shared browser session.
-
-## 2026-06-11 - Datasource browse support review split
-- State: Done
-- Scope: rust/src/commands/datasource/browse/support.rs; rust/src/commands/datasource/browse/support_review.rs; rust/src/commands/datasource/mod.rs; docs/internal/tui-architecture-roadmap.md
-- Current Update: Moved datasource browse review-evidence projection and safe changed-field filtering into a dedicated support review module while preserving existing detail/review tests.
-- Result: `datasource/browse/support.rs` dropped below the architecture warning threshold; the remaining architecture warnings are review_contract and shared browser session.

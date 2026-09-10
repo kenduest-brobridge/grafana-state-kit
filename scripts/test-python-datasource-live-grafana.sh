@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PYTHON_BIN="${PYTHON_BIN:-}"
-GRAFANA_IMAGE="${GRAFANA_IMAGE:-grafana/grafana:13.2.0}"
+GRAFANA_IMAGE="${GRAFANA_IMAGE:-grafana/grafana:13.2.1}"
 GRAFANA_PORT="${GRAFANA_PORT:-43011}"
 GRAFANA_USER="${GRAFANA_USER:-admin}"
 GRAFANA_PASSWORD="${GRAFANA_PASSWORD:-admin}"
@@ -202,8 +202,8 @@ delete_org() {
     curl_status=$?
   fi
 
-  # https://github.com/grafana/grafana/issues/127386; verified on this pinned patch.
-  if [[ "${GRAFANA_VERSION}" == "13.2.0" && "${curl_status}" -eq 22 && "${response_status}" == "500" ]] \
+  # https://github.com/grafana/grafana/issues/127386; reproduced on these patches.
+  if [[ ( "${GRAFANA_VERSION}" == "13.2.0" || "${GRAFANA_VERSION}" == "13.2.1" ) && "${curl_status}" -eq 22 && "${response_status}" == "500" ]] \
     && jq -se 'length == 1 and .[0].message == "Failed to delete organization"' "${response_file}" >/dev/null 2>&1; then
     ORG_DELETE_UNAVAILABLE=1
     printf '%s\n' 'Grafana 13 organization deletion regression: skip missing-org datasource matrix.' >&2

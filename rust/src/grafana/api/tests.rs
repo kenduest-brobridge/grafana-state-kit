@@ -18,6 +18,64 @@ use serde_json::json;
 
 type SequenceServer = (String, Arc<Mutex<Vec<String>>>, thread::JoinHandle<()>);
 
+#[test]
+fn legacy_folder_reads_preserve_forbidden_without_retry() {
+    for permissions in [false, true] {
+        let Some((base_url, requests, handle)) = spawn_sequence_server(vec![http_response(
+            "403 Forbidden",
+            r#"{"message":"Access denied"}"#,
+        )]) else {
+            return;
+        };
+        let api = build_test_api(base_url);
+        let error = if permissions {
+            api.dashboard()
+                .fetch_folder_permissions("private")
+                .unwrap_err()
+        } else {
+            api.dashboard()
+                .fetch_folder_if_exists("private")
+                .unwrap_err()
+        };
+        assert_eq!(error.status_code(), Some(403));
+        assert!(error.to_string().contains("Access denied"));
+        handle.join().unwrap();
+        let requests = requests.lock().unwrap();
+        assert_eq!(requests.len(), 1);
+        let path = if permissions {
+            "/api/folders/private/permissions"
+        } else {
+            "/api/folders/private"
+        };
+        assert!(requests[0].starts_with(&format!("GET {path} ")));
+    }
+}
+
+#[test]
+fn contact_point_update_preserves_provenance_forbidden_without_bypass() {
+    let Some((base_url, requests, handle)) = spawn_sequence_server(vec![http_response(
+        "403 Forbidden",
+        r#"{"message":"cannot change provenance"}"#,
+    )]) else {
+        return;
+    };
+    let api = build_test_api(base_url);
+    let payload = json!({"uid":"cp-main","name":"Main","type":"email","settings":{"addresses":"ops@example.com"}});
+    let error = api
+        .alerting()
+        .update_contact_point("cp-main", payload.as_object().unwrap())
+        .unwrap_err();
+    assert_eq!(error.status_code(), Some(403));
+    assert!(error.to_string().contains("cannot change provenance"));
+    handle.join().unwrap();
+    let requests = requests.lock().unwrap();
+    assert_eq!(requests.len(), 1);
+    assert!(requests[0].starts_with("PUT /api/v1/provisioning/contact-points/cp-main "));
+    assert!(!requests[0]
+        .to_ascii_lowercase()
+        .contains("x-disable-provenance"));
+}
+
 fn http_response(status: &str, body: &str) -> String {
     format!(
         "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",

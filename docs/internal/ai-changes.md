@@ -2,6 +2,13 @@
 
 Current AI change log only.
 - Older entries moved to [`ai-changes-archive-2026-09-05.md`](archive/ai-changes-archive-2026-09-05.md).
+- Older entries moved to [`ai-changes-archive-2026-09-10.md`](archive/ai-changes-archive-2026-09-10.md).
+
+## 2026-09-10 - Grafana 13.2.1 compatibility verification
+- Summary: Pin maintained 13.x Make/CI/smoke lanes to 13.2.1 and allow the independently reproduced org-delete fixture exception for that exact patch.
+- Tests: Add strict version/status/JSON exception cases, query/adhoc/groupby export/import payload coverage, nested native-v2 spec preservation, and 403 propagation without retry or provenance bypass.
+- Impact: Grafana 12 compatibility and production API routing remain unchanged; no new beta or prompt-import capability is introduced.
+- Rollback/Risk: Low; test scripts, regression coverage and documentation only. Unknown versions and nonmatching failures remain fatal. See `todo/2026-09-10-upstream-stable-review.md` for current verification evidence.
 
 ## 2026-09-05 - Grafana 12 compatibility and screenshot retirement
 - Summary: Removed the dashboard screenshot command and browser/Pillow release dependencies from Rust and Python, migrated maintained datasource writes to `/api/datasources/uid/{uid}`, and added pinned Grafana 12.0.10, 12.4.9, and 13.2.0 smoke lanes in Make and CI.
@@ -92,10 +99,3 @@ Current AI change log only.
 - Impact: Operators can inspect datasource plan and import dry-run actions interactively with blockers, warnings, review hints, and safe diffs while public JSON remains unchanged.
 - Rollback/Risk: Low to medium; public help/docs gain an interactive output value, runtime path is read-only and uses existing review envelopes.
 - Follow-up: Consider moving access plan TUI onto the shared review browser builder after comparing existing access-specific summary/resource rows.
-
-## 2026-05-25 - TUI empty selection key handling
-- Summary: Kept datasource/access browse edit and delete keys inside the TUI when no row is selected, surfacing status messages instead of propagating selected-row errors.
-- Tests: cargo test --quiet edit_key_on_empty_document_stays_in_browser; cargo test --quiet delete_key_on_empty_document_stays_in_browser; cargo test --quiet empty_user_browse_edit_and_delete_keys_stay_in_browser; cargo test --quiet empty_team_browse_edit_and_delete_keys_stay_in_browser; cargo test --quiet datasource_browse_input; cargo test --quiet user_browse_input; cargo test --quiet team_browse_input; cargo test --quiet datasource_browse; cargo test --quiet access::user_browse; cargo test --quiet access::team_browse; cargo test --quiet browse; cargo fmt --check; git diff --check
-- Impact: Datasource browse, access user browse, and access team browse now treat empty edit/delete key presses as in-browser no-selection states.
-- Rollback/Risk: Low; changes are limited to empty-selection branches and regression tests cover the key paths.
-- Follow-up: none

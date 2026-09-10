@@ -54,7 +54,7 @@ jobs:
           - lane: grafana-12-current
             image: grafana/grafana:12.4.9
           - lane: grafana-13-current
-            image: grafana/grafana:13.2.0
+            image: grafana/grafana:13.2.1
     steps:
       - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
@@ -76,7 +76,7 @@ jobs:
           - lane: grafana-12-floor
             image: grafana/grafana:12.0.10
           - lane: grafana-13-current
-            image: grafana/grafana:13.2.0
+            image: grafana/grafana:13.2.1
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6

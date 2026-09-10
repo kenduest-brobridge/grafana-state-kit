@@ -21,7 +21,7 @@ DEV_ITERATION ?= 1
 RUST_RELEASE_RUSTFLAGS ?= -C debuginfo=0
 GRAFANA_12_FLOOR_IMAGE ?= grafana/grafana:12.0.10
 GRAFANA_12_CURRENT_IMAGE ?= grafana/grafana:12.4.9
-GRAFANA_13_CURRENT_IMAGE ?= grafana/grafana:13.2.0
+GRAFANA_13_CURRENT_IMAGE ?= grafana/grafana:13.2.1
 HOST_OS := $(shell uname -s)
 PYTHON_DIR := python
 ESC := \033

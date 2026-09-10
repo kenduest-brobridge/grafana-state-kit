@@ -318,6 +318,42 @@ mod tests {
     }
 
     #[test]
+    fn grafana_13_variable_datasource_refs_preserve_raw_roundtrip_and_prompt_boundary() {
+        let variables = json!([
+            {"name":"instance","type":"query","datasource":{"type":"prometheus","uid":"prom-main"},
+             "query":{"query":"label_values(up, instance)","refId":"VariableQuery"},"refresh":1},
+            {"name":"filters","type":"adhoc","datasource":{"type":"prometheus","uid":"prom-main"},
+             "filters":[{"key":"job","operator":"=","value":"node"}],"baseFilters":[]},
+            {"name":"grouping","type":"groupby","datasource":{"type":"prometheus","uid":"prom-main"},
+             "defaultValue":{"text":"instance","value":"instance"},"options":[],"multi":true}
+        ]);
+        let source = json!({"dashboard":{
+            "id":42,"uid":"variables","title":"Variable references","panels":[],
+            "templating":{"list":variables}
+        }});
+        let raw = build_preserved_web_import_document(&source).unwrap();
+        let imported = crate::dashboard::build_import_payload(&raw, None, false, "").unwrap();
+        assert_eq!(imported["dashboard"]["templating"]["list"], variables);
+
+        let prompt =
+            build_external_export_document_with_library_panels(&raw, &datasource_catalog(), None)
+                .unwrap();
+        let inputs = prompt["__inputs"].as_array().unwrap();
+        assert_eq!(inputs.len(), 1);
+        assert_eq!(inputs[0]["pluginId"], "prometheus");
+        let placeholder = format!("${{{}}}", inputs[0]["name"].as_str().unwrap());
+        let mut expected = variables.clone();
+        for variable in expected.as_array_mut().unwrap() {
+            variable["datasource"]["uid"] = json!(placeholder);
+        }
+        assert_eq!(prompt["templating"]["list"], expected);
+        let error = crate::dashboard::build_import_payload(&prompt, None, false, "")
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("Grafana web UI"), "{error}");
+    }
+
+    #[test]
     fn build_library_panel_export_strips_identity_fields() {
         let (uid, export) = build_library_panel_export(&json!({
             "result": {

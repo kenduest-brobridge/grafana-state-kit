@@ -530,6 +530,101 @@ fn export_dashboards_writes_resource_v2_without_rewriting_elements() {
 }
 
 #[test]
+fn grafana_13_native_v2_nested_layout_survives_export_import() {
+    let temp = tempdir().unwrap();
+    let mut args = make_history_only_export_args(temp.path().join("dashboards"), None, false, true);
+    args.include_history = false;
+    args.without_dashboard_raw = true;
+    args.without_dashboard_prompt = true;
+    args.without_dashboard_provisioning = true;
+    args.resource_format = crate::dashboard::DashboardResourceFormat::V2;
+    args.resource_namespace = Some("default".to_string());
+    // v13.2.1 v2 schema shapes; this checks JSON preservation, not server acceptance.
+    let inner_tabs = json!({"kind":"TabsLayout","spec":{"tabs":[{
+        "kind":"TabsLayoutTab","spec":{"title":"CPU details",
+            "layout":{"kind":"GridLayout","spec":{"items":[{
+                "kind":"GridLayoutItem","spec":{"x":0,"y":0,"width":12,"height":8,
+                    "element":{"kind":"ElementReference","name":"panel-1"}}
+            }]}}}
+    }]}});
+    let mut spec = json!({
+        "title":"Nested layouts",
+        "elements":{"panel-1":{"kind":"Panel","spec":{"id":1,"title":"CPU",
+            "customPanelOption":{"enabled":true}}}},
+        "layout":{"kind":"TabsLayout","spec":{"tabs":[{"kind":"TabsLayoutTab","spec":{
+            "title":"Overview","layout":{"kind":"RowsLayout","spec":{"rows":[{
+                "kind":"RowsLayoutRow","spec":{"title":"Compute","collapse":true,
+                    "conditionalRendering":{"kind":"ConditionalRenderingGroup","spec":{
+                        "visibility":"show","condition":"and","items":[{
+                            "kind":"ConditionalRenderingVariable","spec":{
+                                "variable":"instance","operator":"equals","value":"node-1"}
+                        }]}},
+                    "layout":inner_tabs}
+            }]}}
+        }}]}},
+        "customSpecOption":{"nested":[null,false,17,{"keep":"verbatim"}]}
+    });
+    spec["variables"] = json!([
+        {"kind":"QueryVariable","spec":{"name":"instance",
+            "current":{"text":"node-1","value":"node-1"},"hide":"dontHide",
+            "refresh":"onDashboardLoad","skipUrlSync":false,
+            "query":{"kind":"DataQuery","group":"prometheus","version":"v0",
+                "datasource":{"name":"prom-main"},"spec":{"query":"label_values(up, instance)"}},
+            "regex":"","sort":"disabled","options":[],"multi":false,
+            "includeAll":false,"allowCustomValue":true}},
+        {"kind":"AdhocVariable","group":"prometheus","datasource":{"name":"prom-main"},
+            "spec":{"name":"filters","baseFilters":[],
+                "filters":[{"key":"job","operator":"=","value":"node"}],"defaultKeys":[],
+                "hide":"dontHide","skipUrlSync":false,"allowCustomValue":true,"enableGroupBy":true}},
+        {"kind":"GroupByVariable","group":"prometheus","datasource":{"name":"prom-main"},
+            "spec":{"name":"grouping","current":{"text":["instance"],"value":["instance"]},
+                "options":[],"multi":true,"hide":"dontHide","skipUrlSync":false}}
+    ]);
+    let source = json!({"apiVersion":"dashboard.grafana.app/v2","kind":"Dashboard",
+        "metadata":{"name":"nested","namespace":"default","resourceVersion":"7"},"spec":spec});
+    export_dashboards_with_request(
+        |method, path, _, _| match (method.as_str(), path) {
+            ("GET", "/api/org") => Ok(Some(json!({"id":1,"name":"Main Org"}))),
+            ("GET", "/apis/dashboard.grafana.app/v2/namespaces/default/dashboards") => Ok(Some(
+                json!({"apiVersion":"dashboard.grafana.app/v2","kind":"DashboardList",
+                "metadata":{},"items":[source.clone()]}),
+            )),
+            _ => Err(test_support::message(format!("unexpected path {path}"))),
+        },
+        &args,
+    )
+    .unwrap();
+    let exported: Value = serde_json::from_str(
+        &fs::read_to_string(args.output_dir.join("resource-v2/objects/nested.json")).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(exported["spec"], spec);
+    let discovered =
+        crate::dashboard::import::discover_dashboard_v2_resources(&args.output_dir).unwrap();
+    assert_eq!(discovered.len(), 1);
+    let create = crate::dashboard::import::normalize_dashboard_v2_create_payload(
+        &exported,
+        "target",
+        Some("folder"),
+        "",
+    )
+    .unwrap();
+    let live = json!({"apiVersion":"dashboard.grafana.app/v2","kind":"Dashboard",
+        "metadata":{"name":"nested","namespace":"target","resourceVersion":"9"},"spec":{}});
+    let update = crate::dashboard::import::normalize_dashboard_v2_update_payload(
+        &exported,
+        &live,
+        "target",
+        Some("folder"),
+        "",
+    )
+    .unwrap();
+    assert_eq!(create["spec"], spec);
+    assert_eq!(update["spec"], spec);
+    assert_eq!(update["metadata"]["resourceVersion"], "9");
+}
+
+#[test]
 fn export_dashboards_uses_explicit_resource_namespace_for_resource_only_export() {
     let temp = tempdir().unwrap();
     let mut args = make_history_only_export_args(temp.path().join("dashboards"), None, false, true);
