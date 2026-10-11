@@ -2,7 +2,11 @@
 
 ## Active
 
-- [ ] [2026-10-11 deep project review and fixes](2026-10-11-deep-project-review.md) -
+- [x] [2026-10-11 development priorities and simplification](2026-10-11-development-convergence.md) -
+  Verify remaining development opportunities, excess abstraction and stale or
+  redundant tests; implement a bounded, evidence-backed simplification.
+
+- [x] [2026-10-11 deep project review and fixes](2026-10-11-deep-project-review.md) -
   Review maintained Rust behavior, shared contracts and delivery surfaces;
   reproduce and repair confirmed defects, validate, and commit locally.
 

@@ -3,10 +3,8 @@ use serde_json::{Map, Value};
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::common::{message, string_field, value_as_object, Result};
-use crate::dashboard::list;
 use crate::dashboard::live::{
-    create_folder_entry_with_request, fetch_dashboard_if_exists_with_request,
-    fetch_folder_if_exists_with_request,
+    fetch_dashboard_if_exists_with_request, fetch_folder_if_exists_with_request,
 };
 use crate::dashboard::DEFAULT_PAGE_SIZE;
 use crate::grafana_api::DashboardResourceClient;
@@ -24,143 +22,6 @@ pub(crate) struct ImportLookupCache {
     pub orgs: Option<Vec<Map<String, Value>>>,
 }
 
-struct ImportLookupRequestClient<'a, F>
-where
-    F: FnMut(Method, &str, &[(String, String)], Option<&Value>) -> Result<Option<Value>>,
-{
-    request_json: &'a mut F,
-}
-
-impl<'a, F> ImportLookupRequestClient<'a, F>
-where
-    F: FnMut(Method, &str, &[(String, String)], Option<&Value>) -> Result<Option<Value>>,
-{
-    fn new(request_json: &'a mut F) -> Self {
-        Self { request_json }
-    }
-
-    fn list_dashboard_summaries(&mut self, page_size: usize) -> Result<Vec<Map<String, Value>>> {
-        crate::dashboard::list_dashboard_summaries_with_request(&mut *self.request_json, page_size)
-    }
-
-    fn fetch_dashboard_if_exists(&mut self, uid: &str) -> Result<Option<Value>> {
-        fetch_dashboard_if_exists_with_request(&mut *self.request_json, uid)
-    }
-
-    fn fetch_folder_if_exists(&mut self, uid: &str) -> Result<Option<Map<String, Value>>> {
-        fetch_folder_if_exists_with_request(&mut *self.request_json, uid)
-    }
-
-    fn fetch_current_org(&mut self) -> Result<Map<String, Value>> {
-        list::fetch_current_org_with_request(&mut *self.request_json)
-    }
-
-    fn list_orgs(&mut self) -> Result<Vec<Map<String, Value>>> {
-        list::list_orgs_with_request(&mut *self.request_json)
-    }
-
-    fn create_folder_entry(
-        &mut self,
-        title: &str,
-        uid: &str,
-        parent_uid: Option<&str>,
-    ) -> Result<()> {
-        let _ = create_folder_entry_with_request(&mut *self.request_json, title, uid, parent_uid)?;
-        Ok(())
-    }
-}
-
-struct ImportLookupDashboardClient<'a> {
-    client: &'a DashboardResourceClient<'a>,
-}
-
-impl<'a> ImportLookupDashboardClient<'a> {
-    fn new(client: &'a DashboardResourceClient<'a>) -> Self {
-        Self { client }
-    }
-}
-
-#[allow(dead_code)]
-trait ImportLookupLiveOps {
-    fn list_dashboard_summaries(&mut self, page_size: usize) -> Result<Vec<Map<String, Value>>>;
-    fn fetch_dashboard_if_exists(&mut self, uid: &str) -> Result<Option<Value>>;
-    fn fetch_folder_if_exists(&mut self, uid: &str) -> Result<Option<Map<String, Value>>>;
-    fn fetch_current_org(&mut self) -> Result<Map<String, Value>>;
-    fn list_orgs(&mut self) -> Result<Vec<Map<String, Value>>>;
-    fn create_folder_entry(
-        &mut self,
-        title: &str,
-        uid: &str,
-        parent_uid: Option<&str>,
-    ) -> Result<()>;
-}
-
-impl<F> ImportLookupLiveOps for ImportLookupRequestClient<'_, F>
-where
-    F: FnMut(Method, &str, &[(String, String)], Option<&Value>) -> Result<Option<Value>>,
-{
-    fn list_dashboard_summaries(&mut self, page_size: usize) -> Result<Vec<Map<String, Value>>> {
-        self.list_dashboard_summaries(page_size)
-    }
-
-    fn fetch_dashboard_if_exists(&mut self, uid: &str) -> Result<Option<Value>> {
-        self.fetch_dashboard_if_exists(uid)
-    }
-
-    fn fetch_folder_if_exists(&mut self, uid: &str) -> Result<Option<Map<String, Value>>> {
-        self.fetch_folder_if_exists(uid)
-    }
-
-    fn fetch_current_org(&mut self) -> Result<Map<String, Value>> {
-        self.fetch_current_org()
-    }
-
-    fn list_orgs(&mut self) -> Result<Vec<Map<String, Value>>> {
-        self.list_orgs()
-    }
-
-    fn create_folder_entry(
-        &mut self,
-        title: &str,
-        uid: &str,
-        parent_uid: Option<&str>,
-    ) -> Result<()> {
-        self.create_folder_entry(title, uid, parent_uid)
-    }
-}
-
-impl<'a> ImportLookupLiveOps for ImportLookupDashboardClient<'a> {
-    fn list_dashboard_summaries(&mut self, page_size: usize) -> Result<Vec<Map<String, Value>>> {
-        self.client.list_dashboard_summaries(page_size)
-    }
-
-    fn fetch_dashboard_if_exists(&mut self, uid: &str) -> Result<Option<Value>> {
-        self.client.fetch_dashboard_if_exists(uid)
-    }
-
-    fn fetch_folder_if_exists(&mut self, uid: &str) -> Result<Option<Map<String, Value>>> {
-        self.client.fetch_folder_if_exists(uid)
-    }
-
-    fn fetch_current_org(&mut self) -> Result<Map<String, Value>> {
-        self.client.fetch_current_org()
-    }
-
-    fn list_orgs(&mut self) -> Result<Vec<Map<String, Value>>> {
-        self.client.list_orgs()
-    }
-
-    fn create_folder_entry(
-        &mut self,
-        title: &str,
-        uid: &str,
-        parent_uid: Option<&str>,
-    ) -> Result<()> {
-        let _ = self.client.create_folder_entry(title, uid, parent_uid)?;
-        Ok(())
-    }
-}
-
 fn load_dashboard_uid_summary_cache<F>(
     request_json: &mut F,
     cache: &mut ImportLookupCache,
@@ -168,18 +29,19 @@ fn load_dashboard_uid_summary_cache<F>(
 where
     F: FnMut(Method, &str, &[(String, String)], Option<&Value>) -> Result<Option<Value>>,
 {
-    let mut client = ImportLookupRequestClient::new(request_json);
-    load_dashboard_uid_summary_cache_with_client(&mut client, cache)
-}
-
-fn load_dashboard_uid_summary_cache_with_client(
-    client: &mut impl ImportLookupLiveOps,
-    cache: &mut ImportLookupCache,
-) -> Result<()> {
     if cache.dashboard_uids_from_search.is_some() {
         return Ok(());
     }
-    let summaries = client.list_dashboard_summaries(DEFAULT_PAGE_SIZE)?;
+    let summaries =
+        crate::dashboard::list_dashboard_summaries_with_request(request_json, DEFAULT_PAGE_SIZE)?;
+    store_dashboard_uid_summary_cache(summaries, cache);
+    Ok(())
+}
+
+fn store_dashboard_uid_summary_cache(
+    summaries: Vec<Map<String, Value>>,
+    cache: &mut ImportLookupCache,
+) {
     let mut dashboard_uids = BTreeSet::new();
     let mut folder_uids = BTreeMap::new();
     for summary in summaries {
@@ -195,15 +57,18 @@ fn load_dashboard_uid_summary_cache_with_client(
     }
     cache.dashboard_uids_from_search = Some(dashboard_uids);
     cache.dashboard_summary_folder_uids = folder_uids;
-    Ok(())
 }
 
 fn load_dashboard_uid_summary_cache_for_dashboard_client(
     client: &DashboardResourceClient<'_>,
     cache: &mut ImportLookupCache,
 ) -> Result<()> {
-    let mut lookup = ImportLookupDashboardClient::new(client);
-    load_dashboard_uid_summary_cache_with_client(&mut lookup, cache)
+    if cache.dashboard_uids_from_search.is_some() {
+        return Ok(());
+    }
+    let summaries = client.list_dashboard_summaries(DEFAULT_PAGE_SIZE)?;
+    store_dashboard_uid_summary_cache(summaries, cache);
+    Ok(())
 }
 
 pub(crate) fn dashboard_exists_with_summary<F>(
@@ -270,8 +135,7 @@ where
             return Ok(None);
         }
     }
-    let mut client = ImportLookupRequestClient::new(request_json);
-    let fetched = client.fetch_dashboard_if_exists(uid)?;
+    let fetched = fetch_dashboard_if_exists_with_request(request_json, uid)?;
     cache
         .dashboards_by_uid
         .insert(uid.to_string(), fetched.clone());
@@ -302,8 +166,7 @@ pub(crate) fn fetch_dashboard_if_exists_cached_with_client(
             return Ok(None);
         }
     }
-    let mut lookup = ImportLookupDashboardClient::new(client);
-    let fetched = lookup.fetch_dashboard_if_exists(uid)?;
+    let fetched = client.fetch_dashboard_if_exists(uid)?;
     cache
         .dashboards_by_uid
         .insert(uid.to_string(), fetched.clone());
@@ -324,8 +187,7 @@ where
     if let Some(cached) = cache.folders_by_uid.get(uid) {
         return Ok(cached.clone());
     }
-    let mut client = ImportLookupRequestClient::new(request_json);
-    let fetched = client.fetch_folder_if_exists(uid)?;
+    let fetched = fetch_folder_if_exists_with_request(request_json, uid)?;
     cache
         .folders_by_uid
         .insert(uid.to_string(), fetched.clone());
@@ -343,8 +205,7 @@ pub(crate) fn fetch_folder_if_exists_cached_with_client(
     if let Some(cached) = cache.folders_by_uid.get(uid) {
         return Ok(cached.clone());
     }
-    let mut lookup = ImportLookupDashboardClient::new(client);
-    let fetched = lookup.fetch_folder_if_exists(uid)?;
+    let fetched = client.fetch_folder_if_exists(uid)?;
     cache
         .folders_by_uid
         .insert(uid.to_string(), fetched.clone());

@@ -2,12 +2,25 @@
 
 ## Status
 
-- State: planned
+- State: partially implemented; remaining capability diagnostics are separate
 - Date: 2026-07-17
 - Scope: maximize Grafana 12, Grafana 13, and later compatibility by separating
   dashboard input classification from server API capability negotiation
 
-## Current-state findings
+## Reconciliation — 2026-10-11
+
+- Import now defaults to `auto`; source classification, native-v2 probing,
+  independent Classic raw fallback on 404, and routing diagnostics are shipped.
+- Explicit `resource-v2` retains its native-only, single-namespace contract.
+  Auto never converts a native dashboard into Classic JSON.
+- `--native` export is implemented. These completed items are not new work.
+- Shared operator-facing capability diagnostics remain open. Resource-v1 write
+  support remains deliberately unsupported and is not a default priority.
+- The checklist below describes the original proposal; use
+  [the current development inventory](2026-10-11-development-convergence.md)
+  to choose a new slice rather than restarting this entire plan.
+
+## Original findings — 2026-07-17
 
 - `dashboard import` currently defaults to `--input-format raw`.
 - `raw` and `provisioning` use the classic `/api/dashboards/db` workflow.

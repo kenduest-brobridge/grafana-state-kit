@@ -55,8 +55,5 @@ mod export_focus_report_path_rust_tests;
 #[path = "export_focus_report_query_rust_tests.rs"]
 mod export_focus_report_query_rust_tests;
 #[cfg(test)]
-#[path = "export_focus_report_render_rust_tests.rs"]
-mod export_focus_report_render_rust_tests;
-#[cfg(test)]
 #[path = "export_focus_report_validation_rust_tests.rs"]
 mod export_focus_report_validation_rust_tests;

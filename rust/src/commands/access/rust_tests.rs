@@ -47,52 +47,6 @@ use serde_json::{json, Map, Value};
 use std::fs;
 use tempfile::tempdir;
 
-fn render_access_subcommand_help(path: &[&str]) -> String {
-    let mut command = AccessCliRoot::command();
-    let mut current = &mut command;
-    for segment in path {
-        current = current
-            .find_subcommand_mut(segment)
-            .unwrap_or_else(|| panic!("missing access subcommand help for {segment}"));
-    }
-    let mut output = Vec::new();
-    current.write_long_help(&mut output).unwrap();
-    String::from_utf8(output).unwrap()
-}
-
-#[test]
-fn access_delete_help_mentions_prompt() {
-    assert!(render_access_subcommand_help(&["user", "delete"]).contains("--prompt"));
-    assert!(render_access_subcommand_help(&["team", "delete"]).contains("--prompt"));
-    assert!(render_access_subcommand_help(&["org", "delete"]).contains("--prompt"));
-    assert!(render_access_subcommand_help(&["service-account", "delete"]).contains("--prompt"));
-    assert!(
-        render_access_subcommand_help(&["service-account", "token", "delete"]).contains("--prompt")
-    );
-}
-
-#[test]
-fn parse_cli_supports_access_delete_prompt_flags() {
-    let user_args = parse_cli_from(["grafana-util access", "user", "delete", "--prompt"]);
-    match user_args.command {
-        AccessCommand::User {
-            command: UserCommand::Delete(inner),
-        } => {
-            assert!(inner.prompt);
-            assert_eq!(inner.scope, None);
-        }
-        _ => panic!("expected access user delete"),
-    }
-
-    let org_args = parse_cli_from(["grafana-util access", "org", "delete", "--prompt"]);
-    match org_args.command {
-        AccessCommand::Org {
-            command: OrgCommand::Delete(inner),
-        } => assert!(inner.prompt),
-        _ => panic!("expected access org delete"),
-    }
-}
-
 #[test]
 fn parse_cli_supports_access_wide_browse() {
     let args = parse_cli_from([

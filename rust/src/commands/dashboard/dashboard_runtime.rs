@@ -226,32 +226,7 @@ pub fn normalize_dashboard_cli_args(mut args: DashboardCliArgs) -> DashboardCliA
 }
 
 pub fn build_auth_context(common: &CommonCliArgs) -> Result<DashboardAuthContext> {
-    // Auth context is the single contract between parsing and transport:
-    // profile/env defaults are resolved here and then reused by every dashboard client call.
-    let connection = GrafanaConnection::resolve(
-        common.profile.as_deref(),
-        ConnectionMergeInput {
-            url: &common.url,
-            url_default: "",
-            api_token: common.api_token.as_deref(),
-            username: common.username.as_deref(),
-            password: common.password.as_deref(),
-            org_id: None,
-            timeout: common.timeout,
-            timeout_default: DEFAULT_TIMEOUT,
-            verify_ssl: common.verify_ssl,
-            insecure: false,
-            ca_cert: None,
-        },
-        AuthInputs {
-            api_token: common.api_token.as_deref(),
-            username: common.username.as_deref(),
-            password: common.password.as_deref(),
-            prompt_password: common.prompt_password,
-            prompt_token: common.prompt_token,
-        },
-        false,
-    )?;
+    let connection = build_connection(common)?;
     Ok(DashboardAuthContext {
         url: connection.base_url,
         timeout: connection.timeout_secs,

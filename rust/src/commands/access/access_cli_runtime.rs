@@ -219,30 +219,7 @@ pub struct AccessAuthContext {
 }
 
 pub fn build_auth_context(common: &super::CommonCliArgs) -> Result<AccessAuthContext> {
-    let connection = GrafanaConnection::resolve(
-        common.profile.as_deref(),
-        ConnectionMergeInput {
-            url: &common.url,
-            url_default: "",
-            api_token: common.api_token.as_deref(),
-            username: common.username.as_deref(),
-            password: common.password.as_deref(),
-            org_id: common.org_id,
-            timeout: common.timeout,
-            timeout_default: super::DEFAULT_TIMEOUT,
-            verify_ssl: common.verify_ssl,
-            insecure: common.insecure,
-            ca_cert: common.ca_cert.as_deref(),
-        },
-        AuthInputs {
-            api_token: common.api_token.as_deref(),
-            username: common.username.as_deref(),
-            password: common.password.as_deref(),
-            prompt_password: common.prompt_password,
-            prompt_token: common.prompt_token,
-        },
-        true,
-    )?;
+    let connection = build_connection(common)?;
     Ok(AccessAuthContext {
         url: connection.base_url,
         timeout: connection.timeout_secs,
@@ -256,30 +233,7 @@ pub fn build_auth_context(common: &super::CommonCliArgs) -> Result<AccessAuthCon
 pub fn build_auth_context_no_org_id(
     common: &super::CommonCliArgsNoOrgId,
 ) -> Result<AccessAuthContext> {
-    let connection = GrafanaConnection::resolve(
-        common.profile.as_deref(),
-        ConnectionMergeInput {
-            url: &common.url,
-            url_default: "",
-            api_token: common.api_token.as_deref(),
-            username: common.username.as_deref(),
-            password: common.password.as_deref(),
-            org_id: None,
-            timeout: common.timeout,
-            timeout_default: super::DEFAULT_TIMEOUT,
-            verify_ssl: common.verify_ssl,
-            insecure: common.insecure,
-            ca_cert: common.ca_cert.as_deref(),
-        },
-        AuthInputs {
-            api_token: common.api_token.as_deref(),
-            username: common.username.as_deref(),
-            password: common.password.as_deref(),
-            prompt_password: common.prompt_password,
-            prompt_token: common.prompt_token,
-        },
-        false,
-    )?;
+    let connection = build_connection_no_org_id(common)?;
     Ok(AccessAuthContext {
         url: connection.base_url,
         timeout: connection.timeout_secs,

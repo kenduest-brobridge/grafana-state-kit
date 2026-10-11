@@ -34,13 +34,6 @@ pub(crate) mod alert_sync;
 /// Shared artifact workspace resolver primitives for staged export and artifact-driven flows.
 #[path = "common/artifact_workspace.rs"]
 pub mod artifact_workspace;
-/// Cross-resource bundle preflight assembly built above sync resource contracts.
-#[cfg(test)]
-#[path = "commands/sync/root_preflight/mod.rs"]
-pub(crate) mod bundle_preflight;
-#[cfg(test)]
-#[path = "commands/sync/root_preflight/tests.rs"]
-mod bundle_preflight_rust_tests;
 /// Unified top-level CLI parsing and dispatch for the Rust binary.
 #[path = "cli/mod.rs"]
 pub mod cli;

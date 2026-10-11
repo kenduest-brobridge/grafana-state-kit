@@ -3,18 +3,27 @@
 Current AI-maintained status only.
 - Older entries moved to [ai-status-archive-2026-10-11.md](archive/ai-status-archive-2026-10-11.md).
 
-## 2026-10-11 - Deep project review and confirmed repairs
+## 2026-10-11 - Deep project review and maintainability convergence
 
 - State: done; committed locally
 - Scope: Rust shared auth/HTTP/files, dashboard folder and ownership guards,
   alert/datasource route encoding, access role/import behavior, sync artifacts,
   and profile secret integrity plus Linux backend selection.
+- Convergence: Simplify import lookup adapters and duplicate auth resolution;
+  remove 16 exact test copies and two obsolete prototype self-tests, preserving
+  the real Alert assessment assertion; restore three unique dormant interactive
+  cases to active coverage. Development priorities are recorded in
+  `todo/2026-10-11-development-convergence.md`.
 - Current Update: Reproduced guarded import mismatches, lost team-admin roles,
   new-org preview failure, prune deserialization failure, credential corruption
   and authentication precedence defects; regression repairs are integrated.
-- Result: Full Rust tests (2,052 passed, one ignored), Python (1,213 tests,
+- Review Result: Full Rust tests (2,052 passed, one ignored), Python (1,213 tests,
   two skipped), fmt/Clippy, documentation contracts, and the five-lane Grafana
   matrix passed. Linux Secret Service cross-target compilation passed.
+- Convergence Result: Full Rust gate after removals passed 2,034 tests (one
+  ignored); three restored cases each passed exact execution and registration.
+  Final fmt/Clippy, AI workflow and architecture checks passed.
+  The remaining 51 dormant Dashboard cases need individual reconciliation.
 - Boundary: Evidence and known Grafana 13 org-delete skips are recorded in
   `todo/2026-10-11-deep-project-review.md`; real OS-keyring sessions, interactive
   TUI review, and production acceptance remain outside this validation.

@@ -666,6 +666,15 @@ fn build_raw_diff_lines(remote_payload: &Value, payload: &Value) -> Result<Vec<S
 
 #[cfg(test)]
 mod tests {
+    use crate::common::message;
+    use crate::dashboard::dashboard_rust_tests::{make_import_args, write_basic_raw_export};
+    use crate::dashboard::import_interactive::{
+        load_interactive_import_items, InteractiveImportReviewState, InteractiveImportState,
+    };
+    use reqwest::Method;
+    use serde_json::json;
+    use tempfile::tempdir;
+
     #[test]
     fn interactive_import_review_diff_model_uses_shared_changed_field_projection() {
         let model = super::build_interactive_import_review_diff_model(
@@ -702,5 +711,184 @@ mod tests {
             .any(|line| line.marker == '+' && line.content.contains("folderUid")));
         assert!(model.live_lines.iter().all(|line| line.changed));
         assert!(model.desired_lines.iter().all(|line| line.changed));
+    }
+
+    #[test]
+    fn interactive_import_resolves_focused_review_to_update_existing() {
+        let temp = tempdir().unwrap();
+        let raw_dir = temp.path().join("raw");
+        write_basic_raw_export(
+            &raw_dir,
+            "1",
+            "Main Org.",
+            "cpu-main",
+            "CPU Main",
+            "prom-main",
+            "prometheus",
+            "timeseries",
+            "infra",
+            "Infra",
+            "expr",
+            "rate(cpu[5m])",
+        );
+        let args = make_import_args(raw_dir.clone());
+        let items = load_interactive_import_items(&args).unwrap();
+        let mut state = InteractiveImportState::new(items, "create-only".to_string(), false);
+        let mut cache = crate::dashboard::import_lookup::ImportLookupCache::default();
+
+        state.resolve_focused_review_with_request(
+            &mut |method, path, _params, _payload| match (method.clone(), path) {
+                (Method::GET, "/api/search") => Ok(Some(json!([
+                    {"uid":"cpu-main","title":"CPU Main","folderUid":"infra"}
+                ]))),
+                (Method::GET, "/api/dashboards/uid/cpu-main") => Ok(Some(json!({
+                    "dashboard": {
+                        "uid":"cpu-main",
+                        "title":"CPU Main",
+                        "tags":[],
+                        "panels":[{"id":1}]
+                    },
+                    "meta": {"folderUid":"infra"}
+                }))),
+                (Method::GET, "/api/folders/infra") => Ok(Some(json!({
+                    "uid":"infra",
+                    "title":"Infra"
+                }))),
+                _ => Err(message(format!("unexpected request {method} {path}"))),
+            },
+            &mut cache,
+            &args,
+        );
+
+        let item = state.selected_item().unwrap();
+        match &item.review {
+            InteractiveImportReviewState::Resolved(review) => {
+                assert_eq!(review.action, "would-fail-existing");
+                assert_eq!(review.destination, "exists");
+                assert_eq!(review.action_label, "blocked-existing");
+                assert_eq!(review.folder_path, "Infra");
+                assert_eq!(review.diff_status, "matches live");
+                assert!(review.diff_summary_lines[0].contains("already matches"));
+            }
+            other => panic!("expected resolved review, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn interactive_import_resolves_skip_missing_for_update_existing_only() {
+        let temp = tempdir().unwrap();
+        let raw_dir = temp.path().join("raw");
+        write_basic_raw_export(
+            &raw_dir,
+            "1",
+            "Main Org.",
+            "cpu-main",
+            "CPU Main",
+            "prom-main",
+            "prometheus",
+            "timeseries",
+            "infra",
+            "Infra",
+            "expr",
+            "rate(cpu[5m])",
+        );
+        let mut args = make_import_args(raw_dir.clone());
+        args.update_existing_only = true;
+        let items = load_interactive_import_items(&args).unwrap();
+        let mut state =
+            InteractiveImportState::new(items, "update-or-skip-missing".to_string(), false);
+        let mut cache = crate::dashboard::import_lookup::ImportLookupCache::default();
+
+        state.resolve_focused_review_with_request(
+            &mut |method, path, _params, _payload| match (method.clone(), path) {
+                (Method::GET, "/api/search") => Ok(Some(json!([]))),
+                _ => Err(message(format!("unexpected request {method} {path}"))),
+            },
+            &mut cache,
+            &args,
+        );
+
+        let item = state.selected_item().unwrap();
+        match &item.review {
+            InteractiveImportReviewState::Resolved(review) => {
+                assert_eq!(review.action, "would-skip-missing");
+                assert_eq!(review.action_label, "skip-missing");
+                assert_eq!(review.destination, "missing");
+                assert_eq!(review.diff_status, "new dashboard");
+            }
+            other => panic!("expected resolved review, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn interactive_import_review_surfaces_changed_live_summary() {
+        let temp = tempdir().unwrap();
+        let raw_dir = temp.path().join("raw");
+        write_basic_raw_export(
+            &raw_dir,
+            "1",
+            "Main Org.",
+            "cpu-main",
+            "CPU Main",
+            "prom-main",
+            "prometheus",
+            "timeseries",
+            "infra",
+            "Infra",
+            "expr",
+            "rate(cpu[5m])",
+        );
+        let args = make_import_args(raw_dir.clone());
+        let items = load_interactive_import_items(&args).unwrap();
+        let mut state = InteractiveImportState::new(items, "create-only".to_string(), false);
+        let mut cache = crate::dashboard::import_lookup::ImportLookupCache::default();
+
+        state.resolve_focused_review_with_request(
+            &mut |method, path, _params, _payload| match (method.clone(), path) {
+                (Method::GET, "/api/search") => Ok(Some(json!([
+                    {"uid":"cpu-main","title":"CPU Overview","folderUid":"ops"}
+                ]))),
+                (Method::GET, "/api/dashboards/uid/cpu-main") => Ok(Some(json!({
+                    "dashboard": {
+                        "uid":"cpu-main",
+                        "title":"CPU Overview",
+                        "tags":["gold","ops"],
+                        "panels":[{"id":1},{"id":2}]
+                    },
+                    "meta": {"folderUid":"ops"}
+                }))),
+                (Method::GET, "/api/folders/infra") => Ok(Some(json!({
+                    "uid":"infra",
+                    "title":"Infra"
+                }))),
+                _ => Err(message(format!("unexpected request {method} {path}"))),
+            },
+            &mut cache,
+            &args,
+        );
+
+        let item = state.selected_item().unwrap();
+        match &item.review {
+            InteractiveImportReviewState::Resolved(review) => {
+                assert_eq!(review.diff_status, "changed");
+                assert!(review
+                    .diff_summary_lines
+                    .iter()
+                    .any(|line| line.contains("Title:")));
+                assert!(review
+                    .diff_summary_lines
+                    .iter()
+                    .any(|line| line.contains("Folder UID:")));
+                assert!(review
+                    .diff_summary_lines
+                    .iter()
+                    .any(|line| line.contains("Tags:")));
+                assert!(review
+                    .diff_summary_lines
+                    .iter()
+                    .any(|line| line.contains("Panels:")));
+            }
+            other => panic!("expected resolved review, got {other:?}"),
+        }
     }
 }

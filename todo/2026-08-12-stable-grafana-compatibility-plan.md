@@ -8,6 +8,12 @@
 - Scope: Grafana 12.x and 13.x using released, stable APIs and officially
   released Grafana images only
 
+Current evidence (2026-10-11): SGC-000/001/002 are implemented; the maintained
+five-lane matrix passed with Rust 12.0.10/12.4.9/13.2.1 and Python datasource
+12.0.10/13.2.1. Older version references below describe their original execution
+evidence. SGC-003/004 remain proposals; see
+[the current priorities](2026-10-11-development-convergence.md).
+
 ## Objective
 
 Maintain `grafana-utils` compatibility from Grafana 12.0 onward, including the

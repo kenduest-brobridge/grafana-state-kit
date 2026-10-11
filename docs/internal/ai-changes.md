@@ -3,7 +3,7 @@
 Current AI change log only.
 - Older entries moved to [ai-changes-archive-2026-10-11.md](archive/ai-changes-archive-2026-10-11.md).
 
-## 2026-10-11 - Deep project review and confirmed repairs
+## 2026-10-11 - Deep project review and maintainability convergence
 
 - Summary: Restore fail-closed dashboard folder/ownership guards, explicit Basic
   auth precedence, strict HTTP success and JSON overwrite checks; encode dynamic
@@ -12,6 +12,11 @@ Current AI change log only.
 - Workflow: Preflight all effective controlled alert mutations; honor routed
   datasource dry-runs and workspace review/output/live-availability options,
   and preserve significant whitespace in resolved datasource credentials.
+- Convergence: Replace unused import lookup traits/adapters with existing calls,
+  reuse domain connection builders, retire the unwired test-only root preflight,
+  and remove 16 exact duplicate tests while retaining contract coverage.
+  Restore three unique dormant Classic interactive review tests to active
+  execution; record the remaining 51 dormant cases rather than deleting them.
 - Secrets: Authenticate existing encrypted entries before writes; reject missing
   or wrong keys and malformed versions/nonces/salts; enable Linux Secret Service
   instead of the default mock backend. No encrypted format migration.
