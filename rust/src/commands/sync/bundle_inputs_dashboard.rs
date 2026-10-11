@@ -7,6 +7,9 @@ use super::json::{
     discover_json_files, load_json_array_file, load_json_value, require_json_object,
 };
 use crate::common::{message, Result};
+use crate::dashboard::import_target::{
+    build_dashboard_target_review, dashboard_target_review_ownership_label,
+};
 use crate::dashboard::DASHBOARD_PERMISSION_BUNDLE_FILENAME;
 use crate::dashboard::{
     load_dashboard_source, resolve_dashboard_workspace_variant_dir, DashboardImportInputFormat,
@@ -133,6 +136,18 @@ fn normalize_dashboard_bundle_item(
         require_json_object(document, "Dashboard export document")?.clone()
     };
     body.remove("id");
+    if let Some(folder_uid) = document
+        .get("meta")
+        .and_then(|meta| meta.get("folderUid"))
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        body.insert(
+            "folderUid".to_string(),
+            Value::String(folder_uid.to_string()),
+        );
+    }
     let uid = body
         .get("uid")
         .and_then(Value::as_str)
@@ -158,7 +173,18 @@ fn normalize_dashboard_bundle_item(
         "sourcePath".to_string(),
         Value::String(source_path.to_string()),
     );
-    attach_dashboard_ownership(&mut item, ownership);
+    let review = build_dashboard_target_review(document)?;
+    let review_ownership = dashboard_target_review_ownership_label(&review);
+    let mut resolved_ownership = ownership.cloned().unwrap_or_default();
+    if review_ownership != "api-managed" {
+        resolved_ownership.ownership = review_ownership.to_string();
+        for note in review.evidence {
+            if !resolved_ownership.provenance.contains(&note) {
+                resolved_ownership.provenance.push(note);
+            }
+        }
+    }
+    attach_dashboard_ownership(&mut item, Some(&resolved_ownership));
     Ok(Value::Object(item))
 }
 
@@ -306,4 +332,31 @@ pub(crate) fn load_dashboard_provisioning_bundle_sections(
         &resolved.resolved.metadata_dir,
         datasource_provisioning_file,
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn normalize_dashboard_bundle_item_preserves_wrapper_folder_and_ownership() {
+        let item = normalize_dashboard_bundle_item(
+            &json!({
+                "dashboard": {"id": 123, "uid": "cpu-main", "title": "CPU Main", "panels": []},
+                "meta": {"folderUid": "team", "provisioned": true}
+            }),
+            "cpu-main.json",
+            None,
+        )
+        .unwrap();
+
+        assert_eq!(item["body"]["folderUid"], json!("team"));
+        assert!(item["body"].get("id").is_none());
+        assert_eq!(item["ownership"], json!("file-provisioned"));
+        assert!(item["provenance"]
+            .as_array()
+            .unwrap()
+            .contains(&json!("ownership=file-provisioned")));
+    }
 }

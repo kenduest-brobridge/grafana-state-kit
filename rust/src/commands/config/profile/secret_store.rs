@@ -258,7 +258,13 @@ pub fn write_secret_to_encrypted_file(
     key_name: &str,
     secret_value: &str,
 ) -> Result<()> {
-    let mut document = if secret_file_path.exists() {
+    let existing = secret_file_path.try_exists().map_err(|error| {
+        message(format!(
+            "Failed to inspect encrypted secret file {}: {error}",
+            secret_file_path.display()
+        ))
+    })?;
+    let mut document = if existing {
         load_encrypted_secret_file(secret_file_path)?
     } else {
         match key_source {
@@ -283,9 +289,18 @@ pub fn write_secret_to_encrypted_file(
             )));
         }
     }
-    let key_bytes = derive_encrypted_secret_key(secret_file_path, &document, key_source)?;
+    let key_bytes = match key_source {
+        EncryptedSecretKeySource::LocalKeyFile(path) if !existing => {
+            read_or_create_local_key(path)?
+        }
+        _ => derive_encrypted_secret_key(secret_file_path, &document, key_source)?,
+    };
     let cipher = Aes256GcmSiv::new_from_slice(&key_bytes)
         .map_err(|error| message(format!("Failed to initialize secret cipher: {error}")))?;
+    // Authenticate every entry before replacing any ciphertext, including the requested key.
+    for (name, entry) in &document.secrets {
+        decrypt_secret_entry(secret_file_path, &cipher, name, entry)?;
+    }
     let mut nonce_bytes = [0u8; 12];
     rand::thread_rng().fill_bytes(&mut nonce_bytes);
     let nonce = Nonce::from_slice(&nonce_bytes);
@@ -341,24 +356,38 @@ pub fn read_secret_from_encrypted_file(
     let key_bytes = derive_encrypted_secret_key(secret_file_path, &document, key_source)?;
     let cipher = Aes256GcmSiv::new_from_slice(&key_bytes)
         .map_err(|error| message(format!("Failed to initialize secret cipher: {error}")))?;
+    let plaintext = decrypt_secret_entry(secret_file_path, &cipher, key_name, entry)?;
+    String::from_utf8(plaintext).map_err(|error| {
+        message(format!(
+            "Decrypted secret `{key_name}` is not valid UTF-8: {error}"
+        ))
+    })
+}
+
+fn decrypt_secret_entry(
+    secret_file_path: &Path,
+    cipher: &Aes256GcmSiv,
+    key_name: &str,
+    entry: &EncryptedSecretEntry,
+) -> Result<Vec<u8>> {
     let nonce_bytes = STANDARD
         .decode(&entry.nonce)
         .map_err(|error| message(format!("Failed to decode encrypted secret nonce: {error}")))?;
+    if nonce_bytes.len() != 12 {
+        return Err(validation(
+            "Encrypted secret nonce must contain exactly 12 bytes.",
+        ));
+    }
     let ciphertext = STANDARD.decode(&entry.ciphertext).map_err(|error| {
         message(format!(
             "Failed to decode encrypted secret ciphertext: {error}"
         ))
     })?;
     let nonce = Nonce::from_slice(&nonce_bytes);
-    let plaintext = cipher.decrypt(nonce, ciphertext.as_ref()).map_err(|_| {
+    cipher.decrypt(nonce, ciphertext.as_ref()).map_err(|_| {
         validation(format!(
             "Failed to decrypt secret `{key_name}` from {}. Check the passphrase or key file.",
             secret_file_path.display()
-        ))
-    })?;
-    String::from_utf8(plaintext).map_err(|error| {
-        message(format!(
-            "Decrypted secret `{key_name}` is not valid UTF-8: {error}"
         ))
     })
 }
@@ -379,39 +408,48 @@ fn derive_encrypted_secret_key(
             let salt_bytes = STANDARD.decode(salt).map_err(|error| {
                 message(format!("Failed to decode encrypted secret salt: {error}"))
             })?;
+            if salt_bytes.len() != 16 {
+                return Err(validation(
+                    "Encrypted secret salt must contain exactly 16 bytes.",
+                ));
+            }
             Ok(pbkdf2_hmac_array::<Sha256, 32>(
                 passphrase.as_bytes(),
                 &salt_bytes,
                 PBKDF2_ROUNDS,
             ))
         }
-        EncryptedSecretKeySource::LocalKeyFile(path) => read_or_create_local_key(path),
+        EncryptedSecretKeySource::LocalKeyFile(path) => read_local_key(path),
     }
+}
+
+fn read_local_key(path: &Path) -> Result<[u8; 32]> {
+    validate_owner_only_permissions(path)?;
+    let raw = fs::read_to_string(path).map_err(|error| {
+        message(format!(
+            "Failed to read local secret key file {}: {error}",
+            path.display()
+        ))
+    })?;
+    let trimmed = raw.trim();
+    let bytes = STANDARD.decode(trimmed).map_err(|error| {
+        message(format!(
+            "Failed to decode local secret key file {}: {error}",
+            path.display()
+        ))
+    })?;
+    let array: [u8; 32] = bytes.try_into().map_err(|_| {
+        validation(format!(
+            "Local secret key file {} did not contain a 32-byte key.",
+            path.display()
+        ))
+    })?;
+    Ok(array)
 }
 
 fn read_or_create_local_key(path: &Path) -> Result<[u8; 32]> {
     if path.exists() {
-        validate_owner_only_permissions(path)?;
-        let raw = fs::read_to_string(path).map_err(|error| {
-            message(format!(
-                "Failed to read local secret key file {}: {error}",
-                path.display()
-            ))
-        })?;
-        let trimmed = raw.trim();
-        let bytes = STANDARD.decode(trimmed).map_err(|error| {
-            message(format!(
-                "Failed to decode local secret key file {}: {error}",
-                path.display()
-            ))
-        })?;
-        let array: [u8; 32] = bytes.try_into().map_err(|_| {
-            validation(format!(
-                "Local secret key file {} did not contain a 32-byte key.",
-                path.display()
-            ))
-        })?;
-        return Ok(array);
+        return read_local_key(path);
     }
     let mut key = [0u8; 32];
     rand::thread_rng().fill_bytes(&mut key);
@@ -423,7 +461,33 @@ fn read_or_create_local_key(path: &Path) -> Result<[u8; 32]> {
             ))
         })?;
     }
-    write_owner_only_file(path, &format!("{}\n", STANDARD.encode(key)))?;
+    let mut options = OpenOptions::new();
+    options.write(true).create_new(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.mode(0o600);
+    }
+    let mut file = match options.open(path) {
+        Ok(file) => file,
+        Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {
+            return read_local_key(path)
+        }
+        Err(error) => {
+            return Err(message(format!(
+                "Failed to create local secret key file {}: {error}",
+                path.display()
+            )))
+        }
+    };
+    file.write_all(format!("{}\n", STANDARD.encode(key)).as_bytes())
+        .and_then(|()| file.sync_all())
+        .map_err(|error| {
+            message(format!(
+                "Failed to write local secret key file {}: {error}",
+                path.display()
+            ))
+        })?;
     Ok(key)
 }
 
@@ -434,12 +498,20 @@ fn load_encrypted_secret_file(path: &Path) -> Result<EncryptedSecretFile> {
             path.display()
         ))
     })?;
-    serde_yaml::from_str(&raw).map_err(|error| {
+    let document: EncryptedSecretFile = serde_yaml::from_str(&raw).map_err(|error| {
         validation(format!(
             "Failed to parse encrypted secret file {}: {error}",
             path.display()
         ))
-    })
+    })?;
+    if document.version != ENCRYPTED_SECRET_FILE_VERSION {
+        return Err(validation(format!(
+            "Encrypted secret file {} has unsupported version {}.",
+            path.display(),
+            document.version
+        )));
+    }
+    Ok(document)
 }
 
 fn save_encrypted_secret_file(path: &Path, document: &EncryptedSecretFile) -> Result<()> {
@@ -496,6 +568,16 @@ mod tests {
         assert_eq!(value, "secret");
     }
 
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn linux_os_store_uses_secret_service_backend() {
+        // Compile-time guard against keyring silently falling back to its mock backend.
+        assert_eq!(
+            std::any::TypeId::of::<keyring::default::SsCredential>(),
+            std::any::TypeId::of::<keyring::secret_service::SsCredential>()
+        );
+    }
+
     #[test]
     fn encrypted_secret_file_round_trips_with_passphrase() {
         let dir = tempdir().unwrap();
@@ -535,6 +617,127 @@ mod tests {
         )
         .unwrap();
         assert_eq!(value, "token-value");
+    }
+
+    #[test]
+    fn encrypted_secret_file_rejects_wrong_passphrase_update_without_changes() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("secrets.yaml");
+        let correct = EncryptedSecretKeySource::Passphrase("correct-test-passphrase".into());
+        let wrong = EncryptedSecretKeySource::Passphrase("wrong-test-passphrase".into());
+        write_secret_to_encrypted_file(&path, &correct, "original", "original-value").unwrap();
+        let original = fs::read(&path).unwrap();
+        for name in ["original", "additional"] {
+            assert!(write_secret_to_encrypted_file(&path, &wrong, name, "replacement").is_err());
+            assert_eq!(fs::read(&path).unwrap(), original);
+        }
+        assert_eq!(
+            read_secret_from_encrypted_file(&path, &correct, "original").unwrap(),
+            "original-value"
+        );
+    }
+
+    #[test]
+    fn encrypted_secret_file_missing_local_key_never_creates_replacement() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("secrets.yaml");
+        let key_path = dir.path().join("secrets.key");
+        let source = EncryptedSecretKeySource::LocalKeyFile(key_path.clone());
+        write_secret_to_encrypted_file(&path, &source, "original", "value").unwrap();
+        let original = fs::read(&path).unwrap();
+        fs::remove_file(&key_path).unwrap();
+        assert!(read_secret_from_encrypted_file(&path, &source, "original").is_err());
+        assert!(!key_path.exists());
+        assert!(write_secret_to_encrypted_file(&path, &source, "original", "replacement").is_err());
+        assert!(!key_path.exists());
+        assert_eq!(fs::read(&path).unwrap(), original);
+    }
+
+    #[test]
+    fn encrypted_secret_file_rejects_replaced_local_key_without_changes() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("secrets.yaml");
+        let key_path = dir.path().join("secrets.key");
+        let source = EncryptedSecretKeySource::LocalKeyFile(key_path.clone());
+        write_secret_to_encrypted_file(&path, &source, "original", "value").unwrap();
+        let original = fs::read(&path).unwrap();
+        write_owner_only_file(&key_path, &STANDARD.encode([42u8; 32])).unwrap();
+        assert!(write_secret_to_encrypted_file(&path, &source, "original", "replacement").is_err());
+        assert_eq!(fs::read(&path).unwrap(), original);
+    }
+
+    #[test]
+    fn encrypted_secret_file_rejects_invalid_nonce_without_panicking_or_writing() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("secrets.yaml");
+        let source = EncryptedSecretKeySource::LocalKeyFile(dir.path().join("secrets.key"));
+        write_secret_to_encrypted_file(&path, &source, "original", "value").unwrap();
+        let mut document = load_encrypted_secret_file(&path).unwrap();
+        for nonce_length in [0, 11, 13] {
+            document.secrets.get_mut("original").unwrap().nonce =
+                STANDARD.encode(vec![0; nonce_length]);
+            save_encrypted_secret_file(&path, &document).unwrap();
+            let original = fs::read(&path).unwrap();
+            assert!(read_secret_from_encrypted_file(&path, &source, "original").is_err());
+            assert!(
+                write_secret_to_encrypted_file(&path, &source, "additional", "replacement")
+                    .is_err()
+            );
+            assert_eq!(fs::read(&path).unwrap(), original);
+        }
+    }
+
+    #[test]
+    fn encrypted_secret_file_rejects_unknown_version_without_changes() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("secrets.yaml");
+        let source = EncryptedSecretKeySource::LocalKeyFile(dir.path().join("secrets.key"));
+        write_secret_to_encrypted_file(&path, &source, "original", "value").unwrap();
+        let mut document = load_encrypted_secret_file(&path).unwrap();
+        document.version = 2;
+        save_encrypted_secret_file(&path, &document).unwrap();
+        let original = fs::read(&path).unwrap();
+        assert!(read_secret_from_encrypted_file(&path, &source, "original").is_err());
+        assert!(
+            write_secret_to_encrypted_file(&path, &source, "additional", "replacement").is_err()
+        );
+        assert_eq!(fs::read(&path).unwrap(), original);
+    }
+
+    #[test]
+    fn encrypted_secret_file_rejects_invalid_passphrase_salt_without_changes() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("secrets.yaml");
+        let source = EncryptedSecretKeySource::Passphrase("test-passphrase".into());
+        let mut document = new_encrypted_secret_file(ENCRYPTED_SECRET_MODE_PASSPHRASE, None);
+        document.salt = Some(STANDARD.encode([0u8; 15]));
+        save_encrypted_secret_file(&path, &document).unwrap();
+        let original = fs::read(&path).unwrap();
+        assert!(write_secret_to_encrypted_file(&path, &source, "additional", "value").is_err());
+        assert_eq!(fs::read(&path).unwrap(), original);
+    }
+
+    #[test]
+    fn encrypted_secret_file_updates_preserve_other_entries_and_owner_permissions() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("secrets.yaml");
+        let key_path = dir.path().join("secrets.key");
+        let source = EncryptedSecretKeySource::LocalKeyFile(key_path.clone());
+        write_secret_to_encrypted_file(&path, &source, "first", "first-value").unwrap();
+        let original_key = fs::read(&key_path).unwrap();
+        write_secret_to_encrypted_file(&path, &source, "second", "second-value").unwrap();
+        write_secret_to_encrypted_file(&path, &source, "first", "updated-value").unwrap();
+        assert_eq!(
+            read_secret_from_encrypted_file(&path, &source, "first").unwrap(),
+            "updated-value"
+        );
+        assert_eq!(
+            read_secret_from_encrypted_file(&path, &source, "second").unwrap(),
+            "second-value"
+        );
+        assert_eq!(fs::read(&key_path).unwrap(), original_key);
+        validate_owner_only_permissions(&path).unwrap();
+        validate_owner_only_permissions(&key_path).unwrap();
     }
 
     #[cfg(unix)]

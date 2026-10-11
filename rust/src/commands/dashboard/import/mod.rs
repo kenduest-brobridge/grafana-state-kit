@@ -3,6 +3,8 @@
 //! through the shared dashboard HTTP/auth context.
 
 mod apply;
+#[cfg(test)]
+mod apply_guard_tests;
 mod auto;
 pub(crate) mod compare;
 mod dry_run;

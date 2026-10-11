@@ -39,7 +39,10 @@ pub(crate) fn list_dashboard_history_versions_with_request<F>(
 where
     F: FnMut(Method, &str, &[(String, String)], Option<&Value>) -> Result<Option<Value>>,
 {
-    let path = format!("/api/dashboards/uid/{uid}/versions");
+    let path = format!(
+        "/api/dashboards/uid/{}/versions",
+        encode_resource_path_segment(uid)
+    );
     let params = vec![("limit".to_string(), limit.to_string())];
     let response = request_json(Method::GET, &path, &params, None)?;
     let Some(value) = response else {
@@ -359,7 +362,10 @@ pub(crate) fn fetch_dashboard_history_version_data_with_request<F>(
 where
     F: FnMut(Method, &str, &[(String, String)], Option<&Value>) -> Result<Option<Value>>,
 {
-    let version_path = format!("/api/dashboards/uid/{uid}/versions/{version}");
+    let version_path = format!(
+        "/api/dashboards/uid/{}/versions/{version}",
+        encode_resource_path_segment(uid)
+    );
     let version_payload =
         request_json(Method::GET, &version_path, &[], None)?.ok_or_else(|| {
             message(format!(
@@ -386,6 +392,7 @@ where
     F: FnMut(Method, &str, &[(String, String)], Option<&Value>) -> Result<Option<Value>>,
 {
     let current_payload = fetch_dashboard_with_request(&mut request_json, uid)?;
+    super::history_restore::validate_dashboard_history_restore_target(&current_payload, uid)?;
     let current_object = value_as_object(
         &current_payload,
         "Unexpected current dashboard payload for history restore.",

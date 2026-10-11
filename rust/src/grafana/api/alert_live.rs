@@ -6,7 +6,7 @@ use crate::alert::{
     normalize_compare_payload, CONTACT_POINT_KIND, MUTE_TIMING_KIND, POLICIES_KIND, RULE_KIND,
     TEMPLATE_KIND,
 };
-use crate::common::{message, string_field, Result};
+use crate::common::{encode_resource_path_segment, message, string_field, Result};
 #[cfg(test)]
 pub(crate) use crate::grafana_api::alerting::request_object_with_request;
 pub(crate) use crate::grafana_api::alerting::{
@@ -45,7 +45,10 @@ where
             Ok(request_optional_object_with_request(
                 &mut request_json,
                 Method::GET,
-                &format!("/api/v1/provisioning/alert-rules/{uid}"),
+                &format!(
+                    "/api/v1/provisioning/alert-rules/{}",
+                    encode_resource_path_segment(&uid)
+                ),
                 None,
             )?
             .map(|remote| build_compare_document(kind, &normalize_compare_payload(kind, &remote))))
@@ -83,7 +86,10 @@ where
             Ok(request_optional_object_with_request(
                 &mut request_json,
                 Method::GET,
-                &format!("/api/v1/provisioning/templates/{name}"),
+                &format!(
+                    "/api/v1/provisioning/templates/{}",
+                    encode_resource_path_segment(&name)
+                ),
                 None,
             )?
             .map(|remote| build_compare_document(kind, &normalize_compare_payload(kind, &remote))))
@@ -118,7 +124,10 @@ where
             if request_optional_object_with_request(
                 &mut request_json,
                 Method::GET,
-                &format!("/api/v1/provisioning/alert-rules/{uid}"),
+                &format!(
+                    "/api/v1/provisioning/alert-rules/{}",
+                    encode_resource_path_segment(&uid)
+                ),
                 None,
             )?
             .is_some()
@@ -179,7 +188,10 @@ where
             let exists = request_optional_object_with_request(
                 &mut request_json,
                 Method::GET,
-                &format!("/api/v1/provisioning/templates/{name}"),
+                &format!(
+                    "/api/v1/provisioning/templates/{}",
+                    encode_resource_path_segment(&name)
+                ),
                 None,
             )?
             .is_some();
@@ -216,7 +228,10 @@ where
                 && request_optional_object_with_request(
                     &mut request_json,
                     Method::GET,
-                    &format!("/api/v1/provisioning/alert-rules/{uid}"),
+                    &format!(
+                        "/api/v1/provisioning/alert-rules/{}",
+                        encode_resource_path_segment(&uid)
+                    ),
                     None,
                 )?
                 .is_some()
@@ -224,7 +239,10 @@ where
                 let result = request_object_with_request(
                     &mut request_json,
                     Method::PUT,
-                    &format!("/api/v1/provisioning/alert-rules/{uid}"),
+                    &format!(
+                        "/api/v1/provisioning/alert-rules/{}",
+                        encode_resource_path_segment(&uid)
+                    ),
                     Some(&Value::Object(payload.clone())),
                     "Unexpected alert-rule update response from Grafana.",
                 )?;
@@ -256,7 +274,10 @@ where
                     let result = request_object_with_request(
                         &mut request_json,
                         Method::PUT,
-                        &format!("/api/v1/provisioning/contact-points/{uid}"),
+                        &format!(
+                            "/api/v1/provisioning/contact-points/{}",
+                            encode_resource_path_segment(&uid)
+                        ),
                         Some(&Value::Object(payload.clone())),
                         "Unexpected contact-point update response from Grafana.",
                     )?;
@@ -289,7 +310,10 @@ where
                     let result = request_object_with_request(
                         &mut request_json,
                         Method::PUT,
-                        &format!("/api/v1/provisioning/mute-timings/{name}"),
+                        &format!(
+                            "/api/v1/provisioning/mute-timings/{}",
+                            encode_resource_path_segment(&name)
+                        ),
                         Some(&Value::Object(payload.clone())),
                         "Unexpected mute-timing update response from Grafana.",
                     )?;
@@ -310,7 +334,10 @@ where
             let existing = request_optional_object_with_request(
                 &mut request_json,
                 Method::GET,
-                &format!("/api/v1/provisioning/templates/{name}"),
+                &format!(
+                    "/api/v1/provisioning/templates/{}",
+                    encode_resource_path_segment(&name)
+                ),
                 None,
             )?;
             if existing.is_some() && !replace_existing {
@@ -332,7 +359,10 @@ where
             let result = request_object_with_request(
                 &mut request_json,
                 Method::PUT,
-                &format!("/api/v1/provisioning/templates/{name}"),
+                &format!(
+                    "/api/v1/provisioning/templates/{}",
+                    encode_resource_path_segment(&name)
+                ),
                 Some(&Value::Object(body)),
                 "Unexpected template update response from Grafana.",
             )?;
@@ -444,7 +474,10 @@ where
             template_payload.remove("name");
             Ok(request_json(
                 Method::PUT,
-                &format!("/api/v1/provisioning/templates/{name}"),
+                &format!(
+                    "/api/v1/provisioning/templates/{}",
+                    encode_resource_path_segment(&name)
+                ),
                 &[],
                 Some(&Value::Object(template_payload)),
             )?
@@ -459,6 +492,26 @@ where
         .unwrap_or(Value::Null)),
         _ => Err(message(format!("Unsupported alert create kind {kind}."))),
     }
+}
+
+pub(crate) fn apply_prepared_rule_update_with_request<F>(
+    request_json: &mut F,
+    uid: &str,
+    payload: &Map<String, Value>,
+) -> Result<Value>
+where
+    F: FnMut(Method, &str, &[(String, String)], Option<&Value>) -> Result<Option<Value>>,
+{
+    Ok(request_json(
+        Method::PUT,
+        &format!(
+            "/api/v1/provisioning/alert-rules/{}",
+            encode_resource_path_segment(uid)
+        ),
+        &[],
+        Some(&Value::Object(payload.clone())),
+    )?
+    .unwrap_or(Value::Null))
 }
 
 pub(crate) fn apply_update_with_request<F>(
@@ -477,13 +530,7 @@ where
                 body.insert("uid".to_string(), Value::String(identity.to_string()));
             }
             let uid = string_field(&body, "uid", identity);
-            Ok(request_json(
-                Method::PUT,
-                &format!("/api/v1/provisioning/alert-rules/{uid}"),
-                &[],
-                Some(&Value::Object(body)),
-            )?
-            .unwrap_or(Value::Null))
+            apply_prepared_rule_update_with_request(request_json, &uid, &body)
         }
         CONTACT_POINT_KIND => {
             let mut body = build_contact_point_import_payload(payload)?;
@@ -493,7 +540,10 @@ where
             let uid = string_field(&body, "uid", identity);
             Ok(request_json(
                 Method::PUT,
-                &format!("/api/v1/provisioning/contact-points/{uid}"),
+                &format!(
+                    "/api/v1/provisioning/contact-points/{}",
+                    encode_resource_path_segment(&uid)
+                ),
                 &[],
                 Some(&Value::Object(body)),
             )?
@@ -504,7 +554,10 @@ where
             let name = string_field(&body, "name", identity);
             Ok(request_json(
                 Method::PUT,
-                &format!("/api/v1/provisioning/mute-timings/{name}"),
+                &format!(
+                    "/api/v1/provisioning/mute-timings/{}",
+                    encode_resource_path_segment(&name)
+                ),
                 &[],
                 Some(&Value::Object(body)),
             )?
@@ -516,7 +569,10 @@ where
             let existing = request_optional_object_with_request(
                 &mut *request_json,
                 Method::GET,
-                &format!("/api/v1/provisioning/templates/{name}"),
+                &format!(
+                    "/api/v1/provisioning/templates/{}",
+                    encode_resource_path_segment(&name)
+                ),
                 None,
             )?;
             body.insert(
@@ -531,7 +587,10 @@ where
             body.remove("name");
             Ok(request_json(
                 Method::PUT,
-                &format!("/api/v1/provisioning/templates/{name}"),
+                &format!(
+                    "/api/v1/provisioning/templates/{}",
+                    encode_resource_path_segment(&name)
+                ),
                 &[],
                 Some(&Value::Object(body)),
             )?
@@ -560,28 +619,40 @@ where
     match kind {
         RULE_KIND => Ok(request_json(
             Method::DELETE,
-            &format!("/api/v1/provisioning/alert-rules/{identity}"),
+            &format!(
+                "/api/v1/provisioning/alert-rules/{}",
+                encode_resource_path_segment(identity)
+            ),
             &[],
             None,
         )?
         .unwrap_or(Value::Null)),
         CONTACT_POINT_KIND => Ok(request_json(
             Method::DELETE,
-            &format!("/api/v1/provisioning/contact-points/{identity}"),
+            &format!(
+                "/api/v1/provisioning/contact-points/{}",
+                encode_resource_path_segment(identity)
+            ),
             &[],
             None,
         )?
         .unwrap_or(Value::Null)),
         MUTE_TIMING_KIND => Ok(request_json(
             Method::DELETE,
-            &format!("/api/v1/provisioning/mute-timings/{identity}"),
+            &format!(
+                "/api/v1/provisioning/mute-timings/{}",
+                encode_resource_path_segment(identity)
+            ),
             &[("version".to_string(), String::new())],
             None,
         )?
         .unwrap_or(Value::Null)),
         TEMPLATE_KIND => Ok(request_json(
             Method::DELETE,
-            &format!("/api/v1/provisioning/templates/{identity}"),
+            &format!(
+                "/api/v1/provisioning/templates/{}",
+                encode_resource_path_segment(identity)
+            ),
             &[("version".to_string(), String::new())],
             None,
         )?

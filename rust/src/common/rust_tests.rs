@@ -1,7 +1,7 @@
 //! Common utility unit tests.
 //! Verifies path sanitization, shared error helpers, and authentication-header
 //! resolution logic for all Rust domains.
-use super::auth::resolve_auth_headers_with_prompt;
+use super::auth::{resolve_auth_headers_with_prompt, resolve_auth_headers_with_sources};
 use super::{
     editor, emit_plain_output, encode_resource_path_segment, invalid_header_name,
     invalid_header_value, invalid_url, parse_error, resolve_auth_headers, sanitize_path_component,
@@ -16,6 +16,40 @@ use tempfile::tempdir;
 fn sanitize_path_component_normalizes_symbols_and_spaces() {
     assert_eq!(sanitize_path_component(" Ops / CPU % "), "Ops_CPU");
     assert_eq!(sanitize_path_component("..."), "untitled");
+}
+
+#[cfg(unix)]
+#[test]
+fn write_json_file_without_overwrite_refuses_dangling_symlink() {
+    use std::os::unix::fs::symlink;
+    let dir = tempdir().unwrap();
+    let target = dir.path().join("target.json");
+    let link = dir.path().join("output.json");
+    symlink(&target, &link).unwrap();
+    let error = super::write_json_file(&link, &serde_json::json!({"value": 1}), false).unwrap_err();
+    assert!(error
+        .to_string()
+        .contains("Refusing to overwrite existing file"));
+    assert!(!target.exists());
+}
+
+#[test]
+fn write_json_file_preserves_overwrite_gate_and_nested_output() {
+    let dir = tempdir().unwrap();
+    let path = dir.path().join("nested/output.json");
+    let original = serde_json::json!({"value": 1});
+    let replacement = serde_json::json!({"value": 2});
+    super::write_json_file(&path, &original, false).unwrap();
+    assert!(super::write_json_file(&path, &replacement, false).is_err());
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&fs::read_to_string(&path).unwrap()).unwrap(),
+        original
+    );
+    super::write_json_file(&path, &replacement, true).unwrap();
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&fs::read_to_string(&path).unwrap()).unwrap(),
+        replacement
+    );
 }
 
 #[test]
@@ -174,6 +208,62 @@ fn resolve_auth_headers_supports_prompt_password() {
             "Basic dXNlcjpzZWNyZXQ=".to_string()
         )
     );
+}
+
+#[test]
+fn explicit_basic_auth_overrides_environment_token_and_credentials() {
+    for prompted in [false, true] {
+        let headers = resolve_auth_headers_with_sources(
+            None,
+            Some("user"),
+            if prompted { None } else { Some("secret") },
+            (prompted, false),
+            (
+                || Ok("secret".to_string()),
+                || panic!("unexpected token prompt"),
+            ),
+            |_| Some("environment-credential".to_string()),
+        )
+        .unwrap();
+        assert_eq!(
+            headers,
+            vec![(
+                "Authorization".to_string(),
+                "Basic dXNlcjpzZWNyZXQ=".to_string()
+            )]
+        );
+    }
+}
+
+#[test]
+fn environment_auth_fallback_preserves_token_priority_and_basic_pair() {
+    for token_present in [false, true] {
+        let headers = resolve_auth_headers_with_sources(
+            None,
+            None,
+            None,
+            (false, false),
+            (
+                || panic!("unexpected password prompt"),
+                || panic!("unexpected token prompt"),
+            ),
+            |name| match name {
+                "GRAFANA_API_TOKEN" if token_present => Some("env-token".to_string()),
+                "GRAFANA_USERNAME" => Some("user".to_string()),
+                "GRAFANA_PASSWORD" => Some("secret".to_string()),
+                _ => None,
+            },
+        )
+        .unwrap();
+        assert_eq!(
+            headers[0].1,
+            if token_present {
+                "Bearer env-token"
+            } else {
+                "Basic dXNlcjpzZWNyZXQ="
+            }
+        );
+    }
 }
 
 #[test]

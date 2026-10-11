@@ -1,5 +1,6 @@
 use serde_json::Value;
 use std::fs;
+use std::io::{ErrorKind, Write};
 use std::path::Path;
 
 use super::{strip_ansi_codes, validation, Result};
@@ -52,18 +53,28 @@ pub fn load_json_object_file(path: &Path, object_label: &str) -> Result<Value> {
 
 /// Write JSON to disk with an explicit overwrite gate.
 pub fn write_json_file(path: &Path, payload: &Value, overwrite: bool) -> Result<()> {
-    if path.exists() && !overwrite {
-        return Err(validation(format!(
-            "Refusing to overwrite existing file: {}. Use --overwrite.",
-            path.display()
-        )));
-    }
+    let rendered = format!("{}\n", serde_json::to_string_pretty(payload)?);
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)?;
     }
-    fs::write(
-        path,
-        format!("{}\n", serde_json::to_string_pretty(payload)?),
-    )?;
+    if overwrite {
+        fs::write(path, rendered)?;
+    } else {
+        let mut file = fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(path)
+            .map_err(|error| {
+                if error.kind() == ErrorKind::AlreadyExists {
+                    validation(format!(
+                        "Refusing to overwrite existing file: {}. Use --overwrite.",
+                        path.display()
+                    ))
+                } else {
+                    error.into()
+                }
+            })?;
+        file.write_all(rendered.as_bytes())?;
+    }
     Ok(())
 }

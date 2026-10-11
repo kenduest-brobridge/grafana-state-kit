@@ -30,7 +30,7 @@ pub(crate) use self::cli::{PROJECT_STATUS_LIVE_HELP_TEXT, PROJECT_STATUS_STAGED_
 
 pub(crate) const PROJECT_STATUS_DOMAIN_COUNT: usize = 6;
 
-fn staged_args_to_overview_args(args: &ProjectStatusStagedArgs) -> OverviewArgs {
+pub(crate) fn staged_args_to_overview_args(args: &ProjectStatusStagedArgs) -> OverviewArgs {
     OverviewArgs {
         dashboard_export_dir: args.dashboard_export_dir.clone(),
         dashboard_provisioning_dir: args.dashboard_provisioning_dir.clone(),

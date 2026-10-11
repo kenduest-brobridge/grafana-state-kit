@@ -3,7 +3,7 @@
 use reqwest::Method;
 use serde_json::{Map, Value};
 
-use crate::common::{message, string_field, Result};
+use crate::common::{encode_resource_path_segment, message, string_field, Result};
 use crate::datasource::{fetch_datasource_by_uid_if_exists, resolve_match};
 use crate::http::JsonHttpClient;
 
@@ -145,7 +145,10 @@ where
                 let payload = build_update_payload(record, secret_values, &target)?;
                 requests.push(PreparedDatasourceImportRequest {
                     method: Method::PUT,
-                    path: format!("/api/datasources/uid/{}", target.uid),
+                    path: format!(
+                        "/api/datasources/uid/{}",
+                        encode_resource_path_segment(&target.uid)
+                    ),
                     payload,
                 });
                 would_update += 1;
@@ -174,4 +177,50 @@ where
         would_update,
         would_skip,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn import_update_encodes_uid_route_and_preserves_payload_identity() {
+        let uid = "ops/query?filter#name %";
+        let record = DatasourceImportRecord {
+            uid: uid.to_string(),
+            name: "Ops".to_string(),
+            datasource_type: "prometheus".to_string(),
+            ..Default::default()
+        };
+        let live = vec![json!({"uid": uid, "name": "Ops", "id": 7})
+            .as_object()
+            .unwrap()
+            .clone()];
+        let plan = prepare_datasource_import_plan_with_target_resolver(
+            &[record],
+            &live,
+            true,
+            false,
+            None,
+            |target_uid, _identity| {
+                assert_eq!(target_uid, uid);
+                Ok(DatasourceUpdateTargetEvidence {
+                    uid: uid.to_string(),
+                    version: Some(3),
+                    read_only: false,
+                })
+            },
+        )
+        .unwrap();
+
+        assert_eq!(plan.requests.len(), 1);
+        assert_eq!(plan.requests[0].method, Method::PUT);
+        assert_eq!(
+            plan.requests[0].path,
+            "/api/datasources/uid/ops%2Fquery%3Ffilter%23name%20%25"
+        );
+        assert_eq!(plan.requests[0].payload["uid"], json!(uid));
+        assert_eq!(plan.requests[0].payload["version"], json!(3));
+    }
 }

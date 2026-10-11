@@ -221,7 +221,7 @@ where
             if args.dry_run {
                 created += 1;
                 println!("Would create org {}", desired_name);
-                exported_id.clone()
+                String::new()
             } else {
                 let payload = Value::Object(Map::from_iter(vec![(
                     "name".to_string(),
@@ -239,7 +239,7 @@ where
             }
         };
 
-        if !org_id.is_empty() {
+        if !org_id.is_empty() || (args.dry_run && !existing_found) {
             let desired_users = match record.get("users") {
                 Some(Value::Array(values)) => values
                     .iter()
@@ -248,7 +248,7 @@ where
                     .collect::<Vec<Map<String, Value>>>(),
                 _ => Vec::new(),
             };
-            let live_users = if desired_users.is_empty() {
+            let live_users = if desired_users.is_empty() || (args.dry_run && !existing_found) {
                 Vec::new()
             } else {
                 list_org_users_with_request(&mut request_json, &org_id)?

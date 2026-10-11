@@ -54,6 +54,45 @@ fn team_list_with_request_reads_search_and_members() {
 }
 
 #[test]
+fn team_modify_preserves_existing_admins_from_grafana_permission_field() {
+    let args = TeamModifyArgs {
+        common: super::make_token_common(),
+        team_id: Some("3".to_string()),
+        name: None,
+        add_member: Vec::new(),
+        remove_member: Vec::new(),
+        add_admin: vec!["alice@example.com".to_string()],
+        remove_admin: Vec::new(),
+        json: false,
+    };
+    let mut updated_admins = None;
+    modify_team_with_request(
+        |method, path, _params, payload| match (method, path) {
+            (Method::GET, "/api/teams/3") => Ok(Some(json!({"id": 3, "name": "Ops"}))),
+            (Method::GET, "/api/teams/3/members") => Ok(Some(json!([
+                {"userId": 7, "login": "alice", "email": "alice@example.com", "permission": 0},
+                {"userId": 8, "login": "bob", "email": "bob@example.com", "permission": 4}
+            ]))),
+            (Method::GET, "/api/org/users") => Ok(Some(json!([
+                {"userId": 7, "login": "alice", "email": "alice@example.com"}
+            ]))),
+            (Method::PUT, "/api/teams/3/members") => {
+                updated_admins = payload.and_then(|value| value.get("admins")).cloned();
+                Ok(Some(json!({"message": "updated"})))
+            }
+            _ => panic!("unexpected request {path}"),
+        },
+        &args,
+    )
+    .unwrap();
+
+    assert_eq!(
+        updated_admins,
+        Some(json!(["alice@example.com", "bob@example.com"]))
+    );
+}
+
+#[test]
 fn team_list_all_output_columns_are_accepted() {
     let args = TeamListArgs {
         common: super::make_token_common(),
@@ -287,8 +326,8 @@ fn team_export_with_request_writes_bundle_with_members_and_admins() {
                 ]
             }))),
             "/api/teams/3/members" => Ok(Some(json!([
-                {"userId": 7, "login": "alice@example.com", "email": "alice@example.com", "isAdmin": false},
-                {"userId": 8, "login": "bob@example.com", "email": "bob@example.com", "isAdmin": true}
+                {"userId": 7, "login": "alice@example.com", "email": "alice@example.com", "permission": 0},
+                {"userId": 8, "login": "bob@example.com", "email": "bob@example.com", "permission": 4}
             ]))),
             _ => panic!("unexpected path {path}"),
         },

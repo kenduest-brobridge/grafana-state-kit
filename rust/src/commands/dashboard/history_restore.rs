@@ -1,4 +1,8 @@
 use crate::common::{message, render_json_value, string_field, value_as_object, Result};
+use crate::dashboard::import_target::{
+    build_dashboard_target_review, build_dashboard_target_review_reason,
+    dashboard_target_review_is_blocked, dashboard_target_review_ownership_label,
+};
 use crate::tabular_output::render_yaml;
 use dialoguer::{theme::ColorfulTheme, Confirm, Select};
 use reqwest::Method;
@@ -107,6 +111,7 @@ where
     F: FnMut(Method, &str, &[(String, String)], Option<&Value>) -> Result<Option<Value>>,
 {
     let current_payload = fetch_dashboard_with_request(&mut request_json, uid)?;
+    validate_dashboard_history_restore_target(&current_payload, uid)?;
     let current_object = value_as_object(
         &current_payload,
         "Unexpected current dashboard payload for history restore.",
@@ -153,6 +158,18 @@ where
     }
     let _ =
         import_dashboard_request_with_request(&mut request_json, &Value::Object(import_payload))?;
+    Ok(())
+}
+
+pub(super) fn validate_dashboard_history_restore_target(payload: &Value, uid: &str) -> Result<()> {
+    let review = build_dashboard_target_review(payload)?;
+    if dashboard_target_review_is_blocked(&review) {
+        return Err(message(format!(
+            "Refusing to restore {} dashboard uid={uid}: {}. Restore it at its owning source.",
+            dashboard_target_review_ownership_label(&review),
+            build_dashboard_target_review_reason(&review)
+        )));
+    }
     Ok(())
 }
 

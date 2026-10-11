@@ -3,7 +3,7 @@
 use reqwest::Method;
 use serde_json::{Map, Value};
 
-use crate::common::{message, string_field, Result};
+use crate::common::{encode_resource_path_segment, message, string_field, Result};
 use crate::datasource_catalog::{
     build_add_defaults_for_supported_type, normalize_supported_datasource_type,
     DatasourcePresetProfile,
@@ -413,7 +413,7 @@ pub(crate) fn fetch_datasource_by_uid_if_exists(
 ) -> Result<Option<Map<String, Value>>> {
     match client.request_json(
         Method::GET,
-        &format!("/api/datasources/uid/{uid}"),
+        &format!("/api/datasources/uid/{}", encode_resource_path_segment(uid)),
         &[],
         None,
     ) {

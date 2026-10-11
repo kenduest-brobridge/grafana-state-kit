@@ -7,7 +7,7 @@
 use reqwest::Method;
 use serde_json::{Map, Value};
 
-use crate::common::{message, value_as_object, Result};
+use crate::common::{encode_resource_path_segment, message, value_as_object, Result};
 use crate::grafana_api::DashboardResourceClient;
 use crate::http::JsonHttpClient;
 
@@ -219,7 +219,10 @@ fn fetch_history_version_with_client(
     version: i64,
     org_id_override: Option<i64>,
 ) -> Result<Map<String, Value>> {
-    let path = format!("/api/dashboards/uid/{uid}/versions/{version}");
+    let path = format!(
+        "/api/dashboards/uid/{}/versions/{version}",
+        encode_resource_path_segment(uid)
+    );
     let params = org_id_override
         .map(|org_id| vec![("orgId".to_string(), org_id.to_string())])
         .unwrap_or_default();
@@ -247,8 +250,14 @@ fn fetch_permission_target_with_client(
     org_id_override: Option<i64>,
 ) -> Result<Vec<Map<String, Value>>> {
     let path = match target.resource_kind {
-        "folder" => format!("/api/folders/{}/permissions", target.resource_uid),
-        "dashboard" => format!("/api/dashboards/uid/{}/permissions", target.resource_uid),
+        "folder" => format!(
+            "/api/folders/{}/permissions",
+            encode_resource_path_segment(&target.resource_uid)
+        ),
+        "dashboard" => format!(
+            "/api/dashboards/uid/{}/permissions",
+            encode_resource_path_segment(&target.resource_uid)
+        ),
         other => {
             return Err(message(format!(
                 "Unsupported permission export resource kind {other}."
@@ -329,6 +338,27 @@ mod export_tests {
         assert_eq!(variant_index[0].folder_path, "Platform / Team / Infra");
         assert_eq!(root_index.items[0].folder_uid, "infra");
         assert_eq!(root_index.items[0].folder_path, "Platform / Team / Infra");
+    }
+
+    #[test]
+    fn library_panel_export_encodes_reserved_uid_delimiters() {
+        let uid = "shared/main?orgId=2#frag %one";
+        let mut calls = Vec::new();
+        let _ = collect_library_panel_exports_with_request(
+            |method, path, _, _| {
+                calls.push((method, path.to_string()));
+                Ok(None)
+            },
+            &json!({"dashboard": {"panels": [{"libraryPanel": {"uid": uid}}]}}),
+        )
+        .unwrap();
+        assert_eq!(
+            calls,
+            vec![(
+                Method::GET,
+                "/api/library-elements/shared%2Fmain%3ForgId%3D2%23frag%20%25one".to_string()
+            )]
+        );
     }
 
     #[test]

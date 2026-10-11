@@ -159,9 +159,13 @@ Use scan to size the workspace before you fetch live state. If the total is unex
 ### 2. Workspace Test
 Verify staged readiness before you preview or apply anything.
 ```bash
-# Check the discovered mixed workspace with staged availability hints.
-grafana-util workspace test ./grafana-oac-repo --availability-file ./availability.json
+# Check a packaged workspace with staged availability hints.
+grafana-util workspace test ./grafana-oac-repo --source-bundle ./source-bundle.json --target-inventory ./target-inventory.json --availability-file ./availability.json
 ```
+
+Staged availability hints require a source bundle and target inventory, supplied
+explicitly or discovered in the workspace. Use `--fetch-live` to check availability
+directly for desired resources or raw exports.
 
 ```bash
 # Check the staged package and merge live availability hints.

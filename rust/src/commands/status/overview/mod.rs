@@ -7,7 +7,7 @@
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use serde::Serialize;
 use serde_json::Value;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 pub use crate::project_status::{
     ProjectDomainStatus as OverviewProjectStatusDomain, ProjectStatus as OverviewProjectStatus,
@@ -314,6 +314,20 @@ pub struct OverviewDocument {
 #[cfg_attr(not(test), allow(dead_code))]
 pub(crate) fn build_overview_artifacts(args: &OverviewArgs) -> Result<Vec<OverviewArtifact>> {
     overview_artifacts::build_overview_artifacts(args)
+}
+
+#[derive(Default)]
+pub(crate) struct OverviewInputOverrides<'a> {
+    pub(crate) datasource_export_file: Option<&'a Path>,
+    pub(crate) availability: Option<&'a Value>,
+    pub(crate) extra_artifacts: &'a [OverviewArtifact],
+}
+
+pub(crate) fn build_overview_artifacts_with_inputs(
+    args: &OverviewArgs,
+    inputs: &OverviewInputOverrides<'_>,
+) -> Result<Vec<OverviewArtifact>> {
+    overview_artifacts::build_overview_artifacts_with_inputs(args, inputs)
 }
 
 pub fn build_overview_document(artifacts: Vec<OverviewArtifact>) -> Result<OverviewDocument> {

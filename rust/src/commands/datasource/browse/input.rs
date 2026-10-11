@@ -1,6 +1,6 @@
 #![cfg(feature = "tui")]
 
-use crate::common::{message, Result};
+use crate::common::{encode_resource_path_segment, message, Result};
 use crate::http::JsonHttpClient;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use reqwest::Method;
@@ -261,7 +261,10 @@ fn save_edit(
     let payload = super::build_modify_payload(&existing, &updates)?;
     client.request_json(
         Method::PUT,
-        &format!("/api/datasources/uid/{}", selected.uid),
+        &format!(
+            "/api/datasources/uid/{}",
+            encode_resource_path_segment(&selected.uid)
+        ),
         &[],
         Some(&payload),
     )?;
@@ -282,7 +285,10 @@ fn confirm_delete(
         .ok_or_else(|| message("Datasource browse delete preview is missing."))?;
     client.request_json(
         Method::DELETE,
-        &format!("/api/datasources/uid/{}", pending.uid),
+        &format!(
+            "/api/datasources/uid/{}",
+            encode_resource_path_segment(&pending.uid)
+        ),
         &[],
         None,
     )?;

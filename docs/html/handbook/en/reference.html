@@ -1032,6 +1032,7 @@ code[class*="language-"],pre[class*="language-"]{color:#ccc;background:none;font
 <p>If you set <code>GRAFANA_UTIL_CONFIG</code>, the config file moves with that path. The helper files for <code>encrypted-file</code> mode follow the same directory:</p>
 <table><thead><tr><th>File</th><th>Default location</th></tr></thead><tbody><tr><td><code>grafana-util.yaml</code></td><td>current working directory, or the path given by <code>GRAFANA_UTIL_CONFIG</code></td></tr><tr><td><code>.grafana-util.secrets.yaml</code></td><td>same directory as <code>grafana-util.yaml</code></td></tr><tr><td><code>.grafana-util.secrets.key</code></td><td>same directory as <code>grafana-util.yaml</code></td></tr></tbody></table>
 <p>When <code>encrypted-file</code> uses these repo-local helper paths, <code>config profile add</code> also appends them to the config-directory <code>.gitignore</code> if they are not already ignored.</p>
+<p>Updating an existing encrypted secret file requires its original passphrase or local key. A wrong passphrase, replaced or missing key, unsupported file version, or malformed encrypted entry stops the update without changing the secret file. Reading an existing store never creates a replacement key. Restore the original key from your backup if it is missing; changing the passphrase is not a key rotation workflow.</p>
 <h3 id="2-initialize-add-and-list-profiles">2. Initialize, add, and list profiles</h3>
 <pre><code># Create the local profile config file first.
 grafana-util config profile init --overwrite</code></pre>

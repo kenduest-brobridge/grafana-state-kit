@@ -259,6 +259,39 @@ fn run_sync_cli_bundle_rejects_dual_dashboard_sources() {
 }
 
 #[test]
+fn run_sync_cli_bundle_prefers_explicit_provisioning_over_discovered_raw() {
+    let temp = tempdir().unwrap();
+    let workspace = temp.path().join("workspace");
+    super::write_dashboard_raw_fixture(&workspace.join("dashboards/raw"));
+    let provisioning_root = temp.path().join("selected-provisioning");
+    write_dashboard_provisioning_fixture(&provisioning_root);
+    let output_file = temp.path().join("bundle.json");
+
+    run_sync_cli(SyncGroupCommand::Bundle(SyncBundleArgs {
+        workspace: Some(workspace),
+        dashboard_export_dir: None,
+        dashboard_provisioning_dir: Some(provisioning_root.clone()),
+        alert_export_dir: None,
+        datasource_export_file: None,
+        datasource_provisioning_file: None,
+        metadata_file: None,
+        output_file: Some(output_file.clone()),
+        also_stdout: false,
+        output_format: SyncOutputFormat::Json,
+    }))
+    .unwrap();
+
+    let bundle: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&output_file).unwrap()).unwrap();
+    assert_eq!(bundle["summary"]["dashboardCount"], json!(1));
+    assert_eq!(
+        bundle["metadata"]["dashboardProvisioningDir"],
+        json!(provisioning_root.display().to_string())
+    );
+    assert!(bundle["metadata"].get("dashboardExportDir").is_none());
+}
+
+#[test]
 fn run_sync_cli_bundle_preserves_alert_export_artifact_metadata() {
     let temp = tempdir().unwrap();
     let alert_export_dir = temp.path().join("alerts").join("raw");

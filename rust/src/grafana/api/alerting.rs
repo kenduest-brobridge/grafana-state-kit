@@ -1,7 +1,7 @@
 use reqwest::Method;
 use serde_json::{Map, Value};
 
-use crate::common::{message, Result};
+use crate::common::{encode_resource_path_segment, message, Result};
 use crate::http::JsonHttpClient;
 
 pub(crate) struct AlertingResourceClient<'a> {
@@ -57,7 +57,7 @@ impl<'a> AlertingResourceClient<'a> {
         expect_object(
             self.request_json(
                 Method::GET,
-                &format!("/api/dashboards/uid/{uid}"),
+                &format!("/api/dashboards/uid/{}", encode_resource_path_segment(uid)),
                 &[],
                 None,
             )?,
@@ -69,7 +69,10 @@ impl<'a> AlertingResourceClient<'a> {
         expect_object(
             self.request_json(
                 Method::GET,
-                &format!("/api/v1/provisioning/alert-rules/{uid}"),
+                &format!(
+                    "/api/v1/provisioning/alert-rules/{}",
+                    encode_resource_path_segment(uid)
+                ),
                 &[],
                 None,
             )?,
@@ -100,7 +103,10 @@ impl<'a> AlertingResourceClient<'a> {
         expect_object(
             self.request_json(
                 Method::PUT,
-                &format!("/api/v1/provisioning/alert-rules/{uid}"),
+                &format!(
+                    "/api/v1/provisioning/alert-rules/{}",
+                    encode_resource_path_segment(uid)
+                ),
                 &[],
                 Some(&Value::Object(payload.clone())),
             )?,
@@ -143,7 +149,10 @@ impl<'a> AlertingResourceClient<'a> {
         expect_object(
             self.request_json(
                 Method::PUT,
-                &format!("/api/v1/provisioning/contact-points/{uid}"),
+                &format!(
+                    "/api/v1/provisioning/contact-points/{}",
+                    encode_resource_path_segment(uid)
+                ),
                 &[],
                 Some(&Value::Object(payload.clone())),
             )?,
@@ -181,7 +190,10 @@ impl<'a> AlertingResourceClient<'a> {
         expect_object(
             self.request_json(
                 Method::PUT,
-                &format!("/api/v1/provisioning/mute-timings/{name}"),
+                &format!(
+                    "/api/v1/provisioning/mute-timings/{}",
+                    encode_resource_path_segment(name)
+                ),
                 &[],
                 Some(&Value::Object(payload.clone())),
             )?,
@@ -230,7 +242,10 @@ impl<'a> AlertingResourceClient<'a> {
         expect_object(
             self.request_json(
                 Method::GET,
-                &format!("/api/v1/provisioning/templates/{name}"),
+                &format!(
+                    "/api/v1/provisioning/templates/{}",
+                    encode_resource_path_segment(name)
+                ),
                 &[],
                 None,
             )?,
@@ -248,7 +263,10 @@ impl<'a> AlertingResourceClient<'a> {
         expect_object(
             self.request_json(
                 Method::PUT,
-                &format!("/api/v1/provisioning/templates/{name}"),
+                &format!(
+                    "/api/v1/provisioning/templates/{}",
+                    encode_resource_path_segment(name)
+                ),
                 &[],
                 Some(&Value::Object(body)),
             )?,
@@ -260,7 +278,10 @@ impl<'a> AlertingResourceClient<'a> {
         Ok(self
             .request_json(
                 Method::DELETE,
-                &format!("/api/v1/provisioning/alert-rules/{uid}"),
+                &format!(
+                    "/api/v1/provisioning/alert-rules/{}",
+                    encode_resource_path_segment(uid)
+                ),
                 &[],
                 None,
             )?
@@ -271,7 +292,10 @@ impl<'a> AlertingResourceClient<'a> {
         Ok(self
             .request_json(
                 Method::DELETE,
-                &format!("/api/v1/provisioning/contact-points/{uid}"),
+                &format!(
+                    "/api/v1/provisioning/contact-points/{}",
+                    encode_resource_path_segment(uid)
+                ),
                 &[],
                 None,
             )?
@@ -282,7 +306,10 @@ impl<'a> AlertingResourceClient<'a> {
         Ok(self
             .request_json(
                 Method::DELETE,
-                &format!("/api/v1/provisioning/mute-timings/{name}"),
+                &format!(
+                    "/api/v1/provisioning/mute-timings/{}",
+                    encode_resource_path_segment(name)
+                ),
                 &[("version".to_string(), String::new())],
                 None,
             )?
@@ -293,7 +320,10 @@ impl<'a> AlertingResourceClient<'a> {
         Ok(self
             .request_json(
                 Method::DELETE,
-                &format!("/api/v1/provisioning/templates/{name}"),
+                &format!(
+                    "/api/v1/provisioning/templates/{}",
+                    encode_resource_path_segment(name)
+                ),
                 &[("version".to_string(), String::new())],
                 None,
             )?
@@ -410,3 +440,7 @@ pub(crate) fn parse_template_list_response(
         )),
     }
 }
+
+#[cfg(test)]
+#[path = "resource_path_tests.rs"]
+mod resource_path_tests;

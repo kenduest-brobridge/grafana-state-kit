@@ -1031,6 +1031,7 @@ code[class*="language-"],pre[class*="language-"]{color:#ccc;background:none;font
 <p>如果你有設定 <code>GRAFANA_UTIL_CONFIG</code>，設定檔就會跟著那個路徑走。<code>encrypted-file</code> 模式用到的幫助檔也會放在同一個目錄：</p>
 <table><thead><tr><th>檔案</th><th>預設位置</th></tr></thead><tbody><tr><td><code>grafana-util.yaml</code></td><td>目前工作目錄，或 <code>GRAFANA_UTIL_CONFIG</code> 指定的路徑</td></tr><tr><td><code>.grafana-util.secrets.yaml</code></td><td>跟 <code>grafana-util.yaml</code> 放同一個目錄</td></tr><tr><td><code>.grafana-util.secrets.key</code></td><td>跟 <code>grafana-util.yaml</code> 放同一個目錄</td></tr></tbody></table>
 <p>如果 <code>encrypted-file</code> 使用這些 repo-local helper 路徑，<code>config profile add</code> 也會在尚未忽略時，自動把它們加到 config 目錄的 <code>.gitignore</code>。</p>
+<p>更新既有加密秘密檔時，必須使用原本的 passphrase 或本機金鑰。密語錯誤、金鑰被替換或遺失、檔案版本不支援，或加密項目格式錯誤時，會停止更新並保留秘密檔原有內容。 讀取既有秘密檔不會建立替代金鑰；金鑰遺失時，請從備份還原原金鑰。改用另一組密語並不會替秘密檔輪替金鑰。</p>
 <h3 id="2-初始化新增並列出-profile">2. 初始化、新增並列出 profile</h3>
 <pre><code># 先建立本機 profile 設定檔。
 grafana-util config profile init --overwrite</code></pre>

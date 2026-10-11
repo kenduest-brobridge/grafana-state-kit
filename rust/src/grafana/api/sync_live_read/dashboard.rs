@@ -5,6 +5,9 @@ use reqwest::Method;
 use serde_json::{Map, Value};
 
 use crate::common::{message, Result};
+use crate::dashboard::import_target::{
+    build_dashboard_target_review, dashboard_target_review_ownership_label,
+};
 #[cfg(test)]
 use crate::sync::require_json_object;
 
@@ -147,6 +150,7 @@ fn append_dashboard_spec(
     uid: &str,
     dashboard_wrapper: Value,
 ) -> Result<()> {
+    let target_review = build_dashboard_target_review(&dashboard_wrapper)?;
     let mut wrapper = match dashboard_wrapper {
         Value::Object(wrapper) => wrapper,
         _ => return Err(message(format!("Grafana dashboard payload for UID {uid}."))),
@@ -159,18 +163,42 @@ fn append_dashboard_spec(
         _ => return Err(message(format!("Grafana dashboard body for UID {uid}."))),
     };
     normalized.remove("id");
+    if let Some(folder_uid) = wrapper
+        .get("meta")
+        .and_then(|meta| meta.get("folderUid"))
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        normalized.insert(
+            "folderUid".to_string(),
+            Value::String(folder_uid.to_string()),
+        );
+    }
     let title = normalized
         .get("title")
         .and_then(Value::as_str)
         .map(str::trim)
         .filter(|value: &&str| !value.is_empty())
         .unwrap_or(uid);
-    specs.push(serde_json::json!({
+    let mut spec = serde_json::json!({
         "kind": "dashboard",
         "uid": uid,
         "title": title,
         "body": normalized,
-    }));
+    });
+    let ownership = dashboard_target_review_ownership_label(&target_review);
+    if ownership != "api-managed" {
+        spec["ownership"] = Value::String(ownership.to_string());
+        spec["provenance"] = Value::Array(
+            target_review
+                .evidence
+                .into_iter()
+                .map(Value::String)
+                .collect(),
+        );
+    }
+    specs.push(spec);
     Ok(())
 }
 
@@ -277,6 +305,51 @@ mod tests {
             .map(|spec| spec["uid"].as_str().unwrap())
             .collect::<Vec<_>>();
         assert_eq!(uids, vec!["dash-b", "dash-a", "dash-c"]);
+    }
+
+    #[test]
+    fn append_dashboard_specs_preserves_folder_and_target_ownership_for_apply() {
+        for meta in [
+            serde_json::json!({"folderUid": "team", "provisioned": true}),
+            serde_json::json!({
+                "folderUid": "team",
+                "managedRepository": {"kind": "git", "id": "repo-main"}
+            }),
+        ] {
+            let mut specs = Vec::new();
+            append_dashboard_specs_from_summaries(&mut specs, vec![summary("dash-a")], |_uid| {
+                Ok(serde_json::json!({
+                    "dashboard": {"id": 123, "uid": "dash-a", "title": "CPU", "panels": []},
+                    "meta": meta
+                }))
+            })
+            .unwrap();
+            assert_eq!(specs[0]["body"]["folderUid"], serde_json::json!("team"));
+            assert!(specs[0]["body"].get("id").is_none());
+
+            let desired = serde_json::json!({
+                "kind": "dashboard",
+                "uid": "dash-a",
+                "body": {"uid": "dash-a", "title": "Updated CPU", "panels": [], "folderUid": "team"}
+            });
+            let mut plan =
+                crate::sync::build_sync_plan_document(&[desired], &specs, false).unwrap();
+            plan["reviewed"] = Value::Bool(true);
+            let intent = crate::sync::build_sync_apply_intent_document(&plan, true).unwrap();
+            let operations = crate::sync::live::load_apply_intent_operations(&intent).unwrap();
+            let mut requests = 0;
+            let result = crate::sync::live::execute_live_apply_with_request(
+                |_method, _path, _params, _payload| {
+                    requests += 1;
+                    Ok(None)
+                },
+                &operations,
+                false,
+                false,
+            );
+            assert!(result.is_err());
+            assert_eq!(requests, 0);
+        }
     }
 
     #[test]

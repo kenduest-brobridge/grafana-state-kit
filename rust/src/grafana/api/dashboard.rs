@@ -376,7 +376,12 @@ impl<'a> DashboardResourceClient<'a> {
     }
 
     pub(crate) fn fetch_folder_if_exists(&self, uid: &str) -> Result<Option<Map<String, Value>>> {
-        match self.request_json(Method::GET, &format!("/api/folders/{uid}"), &[], None) {
+        match self.request_json(
+            Method::GET,
+            &format!("/api/folders/{}", encode_resource_path_segment(uid)),
+            &[],
+            None,
+        ) {
             Ok(Some(Value::Object(object))) => Ok(Some(object)),
             Ok(Some(_)) => Err(message(format!("Unexpected folder payload for UID {uid}."))),
             Ok(None) => Ok(None),
@@ -388,7 +393,7 @@ impl<'a> DashboardResourceClient<'a> {
     pub(crate) fn fetch_dashboard(&self, uid: &str) -> Result<Value> {
         match self.request_json(
             Method::GET,
-            &format!("/api/dashboards/uid/{uid}"),
+            &format!("/api/dashboards/uid/{}", encode_resource_path_segment(uid)),
             &[],
             None,
         )? {
@@ -422,7 +427,10 @@ impl<'a> DashboardResourceClient<'a> {
     pub(crate) fn fetch_library_panel(&self, uid: &str) -> Result<Value> {
         match self.request_json(
             Method::GET,
-            &format!("/api/library-elements/{uid}"),
+            &format!(
+                "/api/library-elements/{}",
+                encode_resource_path_segment(uid)
+            ),
             &[],
             None,
         )? {
@@ -446,7 +454,10 @@ impl<'a> DashboardResourceClient<'a> {
 
     #[allow(dead_code)]
     pub(crate) fn fetch_dashboard_permissions(&self, uid: &str) -> Result<Vec<Map<String, Value>>> {
-        let path = format!("/api/dashboards/uid/{uid}/permissions");
+        let path = format!(
+            "/api/dashboards/uid/{}/permissions",
+            encode_resource_path_segment(uid)
+        );
         self.expect_object_list(
             self.request_json(Method::GET, &path, &[], None)?,
             &format!("Unexpected dashboard permissions payload for UID {uid}."),
@@ -455,7 +466,10 @@ impl<'a> DashboardResourceClient<'a> {
 
     #[allow(dead_code)]
     pub(crate) fn fetch_folder_permissions(&self, uid: &str) -> Result<Vec<Map<String, Value>>> {
-        let path = format!("/api/folders/{uid}/permissions");
+        let path = format!(
+            "/api/folders/{}/permissions",
+            encode_resource_path_segment(uid)
+        );
         self.expect_object_list(
             self.request_json(Method::GET, &path, &[], None)?,
             &format!("Unexpected folder permissions payload for UID {uid}."),
@@ -499,7 +513,7 @@ impl<'a> DashboardResourceClient<'a> {
         uid: &str,
         payload: &Map<String, Value>,
     ) -> Result<Map<String, Value>> {
-        let path = format!("/api/folders/{uid}");
+        let path = format!("/api/folders/{}", encode_resource_path_segment(uid));
         match self.request_json(
             Method::PUT,
             &path,
@@ -529,7 +543,7 @@ impl<'a> DashboardResourceClient<'a> {
     }
 
     pub(crate) fn delete_dashboard_request(&self, uid: &str) -> Result<Map<String, Value>> {
-        let path = format!("/api/dashboards/uid/{uid}");
+        let path = format!("/api/dashboards/uid/{}", encode_resource_path_segment(uid));
         match self.request_json(Method::DELETE, &path, &[], None)? {
             Some(Value::Object(object)) => Ok(object),
             Some(_) => Err(message(format!(
@@ -542,7 +556,7 @@ impl<'a> DashboardResourceClient<'a> {
     }
 
     pub(crate) fn delete_folder_request(&self, uid: &str) -> Result<Map<String, Value>> {
-        let path = format!("/api/folders/{uid}");
+        let path = format!("/api/folders/{}", encode_resource_path_segment(uid));
         match self.request_json(Method::DELETE, &path, &[], None)? {
             Some(Value::Object(object)) => Ok(object),
             Some(_) => Err(message(format!(
@@ -565,7 +579,10 @@ impl<'a> DashboardResourceClient<'a> {
                 .map(str::trim)
                 .filter(|value| !value.is_empty())
         })?;
-        let path = format!("/api/dashboards/uid/{uid}/versions");
+        let path = format!(
+            "/api/dashboards/uid/{}/versions",
+            encode_resource_path_segment(uid)
+        );
         let params = vec![("limit".to_string(), "1".to_string())];
         let response = self
             .request_json(Method::GET, &path, &params, None)

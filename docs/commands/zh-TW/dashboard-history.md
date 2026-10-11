@@ -47,6 +47,7 @@
 - 原本那個歷史版本仍然會保留在 dashboard history 中。
 - `--dry-run` 只會顯示還原意圖，不會真的變更 Grafana。
 - 真正要還原時，必須加上 `--yes`，除非您使用 `--prompt`。
+- 由檔案佈建或 Git Sync 管理的 dashboard 會拒絕還原預覽與直接還原；請在其所屬來源還原歷史內容。
 
 ## 給 CI 用的 JSON contract
 

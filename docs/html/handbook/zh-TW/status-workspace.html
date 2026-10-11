@@ -1011,8 +1011,9 @@ grafana-util workspace scan --dashboard-export-dir ./dashboards/raw --alert-expo
 <p>先用 scan 看整個 workspace package 的規模與輸入形狀，再往下看 preview。若總數異常偏大，應先停下來檢查 staged 輸入。</p>
 <h3 id="2-workspace-測試">2. Workspace 測試</h3>
 <p>驗證匯出 / 匯入目錄結構與 staged readiness。</p>
-<pre><code># 先檢查目前 mixed workspace 自動發現到的 staged package。
-grafana-util workspace test ./grafana-oac-repo --availability-file ./availability.json</code></pre>
+<pre><code># 使用已打包的 workspace 與 staged availability hints 進行檢查。
+grafana-util workspace test ./grafana-oac-repo --source-bundle ./source-bundle.json --target-inventory ./target-inventory.json --availability-file ./availability.json</code></pre>
+<p>只使用 staged availability hints 時，需要明確指定 source bundle 與 target inventory，或讓 workspace 自動發現這兩項輸入。若要直接檢查 desired 資源或 raw 匯出內容的可用性，請使用 <code>--fetch-live</code>。</p>
 <pre><code># 把 live availability hints 併進 staged 檢查。
 grafana-util workspace test ./grafana-oac-repo --fetch-live --output-format json</code></pre>
 <p><strong>預期輸出：</strong></p>

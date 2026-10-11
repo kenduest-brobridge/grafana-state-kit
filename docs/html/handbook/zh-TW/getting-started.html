@@ -1017,6 +1017,7 @@ grafana-util status overview live \
   --output-format yaml</code></pre>
 <p>環境變數也可以直接提供同樣的驗證資訊：</p>
 <ul><li><code>GRAFANA_USERNAME</code></li><li><code>GRAFANA_PASSWORD</code></li><li><code>GRAFANA_API_TOKEN</code></li></ul>
+<p>明確指定的 Basic 帳密（包含 <code>--prompt-password</code>）優先於 <code>GRAFANA_API_TOKEN</code>。未指定驗證資訊時，環境變數中的 Token 優先於環境中的帳密。</p>
 <p>如果是重複執行的工作，建議把這些 reference 寫進 profile，例如 <code>password_env: GRAFANA_PROD_PASSWORD</code> 或 <code>token_env: GRAFANA_DEV_TOKEN</code>，這樣就不用在每條命令上重打敏感資訊。</p>
 <h3 id="建議的學習順序">建議的學習順序</h3>
 <p>第一次使用時，建議照這個順序：</p>

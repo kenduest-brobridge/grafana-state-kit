@@ -125,6 +125,55 @@ fn org_import_rejects_kind_mismatch_and_future_version_bundle_contract() {
 }
 
 #[test]
+fn org_import_dry_run_new_org_does_not_fetch_source_org_users() {
+    for exported_id in [json!(9), Value::Null] {
+        let temp = tempdir().unwrap();
+        fs::write(
+            temp.path().join("orgs.json"),
+            serde_json::to_string(&json!({
+                "kind": "grafana-utils-access-org-export-index",
+                "version": 1,
+                "records": [{
+                    "id": exported_id,
+                    "name": "New Org",
+                    "users": [{"login": "alice", "orgRole": "Editor"}]
+                }]
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+        let args = OrgImportArgs {
+            common: make_basic_common_no_org_id(),
+            input_dir: temp.path().to_path_buf(),
+            local: false,
+            run: None,
+            run_id: None,
+            replace_existing: true,
+            dry_run: true,
+            yes: false,
+        };
+        let mut calls = Vec::new();
+        import_orgs_with_request(
+            |method, path, _params, _payload| {
+                calls.push((method.clone(), path.to_string()));
+                match (method, path) {
+                    (Method::GET, "/api/orgs") => Ok(Some(json!([]))),
+                    _ => Err(crate::common::api_response(
+                        404,
+                        format!("http://127.0.0.1:3000{path}"),
+                        "Organization not found",
+                    )),
+                }
+            },
+            &args,
+        )
+        .unwrap();
+
+        assert_eq!(calls, vec![(Method::GET, "/api/orgs".to_string())]);
+    }
+}
+
+#[test]
 fn org_import_with_request_dry_run_reports_user_role_update_without_mutating() {
     let temp = tempdir().unwrap();
     let input_dir = temp.path().join("access-orgs");

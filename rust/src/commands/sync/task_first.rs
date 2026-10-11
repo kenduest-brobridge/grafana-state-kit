@@ -5,8 +5,9 @@ use std::path::{Path, PathBuf};
 use super::{
     attach_lineage, attach_trace_id, build_sync_plan_document,
     cli::{
-        execute_sync_bundle_preflight, execute_sync_plan, execute_sync_promotion_preflight,
-        load_sync_live_array, render_and_emit_sync_command_output,
+        build_sync_review_document, execute_sync_bundle_preflight, execute_sync_plan,
+        execute_sync_promotion_preflight, load_sync_live_array, load_sync_merged_availability,
+        render_and_emit_sync_command_output,
     },
     input_normalization::{
         build_overview_args, build_status_args, load_preview_desired_specs,
@@ -16,16 +17,137 @@ use super::{
         attach_discovery_to_overview, attach_discovery_to_status, attach_discovery_to_sync_output,
         discover_change_staged_inputs, emit_discovery_provenance, DiscoveredChangeInputs,
     },
-    ChangeCheckArgs, ChangeInspectArgs, ChangePreviewArgs, Result, SyncBundlePreflightArgs,
-    SyncCommandOutput, SyncOutputFormat, SyncPlanArgs, SyncPromotionPreflightArgs,
+    ChangeCheckArgs, ChangeInspectArgs, ChangeOutputArgs, ChangePreviewArgs, Result,
+    SyncBundlePreflightArgs, SyncCommandOutput, SyncOutputFormat, SyncPlanArgs,
+    SyncPromotionPreflightArgs,
 };
 use crate::common::{emit_plain_output, message};
 use crate::overview::{
-    execute_overview, render_overview_text, OverviewArtifact, OverviewInputField,
+    build_overview_artifacts_with_inputs, build_overview_document, render_overview_text,
+    OverviewArgs, OverviewArtifact, OverviewInputField, OverviewInputOverrides,
     OVERVIEW_ARTIFACT_BUNDLE_PREFLIGHT_KIND, OVERVIEW_ARTIFACT_PROMOTION_PREFLIGHT_KIND,
 };
-use crate::project_status_command::{execute_project_status_staged, render_project_status_text};
+use crate::project_status_command::{render_project_status_text, staged_args_to_overview_args};
 use crate::project_status_staged::build_staged_project_status;
+
+fn emit_workspace_output(
+    document: &impl serde::Serialize,
+    text_lines: &[String],
+    output: &ChangeOutputArgs,
+) -> Result<()> {
+    let persisted = match output.output_format {
+        SyncOutputFormat::Json => serde_json::to_string_pretty(document)?,
+        SyncOutputFormat::Text => text_lines.join("\n"),
+    };
+    if let Some(path) = output.output_file.as_deref() {
+        emit_plain_output(&persisted, Some(path), false)?;
+    }
+    if output.output_file.is_none() || output.also_stdout {
+        let rendered = match output.output_format {
+            SyncOutputFormat::Json => crate::common::render_json_value(document)?,
+            SyncOutputFormat::Text => persisted,
+        };
+        emit_plain_output(&rendered, None, false)?;
+    }
+    Ok(())
+}
+
+fn build_live_check_artifact(
+    args: &ChangeCheckArgs,
+    inputs: &mut OverviewArgs,
+    availability: &serde_json::Value,
+) -> Result<Option<OverviewArtifact>> {
+    if inputs.target_inventory.is_some() || inputs.mapping_file.is_some() {
+        return Ok(None);
+    }
+    let source = if let Some(path) = inputs.source_bundle.as_ref() {
+        super::load_json_value(path, "Workspace package input")?
+    } else {
+        if inputs.desired_file.is_none()
+            && inputs.dashboard_export_dir.is_none()
+            && inputs.dashboard_provisioning_dir.is_none()
+            && inputs.datasource_provisioning_file.is_none()
+            && args.inputs.datasource_export_file.is_none()
+            && inputs.alert_export_dir.is_none()
+        {
+            return Ok(None);
+        }
+        let desired = load_preview_desired_specs(
+            &args.inputs,
+            inputs.desired_file.as_ref(),
+            None,
+            inputs.dashboard_export_dir.as_ref(),
+            inputs.dashboard_provisioning_dir.as_ref(),
+            inputs.alert_export_dir.as_ref(),
+            inputs.datasource_provisioning_file.as_ref(),
+        )?;
+        let mut dashboards = Vec::new();
+        let mut datasources = Vec::new();
+        let mut folders = Vec::new();
+        let mut alerts = Vec::new();
+        for value in desired {
+            let kind = super::workbench::normalize_resource_spec(&value)?.kind;
+            match kind.as_str() {
+                "dashboard" => dashboards.push(value),
+                "datasource" => datasources.push(value),
+                "folder" => folders.push(value),
+                _ => alerts.push(value),
+            }
+        }
+        super::build_sync_source_bundle_document(
+            &dashboards,
+            &datasources,
+            &folders,
+            &alerts,
+            None,
+            None,
+        )?
+    };
+    let document = super::build_sync_bundle_preflight_document(
+        &source,
+        &serde_json::json!({}),
+        Some(availability),
+    )?;
+    let mut artifact_inputs = Vec::new();
+    for (name, path) in [
+        ("sourceBundle", inputs.source_bundle.as_deref()),
+        ("desiredFile", inputs.desired_file.as_deref()),
+        ("dashboardExportDir", inputs.dashboard_export_dir.as_deref()),
+        (
+            "dashboardProvisioningDir",
+            inputs.dashboard_provisioning_dir.as_deref(),
+        ),
+        (
+            "datasourceExportFile",
+            args.inputs.datasource_export_file.as_deref(),
+        ),
+        (
+            "datasourceProvisioningFile",
+            inputs.datasource_provisioning_file.as_deref(),
+        ),
+        ("alertExportDir", inputs.alert_export_dir.as_deref()),
+        ("availabilityFile", inputs.availability_file.as_deref()),
+    ] {
+        if let Some(path) = path {
+            artifact_inputs.push(OverviewInputField {
+                name: name.to_string(),
+                value: path.display().to_string(),
+            });
+        }
+    }
+    artifact_inputs.push(OverviewInputField {
+        name: "availabilitySource".to_string(),
+        value: "live".to_string(),
+    });
+    inputs.source_bundle = None;
+    inputs.availability_file = None;
+    Ok(Some(OverviewArtifact {
+        kind: OVERVIEW_ARTIFACT_BUNDLE_PREFLIGHT_KIND.to_string(),
+        title: "Workspace live availability check".to_string(),
+        inputs: artifact_inputs,
+        document,
+    }))
+}
 
 fn ensure_any_discovered(discovered: &DiscoveredChangeInputs) -> Result<()> {
     if discovered == &DiscoveredChangeInputs::default() {
@@ -36,12 +158,34 @@ fn ensure_any_discovered(discovered: &DiscoveredChangeInputs) -> Result<()> {
     Ok(())
 }
 
-fn emit_preview_output(
-    output: SyncCommandOutput,
-    output_file: Option<&PathBuf>,
-    also_stdout: bool,
-    format: SyncOutputFormat,
-) -> Result<()> {
+fn emit_preview_output(mut output: SyncCommandOutput, args: &ChangePreviewArgs) -> Result<()> {
+    if args.mark_reviewed {
+        if output
+            .document
+            .get("kind")
+            .and_then(serde_json::Value::as_str)
+            != Some(super::workbench::SYNC_PLAN_KIND)
+        {
+            return Err(message("Workspace preview review requires a sync plan; package and promotion checks cannot be marked reviewed."));
+        }
+        let trace_id = super::require_trace_id(&output.document, "Workspace preview document")?;
+        let plan = if args.interactive_review {
+            super::review_tui::run_sync_review_tui(&output.document)?
+        } else {
+            output.document
+        };
+        output.document = build_sync_review_document(
+            &plan,
+            &args.review_token,
+            &trace_id,
+            args.reviewed_by.as_deref(),
+            args.reviewed_at.as_deref(),
+            args.review_note.as_deref(),
+        )?;
+        output.text_lines = super::render_sync_plan_text(&output.document)?;
+    }
+    let output_file = args.output.output_file.as_ref();
+    let format = args.output.output_format;
     if let Some(path) = output_file {
         let persisted = match format {
             SyncOutputFormat::Json => serde_json::to_string_pretty(&output.document)?,
@@ -49,7 +193,7 @@ fn emit_preview_output(
         };
         emit_plain_output(&persisted, Some(path.as_path()), false)?;
     }
-    if output_file.is_none() || also_stdout {
+    if output_file.is_none() || args.output.also_stdout {
         render_and_emit_sync_command_output(output, format)?;
     }
     Ok(())
@@ -187,20 +331,15 @@ pub(crate) fn run_sync_inspect(args: ChangeInspectArgs) -> Result<()> {
         merged.desired_file.as_ref(),
         merged.source_bundle.as_ref(),
     )?;
-    match args.output.output_format {
-        SyncOutputFormat::Json => {
-            let document = attach_discovery_to_overview(execute_overview(&merged)?, &discovered);
-            println!("{}", crate::common::render_json_value(&document)?);
-            Ok(())
-        }
-        SyncOutputFormat::Text => {
-            let document = attach_discovery_to_overview(execute_overview(&merged)?, &discovered);
-            for line in render_overview_text(&document)? {
-                println!("{line}");
-            }
-            Ok(())
-        }
-    }
+    let artifacts = build_overview_artifacts_with_inputs(
+        &merged,
+        &OverviewInputOverrides {
+            datasource_export_file: args.inputs.datasource_export_file.as_deref(),
+            ..Default::default()
+        },
+    )?;
+    let document = attach_discovery_to_overview(build_overview_document(artifacts)?, &discovered);
+    emit_workspace_output(&document, &render_overview_text(&document)?, &args.output)
 }
 
 pub(crate) fn run_sync_check(args: ChangeCheckArgs) -> Result<()> {
@@ -239,37 +378,38 @@ pub(crate) fn run_sync_check(args: ChangeCheckArgs) -> Result<()> {
         merged.desired_file.as_ref(),
         merged.source_bundle.as_ref(),
     )?;
-    match args.output.output_format {
-        SyncOutputFormat::Json => {
-            let status =
-                attach_discovery_to_status(execute_project_status_staged(&merged)?, &discovered);
-            println!("{}", crate::common::render_json_value(&status)?);
-            Ok(())
-        }
-        SyncOutputFormat::Text => {
-            let status =
-                attach_discovery_to_status(execute_project_status_staged(&merged)?, &discovered);
-            for line in render_project_status_text(&status) {
-                println!("{line}");
-            }
-            Ok(())
-        }
-    }
+    let availability = if args.fetch_live {
+        load_sync_merged_availability(
+            true,
+            &args.common,
+            args.org_id,
+            merged.availability_file.as_ref(),
+        )?
+    } else {
+        None
+    };
+    let mut overview_args = staged_args_to_overview_args(&merged);
+    let extra_artifacts = match availability.as_ref() {
+        Some(availability) => build_live_check_artifact(&args, &mut overview_args, availability)?
+            .into_iter()
+            .collect::<Vec<_>>(),
+        None => Vec::new(),
+    };
+    let artifacts = build_overview_artifacts_with_inputs(
+        &overview_args,
+        &OverviewInputOverrides {
+            datasource_export_file: args.inputs.datasource_export_file.as_deref(),
+            availability: availability.as_ref(),
+            extra_artifacts: &extra_artifacts,
+        },
+    )?;
+    let status = attach_discovery_to_status(build_staged_project_status(&artifacts), &discovered);
+    emit_workspace_output(&status, &render_project_status_text(&status), &args.output)
 }
 
 pub(crate) fn run_sync_preview(args: ChangePreviewArgs) -> Result<()> {
     let discovered = discover_change_staged_inputs(Some(args.inputs.workspace.as_path()))?;
     emit_discovery_provenance(&discovered, args.output.output_format);
-    let (selected_dashboard_export_dir, selected_dashboard_provisioning_dir) =
-        select_preview_dashboard_sources(
-            &args.inputs,
-            discovered.dashboard_export_dir.as_ref(),
-            discovered.dashboard_provisioning_dir.as_ref(),
-        )?;
-    let normalized_dashboard_inputs = normalize_change_dashboard_inputs(
-        selected_dashboard_export_dir,
-        selected_dashboard_provisioning_dir,
-    )?;
     let source_bundle = args
         .inputs
         .source_bundle
@@ -326,12 +466,7 @@ pub(crate) fn run_sync_preview(args: ChangePreviewArgs) -> Result<()> {
                     .or(discovered.availability_file.as_ref()),
             ),
         )?;
-        return emit_preview_output(
-            attach_discovery_to_sync_output(output, &discovered),
-            args.output.output_file.as_ref(),
-            args.output.also_stdout,
-            args.output.output_format,
-        );
+        return emit_preview_output(attach_discovery_to_sync_output(output, &discovered), &args);
     }
     if let (Some(source_bundle), Some(target_inventory)) = (source_bundle, target_inventory) {
         let output = execute_sync_bundle_preflight(&SyncBundlePreflightArgs {
@@ -365,19 +500,15 @@ pub(crate) fn run_sync_preview(args: ChangePreviewArgs) -> Result<()> {
                     .or(discovered.availability_file.as_ref()),
             ),
         )?;
-        return emit_preview_output(
-            attach_discovery_to_sync_output(output, &discovered),
-            args.output.output_file.as_ref(),
-            args.output.also_stdout,
-            args.output.output_format,
-        );
+        return emit_preview_output(attach_discovery_to_sync_output(output, &discovered), &args);
     }
-    let output = if let Some(desired_file) = args
-        .inputs
-        .desired_file
-        .clone()
-        .or(discovered.desired_file.clone())
-    {
+    let output = if let Some(desired_file) = args.inputs.desired_file.clone().or_else(|| {
+        args.inputs
+            .source_bundle
+            .is_none()
+            .then(|| discovered.desired_file.clone())
+            .flatten()
+    }) {
         execute_sync_plan(&SyncPlanArgs {
             desired_file,
             live_file: args.live_file.clone(),
@@ -390,6 +521,17 @@ pub(crate) fn run_sync_preview(args: ChangePreviewArgs) -> Result<()> {
             trace_id: args.trace_id.clone(),
         })?
     } else {
+        let normalized_dashboard_inputs =
+            if args.inputs.source_bundle.is_some() || discovered.source_bundle.is_some() {
+                Default::default()
+            } else {
+                let (selected_export, selected_provisioning) = select_preview_dashboard_sources(
+                    &args.inputs,
+                    discovered.dashboard_export_dir.as_ref(),
+                    discovered.dashboard_provisioning_dir.as_ref(),
+                )?;
+                normalize_change_dashboard_inputs(selected_export, selected_provisioning)?
+            };
         let preview_discovered = DiscoveredChangeInputs {
             workspace_root: discovered.workspace_root.clone(),
             dashboard_export_dir: normalized_dashboard_inputs.dashboard_export_dir.clone(),
@@ -431,12 +573,7 @@ pub(crate) fn run_sync_preview(args: ChangePreviewArgs) -> Result<()> {
             document,
         }
     };
-    emit_preview_output(
-        attach_discovery_to_sync_output(output, &discovered),
-        args.output.output_file.as_ref(),
-        args.output.also_stdout,
-        args.output.output_format,
-    )
+    emit_preview_output(attach_discovery_to_sync_output(output, &discovered), &args)
 }
 
 #[cfg(test)]

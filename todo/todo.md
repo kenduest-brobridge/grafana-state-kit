@@ -2,6 +2,10 @@
 
 ## Active
 
+- [ ] [2026-10-11 deep project review and fixes](2026-10-11-deep-project-review.md) -
+  Review maintained Rust behavior, shared contracts and delivery surfaces;
+  reproduce and repair confirmed defects, validate, and commit locally.
+
 - [x] [2026-09-10 stable upstream review and execution](2026-09-10-upstream-stable-review.md) -
   Verify Grafana 13.2.1, fix confirmed compatibility issues, add regression
   coverage, review and commit; retain Grafana 12.x compatibility.

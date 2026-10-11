@@ -160,11 +160,12 @@ where
         resolved_import.metadata_dir(),
         Some(super::super::import_metadata_variant(args)),
     )?;
-    let folder_inventory = if args.ensure_folders || args.dry_run {
-        load_folder_inventory(resolved_import.metadata_dir(), metadata.as_ref())?
-    } else {
-        Vec::new()
-    };
+    let folder_inventory =
+        if args.ensure_folders || args.require_matching_folder_path || args.dry_run {
+            load_folder_inventory(resolved_import.metadata_dir(), metadata.as_ref())?
+        } else {
+            Vec::new()
+        };
     if args.ensure_folders && folder_inventory.is_empty() {
         let folders_file = metadata
             .as_ref()

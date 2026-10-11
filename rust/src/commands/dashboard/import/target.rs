@@ -131,7 +131,9 @@ pub(crate) fn dashboard_target_ownership_evidence(
 }
 
 fn evidence_has_ownership(evidence: &[String], ownership: DashboardTargetOwnership) -> bool {
-    dashboard_target_ownership_from_evidence(evidence) == Some(ownership)
+    evidence.iter().any(|value| {
+        dashboard_target_ownership_from_evidence(std::slice::from_ref(value)) == Some(ownership)
+    })
 }
 
 fn summarize_scalar_value(key: &str, value: &Value) -> Option<String> {
@@ -424,5 +426,20 @@ mod tests {
         assert_eq!(evidence, vec!["managedBy{kind=plugin}".to_string()]);
         assert_eq!(dashboard_target_ownership_from_evidence(&evidence), None);
         assert!(!dashboard_target_evidence_blocks_direct_write(&evidence));
+    }
+
+    #[test]
+    fn target_ownership_evidence_blocks_on_any_managed_source() {
+        for ownership in ["file-provisioned", "git-sync-managed"] {
+            let evidence = vec![
+                "ownership=api-managed".to_string(),
+                format!("ownership={ownership}"),
+            ];
+            assert!(dashboard_target_evidence_blocks_direct_write(&evidence));
+        }
+        assert!(dashboard_target_evidence_warns_direct_write(&[
+            "ownership=api-managed".to_string(),
+            "ownership=managed-unknown".to_string(),
+        ]));
     }
 }

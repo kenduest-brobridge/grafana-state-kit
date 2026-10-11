@@ -189,6 +189,9 @@ grafana-util status overview live \
 - `GRAFANA_PASSWORD`
 - `GRAFANA_API_TOKEN`
 
+明確指定的 Basic 帳密（包含 `--prompt-password`）優先於
+`GRAFANA_API_TOKEN`。未指定驗證資訊時，環境變數中的 Token 優先於環境中的帳密。
+
 如果是重複執行的工作，建議把這些 reference 寫進 profile，例如 `password_env: GRAFANA_PROD_PASSWORD` 或 `token_env: GRAFANA_DEV_TOKEN`，這樣就不用在每條命令上重打敏感資訊。
 
 ### 建議的學習順序

@@ -9,7 +9,7 @@ use super::apply_contract::{
 use super::json::{require_json_array_field, require_json_object};
 use super::workbench::{SYNC_APPLY_INTENT_KIND, SYNC_APPLY_INTENT_SCHEMA_VERSION, SYNC_PLAN_KIND};
 use crate::common::{message, tool_version, GrafanaCliError, Result};
-use crate::review_contract::is_review_apply_action;
+use crate::review_contract::{is_review_apply_action, REVIEW_ACTION_WOULD_DELETE};
 use serde_json::Value;
 
 pub fn build_sync_apply_intent_document(plan_document: &Value, approve: bool) -> Result<Value> {
@@ -43,6 +43,17 @@ pub fn build_sync_apply_intent_document(plan_document: &Value, approve: bool) ->
                 .and_then(Value::as_str)
                 .map(is_review_apply_action)
                 .unwrap_or(false)
+        })
+        .map(|mut item| {
+            // Prune plans have no desired resource, while the executor expects an empty body.
+            if item.get("action").and_then(Value::as_str) == Some(REVIEW_ACTION_WOULD_DELETE)
+                && item.get("desired") == Some(&Value::Null)
+            {
+                if let Some(object) = item.as_object_mut() {
+                    object.remove("desired");
+                }
+            }
+            item
         })
         .map(serde_json::from_value::<SyncApplyOperation>)
         .collect::<serde_json::Result<Vec<_>>>()?;

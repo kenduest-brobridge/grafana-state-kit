@@ -16,6 +16,11 @@ Apply a reviewed alert management plan.
 
 Create, delete, contact-point, mute-timing, policy, template, and ambiguous rule-field changes fail closed. Use `alert plan` and review output to keep those broader changes visible without applying them directly.
 
+Every proposed mutation and its effective update payload are validated before the first write.
+The allowed-field check compares the plan's live and desired rule values rather
+than trusting `changedFields` alone. Runtime API failures can still leave earlier
+valid updates applied; review the reported result before retrying.
+
 ## Before / After
 
 - **Before**: a reviewed alert plan still leaves one risky question open: what actually happens when someone presses go against live Grafana?

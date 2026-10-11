@@ -236,6 +236,12 @@ pub(crate) fn team_member_identity(member: &Map<String, Value>) -> String {
 }
 
 pub(super) fn team_member_is_admin(member: &Map<String, Value>) -> bool {
+    if let Some(permission) = member.get("permission") {
+        let permission = scalar_text(Some(permission));
+        if let Ok(permission) = permission.parse::<i64>() {
+            return permission == 4;
+        }
+    }
     value_bool(member.get("isAdmin"))
         .unwrap_or_else(|| value_bool(member.get("admin")).unwrap_or(false))
 }

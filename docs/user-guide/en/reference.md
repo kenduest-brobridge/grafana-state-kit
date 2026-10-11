@@ -261,6 +261,13 @@ If you set `GRAFANA_UTIL_CONFIG`, the config file moves with that path. The help
 
 When `encrypted-file` uses these repo-local helper paths, `config profile add` also appends them to the config-directory `.gitignore` if they are not already ignored.
 
+Updating an existing encrypted secret file requires its original passphrase or
+local key. A wrong passphrase, replaced or missing key, unsupported file version,
+or malformed encrypted entry stops the update without changing the secret file.
+Reading an existing store never creates a replacement key. Restore the original
+key from your backup if it is missing; changing the passphrase is not a key
+rotation workflow.
+
 ### 2. Initialize, add, and list profiles
 ```bash
 # Create the local profile config file first.

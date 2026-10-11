@@ -52,6 +52,31 @@ where
     F: FnOnce() -> Result<String>,
     G: FnOnce() -> Result<String>,
 {
+    resolve_auth_headers_with_sources(
+        api_token,
+        username,
+        password,
+        (prompt_for_password, prompt_for_token),
+        (prompt_password_reader, prompt_token_reader),
+        env_value,
+    )
+}
+
+pub(super) fn resolve_auth_headers_with_sources<F, G, H>(
+    api_token: Option<&str>,
+    username: Option<&str>,
+    password: Option<&str>,
+    prompts: (bool, bool),
+    prompt_readers: (F, G),
+    env_reader: H,
+) -> Result<Vec<(String, String)>>
+where
+    F: FnOnce() -> Result<String>,
+    G: FnOnce() -> Result<String>,
+    H: Fn(&str) -> Option<String>,
+{
+    let (prompt_for_password, prompt_for_token) = prompts;
+    let (prompt_password_reader, prompt_token_reader) = prompt_readers;
     let cli_token = api_token
         .map(str::to_owned)
         .filter(|value| !value.is_empty());
@@ -104,7 +129,13 @@ where
         )]);
     }
 
-    let token = cli_token.or_else(|| env_value("GRAFANA_API_TOKEN"));
+    let token = cli_token.or_else(|| {
+        if cli_username.is_some() {
+            None
+        } else {
+            env_reader("GRAFANA_API_TOKEN")
+        }
+    });
     if let Some(token) = token {
         return Ok(vec![(
             "Authorization".to_string(),
@@ -116,8 +147,8 @@ where
         cli_password = Some(prompt_password_reader()?);
     }
 
-    let username = cli_username.or_else(|| env_value("GRAFANA_USERNAME"));
-    let password = cli_password.or_else(|| env_value("GRAFANA_PASSWORD"));
+    let username = cli_username.or_else(|| env_reader("GRAFANA_USERNAME"));
+    let password = cli_password.or_else(|| env_reader("GRAFANA_PASSWORD"));
     if let (Some(username), Some(password)) = (username.as_ref(), password.as_ref()) {
         let encoded = STANDARD.encode(format!("{username}:{password}"));
         return Ok(vec![(

@@ -44,58 +44,78 @@ pub(crate) fn build_overview_args(
     discovered_mapping_file: Option<&PathBuf>,
 ) -> OverviewArgs {
     OverviewArgs {
-        dashboard_export_dir: args
-            .inputs
-            .dashboard_export_dir
-            .clone()
-            .or(discovered_dashboard_export_dir.cloned()),
-        dashboard_provisioning_dir: args
-            .inputs
-            .dashboard_provisioning_dir
-            .clone()
-            .or(discovered_dashboard_provisioning_dir.cloned()),
+        dashboard_export_dir: args.inputs.dashboard_export_dir.clone().or_else(|| {
+            (args.inputs.dashboard_provisioning_dir.is_none()
+                && args.inputs.source_bundle.is_none())
+            .then(|| discovered_dashboard_export_dir.cloned())
+            .flatten()
+        }),
+        dashboard_provisioning_dir: args.inputs.dashboard_provisioning_dir.clone().or_else(|| {
+            (args.inputs.dashboard_export_dir.is_none() && args.inputs.source_bundle.is_none())
+                .then(|| discovered_dashboard_provisioning_dir.cloned())
+                .flatten()
+        }),
         datasource_export_dir: None,
-        datasource_provisioning_file: args
-            .inputs
-            .datasource_provisioning_file
-            .clone()
-            .or(discovered_datasource_provisioning_file.cloned()),
-        access_user_export_dir: args
-            .inputs
-            .access_user_export_dir
-            .clone()
-            .or(discovered_access_user_export_dir.cloned()),
-        access_team_export_dir: args
-            .inputs
-            .access_team_export_dir
-            .clone()
-            .or(discovered_access_team_export_dir.cloned()),
-        access_org_export_dir: args
-            .inputs
-            .access_org_export_dir
-            .clone()
-            .or(discovered_access_org_export_dir.cloned()),
+        datasource_provisioning_file: args.inputs.datasource_provisioning_file.clone().or_else(
+            || {
+                (args.inputs.datasource_export_file.is_none()
+                    && args.inputs.source_bundle.is_none())
+                .then(|| discovered_datasource_provisioning_file.cloned())
+                .flatten()
+            },
+        ),
+        access_user_export_dir: args.inputs.access_user_export_dir.clone().or_else(|| {
+            args.inputs
+                .source_bundle
+                .is_none()
+                .then(|| discovered_access_user_export_dir.cloned())
+                .flatten()
+        }),
+        access_team_export_dir: args.inputs.access_team_export_dir.clone().or_else(|| {
+            args.inputs
+                .source_bundle
+                .is_none()
+                .then(|| discovered_access_team_export_dir.cloned())
+                .flatten()
+        }),
+        access_org_export_dir: args.inputs.access_org_export_dir.clone().or_else(|| {
+            args.inputs
+                .source_bundle
+                .is_none()
+                .then(|| discovered_access_org_export_dir.cloned())
+                .flatten()
+        }),
         access_service_account_export_dir: args
             .inputs
             .access_service_account_export_dir
             .clone()
-            .or(discovered_access_service_account_export_dir.cloned()),
-        desired_file: args
-            .inputs
-            .desired_file
-            .clone()
-            .or(discovered_desired_file.cloned()),
+            .or_else(|| {
+                args.inputs
+                    .source_bundle
+                    .is_none()
+                    .then(|| discovered_access_service_account_export_dir.cloned())
+                    .flatten()
+            }),
+        desired_file: args.inputs.desired_file.clone().or_else(|| {
+            args.inputs
+                .source_bundle
+                .is_none()
+                .then(|| discovered_desired_file.cloned())
+                .flatten()
+        }),
         source_bundle: args
             .inputs
             .source_bundle
             .clone()
             .or(discovered_source_bundle.cloned()),
         target_inventory: discovered_target_inventory.cloned(),
-        alert_export_dir: args
-            .inputs
-            .alert_export_dir
-            .clone()
-            .or(discovered_alert_export_dir.cloned()),
+        alert_export_dir: args.inputs.alert_export_dir.clone().or_else(|| {
+            args.inputs
+                .source_bundle
+                .is_none()
+                .then(|| discovered_alert_export_dir.cloned())
+                .flatten()
+        }),
         availability_file: discovered_availability_file.cloned(),
         mapping_file: discovered_mapping_file.cloned(),
         output_format: match args.output.output_format {
@@ -154,47 +174,65 @@ pub(crate) fn build_status_args(
     discovered_mapping_file: Option<&PathBuf>,
 ) -> ProjectStatusStagedArgs {
     ProjectStatusStagedArgs {
-        dashboard_export_dir: args
-            .inputs
-            .dashboard_export_dir
-            .clone()
-            .or(discovered_dashboard_export_dir.cloned()),
-        dashboard_provisioning_dir: args
-            .inputs
-            .dashboard_provisioning_dir
-            .clone()
-            .or(discovered_dashboard_provisioning_dir.cloned()),
+        dashboard_export_dir: args.inputs.dashboard_export_dir.clone().or_else(|| {
+            (args.inputs.dashboard_provisioning_dir.is_none()
+                && args.inputs.source_bundle.is_none())
+            .then(|| discovered_dashboard_export_dir.cloned())
+            .flatten()
+        }),
+        dashboard_provisioning_dir: args.inputs.dashboard_provisioning_dir.clone().or_else(|| {
+            (args.inputs.dashboard_export_dir.is_none() && args.inputs.source_bundle.is_none())
+                .then(|| discovered_dashboard_provisioning_dir.cloned())
+                .flatten()
+        }),
         datasource_export_dir: None,
-        datasource_provisioning_file: args
-            .inputs
-            .datasource_provisioning_file
-            .clone()
-            .or(discovered_datasource_provisioning_file.cloned()),
-        access_user_export_dir: args
-            .inputs
-            .access_user_export_dir
-            .clone()
-            .or(discovered_access_user_export_dir.cloned()),
-        access_team_export_dir: args
-            .inputs
-            .access_team_export_dir
-            .clone()
-            .or(discovered_access_team_export_dir.cloned()),
-        access_org_export_dir: args
-            .inputs
-            .access_org_export_dir
-            .clone()
-            .or(discovered_access_org_export_dir.cloned()),
+        datasource_provisioning_file: args.inputs.datasource_provisioning_file.clone().or_else(
+            || {
+                (args.inputs.datasource_export_file.is_none()
+                    && args.inputs.source_bundle.is_none())
+                .then(|| discovered_datasource_provisioning_file.cloned())
+                .flatten()
+            },
+        ),
+        access_user_export_dir: args.inputs.access_user_export_dir.clone().or_else(|| {
+            args.inputs
+                .source_bundle
+                .is_none()
+                .then(|| discovered_access_user_export_dir.cloned())
+                .flatten()
+        }),
+        access_team_export_dir: args.inputs.access_team_export_dir.clone().or_else(|| {
+            args.inputs
+                .source_bundle
+                .is_none()
+                .then(|| discovered_access_team_export_dir.cloned())
+                .flatten()
+        }),
+        access_org_export_dir: args.inputs.access_org_export_dir.clone().or_else(|| {
+            args.inputs
+                .source_bundle
+                .is_none()
+                .then(|| discovered_access_org_export_dir.cloned())
+                .flatten()
+        }),
         access_service_account_export_dir: args
             .inputs
             .access_service_account_export_dir
             .clone()
-            .or(discovered_access_service_account_export_dir.cloned()),
-        desired_file: args
-            .inputs
-            .desired_file
-            .clone()
-            .or(discovered_desired_file.cloned()),
+            .or_else(|| {
+                args.inputs
+                    .source_bundle
+                    .is_none()
+                    .then(|| discovered_access_service_account_export_dir.cloned())
+                    .flatten()
+            }),
+        desired_file: args.inputs.desired_file.clone().or_else(|| {
+            args.inputs
+                .source_bundle
+                .is_none()
+                .then(|| discovered_desired_file.cloned())
+                .flatten()
+        }),
         source_bundle: args
             .inputs
             .source_bundle
@@ -204,11 +242,13 @@ pub(crate) fn build_status_args(
             .target_inventory
             .clone()
             .or(discovered_target_inventory.cloned()),
-        alert_export_dir: args
-            .inputs
-            .alert_export_dir
-            .clone()
-            .or(discovered_alert_export_dir.cloned()),
+        alert_export_dir: args.inputs.alert_export_dir.clone().or_else(|| {
+            args.inputs
+                .source_bundle
+                .is_none()
+                .then(|| discovered_alert_export_dir.cloned())
+                .flatten()
+        }),
         availability_file: args
             .availability_file
             .clone()
@@ -259,14 +299,18 @@ pub(crate) fn build_change_bundle_specs(
         .alert_export_dir
         .as_ref()
         .or(discovered_alert_export_dir);
-    let datasource_provisioning_file = inputs
-        .datasource_provisioning_file
-        .as_ref()
-        .or(discovered_datasource_provisioning_file);
+    let datasource_provisioning_file = inputs.datasource_provisioning_file.as_ref().or_else(|| {
+        inputs
+            .datasource_export_file
+            .is_none()
+            .then_some(discovered_datasource_provisioning_file)
+            .flatten()
+    });
 
     if dashboard_export_dir.is_none()
         && dashboard_provisioning_dir.is_none()
         && alert_export_dir.is_none()
+        && inputs.datasource_export_file.is_none()
         && datasource_provisioning_file.is_none()
     {
         return Ok(None);
@@ -277,7 +321,7 @@ pub(crate) fn build_change_bundle_specs(
         dashboard_export_dir: dashboard_export_dir.cloned(),
         dashboard_provisioning_dir: dashboard_provisioning_dir.cloned(),
         alert_export_dir: alert_export_dir.cloned(),
-        datasource_export_file: None,
+        datasource_export_file: inputs.datasource_export_file.clone(),
         datasource_provisioning_file: datasource_provisioning_file.cloned(),
         metadata_file: None,
     })?;
@@ -299,7 +343,14 @@ pub(crate) fn load_preview_desired_specs(
     discovered_alert_export_dir: Option<&PathBuf>,
     discovered_datasource_provisioning_file: Option<&PathBuf>,
 ) -> Result<Vec<Value>> {
-    if let Some(path) = inputs.desired_file.as_ref().or(discovered_desired_file) {
+    let desired_file = inputs.desired_file.as_ref().or_else(|| {
+        inputs
+            .source_bundle
+            .is_none()
+            .then_some(discovered_desired_file)
+            .flatten()
+    });
+    if let Some(path) = desired_file {
         return load_json_array_file(path, "Workspace desired input");
     }
     if let Some(path) = inputs.source_bundle.as_ref().or(discovered_source_bundle) {
@@ -309,8 +360,8 @@ pub(crate) fn load_preview_desired_specs(
             .ok_or_else(|| message("Workspace package input must be a JSON object."))?;
         let mut desired_specs = Vec::new();
         for key in ["dashboards", "datasources", "folders", "alerts"] {
-            if let Some(items) = bundle.get(key).and_then(Value::as_array) {
-                desired_specs.extend(items.iter().cloned());
+            if let Some(items) = bundle.get(key) {
+                desired_specs.extend(super::json::require_json_array(items, key)?.iter().cloned());
             }
         }
         return Ok(desired_specs);
@@ -556,6 +607,62 @@ mod input_normalization_tests {
             dashboard["sourcePath"],
             serde_json::json!("org_1_Main_Org/raw/cpu-main.json")
         );
+    }
+
+    #[test]
+    fn build_change_bundle_specs_prefers_explicit_datasource_inventory() {
+        let temp = tempdir().unwrap();
+        let inventory_file = temp.path().join("selected-datasources.json");
+        fs::write(
+            &inventory_file,
+            serde_json::json!([{"uid": "selected", "name": "Selected", "type": "prometheus"}])
+                .to_string(),
+        )
+        .unwrap();
+        let mut inputs = staged_inputs(None, None);
+        inputs.datasource_export_file = Some(inventory_file);
+        let discovered_provisioning = temp.path().join("not-selected.yaml");
+
+        let specs =
+            build_change_bundle_specs(&inputs, None, None, None, Some(&discovered_provisioning))
+                .unwrap()
+                .unwrap();
+
+        assert_eq!(specs.len(), 1);
+        assert_eq!(specs[0]["uid"], serde_json::json!("selected"));
+    }
+
+    #[test]
+    fn load_preview_desired_specs_prefers_explicit_bundle_over_discovered_desired() {
+        let temp = tempdir().unwrap();
+        let bundle_file = temp.path().join("selected-bundle.json");
+        fs::write(
+            &bundle_file,
+            super::super::build_sync_source_bundle_document(
+                &[serde_json::json!({"kind": "dashboard", "uid": "selected", "body": {"title": "Selected"}})],
+                &[], &[], &[], None, None,
+            )
+            .unwrap()
+            .to_string(),
+        )
+        .unwrap();
+        let mut inputs = staged_inputs(None, None);
+        inputs.source_bundle = Some(bundle_file);
+        let discovered_desired = temp.path().join("not-selected.json");
+
+        let specs = load_preview_desired_specs(
+            &inputs,
+            Some(&discovered_desired),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        assert_eq!(specs.len(), 1);
+        assert_eq!(specs[0]["uid"], serde_json::json!("selected"));
     }
 
     #[test]

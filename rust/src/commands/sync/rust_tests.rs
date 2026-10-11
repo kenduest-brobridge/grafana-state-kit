@@ -117,6 +117,50 @@ fn build_sync_plan_document_preserves_dashboard_ownership_provenance() {
 }
 
 #[test]
+fn build_sync_plan_document_preserves_live_dashboard_target_ownership() {
+    let mut plan = build_sync_plan_document(
+        &[json!({
+            "kind": "dashboard",
+            "uid": "cpu-main",
+            "body": {"title": "Updated CPU Main"},
+            "ownership": "api-managed"
+        })],
+        &[json!({
+            "kind": "dashboard",
+            "uid": "cpu-main",
+            "body": {"title": "CPU Main"},
+            "ownership": "git-sync-managed",
+            "provenance": ["managedRepository{kind=git,id=repo-main}"]
+        })],
+        false,
+    )
+    .unwrap();
+    let operation = &plan["operations"][0];
+    assert_eq!(operation["action"], json!("would-update"));
+    assert_eq!(operation["ownership"], json!("git-sync-managed"));
+    let evidence = operation["provenance"].as_array().unwrap();
+    assert!(evidence.contains(&json!("ownership=git-sync-managed")));
+    assert!(evidence.contains(&json!("ownership=api-managed")));
+    assert!(evidence.contains(&json!("managedRepository{kind=git,id=repo-main}")));
+
+    plan["reviewed"] = json!(true);
+    let intent = build_sync_apply_intent_document(&plan, true).unwrap();
+    let operations = super::live::load_apply_intent_operations(&intent).unwrap();
+    let mut requests = 0;
+    let result = super::live::execute_live_apply_with_request(
+        |_method, _path, _params, _payload| {
+            requests += 1;
+            Ok(None)
+        },
+        &operations,
+        false,
+        false,
+    );
+    assert!(result.is_err());
+    assert_eq!(requests, 0);
+}
+
+#[test]
 fn summarize_resource_specs_reports_counts() {
     let specs = vec![
         normalize_resource_spec(&json!({"kind":"folder","uid":"ops","title":"Operations"}))
@@ -358,6 +402,31 @@ fn build_sync_apply_intent_document_requires_review_and_approval() {
         .unwrap_err()
         .to_string();
     assert!(not_approved.contains("explicit approval"));
+}
+
+#[test]
+fn build_sync_apply_intent_document_accepts_generated_prune_operations() {
+    let mut plan = build_sync_plan_document(
+        &[],
+        &[json!({
+            "kind": "dashboard",
+            "uid": "obsolete",
+            "body": {"title": "Obsolete"}
+        })],
+        true,
+    )
+    .unwrap();
+    plan["reviewed"] = json!(true);
+    assert_eq!(plan["operations"][0]["desired"], json!(null));
+
+    let intent = build_sync_apply_intent_document(&plan, true).unwrap();
+
+    assert_eq!(intent["operations"].as_array().unwrap().len(), 1);
+    assert_eq!(intent["operations"][0]["identity"], json!("obsolete"));
+    assert_eq!(intent["operations"][0]["action"], json!("would-delete"));
+    assert_eq!(intent["operations"][0]["desired"], json!({}));
+    let operations = super::live::load_apply_intent_operations(&intent).unwrap();
+    assert!(operations[0].desired.is_empty());
 }
 
 #[test]

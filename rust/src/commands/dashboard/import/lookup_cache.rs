@@ -369,7 +369,11 @@ where
         .ok_or_else(|| message("Dashboard import payload is missing dashboard."))?;
     let uid = string_field(dashboard, "uid", "");
     if uid.is_empty() {
-        return Ok("would-create");
+        return Ok(if update_existing_only {
+            "would-skip-missing"
+        } else {
+            "would-create"
+        });
     }
     if !dashboard_exists_with_summary(request_json, cache, &uid)? {
         if update_existing_only {
@@ -399,7 +403,11 @@ pub(crate) fn determine_dashboard_import_action_with_client(
         .ok_or_else(|| message("Dashboard import payload is missing dashboard."))?;
     let uid = string_field(dashboard, "uid", "");
     if uid.is_empty() {
-        return Ok("would-create");
+        return Ok(if update_existing_only {
+            "would-skip-missing"
+        } else {
+            "would-create"
+        });
     }
     let exists = match fetch_dashboard_if_exists_cached_with_client(client, cache, &uid)? {
         Some(_) => true,

@@ -9,6 +9,154 @@ use reqwest::Method;
 use serde_json::{json, Value};
 use std::cell::RefCell;
 
+fn controlled_rule_update_row(uid: &str) -> Value {
+    json!({
+        "kind": RULE_KIND,
+        "identity": uid,
+        "action": "update",
+        "status": "ready",
+        "changedFields": ["condition"],
+        "desired": {
+            "uid": uid,
+            "title": "CPU",
+            "folderUID": "general",
+            "ruleGroup": "default",
+            "condition": "B",
+            "data": []
+        },
+        "live": {
+            "uid": uid,
+            "title": "CPU",
+            "folderUID": "general",
+            "ruleGroup": "default",
+            "condition": "A",
+            "data": []
+        }
+    })
+}
+
+#[test]
+fn controlled_alert_apply_rejects_undeclared_broad_payload_changes() {
+    for (field, value) in [
+        ("title", json!("Renamed CPU")),
+        ("folderUID", json!("other-folder")),
+        ("orgID", json!(9)),
+        ("labels", json!({"route": "different-contact-point"})),
+    ] {
+        let mut row = controlled_rule_update_row("cpu-main");
+        row["desired"][field] = value;
+        let plan = build_alert_plan_document(&[row], false);
+        let mut calls = Vec::new();
+        let error = execute_alert_plan_with_request(
+            |method, path, _params, _payload| {
+                calls.push((method, path.to_string()));
+                Ok(Some(json!({"uid": "cpu-main"})))
+            },
+            &plan,
+            false,
+        )
+        .unwrap_err();
+
+        assert!(error.to_string().contains("unsupported rule fields"));
+        assert!(error.to_string().contains(field));
+        assert!(calls.is_empty());
+    }
+}
+
+#[test]
+fn controlled_alert_apply_validates_all_rows_before_first_write() {
+    let valid = controlled_rule_update_row("cpu-main");
+    let invalid = json!({
+        "kind": TEMPLATE_KIND,
+        "identity": "later-template",
+        "action": "delete",
+        "status": "ready"
+    });
+    let plan = build_alert_plan_document(&[valid, invalid], true);
+    let mut calls = Vec::new();
+    let error = execute_alert_plan_with_request(
+        |method, path, _params, _payload| {
+            calls.push((method, path.to_string()));
+            Ok(Some(json!({"uid": "cpu-main"})))
+        },
+        &plan,
+        false,
+    )
+    .unwrap_err();
+
+    assert!(error.to_string().contains("controlled alert live apply"));
+    assert!(calls.is_empty());
+}
+
+#[test]
+fn controlled_alert_apply_validates_effective_wrapped_rule_identity() {
+    let mut row = controlled_rule_update_row("cpu-main");
+    let nested = controlled_rule_update_row("different-rule")["desired"].clone();
+    for side in ["desired", "live"] {
+        row[side]["kind"] = json!(RULE_KIND);
+        row[side]["schemaVersion"] = json!(1);
+        row[side]["spec"] = nested.clone();
+    }
+    let plan = build_alert_plan_document(&[row], false);
+    let mut calls = Vec::new();
+    let error = execute_alert_plan_with_request(
+        |method, path, _params, _payload| {
+            calls.push((method, path.to_string()));
+            Ok(Some(json!({"uid": "different-rule"})))
+        },
+        &plan,
+        false,
+    )
+    .unwrap_err();
+
+    assert!(error.to_string().contains("matching rule uid identity"));
+    assert!(calls.is_empty());
+}
+
+#[test]
+fn controlled_alert_apply_prebuilds_all_payloads_before_first_write() {
+    let valid = controlled_rule_update_row("cpu-main");
+    let mut invalid = controlled_rule_update_row("later-rule");
+    invalid["desired"]["data"] = json!({"invalid": "not an array"});
+    invalid["changedFields"] = json!(["condition", "data"]);
+    let plan = build_alert_plan_document(&[valid, invalid], false);
+    let mut calls = Vec::new();
+    let error = execute_alert_plan_with_request(
+        |method, path, _params, _payload| {
+            calls.push((method, path.to_string()));
+            Ok(Some(json!({"uid": "cpu-main"})))
+        },
+        &plan,
+        false,
+    )
+    .unwrap_err();
+
+    assert!(error.to_string().contains("field 'data' must be a list"));
+    assert!(calls.is_empty());
+}
+
+#[test]
+fn controlled_alert_apply_rejects_mismatched_changed_fields() {
+    let mut row = controlled_rule_update_row("cpu-main");
+    row["desired"]["for"] = json!("5m");
+    let plan = build_alert_plan_document(&[row], false);
+    let mut calls = Vec::new();
+    let error = execute_alert_plan_with_request(
+        |method, path, _params, _payload| {
+            calls.push((method, path.to_string()));
+            Ok(Some(json!({"uid": "cpu-main"})))
+        },
+        &plan,
+        false,
+    )
+    .unwrap_err();
+
+    assert!(error
+        .to_string()
+        .contains("changedFields does not match payload changes"));
+    assert!(calls.is_empty());
+}
+
 #[test]
 fn execute_alert_plan_with_request_rejects_broad_create_update_and_delete_rows() {
     let plan = build_alert_plan_document(

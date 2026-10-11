@@ -6,6 +6,7 @@
 use super::summary_builder::{is_alert_sync_kind, normalize_resource_specs};
 use super::workbench::{SyncResourceSpec, SYNC_PLAN_KIND, SYNC_PLAN_SCHEMA_VERSION};
 use crate::common::{message, tool_version, Result};
+use crate::dashboard::import_target::dashboard_target_ownership_evidence;
 use crate::review_contract::{
     REVIEW_ACTION_UNMANAGED, REVIEW_ACTION_WOULD_CREATE, REVIEW_ACTION_WOULD_DELETE,
     REVIEW_ACTION_WOULD_UPDATE, REVIEW_STATUS_BLOCKED,
@@ -185,6 +186,37 @@ fn attach_ownership_fields(operation: &mut Value, spec: &SyncResourceSpec) {
             "provenance".to_string(),
             Value::Array(spec.provenance.iter().cloned().map(Value::String).collect()),
         );
+    }
+}
+
+fn attach_update_ownership_fields(
+    operation: &mut Value,
+    desired: &SyncResourceSpec,
+    live: &SyncResourceSpec,
+) {
+    attach_ownership_fields(operation, desired);
+    if desired.kind != "dashboard" {
+        return;
+    }
+    let mut evidence = dashboard_target_ownership_evidence(&live.ownership, &live.provenance);
+    for note in dashboard_target_ownership_evidence(&desired.ownership, &desired.provenance) {
+        if !evidence.contains(&note) {
+            evidence.push(note);
+        }
+    }
+    if let Some(object) = operation.as_object_mut() {
+        if !live.ownership.is_empty() {
+            object.insert(
+                "ownership".to_string(),
+                Value::String(live.ownership.clone()),
+            );
+        }
+        if !evidence.is_empty() {
+            object.insert(
+                "provenance".to_string(),
+                Value::Array(evidence.into_iter().map(Value::String).collect()),
+            );
+        }
     }
 }
 
@@ -483,7 +515,7 @@ pub fn build_sync_plan_document(
                 "live": live_spec.body,
                 "sourcePath": desired_spec.source_path,
             });
-            attach_ownership_fields(&mut operation, desired_spec);
+            attach_update_ownership_fields(&mut operation, desired_spec, live_spec);
             operations.push(operation);
         } else {
             let mut operation = serde_json::json!({

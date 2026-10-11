@@ -258,6 +258,9 @@ password_store:
 
 如果 `encrypted-file` 使用這些 repo-local helper 路徑，`config profile add` 也會在尚未忽略時，自動把它們加到 config 目錄的 `.gitignore`。
 
+更新既有加密秘密檔時，必須使用原本的 passphrase 或本機金鑰。密語錯誤、金鑰被替換或遺失、檔案版本不支援，或加密項目格式錯誤時，會停止更新並保留秘密檔原有內容。
+讀取既有秘密檔不會建立替代金鑰；金鑰遺失時，請從備份還原原金鑰。改用另一組密語並不會替秘密檔輪替金鑰。
+
 ### 2. 初始化、新增並列出 profile
 ```bash
 # 先建立本機 profile 設定檔。

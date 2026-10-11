@@ -47,6 +47,8 @@ Restore creates a new latest revision instead of overwriting the historical vers
 - The original historical version remains in the dashboard history chain.
 - `--dry-run` shows the restore intent without changing Grafana.
 - A real restore requires confirmation with `--yes` unless you use `--prompt`.
+- File-provisioned and Git Sync managed dashboards reject both restore preview
+  and direct restoration. Restore their historical content at the owning source.
 
 ## JSON contracts for CI
 

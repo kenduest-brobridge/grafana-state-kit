@@ -77,6 +77,27 @@ fn build_url_accepts_real_ipv4_host() {
 }
 
 #[test]
+fn build_url_rejects_dot_segments_in_resource_routes() {
+    let client = JsonHttpClient::new(JsonHttpClientConfig {
+        base_url: "https://grafana.example.com/grafana".to_string(),
+        headers: Vec::new(),
+        timeout_secs: 5,
+        verify_ssl: true,
+    })
+    .unwrap();
+    for identity in [".", "..", "%2E", "%2e%2E", ".%2e", "%2E."] {
+        let error = client
+            .build_url(&format!("/api/dashboards/uid/{identity}"), &[])
+            .unwrap_err();
+        assert!(error.to_string().contains("dot segments"));
+    }
+    assert!(client
+        .build_url("/api/dashboards/uid/normal.name", &[])
+        .is_ok());
+    assert!(client.build_url("/api/dashboards/uid/%252E", &[]).is_ok());
+}
+
+#[test]
 fn client_builder_rejects_invalid_header_name_with_typed_error() {
     let result = JsonHttpClient::new(JsonHttpClientConfig {
         base_url: "http://127.0.0.1:3000".to_string(),
@@ -306,4 +327,40 @@ fn request_json_treats_whitespace_success_body_as_empty() {
 
     server.join().unwrap();
     assert_eq!(body, None);
+}
+
+#[test]
+fn request_json_rejects_unresolved_redirects_and_not_modified() {
+    for status in ["302 Found", "304 Not Modified", "307 Temporary Redirect"] {
+        let listener = match TcpListener::bind("127.0.0.1:0") {
+            Ok(listener) => listener,
+            Err(error) if error.kind() == ErrorKind::PermissionDenied => return,
+            Err(error) => panic!("failed to bind test listener: {error}"),
+        };
+        let address = listener.local_addr().unwrap();
+        let server = thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            stream
+                .set_read_timeout(Some(Duration::from_secs(5)))
+                .unwrap();
+            let mut request = [0_u8; 4096];
+            assert!(stream.read(&mut request).unwrap() > 0);
+            write!(
+                stream,
+                "HTTP/1.1 {status}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+            )
+            .unwrap();
+        });
+        let client = JsonHttpClient::new(JsonHttpClientConfig {
+            base_url: format!("http://{address}"),
+            headers: vec![],
+            timeout_secs: 5,
+            verify_ssl: false,
+        })
+        .unwrap();
+        let result = client.request_json(Method::GET, "/api/search", &[], None);
+        server.join().unwrap();
+        let error = result.unwrap_err();
+        assert_eq!(error.status_code().unwrap().to_string(), &status[..3]);
+    }
 }

@@ -99,7 +99,7 @@ pub(super) fn run_live_import<B: LiveImportBackend>(
             build_folder_path_match_result(
                 source_folder_path.as_deref(),
                 destination_folder_path.as_deref(),
-                destination_folder_path.is_some(),
+                matches!(action, Some("would-update" | "would-fail-existing")),
                 true,
             )
         } else {

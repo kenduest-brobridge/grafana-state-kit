@@ -86,7 +86,7 @@ impl JsonHttpClient {
         let status = response.status();
         let body = response.bytes()?;
 
-        if status.is_client_error() || status.is_server_error() {
+        if !status.is_success() {
             let body_text = String::from_utf8_lossy(&body).into_owned();
             return Err(api_response(status.as_u16(), url.to_string(), body_text));
         }
@@ -100,6 +100,14 @@ impl JsonHttpClient {
 
     // Keep URL assembly consistent across callers.
     fn build_url(&self, path: &str, params: &[(String, String)]) -> Result<Url> {
+        if path.split('/').any(|segment| {
+            matches!(
+                segment.to_ascii_lowercase().as_str(),
+                "." | ".." | "%2e" | "%2e%2e" | ".%2e" | "%2e."
+            )
+        }) {
+            return Err(message("Request path must not contain dot segments."));
+        }
         let context = format!("request path {path}");
         let url_text = format!("{}{}", self.base_url, path);
         let mut url = parse_request_url(&url_text, &context)?;

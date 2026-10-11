@@ -160,3 +160,25 @@ fn resolve_secret_placeholders_builds_secure_json_data_map() {
     assert_eq!(resolved["basicAuthPassword"], json!("secret-value"));
     assert_eq!(resolved["httpHeaderValue1"], json!("tenant-token"));
 }
+
+#[test]
+fn resolve_secret_placeholders_preserves_secret_whitespace() {
+    let datasource = json!({
+        "name": "Loki Main",
+        "type": "loki",
+        "secureJsonDataPlaceholders": {
+            "basicAuthPassword": "${secret:loki-basic-auth}",
+            "tlsClientCert": "${secret:loki-client-cert}"
+        }
+    });
+    let plan = build_secret_placeholder_plan(datasource.as_object().unwrap()).unwrap();
+    let secrets = json!({
+        "loki-basic-auth": "  example password  ",
+        "loki-client-cert": "-----BEGIN CERTIFICATE-----\nexample\n-----END CERTIFICATE-----\n"
+    });
+    let resolved =
+        resolve_secret_placeholders(&plan.placeholders, secrets.as_object().unwrap()).unwrap();
+
+    assert_eq!(resolved["basicAuthPassword"], secrets["loki-basic-auth"]);
+    assert_eq!(resolved["tlsClientCert"], secrets["loki-client-cert"]);
+}

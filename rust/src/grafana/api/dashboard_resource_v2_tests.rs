@@ -296,3 +296,69 @@ fn v2_update_puts_named_payload_and_preserves_conflict_status() {
     ));
     assert!(requests[1].starts_with("PUT "));
 }
+
+#[test]
+fn classic_dashboard_api_encodes_reserved_uid_delimiters() {
+    let uid = "cpu/main?orgId=2#frag %one";
+    let Some((base_url, requests, handle)) = spawn_server(vec![
+        http_response("200 OK", &json!({"dashboard": {"uid": uid}}).to_string()),
+        http_response("200 OK", &json!({"uid": uid, "title": "Infra"}).to_string()),
+        http_response("200 OK", &json!({"result": {"uid": uid}}).to_string()),
+        http_response("200 OK", "[]"),
+        http_response("200 OK", "[]"),
+        http_response("200 OK", "{}"),
+        http_response("200 OK", "{}"),
+        http_response("200 OK", "{}"),
+        http_response("200 OK", r#"[{"created":"2026-10-11T00:00:00Z"}]"#),
+    ]) else {
+        return;
+    };
+    let api = test_api(base_url);
+    let dashboard = api.dashboard();
+    assert_eq!(
+        dashboard.fetch_dashboard(uid).unwrap()["dashboard"]["uid"],
+        uid
+    );
+    dashboard.fetch_folder_if_exists(uid).unwrap();
+    dashboard.fetch_library_panel(uid).unwrap();
+    dashboard.fetch_dashboard_permissions(uid).unwrap();
+    dashboard.fetch_folder_permissions(uid).unwrap();
+    dashboard
+        .update_folder_request(
+            uid,
+            &json!({"uid": uid, "title": "Infra"})
+                .as_object()
+                .unwrap()
+                .clone(),
+        )
+        .unwrap();
+    dashboard.delete_dashboard_request(uid).unwrap();
+    dashboard.delete_folder_request(uid).unwrap();
+    assert_eq!(
+        dashboard.latest_dashboard_version_timestamp(&[json!({"uid": uid})
+            .as_object()
+            .unwrap()
+            .clone()]),
+        Some("2026-10-11T00:00:00Z".to_string())
+    );
+    handle.join().unwrap();
+
+    let encoded_uid = "cpu%2Fmain%3ForgId%3D2%23frag%20%25one";
+    let expected = [
+        format!("GET /api/dashboards/uid/{encoded_uid} "),
+        format!("GET /api/folders/{encoded_uid} "),
+        format!("GET /api/library-elements/{encoded_uid} "),
+        format!("GET /api/dashboards/uid/{encoded_uid}/permissions "),
+        format!("GET /api/folders/{encoded_uid}/permissions "),
+        format!("PUT /api/folders/{encoded_uid} "),
+        format!("DELETE /api/dashboards/uid/{encoded_uid} "),
+        format!("DELETE /api/folders/{encoded_uid} "),
+        format!("GET /api/dashboards/uid/{encoded_uid}/versions?limit=1 "),
+    ];
+    let requests = requests.lock().unwrap();
+    assert_eq!(requests.len(), expected.len());
+    for (request, expected) in requests.iter().zip(expected) {
+        assert!(request.starts_with(&expected), "{request}");
+    }
+    assert!(requests[5].contains(&json!({"uid": uid, "title": "Infra"}).to_string()));
+}

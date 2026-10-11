@@ -161,8 +161,7 @@ pub fn resolve_secret_placeholders(
         let Some(secret_value) = provided_secrets
             .get(&placeholder.placeholder_name)
             .and_then(Value::as_str)
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
+            .filter(|value| !value.trim().is_empty())
         else {
             unresolved_placeholder_names.push(placeholder.placeholder_name.clone());
             continue;

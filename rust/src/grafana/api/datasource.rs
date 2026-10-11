@@ -1,7 +1,7 @@
 use reqwest::Method;
 use serde_json::{Map, Value};
 
-use crate::common::{message, Result};
+use crate::common::{encode_resource_path_segment, message, Result};
 use crate::http::JsonHttpClient;
 
 pub(crate) struct DatasourceResourceClient<'a> {
@@ -95,7 +95,10 @@ impl<'a> DatasourceResourceClient<'a> {
     ) -> Result<Map<String, Value>> {
         match self.request_json(
             Method::PUT,
-            &format!("/api/datasources/uid/{datasource_uid}"),
+            &format!(
+                "/api/datasources/uid/{}",
+                encode_resource_path_segment(datasource_uid)
+            ),
             &[],
             Some(&Value::Object(payload.clone())),
         )? {
@@ -110,7 +113,10 @@ impl<'a> DatasourceResourceClient<'a> {
         Ok(self
             .request_json(
                 Method::DELETE,
-                &format!("/api/datasources/uid/{datasource_uid}"),
+                &format!(
+                    "/api/datasources/uid/{}",
+                    encode_resource_path_segment(datasource_uid)
+                ),
                 &[],
                 None,
             )?

@@ -16,6 +16,9 @@
 
 Create、delete、contact-point、mute-timing、policy、template，以及語意較不明確的 rule field 變更都會 fail closed。請用 `alert plan` 和 review output 保留這些較廣變更的可見性，不要直接 apply。
 
+第一次寫入前會驗證所有預計執行的變更與實際更新內容。允許欄位檢查會比較計畫中的 live 與 desired 規則值，不會只信任 `changedFields`。
+執行時若 API 失敗，先前已完成的合法更新仍可能保留；重試前請先確認回報結果。
+
 ## 採用前後對照
 
 - **採用前**：即使 alert plan 已審閱完成，真正碰到 live Grafana 的最後一步仍然很容易變成不透明的人工操作。

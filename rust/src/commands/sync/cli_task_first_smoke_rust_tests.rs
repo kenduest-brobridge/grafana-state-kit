@@ -241,6 +241,258 @@ fn task_first_workspace_cli_args(
 }
 
 #[test]
+fn task_first_workspace_scan_and_test_use_datasource_inventory_and_output_file() {
+    let temp = tempdir().unwrap();
+    let inventory = temp.path().join("selected-datasources.json");
+    fs::write(
+        &inventory,
+        r#"[{"uid":"selected","name":"Selected","type":"prometheus"}]"#,
+    )
+    .unwrap();
+    write_datasource_provisioning_fixture(&temp.path().join("datasources/provisioning"));
+    for command in ["scan", "test"] {
+        let output = temp.path().join(format!("{command}.json"));
+        let args = SyncCliArgs::parse_from([
+            "grafana-util",
+            command,
+            temp.path().to_str().unwrap(),
+            "--datasource-export-file",
+            inventory.to_str().unwrap(),
+            "--output-format",
+            "json",
+            "--output-file",
+            output.to_str().unwrap(),
+        ]);
+        run_sync_cli(args.command).unwrap();
+        let document: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(&output).unwrap()).unwrap();
+        if command == "scan" {
+            assert_eq!(
+                document["artifacts"][0]["document"]["datasources"][0]["uid"],
+                "selected"
+            );
+            assert_eq!(
+                document["artifacts"][0]["inputs"][0]["value"],
+                inventory.display().to_string()
+            );
+        } else {
+            assert_eq!(document["domains"][0]["id"], "datasource");
+            assert_eq!(document["domains"][0]["primaryCount"], 1);
+        }
+    }
+}
+
+#[test]
+fn task_first_workspace_test_fetch_live_propagates_connection_failure() {
+    let temp = tempdir().unwrap();
+    let desired = temp.path().join("desired.json");
+    let output = temp.path().join("status.json");
+    fs::write(&desired, "[]").unwrap();
+    let args = SyncCliArgs::parse_from([
+        "grafana-util",
+        "test",
+        temp.path().to_str().unwrap(),
+        "--desired-file",
+        desired.to_str().unwrap(),
+        "--fetch-live",
+        "--url",
+        "http://127.0.0.1:9",
+        "--token",
+        "test-token",
+        "--timeout",
+        "1",
+        "--output-format",
+        "json",
+        "--output-file",
+        output.to_str().unwrap(),
+    ]);
+    assert!(run_sync_cli(args.command).is_err());
+    assert!(!output.exists());
+}
+
+#[test]
+fn task_first_workspace_test_fetch_live_checks_returned_availability() {
+    use std::io::{Read, Write};
+    use std::net::TcpListener;
+    use std::time::{Duration, Instant};
+
+    for bundle_mode in [false, true] {
+        for available in [false, true] {
+            let temp = tempdir().unwrap();
+            let desired = json!([{
+                "kind": "datasource", "uid": "selected", "title": "Selected",
+                "body": {"uid": "selected", "name": "Selected", "type": "prometheus"}
+            }]);
+            let source = temp.path().join(if bundle_mode {
+                "source.json"
+            } else {
+                "desired.json"
+            });
+            let target = temp.path().join("destination.json");
+            let output = temp.path().join("status.json");
+            let input = if bundle_mode {
+                super::build_sync_source_bundle_document(
+                    &[],
+                    desired.as_array().unwrap(),
+                    &[],
+                    &[],
+                    None,
+                    None,
+                )
+                .unwrap()
+            } else {
+                desired
+            };
+            fs::write(&source, serde_json::to_string(&input).unwrap()).unwrap();
+            fs::write(&target, "{}").unwrap();
+            let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+            listener.set_nonblocking(true).unwrap();
+            let url = format!("http://{}", listener.local_addr().unwrap());
+            let server = std::thread::spawn(move || {
+                let mut requests = Vec::new();
+                let deadline = Instant::now() + Duration::from_secs(5);
+                while requests.len() < 3 && Instant::now() < deadline {
+                    match listener.accept() {
+                        Ok((mut stream, _)) => {
+                            stream
+                                .set_read_timeout(Some(Duration::from_secs(2)))
+                                .unwrap();
+                            let mut buffer = [0; 8192];
+                            let mut request = Vec::new();
+                            while !request.windows(4).any(|bytes| bytes == b"\r\n\r\n") {
+                                let count = stream.read(&mut buffer).unwrap();
+                                if count == 0 {
+                                    break;
+                                }
+                                request.extend_from_slice(&buffer[..count]);
+                            }
+                            let request = String::from_utf8(request).unwrap();
+                            let path = request
+                                .lines()
+                                .next()
+                                .unwrap()
+                                .split_whitespace()
+                                .nth(1)
+                                .unwrap();
+                            let body = match path {
+                                "/api/datasources" => "[]",
+                                "/api/plugins" if available => r#"[{"id":"prometheus"}]"#,
+                                "/api/plugins" | "/api/v1/provisioning/contact-points" => "[]",
+                                _ => panic!("unexpected request {path}"),
+                            };
+                            write!(stream, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len()).unwrap();
+                            requests.push(request);
+                        }
+                        Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                            std::thread::sleep(Duration::from_millis(5));
+                        }
+                        Err(error) => panic!("{error}"),
+                    }
+                }
+                requests
+            });
+            let mut argv = vec![
+                "grafana-util",
+                "test",
+                temp.path().to_str().unwrap(),
+                if bundle_mode {
+                    "--source-bundle"
+                } else {
+                    "--desired-file"
+                },
+                source.to_str().unwrap(),
+                "--fetch-live",
+                "--url",
+                url.as_str(),
+                "--token",
+                "test-token",
+                "--org-id",
+                "7",
+                "--output-format",
+                "json",
+                "--output-file",
+                output.to_str().unwrap(),
+            ];
+            if bundle_mode {
+                argv.extend(["--target-inventory", target.to_str().unwrap()]);
+            }
+            let result = run_sync_cli(SyncCliArgs::parse_from(argv).command);
+            let requests = server.join().unwrap();
+            assert!(result.is_ok(), "{result:?}");
+            assert_eq!(requests.len(), 3);
+            assert!(requests
+                .iter()
+                .all(|request| request.to_ascii_lowercase().contains("x-grafana-org-id: 7")));
+            let status: serde_json::Value =
+                serde_json::from_str(&fs::read_to_string(output).unwrap()).unwrap();
+            let sync = status["domains"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|domain| domain["id"] == "sync")
+                .unwrap();
+            assert_eq!(sync["blockerCount"].as_i64().unwrap() > 0, !available);
+            assert_eq!(sync["status"] == "blocked", !available);
+        }
+    }
+}
+
+#[test]
+fn task_first_workspace_uses_explicit_bundle_before_discovered_inputs() {
+    let temp = tempdir().unwrap();
+    let workspace = temp.path().join("workspace");
+    fs::create_dir_all(workspace.join("alerts")).unwrap();
+    fs::write(workspace.join("desired.json"), "invalid unselected input").unwrap();
+    let source = temp.path().join("selected-source.json");
+    let target = workspace.join("target-inventory.json");
+    let live = temp.path().join("live.json");
+    fs::write(&source, super::build_sync_source_bundle_document(
+        &[json!({"kind":"dashboard","uid":"selected","title":"Selected","body":{"title":"Selected"}})],
+        &[], &[], &[], None, None,
+    ).unwrap().to_string()).unwrap();
+    fs::write(&target, "{}").unwrap();
+    fs::write(&live, "[]").unwrap();
+    for command in ["scan", "test", "preview"] {
+        let output = temp.path().join(format!("{command}-selected.json"));
+        let mut argv = vec![
+            "grafana-util",
+            command,
+            workspace.to_str().unwrap(),
+            "--source-bundle",
+            source.to_str().unwrap(),
+            "--output-format",
+            "json",
+            "--output-file",
+            output.to_str().unwrap(),
+        ];
+        if command == "preview" {
+            argv.extend(["--live-file", live.to_str().unwrap()]);
+        }
+        run_sync_cli(SyncCliArgs::parse_from(argv).command).unwrap();
+        let document: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(output).unwrap()).unwrap();
+        if command == "scan" {
+            assert_eq!(document["summary"]["artifactCount"], 1);
+            assert_eq!(
+                document["artifacts"][0]["inputs"][0]["value"],
+                source.display().to_string()
+            );
+        } else if command == "test" {
+            let sync = document["domains"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|domain| domain["id"] == "sync")
+                .unwrap();
+            assert_eq!(sync["primaryCount"], 1);
+        } else {
+            assert_eq!(document["kind"], "grafana-utils-sync-bundle-preflight");
+            assert_eq!(document["summary"]["resourceCount"], 1);
+        }
+    }
+}
+
+#[test]
 fn task_first_workspace_lane_smoke_runs_from_repo_local_workspace() {
     let temp = tempdir().unwrap();
     let workspace = temp.path().join("workspace");
@@ -337,6 +589,59 @@ fn task_first_workspace_lane_smoke_runs_from_repo_local_workspace() {
         }
         _ => panic!("expected apply"),
     }
+}
+
+#[test]
+fn task_first_workspace_preview_marks_reviewed_and_preserves_audit_metadata() {
+    let temp = tempdir().unwrap();
+    let workspace = temp.path();
+    fs::write(workspace.join("desired.json"), "[]").unwrap();
+    let live_file = workspace.join("live.json");
+    fs::write(&live_file, "[]").unwrap();
+    let preview_file = workspace.join("preview.json");
+    let mut args = task_first_workspace_cli_args("preview", workspace, Some(&live_file), None);
+    let SyncGroupCommand::Preview(ref mut preview) = args.command else {
+        panic!("expected preview");
+    };
+    preview.mark_reviewed = true;
+    preview.reviewed_by = Some("operator".to_string());
+    preview.reviewed_at = Some("2026-10-11T12:00:00Z".to_string());
+    preview.review_note = Some("checked all operations".to_string());
+    preview.output.output_file = Some(preview_file.clone());
+
+    run_sync_cli(args.command).unwrap();
+
+    let document: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&preview_file).unwrap()).unwrap();
+    assert_eq!(document["reviewed"], json!(true));
+    assert_eq!(document["stage"], json!("review"));
+    assert_eq!(document["stepIndex"], json!(2));
+    assert_eq!(document["reviewedBy"], json!("operator"));
+    assert_eq!(document["reviewedAt"], json!("2026-10-11T12:00:00Z"));
+    assert_eq!(document["reviewNote"], json!("checked all operations"));
+    assert_eq!(document["parentTraceId"], document["traceId"]);
+}
+
+#[test]
+fn task_first_workspace_preview_rejects_invalid_review_token_before_output() {
+    let temp = tempdir().unwrap();
+    let workspace = temp.path();
+    fs::write(workspace.join("desired.json"), "[]").unwrap();
+    let live_file = workspace.join("live.json");
+    fs::write(&live_file, "[]").unwrap();
+    let preview_file = workspace.join("preview.json");
+    let mut args = task_first_workspace_cli_args("preview", workspace, Some(&live_file), None);
+    let SyncGroupCommand::Preview(ref mut preview) = args.command else {
+        panic!("expected preview");
+    };
+    preview.mark_reviewed = true;
+    preview.review_token = "unrecognized-token".to_string();
+    preview.output.output_file = Some(preview_file.clone());
+
+    let error = run_sync_cli(args.command).unwrap_err();
+
+    assert!(error.to_string().contains("review token rejected"));
+    assert!(!preview_file.exists());
 }
 
 #[test]

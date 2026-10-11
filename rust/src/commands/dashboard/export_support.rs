@@ -11,7 +11,9 @@ use std::collections::BTreeMap;
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
-use crate::common::{message, sanitize_path_component, string_field, Result};
+use crate::common::{
+    encode_resource_path_segment, message, sanitize_path_component, string_field, Result,
+};
 
 use super::super::export_prompt::{build_library_panel_export, collect_library_panel_uids};
 use crate::dashboard::live::{
@@ -105,7 +107,10 @@ where
     for uid in collect_library_panel_uids(dashboard_payload) {
         match request_json(
             Method::GET,
-            &format!("/api/library-elements/{uid}"),
+            &format!(
+                "/api/library-elements/{}",
+                encode_resource_path_segment(&uid)
+            ),
             &[],
             None,
         ) {

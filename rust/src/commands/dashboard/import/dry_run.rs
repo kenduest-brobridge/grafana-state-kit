@@ -54,11 +54,12 @@ where
         metadata.as_ref(),
         None,
     )?;
-    let folder_inventory = if args.ensure_folders || args.dry_run {
-        load_folder_inventory(resolved_import.metadata_dir(), metadata.as_ref())?
-    } else {
-        Vec::new()
-    };
+    let folder_inventory =
+        if args.ensure_folders || args.require_matching_folder_path || args.dry_run {
+            load_folder_inventory(resolved_import.metadata_dir(), metadata.as_ref())?
+        } else {
+            Vec::new()
+        };
     if args.ensure_folders && folder_inventory.is_empty() {
         let folders_file = metadata
             .as_ref()
@@ -172,7 +173,7 @@ where
             build_folder_path_match_result(
                 source_folder_path.as_deref(),
                 destination_folder_path.as_deref(),
-                destination_folder_path.is_some(),
+                matches!(action, "would-update" | "would-fail-existing"),
                 true,
             )
         } else {
@@ -276,11 +277,12 @@ pub(crate) fn collect_import_dry_run_report_with_client(
         metadata.as_ref(),
         None,
     )?;
-    let folder_inventory = if args.ensure_folders || args.dry_run {
-        load_folder_inventory(resolved_import.metadata_dir(), metadata.as_ref())?
-    } else {
-        Vec::new()
-    };
+    let folder_inventory =
+        if args.ensure_folders || args.require_matching_folder_path || args.dry_run {
+            load_folder_inventory(resolved_import.metadata_dir(), metadata.as_ref())?
+        } else {
+            Vec::new()
+        };
     if args.ensure_folders && folder_inventory.is_empty() {
         let folders_file = metadata
             .as_ref()
@@ -396,7 +398,7 @@ pub(crate) fn collect_import_dry_run_report_with_client(
             build_folder_path_match_result(
                 source_folder_path.as_deref(),
                 destination_folder_path.as_deref(),
-                destination_folder_path.is_some(),
+                matches!(action, "would-update" | "would-fail-existing"),
                 true,
             )
         } else {

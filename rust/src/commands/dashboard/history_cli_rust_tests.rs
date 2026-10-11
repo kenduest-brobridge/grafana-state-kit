@@ -160,6 +160,52 @@ fn dashboard_history_restore_requires_yes_without_dry_run() {
 }
 
 #[test]
+fn dashboard_history_restore_rejects_source_owned_targets_without_writes() {
+    for meta in [
+        json!({"provisioned": true, "folderUid": "infra"}),
+        json!({"managedBy": {"kind": "repo"}, "folderUid": "infra"}),
+    ] {
+        for dry_run in [false, true] {
+            let args = HistoryRestoreArgs {
+                common: make_history_common_args(),
+                dashboard_uid: "cpu-main".to_string(),
+                version: Some(17),
+                prompt: false,
+                dry_run,
+                output_format: HistoryOutputFormat::Json,
+                message: None,
+                yes: true,
+            };
+            let mut writes = Vec::new();
+            let result = run_dashboard_history_restore(
+                |method, path, _, payload| match (method.as_str(), path) {
+                    ("GET", "/api/dashboards/uid/cpu-main") => Ok(Some(json!({
+                        "dashboard": {"id": 1, "uid": "cpu-main", "title": "CPU Main", "version": 21},
+                        "meta": meta
+                    }))),
+                    ("GET", "/api/dashboards/uid/cpu-main/versions/17") => Ok(Some(json!({
+                        "data": {"uid": "cpu-main", "title": "Old CPU Main"}
+                    }))),
+                    ("POST", "/api/dashboards/db") => {
+                        writes.push(payload.unwrap().clone());
+                        Ok(Some(json!({"status": "success"})))
+                    }
+                    _ => Err(test_support::message(format!(
+                        "unexpected request {method} {path}"
+                    ))),
+                },
+                &args,
+            );
+            assert!(
+                writes.is_empty(),
+                "source-owned restore sent a write: {writes:?}"
+            );
+            assert!(result.unwrap_err().to_string().contains("owning source"));
+        }
+    }
+}
+
+#[test]
 fn dashboard_history_export_writes_json_artifact_with_dashboard_payloads() {
     let temp = tempdir().unwrap();
     let output = temp.path().join("cpu-main.history.json");

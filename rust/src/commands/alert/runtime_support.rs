@@ -60,9 +60,10 @@ fn path_string(path: &Path) -> String {
 
 #[allow(unused_imports)]
 use crate::grafana_api::alert_live::{
-    apply_create_with_request, apply_delete_with_request, apply_update_with_request,
-    fetch_live_compare_document_with_request, request_array_with_request,
-    request_live_resources_by_kind_with_request, request_optional_object_with_request,
+    apply_create_with_request, apply_delete_with_request, apply_prepared_rule_update_with_request,
+    apply_update_with_request, fetch_live_compare_document_with_request,
+    request_array_with_request, request_live_resources_by_kind_with_request,
+    request_optional_object_with_request,
 };
 
 pub fn load_alert_desired_operations(dir: &Path) -> Result<Vec<AlertDesiredOperation>> {
@@ -259,7 +260,7 @@ fn require_matching_rule_identity(
     Ok(())
 }
 
-fn validate_controlled_alert_live_apply_row(row: &Map<String, Value>) -> Result<()> {
+fn prepare_controlled_alert_live_apply_row(row: &Map<String, Value>) -> Result<Map<String, Value>> {
     let action = row
         .get(runtime_schema::row::ACTION)
         .and_then(Value::as_str)
@@ -286,9 +287,10 @@ fn validate_controlled_alert_live_apply_row(row: &Map<String, Value>) -> Result<
             "controlled alert live apply requires ready plan rows; refusing {kind} {identity} with status {status:?}."
         )));
     }
-    let desired = payload_object_from_row(row, runtime_schema::row::DESIRED)?;
-    let live = payload_object_from_row(row, runtime_schema::row::LIVE)?;
-    require_matching_rule_identity(identity, desired, live)?;
+    let desired =
+        build_rule_import_payload(payload_object_from_row(row, runtime_schema::row::DESIRED)?)?;
+    let live = build_rule_import_payload(payload_object_from_row(row, runtime_schema::row::LIVE)?)?;
+    require_matching_rule_identity(identity, &desired, &live)?;
 
     let changed_fields = row_changed_fields(row)?;
     if changed_fields.is_empty() {
@@ -307,7 +309,29 @@ fn validate_controlled_alert_live_apply_row(row: &Map<String, Value>) -> Result<
             unsupported.join(", ")
         )));
     }
-    Ok(())
+    let actual_changed_fields = desired
+        .keys()
+        .chain(live.keys())
+        .filter(|field| desired.get(*field) != live.get(*field))
+        .cloned()
+        .collect::<BTreeSet<_>>();
+    let unsupported = actual_changed_fields
+        .iter()
+        .filter(|field| !CONTROLLED_RULE_UPDATE_FIELDS.contains(&field.as_str()))
+        .cloned()
+        .collect::<Vec<_>>();
+    if !unsupported.is_empty() {
+        return Err(message(format!(
+            "controlled alert live apply unsupported rule fields for {identity}: {}.",
+            unsupported.join(", ")
+        )));
+    }
+    if actual_changed_fields != changed_fields.into_iter().collect::<BTreeSet<_>>() {
+        return Err(message(format!(
+            "controlled alert live apply changedFields does not match payload changes for {identity}."
+        )));
+    }
+    Ok(desired)
 }
 
 pub fn execute_alert_plan_with_request<F>(
@@ -331,7 +355,7 @@ where
         .and_then(Value::as_array)
         .ok_or_else(|| message("Alert plan document is missing rows."))?;
 
-    let mut apply_result = ReviewApplyResult::new("apply");
+    let mut prepared = Vec::new();
     for row in rows {
         let row = row_object(row, "Alert plan row")?;
         let action = row
@@ -341,6 +365,12 @@ where
         if !matches!(action, "create" | "update" | "delete") {
             continue;
         }
+        let payload = prepare_controlled_alert_live_apply_row(row)?;
+        prepared.push((row, payload));
+    }
+
+    let mut apply_result = ReviewApplyResult::new("apply");
+    for (row, payload) in prepared {
         let kind = row
             .get(runtime_schema::row::KIND)
             .and_then(Value::as_str)
@@ -349,16 +379,11 @@ where
             .get(runtime_schema::row::IDENTITY)
             .and_then(Value::as_str)
             .unwrap_or_default();
-        validate_controlled_alert_live_apply_row(row)?;
-        let response = match action {
-            "update" => {
-                let desired = payload_object_from_row(row, runtime_schema::row::DESIRED)?;
-                apply_update_with_request(&mut request_json, kind, identity, desired)?
-            }
-            "create" | "delete" => unreachable!("controlled alert live apply validation"),
-            _ => unreachable!(),
-        };
-        apply_result.push_result(review_apply_result_entry(kind, identity, action, response));
+        let response =
+            apply_prepared_rule_update_with_request(&mut request_json, identity, &payload)?;
+        apply_result.push_result(review_apply_result_entry(
+            kind, identity, "update", response,
+        ));
     }
 
     Ok(apply_result.into_value_with_fields([

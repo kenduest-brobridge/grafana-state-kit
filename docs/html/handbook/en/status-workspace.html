@@ -1012,8 +1012,9 @@ grafana-util workspace scan --dashboard-export-dir ./dashboards/raw --alert-expo
 <p>Use scan to size the workspace before you fetch live state. If the total is unexpectedly large, stop and review the staged inputs first.</p>
 <h3 id="2-workspace-test">2. Workspace Test</h3>
 <p>Verify staged readiness before you preview or apply anything.</p>
-<pre><code># Check the discovered mixed workspace with staged availability hints.
-grafana-util workspace test ./grafana-oac-repo --availability-file ./availability.json</code></pre>
+<pre><code># Check a packaged workspace with staged availability hints.
+grafana-util workspace test ./grafana-oac-repo --source-bundle ./source-bundle.json --target-inventory ./target-inventory.json --availability-file ./availability.json</code></pre>
+<p>Staged availability hints require a source bundle and target inventory, supplied explicitly or discovered in the workspace. Use <code>--fetch-live</code> to check availability directly for desired resources or raw exports.</p>
 <pre><code># Check the staged package and merge live availability hints.
 grafana-util workspace test . --fetch-live --output-format json</code></pre>
 <p><strong>Expected Output:</strong></p>

@@ -124,10 +124,10 @@ Current platform behavior:
 
 - macOS:
   - stores secrets in the Keychain
-  - implemented through the `security` command-line tool
+  - implemented through the native `keyring` Apple backend
 - Linux:
-  - stores secrets through the system keyring integration
-  - intended backend is Linux Secret Service
+  - stores secrets through the `keyring` synchronous Secret Service backend
+  - explicitly enables the backend so Linux never falls back to an in-memory mock
 
 Limits:
 
@@ -165,6 +165,12 @@ Current variants:
 
 - passphrase-backed encrypted file
 - local-key-file-backed encrypted file
+
+Existing stores authenticate every entry before writing an update. Wrong
+passphrases, missing or replaced keys, unsupported versions, and malformed
+nonces or salts fail before persisting changes. Reads only load existing keys;
+key creation is exclusive and limited to initializing a new local-key store.
+The encrypted file format remains version 1; this does not implement key rotation.
 
 Limits:
 

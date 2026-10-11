@@ -1017,6 +1017,7 @@ grafana-util status overview live \
   --output-format yaml</code></pre>
 <p>Environment variables can supply the same auth without repeating sensitive values on every command:</p>
 <ul><li><code>GRAFANA_USERNAME</code></li><li><code>GRAFANA_PASSWORD</code></li><li><code>GRAFANA_API_TOKEN</code></li></ul>
+<p>Explicit Basic credentials (including <code>--prompt-password</code>) take priority over <code>GRAFANA_API_TOKEN</code>. When no credentials are specified, an environment token takes priority over the environment username/password pair.</p>
 <p>For repeatable work, prefer storing those references in a profile such as <code>password_env: GRAFANA_PROD_PASSWORD</code> or <code>token_env: GRAFANA_DEV_TOKEN</code> instead of repeating raw secrets on every command line.</p>
 <h3 id="start-direct-then-simplify">Start direct, then simplify</h3>
 <p>For a first run, the cleanest mental model is:</p>

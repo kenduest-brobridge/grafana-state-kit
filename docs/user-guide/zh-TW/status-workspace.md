@@ -157,9 +157,13 @@ WORKSPACE PACKAGE SUMMARY:
 ### 2. Workspace 測試
 驗證匯出 / 匯入目錄結構與 staged readiness。
 ```bash
-# 先檢查目前 mixed workspace 自動發現到的 staged package。
-grafana-util workspace test ./grafana-oac-repo --availability-file ./availability.json
+# 使用已打包的 workspace 與 staged availability hints 進行檢查。
+grafana-util workspace test ./grafana-oac-repo --source-bundle ./source-bundle.json --target-inventory ./target-inventory.json --availability-file ./availability.json
 ```
+
+只使用 staged availability hints 時，需要明確指定 source bundle 與 target
+inventory，或讓 workspace 自動發現這兩項輸入。若要直接檢查 desired 資源或
+raw 匯出內容的可用性，請使用 `--fetch-live`。
 
 ```bash
 # 把 live availability hints 併進 staged 檢查。

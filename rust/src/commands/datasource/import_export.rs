@@ -53,14 +53,12 @@ pub(crate) use datasource_import_dry_run_review::{
     build_datasource_import_dry_run_review_envelope,
     build_datasource_import_dry_run_review_projection, DatasourceImportDryRunReviewProjection,
 };
-#[cfg(test)]
-#[allow(unused_imports)]
-pub(crate) use datasource_import_export_routed::format_routed_datasource_scope_summary_fields;
 #[allow(unused_imports)]
 pub(crate) use datasource_import_export_routed::{
     build_routed_datasource_import_dry_run_json, format_routed_datasource_import_summary_line,
-    format_routed_datasource_source_org_label, format_routed_datasource_target_org_label,
-    render_routed_datasource_import_org_table, resolve_export_org_target_plan,
+    format_routed_datasource_scope_summary_fields, format_routed_datasource_source_org_label,
+    format_routed_datasource_target_org_label, render_routed_datasource_import_org_table,
+    resolve_export_org_target_plan,
 };
 #[allow(unused_imports)]
 pub(crate) use datasource_import_export_support::{
@@ -210,13 +208,23 @@ pub(crate) fn import_datasources_by_export_org(args: &DatasourceImportArgs) -> R
         );
         return Ok(0);
     }
-    if args.dry_run && args.json {
-        println!("{}", build_routed_datasource_import_dry_run_json(args)?);
-        return Ok(0);
-    }
-
     let mut imported = 0usize;
     for plan in plans {
+        if args.dry_run {
+            println!(
+                "{}",
+                format_routed_datasource_scope_summary_fields(
+                    plan.source_org_id,
+                    &plan.source_org_name,
+                    plan.org_action,
+                    plan.target_org_id,
+                    &plan.input_dir,
+                )
+            );
+            if plan.target_org_id.is_none() {
+                continue;
+            }
+        }
         let scoped_args = DatasourceImportArgs {
             common: args.common.clone(),
             input_dir: Some(plan.input_dir.clone()),
@@ -233,7 +241,7 @@ pub(crate) fn import_datasources_by_export_org(args: &DatasourceImportArgs) -> R
             update_existing_only: args.update_existing_only,
             secret_values: args.secret_values.clone(),
             secret_values_file: args.secret_values_file.clone(),
-            dry_run: false,
+            dry_run: args.dry_run,
             table: args.table,
             json: args.json,
             output_format: args.output_format,

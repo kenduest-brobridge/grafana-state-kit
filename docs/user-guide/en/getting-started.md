@@ -189,6 +189,10 @@ Environment variables can supply the same auth without repeating sensitive value
 - `GRAFANA_PASSWORD`
 - `GRAFANA_API_TOKEN`
 
+Explicit Basic credentials (including `--prompt-password`) take priority over
+`GRAFANA_API_TOKEN`. When no credentials are specified, an environment token
+takes priority over the environment username/password pair.
+
 For repeatable work, prefer storing those references in a profile such as `password_env: GRAFANA_PROD_PASSWORD` or `token_env: GRAFANA_DEV_TOKEN` instead of repeating raw secrets on every command line.
 
 ### Start direct, then simplify

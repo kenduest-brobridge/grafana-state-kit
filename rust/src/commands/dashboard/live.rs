@@ -3,7 +3,7 @@
 use reqwest::Method;
 use serde_json::{Map, Value};
 
-use crate::common::{message, string_field, value_as_object, Result};
+use crate::common::{encode_resource_path_segment, message, string_field, value_as_object, Result};
 use crate::grafana_api::{DashboardResourceClient, DatasourceResourceClient};
 use crate::http::JsonHttpClient;
 
@@ -75,7 +75,12 @@ pub(crate) fn fetch_folder_if_exists_with_request<F>(
 where
     F: FnMut(Method, &str, &[(String, String)], Option<&Value>) -> Result<Option<Value>>,
 {
-    match request_json(Method::GET, &format!("/api/folders/{uid}"), &[], None) {
+    match request_json(
+        Method::GET,
+        &format!("/api/folders/{}", encode_resource_path_segment(uid)),
+        &[],
+        None,
+    ) {
         Ok(Some(value)) => {
             let object =
                 value_as_object(&value, &format!("Unexpected folder payload for UID {uid}."))?;
@@ -386,7 +391,7 @@ where
 {
     match request_json(
         Method::GET,
-        &format!("/api/dashboards/uid/{uid}"),
+        &format!("/api/dashboards/uid/{}", encode_resource_path_segment(uid)),
         &[],
         None,
     )? {
@@ -419,7 +424,10 @@ pub(crate) fn fetch_dashboard_permissions_with_request<F>(
 where
     F: FnMut(Method, &str, &[(String, String)], Option<&Value>) -> Result<Option<Value>>,
 {
-    let path = format!("/api/dashboards/uid/{uid}/permissions");
+    let path = format!(
+        "/api/dashboards/uid/{}/permissions",
+        encode_resource_path_segment(uid)
+    );
     match request_json(Method::GET, &path, &[], None)? {
         Some(Value::Array(items)) => items
             .into_iter()
@@ -445,7 +453,10 @@ pub(crate) fn fetch_folder_permissions_with_request<F>(
 where
     F: FnMut(Method, &str, &[(String, String)], Option<&Value>) -> Result<Option<Value>>,
 {
-    let path = format!("/api/folders/{uid}/permissions");
+    let path = format!(
+        "/api/folders/{}/permissions",
+        encode_resource_path_segment(uid)
+    );
     match request_json(Method::GET, &path, &[], None)? {
         Some(Value::Array(items)) => items
             .into_iter()
@@ -507,7 +518,7 @@ pub(crate) fn delete_dashboard_request_with_request<F>(
 where
     F: FnMut(Method, &str, &[(String, String)], Option<&Value>) -> Result<Option<Value>>,
 {
-    let path = format!("/api/dashboards/uid/{uid}");
+    let path = format!("/api/dashboards/uid/{}", encode_resource_path_segment(uid));
     match request_json(Method::DELETE, &path, &[], None)? {
         Some(value) => {
             let object = value_as_object(
@@ -533,7 +544,7 @@ pub(crate) fn delete_folder_request_with_request<F>(
 where
     F: FnMut(Method, &str, &[(String, String)], Option<&Value>) -> Result<Option<Value>>,
 {
-    let path = format!("/api/folders/{uid}");
+    let path = format!("/api/folders/{}", encode_resource_path_segment(uid));
     match request_json(Method::DELETE, &path, &[], None)? {
         Some(value) => {
             let object = value_as_object(
@@ -573,3 +584,7 @@ where
 pub fn list_datasources(client: &JsonHttpClient) -> Result<Vec<Map<String, Value>>> {
     DatasourceResourceClient::new(client).list_datasources()
 }
+
+#[cfg(test)]
+#[path = "live_path_tests.rs"]
+mod live_path_tests;

@@ -29,7 +29,7 @@ pub(crate) fn load_sync_live_array(
     }
 }
 
-fn load_sync_merged_availability(
+pub(crate) fn load_sync_merged_availability(
     fetch_live: bool,
     common: &CommonCliArgs,
     org_id: Option<i64>,
@@ -47,7 +47,7 @@ fn load_sync_merged_availability(
     }
 }
 
-fn build_sync_review_document(
+pub(crate) fn build_sync_review_document(
     reviewed_plan_input: &Value,
     review_token: &str,
     trace_id: &str,
@@ -399,9 +399,13 @@ pub(crate) fn execute_sync_bundle(args: &SyncBundleArgs) -> Result<SyncCommandOu
         None => None,
     };
     let dashboard_export_dir = args.dashboard_export_dir.clone().or_else(|| {
-        discovered
-            .as_ref()
-            .and_then(|found| found.dashboard_export_dir.clone())
+        if args.dashboard_provisioning_dir.is_some() {
+            None
+        } else {
+            discovered
+                .as_ref()
+                .and_then(|found| found.dashboard_export_dir.clone())
+        }
     });
     let dashboard_provisioning_dir = args.dashboard_provisioning_dir.clone().or_else(|| {
         if dashboard_export_dir.is_some() {

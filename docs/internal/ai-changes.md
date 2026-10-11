@@ -1,6 +1,26 @@
 # ai-changes.md
 
 Current AI change log only.
+- Older entries moved to [ai-changes-archive-2026-10-11.md](archive/ai-changes-archive-2026-10-11.md).
+
+## 2026-10-11 - Deep project review and confirmed repairs
+
+- Summary: Restore fail-closed dashboard folder/ownership guards, explicit Basic
+  auth precedence, strict HTTP success and JSON overwrite checks; encode dynamic
+  Grafana routes and preserve team-admin roles, new-org dry-runs, prune intents,
+  explicit package inputs, and dashboard folder/ownership evidence through sync.
+- Workflow: Preflight all effective controlled alert mutations; honor routed
+  datasource dry-runs and workspace review/output/live-availability options,
+  and preserve significant whitespace in resolved datasource credentials.
+- Secrets: Authenticate existing encrypted entries before writes; reject missing
+  or wrong keys and malformed versions/nonces/salts; enable Linux Secret Service
+  instead of the default mock backend. No encrypted format migration.
+- Tests: Regression and integration evidence is tracked in
+  `todo/2026-10-11-deep-project-review.md`.
+- Impact/Risk: Tightens existing safety contracts without new CLI paths; Linux
+  OS storage requires a real Secret Service session, and corrupted encrypted
+  stores must be restored rather than overwritten with another key.
+
 - Older entries moved to [`ai-changes-archive-2026-09-05.md`](archive/ai-changes-archive-2026-09-05.md).
 - Older entries moved to [`ai-changes-archive-2026-09-10.md`](archive/ai-changes-archive-2026-09-10.md).
 
@@ -92,10 +112,3 @@ Current AI change log only.
 - Impact: `status/overview/tui.rs` is now under the architecture warning threshold, leaving status overview with the same facade/runtime/tests shape as the newer status TUI module. Public CLI paths, help text, generated docs, and command contracts are unchanged.
 - Rollback/Risk: Low; this is a structural split of existing code with focused TUI tests covering search, Project Home handoff, initial item focus, and render output.
 - Follow-up: Continue reducing the remaining TUI/shared warning-threshold files: datasource browse render/support and shared browser session.
-
-## 2026-05-28 - Datasource interactive review output
-- Summary: Added shared read-only mutation review browser projection and wired datasource plan/import dry-run interactive output.
-- Tests: cargo test --quiet datasource_plan_review_envelope_builds_user_friendly_browser_items; cargo test --quiet datasource_plan_parser_accepts_interactive_output; cargo test --quiet datasource_import_dry_run_parser_accepts_interactive_output; cargo test --quiet datasource_import_rejects_use_export_org_interactive_review_output; cargo test --quiet datasource_plan; cargo test --quiet datasource_import_dry_run_review; cargo test --quiet cli_mutation; cargo test --quiet datasource (outside sandbox for local mock-server coverage after sandbox denied binding); RUSTFLAGS=-Dwarnings cargo check --quiet --no-default-features --all-targets; cargo fmt --check; make quality-docs-surface; make man-check; make html-check; make quality-ai-workflow; git diff --check
-- Impact: Operators can inspect datasource plan and import dry-run actions interactively with blockers, warnings, review hints, and safe diffs while public JSON remains unchanged.
-- Rollback/Risk: Low to medium; public help/docs gain an interactive output value, runtime path is read-only and uses existing review envelopes.
-- Follow-up: Consider moving access plan TUI onto the shared review browser builder after comparing existing access-specific summary/resource rows.

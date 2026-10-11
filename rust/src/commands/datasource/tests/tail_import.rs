@@ -9,6 +9,121 @@ use tempfile::tempdir;
 use super::*;
 
 #[test]
+fn routed_datasource_import_text_dry_run_never_writes() {
+    use std::io::{ErrorKind, Read, Write};
+    use std::net::TcpListener;
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use std::sync::Arc;
+    use std::thread;
+    use std::time::{Duration, Instant};
+
+    for (org_exists, create_missing_orgs) in [(true, false), (false, false), (false, true)] {
+        let temp = tempdir().unwrap();
+        let input_dir = write_multi_org_import_fixture(
+            temp.path(),
+            &[(
+                3,
+                "Ops",
+                vec![json!({
+                    "uid": "prom-main", "name": "Prometheus", "type": "prometheus",
+                    "access": "proxy", "url": "http://prometheus:9090", "isDefault": false,
+                    "org": "Ops", "orgId": "3"
+                })],
+            )],
+        );
+        let listener = match TcpListener::bind("127.0.0.1:0") {
+            Ok(listener) => listener,
+            Err(error) if error.kind() == ErrorKind::PermissionDenied => return,
+            Err(error) => panic!("failed to bind test listener: {error}"),
+        };
+        listener.set_nonblocking(true).unwrap();
+        let url = format!("http://{}", listener.local_addr().unwrap());
+        let done = Arc::new(AtomicBool::new(false));
+        let server_done = done.clone();
+        let server = thread::spawn(move || {
+            let mut requests = Vec::new();
+            let deadline = Instant::now() + Duration::from_secs(10);
+            while !server_done.load(Ordering::Acquire) && Instant::now() < deadline {
+                let (mut stream, _) = match listener.accept() {
+                    Ok(connection) => connection,
+                    Err(error) if error.kind() == ErrorKind::WouldBlock => {
+                        thread::sleep(Duration::from_millis(5));
+                        continue;
+                    }
+                    Err(error) => panic!("failed to accept test request: {error}"),
+                };
+                stream
+                    .set_read_timeout(Some(Duration::from_secs(5)))
+                    .unwrap();
+                let mut bytes = Vec::new();
+                let mut buffer = [0_u8; 1024];
+                let request_line = loop {
+                    let count = stream.read(&mut buffer).unwrap();
+                    assert!(count > 0);
+                    bytes.extend_from_slice(&buffer[..count]);
+                    if bytes.windows(4).any(|part| part == b"\r\n\r\n") {
+                        break String::from_utf8_lossy(&bytes)
+                            .lines()
+                            .next()
+                            .unwrap()
+                            .to_string();
+                    }
+                };
+                let response = if request_line.starts_with("GET /api/orgs ") {
+                    if org_exists {
+                        json!([{"id": 3, "name": "Ops"}])
+                    } else {
+                        json!([])
+                    }
+                } else if request_line.starts_with("GET /api/datasources ") {
+                    json!([])
+                } else if request_line.starts_with("GET /api/org ") {
+                    json!({"id": 3, "name": "Ops"})
+                } else {
+                    json!({})
+                };
+                requests.push(request_line);
+                let body = response.to_string();
+                write!(stream, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len()).unwrap();
+            }
+            requests
+        });
+        let mut args = vec![
+            "grafana-util",
+            "import",
+            "--url",
+            &url,
+            "--basic-user",
+            "admin",
+            "--basic-password",
+            "admin",
+            "--input-dir",
+            input_dir.to_str().unwrap(),
+            "--use-export-org",
+            "--dry-run",
+        ];
+        if create_missing_orgs {
+            args.push("--create-missing-orgs");
+        }
+        let DatasourceGroupCommand::Import(args) =
+            DatasourceCliArgs::parse_normalized_from(args).command
+        else {
+            unreachable!();
+        };
+        let result = crate::datasource::import_datasources_by_export_org(&args);
+        done.store(true, Ordering::Release);
+        let requests = server.join().unwrap();
+
+        assert!(
+            requests.iter().all(|request| request.starts_with("GET ")),
+            "dry-run wrote: {requests:?}"
+        );
+        assert_eq!(result.unwrap(), 0);
+        assert!(!requests.is_empty());
+    }
+}
+
+#[test]
 fn datasource_import_rejects_output_columns_without_table_output() {
     let temp = tempdir().unwrap();
     let input_dir = temp.path().join("datasources");

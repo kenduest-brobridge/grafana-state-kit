@@ -1,6 +1,24 @@
 # ai-status.md
 
 Current AI-maintained status only.
+- Older entries moved to [ai-status-archive-2026-10-11.md](archive/ai-status-archive-2026-10-11.md).
+
+## 2026-10-11 - Deep project review and confirmed repairs
+
+- State: done; committed locally
+- Scope: Rust shared auth/HTTP/files, dashboard folder and ownership guards,
+  alert/datasource route encoding, access role/import behavior, sync artifacts,
+  and profile secret integrity plus Linux backend selection.
+- Current Update: Reproduced guarded import mismatches, lost team-admin roles,
+  new-org preview failure, prune deserialization failure, credential corruption
+  and authentication precedence defects; regression repairs are integrated.
+- Result: Full Rust tests (2,052 passed, one ignored), Python (1,213 tests,
+  two skipped), fmt/Clippy, documentation contracts, and the five-lane Grafana
+  matrix passed. Linux Secret Service cross-target compilation passed.
+- Boundary: Evidence and known Grafana 13 org-delete skips are recorded in
+  `todo/2026-10-11-deep-project-review.md`; real OS-keyring sessions, interactive
+  TUI review, and production acceptance remain outside this validation.
+
 - Older entries moved to [`ai-status-archive-2026-09-05.md`](archive/ai-status-archive-2026-09-05.md).
 - Older entries moved to [`ai-status-archive-2026-09-10.md`](archive/ai-status-archive-2026-09-10.md).
 
@@ -61,9 +79,3 @@ Current AI-maintained status only.
 - Scope: rust/src/common/browser/session.rs; rust/src/common/browser/detail.rs; rust/src/common/browser/session_tests.rs; rust/src/lib.rs; docs/internal/tui-architecture-roadmap.md
 - Current Update: Moved shared browser detail projection helpers and session behavior tests out of session.rs while preserving the crate::interactive_browser public-in-crate helper surface.
 - Result: `session.rs` dropped below the architecture warning threshold and `make quality-architecture` is clean.
-
-## 2026-06-11 - Review contract test split
-- State: Done
-- Scope: rust/src/commands/review_contract.rs; rust/src/commands/review_contract_tests.rs; docs/internal/tui-architecture-roadmap.md
-- Current Update: Moved shared review contract inline tests into a file-backed test module while preserving the same private-helper coverage.
-- Result: `review_contract.rs` dropped below the architecture warning threshold; the only remaining architecture warning is shared browser session.

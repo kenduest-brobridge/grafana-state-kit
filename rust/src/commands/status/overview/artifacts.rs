@@ -5,8 +5,9 @@ use super::overview_support::{
     load_object_from_value, object_field_count, overview_inputs, value_is_truthy,
 };
 use super::{
-    OverviewArgs, OverviewArtifact, OverviewInputField, DATASOURCE_EXPORT_METADATA_FILENAME,
-    OVERVIEW_ARTIFACT_ACCESS_ORG_EXPORT_KIND, OVERVIEW_ARTIFACT_ACCESS_SERVICE_ACCOUNT_EXPORT_KIND,
+    OverviewArgs, OverviewArtifact, OverviewInputField, OverviewInputOverrides,
+    DATASOURCE_EXPORT_METADATA_FILENAME, OVERVIEW_ARTIFACT_ACCESS_ORG_EXPORT_KIND,
+    OVERVIEW_ARTIFACT_ACCESS_SERVICE_ACCOUNT_EXPORT_KIND,
     OVERVIEW_ARTIFACT_ACCESS_TEAM_EXPORT_KIND, OVERVIEW_ARTIFACT_ACCESS_USER_EXPORT_KIND,
     OVERVIEW_ARTIFACT_ALERT_EXPORT_KIND, OVERVIEW_ARTIFACT_BUNDLE_PREFLIGHT_KIND,
     OVERVIEW_ARTIFACT_DASHBOARD_EXPORT_KIND, OVERVIEW_ARTIFACT_DATASOURCE_EXPORT_KIND,
@@ -403,14 +404,16 @@ fn build_bundle_preflight_artifact(
     source_bundle: &Path,
     target_inventory: &Path,
     availability_file: Option<&Path>,
+    availability: Option<&Value>,
 ) -> Result<OverviewArtifact> {
     let source_bundle_document =
         load_json_object_value(source_bundle, "Overview source bundle input")?;
     let target_inventory_document =
         load_json_object_value(target_inventory, "Overview target inventory input")?;
-    let availability_document = match availability_file {
-        None => None,
-        Some(path) => Some(load_json_object_value(path, "Overview availability input")?),
+    let availability_document = match (availability, availability_file) {
+        (Some(document), _) => Some(document.clone()),
+        (None, Some(path)) => Some(load_json_object_value(path, "Overview availability input")?),
+        (None, None) => None,
     };
     let document = build_sync_bundle_preflight_document(
         &source_bundle_document,
@@ -433,6 +436,12 @@ fn build_bundle_preflight_artifact(
             value: path.display().to_string(),
         });
     }
+    if availability.is_some() {
+        inputs.push(OverviewInputField {
+            name: "availabilitySource".to_string(),
+            value: "live".to_string(),
+        });
+    }
     Ok(OverviewArtifact {
         kind: OVERVIEW_ARTIFACT_BUNDLE_PREFLIGHT_KIND.to_string(),
         title: "Sync bundle preflight".to_string(),
@@ -446,6 +455,7 @@ fn build_promotion_preflight_artifact(
     target_inventory: &Path,
     mapping_file: Option<&Path>,
     availability_file: Option<&Path>,
+    availability: Option<&Value>,
 ) -> Result<OverviewArtifact> {
     let source_bundle_document =
         load_json_object_value(source_bundle, "Overview source bundle input")?;
@@ -458,9 +468,10 @@ fn build_promotion_preflight_artifact(
             "Overview promotion mapping input",
         )?),
     };
-    let availability_document = match availability_file {
-        None => None,
-        Some(path) => Some(load_json_object_value(path, "Overview availability input")?),
+    let availability_document = match (availability, availability_file) {
+        (Some(document), _) => Some(document.clone()),
+        (None, Some(path)) => Some(load_json_object_value(path, "Overview availability input")?),
+        (None, None) => None,
     };
     let document = build_sync_promotion_preflight_document(
         &source_bundle_document,
@@ -490,6 +501,12 @@ fn build_promotion_preflight_artifact(
             value: path.display().to_string(),
         });
     }
+    if availability.is_some() {
+        inputs.push(OverviewInputField {
+            name: "availabilitySource".to_string(),
+            value: "live".to_string(),
+        });
+    }
     Ok(OverviewArtifact {
         kind: OVERVIEW_ARTIFACT_PROMOTION_PREFLIGHT_KIND.to_string(),
         title: "Sync promotion preflight".to_string(),
@@ -516,7 +533,17 @@ fn has_any_inputs(args: &OverviewArgs) -> bool {
 }
 
 pub(crate) fn build_overview_artifacts(args: &OverviewArgs) -> Result<Vec<OverviewArtifact>> {
-    if !has_any_inputs(args) {
+    build_overview_artifacts_with_inputs(args, &OverviewInputOverrides::default())
+}
+
+pub(crate) fn build_overview_artifacts_with_inputs(
+    args: &OverviewArgs,
+    inputs: &OverviewInputOverrides<'_>,
+) -> Result<Vec<OverviewArtifact>> {
+    if !has_any_inputs(args)
+        && inputs.datasource_export_file.is_none()
+        && inputs.extra_artifacts.is_empty()
+    {
         return Err(message("Overview requires at least one input artifact."));
     }
     validate_bundle_context(args)?;
@@ -528,7 +555,14 @@ pub(crate) fn build_overview_artifacts(args: &OverviewArgs) -> Result<Vec<Overvi
     if let Some(path) = args.dashboard_provisioning_dir.as_deref() {
         artifacts.push(build_dashboard_provisioning_artifact(path)?);
     }
-    if let Some(path) = args.datasource_provisioning_file.as_deref() {
+    if let Some(path) = inputs.datasource_export_file {
+        artifacts.push(build_datasource_artifact(
+            "Datasource inventory",
+            "datasourceExportFile",
+            path,
+            load_json_array_value(path, "Overview datasource inventory input")?,
+        )?);
+    } else if let Some(path) = args.datasource_provisioning_file.as_deref() {
         artifacts.push(build_datasource_provisioning_artifact(path)?);
     } else if let Some(path) = args.datasource_export_dir.as_deref() {
         artifacts.push(build_datasource_export_artifact(path)?);
@@ -559,6 +593,7 @@ pub(crate) fn build_overview_artifacts(args: &OverviewArgs) -> Result<Vec<Overvi
             source_bundle,
             target_inventory,
             args.availability_file.as_deref(),
+            inputs.availability,
         )?);
         if args.mapping_file.is_some() {
             artifacts.push(build_promotion_preflight_artifact(
@@ -566,8 +601,10 @@ pub(crate) fn build_overview_artifacts(args: &OverviewArgs) -> Result<Vec<Overvi
                 target_inventory,
                 args.mapping_file.as_deref(),
                 args.availability_file.as_deref(),
+                inputs.availability,
             )?);
         }
     }
+    artifacts.extend_from_slice(inputs.extra_artifacts);
     Ok(artifacts)
 }

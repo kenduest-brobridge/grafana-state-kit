@@ -956,6 +956,7 @@ code[class*="language-"],pre[class*="language-"]{color:#ccc;background:none;font
 <h2 id="safety-boundary">Safety boundary</h2>
 <p><code>alert apply</code> is a controlled live-apply lane. It currently permits only ready alert-rule <code>update</code> rows whose changed fields are limited to <code>condition</code>, <code>data</code>, <code>for</code>, <code>noDataState</code>, or <code>execErrState</code>.</p>
 <p>Create, delete, contact-point, mute-timing, policy, template, and ambiguous rule-field changes fail closed. Use <code>alert plan</code> and review output to keep those broader changes visible without applying them directly.</p>
+<p>Every proposed mutation and its effective update payload are validated before the first write. The allowed-field check compares the plan&#x27;s live and desired rule values rather than trusting <code>changedFields</code> alone. Runtime API failures can still leave earlier valid updates applied; review the reported result before retrying.</p>
 <h2 id="before-after">Before / After</h2>
 <ul><li><strong>Before</strong>: a reviewed alert plan still leaves one risky question open: what actually happens when someone presses go against live Grafana?</li><li><strong>After</strong>: <code>alert apply</code> turns that final step into an explicit command with approval, reproducible auth, and machine-readable output.</li></ul>
 <h2 id="key-flags">Key flags</h2>
