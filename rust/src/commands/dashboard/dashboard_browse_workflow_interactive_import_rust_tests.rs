@@ -1,6 +1,11 @@
 //! Interactive import workflow regression tests for dashboard browse flows.
 
 use super::*;
+use crate::dashboard::dashboard_rust_tests::{
+    make_import_args, write_basic_raw_export, write_combined_export_root_metadata,
+};
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use tempfile::tempdir;
 
 #[test]
 fn interactive_import_loads_dashboard_titles_and_folder_paths() {
@@ -192,6 +197,7 @@ fn interactive_import_summary_counts_track_pending_selected_and_reviewed_actions
                                 diff_summary_lines: vec!["Title: old -> new".to_string()],
                                 diff_structural_lines: vec!["Panels: 1 -> 2".to_string()],
                                 diff_raw_lines: vec!["REMOTE".to_string(), "LOCAL".to_string()],
+                                diff_model: None,
                             },
                         ),
                     ),
@@ -230,6 +236,7 @@ fn interactive_import_dry_run_state_uses_dry_run_status_and_enter_copy() {
 
     assert!(state.dry_run);
     assert!(state.status.contains("dry-run"));
+    assert!(state.status.contains("Enter runs dry-run"));
 }
 
 #[test]
@@ -262,7 +269,9 @@ fn interactive_import_with_use_export_org_falls_through_to_tty_validation() {
             .unwrap();
 
     let error = crate::dashboard::import_interactive::select_import_dashboard_files(
-        &mut |_method, _path, _params, _payload| Ok(None),
+        &mut |_method, _path, _params, _payload| {
+            panic!("TTY validation must precede live requests")
+        },
         &mut cache,
         &args,
         &resolved_import,

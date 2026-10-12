@@ -1,4 +1,4 @@
-use super::*;
+use super::support::build_dashboard_browse_document;
 use serde_json::{json, Map, Value};
 
 #[test]

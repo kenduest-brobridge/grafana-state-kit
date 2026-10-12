@@ -16,6 +16,13 @@ use super::super::{
     RESOURCE_V1_EXPORT_SUBDIR, RESOURCE_V2_EXPORT_SUBDIR,
 };
 
+#[path = "export_resource/portable_v2.rs"]
+mod portable_v2;
+pub(crate) use portable_v2::{
+    dashboard_resource_export_document, validate_portable_v2_export_args,
+    validate_portable_v2_served_lanes,
+};
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct ResourceExportLane {
     pub(crate) version: DashboardResourceApiVersion,

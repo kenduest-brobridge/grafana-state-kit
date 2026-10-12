@@ -18,6 +18,10 @@ use super::delete_support::{build_delete_plan_with_request, validate_delete_args
 use super::live::{delete_dashboard_request_with_request, delete_folder_request_with_request};
 use super::{build_http_client, build_http_client_for_org, DeleteArgs};
 
+#[cfg(test)]
+#[path = "dashboard_browse_delete_rust_tests.rs"]
+mod tests;
+
 pub fn delete_dashboards_with_client(client: &JsonHttpClient, args: &DeleteArgs) -> Result<usize> {
     delete_dashboards_with_request(
         |method, path, params, payload| client.request_json(method, path, params, payload),

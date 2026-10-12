@@ -10,7 +10,7 @@ read live and staged Grafana state through one canonical status surface.
 when you want readiness, overview, snapshot, or direct live reads without moving into mutation work.
 .SH COMMAND GROUPS
 .PP
-\- Live Read\-Only: live, overview, resource, snapshot
+\- Live Read\-Only: live, capabilities, overview, resource, snapshot
 .PP
 \- Staged Review: staged, overview
 .PP
@@ -27,6 +27,9 @@ render a live readiness view from Grafana read surfaces.
 .TP
 .B staged
 render a readiness gate from staged artifacts.
+.TP
+.B capabilities
+check dashboard list\-read API availability for the current credentials and an explicit Grafana namespace before choosing a dashboard workflow.
 .TP
 .B overview
 summarize staged artifacts or open the live overview.

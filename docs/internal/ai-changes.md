@@ -1,7 +1,26 @@
 # ai-changes.md
 
 Current AI change log only.
+- Older entry moved to [ai-changes-archive-2026-10-12.md](archive/ai-changes-archive-2026-10-12.md).
 - Older entries moved to [ai-changes-archive-2026-10-11.md](archive/ai-changes-archive-2026-10-11.md).
+
+## 2026-10-12 - Development follow-through
+
+- Summary: Restore all 51 useful dormant Dashboard cases under current domain
+  owners; remove their obsolete router and adapt/strengthen fixtures and assertions.
+- Runtime: Add fresh baseline reads before any controlled Alert write, truthful
+  completed/failed/not-attempted results with failure exit status, three bounded
+  dashboard API read probes, opt-in native-v2 metadata portability and Playlist
+  v1 list/get/describe through existing read-only resource primitives.
+- Contracts: Preserve default archival export, opaque `spec`, ownership guards,
+  explicit namespace and destructive approval. Keep unsupported/unauthorized,
+  malformed-response and transport/server failures distinct.
+- Verification: `todo/2026-10-12-development-follow-through.md` records the final
+  combined checks and live evidence. Physical TUI and OS keyring sessions are
+  separate acceptance boundaries.
+- Risk: Alert drift checks reduce stale-review writes but cannot supply atomic
+  server transactions. Portable export does not remap datasource/folder identity
+  or bypass managed-resource protections. No push or deployment.
 
 ## 2026-10-11 - Deep project review and maintainability convergence
 
@@ -110,10 +129,3 @@ Current AI change log only.
 - Impact: `datasource/browse/render.rs` is now below the architecture warning threshold, reducing the warning list from four files to three without changing public CLI paths, help text, generated docs, or interactive behavior.
 - Rollback/Risk: Low; this is a structural move of existing footer/search rendering covered by focused datasource browse render tests.
 - Follow-up: Continue reducing the remaining TUI/shared warning-threshold files: review_contract and shared browser session.
-
-## 2026-06-11 - Status overview TUI support split
-- Summary: Split status overview TUI runtime and focused tests out of the state/search module while preserving existing interactive behavior.
-- Tests: cargo test --quiet overview_tui --features tui; make quality-rust; make quality-architecture; cargo check --quiet --no-default-features --all-targets; python3 scripts/tui_inventory_report.py --json; make quality-ai-workflow
-- Impact: `status/overview/tui.rs` is now under the architecture warning threshold, leaving status overview with the same facade/runtime/tests shape as the newer status TUI module. Public CLI paths, help text, generated docs, and command contracts are unchanged.
-- Rollback/Risk: Low; this is a structural split of existing code with focused TUI tests covering search, Project Home handoff, initial item focus, and render output.
-- Follow-up: Continue reducing the remaining TUI/shared warning-threshold files: datasource browse render/support and shared browser session.

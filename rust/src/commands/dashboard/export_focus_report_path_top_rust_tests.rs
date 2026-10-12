@@ -31,6 +31,7 @@ fn make_history_only_export_args(
         without_dashboard_provisioning: true,
         include_history: true,
         native: false,
+        portable_v2: false,
         resource_format: crate::dashboard::DashboardResourceFormat::None,
         resource_namespace: None,
         provisioning_provider_name: "grafana-utils-dashboards".to_string(),
@@ -63,6 +64,7 @@ fn export_dashboards_with_request_all_orgs_aggregates_results() {
         without_dashboard_provisioning: true,
         include_history: false,
         native: false,
+        portable_v2: false,
         resource_format: crate::dashboard::DashboardResourceFormat::None,
         resource_namespace: None,
         provisioning_provider_name: "grafana-utils-dashboards".to_string(),
@@ -530,6 +532,159 @@ fn export_dashboards_writes_resource_v2_without_rewriting_elements() {
 }
 
 #[test]
+fn portable_v2_export_round_trip_prepares_destination_create_and_update_requests() {
+    let fixture: Value = serde_json::from_str(include_str!(
+        "../../../../tests/fixtures/dashboard_resource_v2_import_golden.json"
+    ))
+    .unwrap();
+    let source = &fixture["source"];
+    for portable_v2 in [false, true] {
+        let temp = tempdir().unwrap();
+        let mut args =
+            make_history_only_export_args(temp.path().join("dashboards"), None, false, true);
+        args.include_history = false;
+        args.without_dashboard_raw = true;
+        args.resource_format = crate::dashboard::DashboardResourceFormat::V2;
+        args.resource_namespace = Some("source-namespace".to_string());
+        args.portable_v2 = portable_v2;
+        assert_eq!(export_dashboards_with_request(|method, path, _, _| {
+            assert_eq!(method, reqwest::Method::GET);
+            assert_eq!(path, "/apis/dashboard.grafana.app/v2/namespaces/source-namespace/dashboards");
+            Ok(Some(json!({"apiVersion":"dashboard.grafana.app/v2","kind":"DashboardList","metadata":{},"items":[source.clone()]})))
+        }, &args).unwrap(), 1);
+        let artifact = args
+            .output_dir
+            .join("resource-v2/objects/cpu-overview.json");
+        let artifact_text = fs::read_to_string(&artifact).unwrap();
+        let exported: Value = serde_json::from_str(&artifact_text).unwrap();
+        if !portable_v2 {
+            assert_eq!(exported, *source);
+            assert_eq!(
+                artifact_text,
+                serde_json::to_string_pretty(source).unwrap() + "\n"
+            );
+        }
+        assert_eq!(exported["spec"], source["spec"]);
+        assert_eq!(exported["metadata"]["namespace"], "source-namespace");
+        assert_eq!(
+            exported["metadata"]["annotations"]["grafana.app/folder"],
+            "source-folder"
+        );
+        assert_eq!(
+            exported["metadata"].get("resourceVersion").is_none(),
+            portable_v2
+        );
+        for update in [false, true] {
+            let import_args = match crate::dashboard::parse_cli_from([
+                "grafana-util",
+                "import",
+                "--input-dir",
+                args.output_dir.to_str().unwrap(),
+                "--input-format",
+                "resource-v2",
+                "--resource-namespace",
+                "target-namespace",
+                "--replace-existing",
+            ])
+            .command
+            {
+                crate::dashboard::DashboardCommand::Import(args) => args,
+                _ => unreachable!(),
+            };
+            let live = json!({"apiVersion":"dashboard.grafana.app/v2","kind":"Dashboard", "metadata":{"name":"cpu-overview","namespace":"target-namespace","resourceVersion":"target-version"},"spec":{"title":"Old"}});
+            let mut writes = Vec::new();
+            assert_eq!(crate::dashboard::import::import_dashboards_with_request(|method, path, _, payload| {
+                if method == reqwest::Method::GET && path.ends_with("/dashboards") {
+                    return Ok(Some(json!({"apiVersion":"dashboard.grafana.app/v2","kind":"DashboardList","metadata":{},"items":[]})));
+                }
+                if method == reqwest::Method::GET {
+                    if update { return Ok(Some(live.clone())); }
+                    return Err(crate::common::api_response(404, path.to_string(), "not found".to_string()));
+                }
+                writes.push((method.clone(), path.to_string(), payload.unwrap().clone()));
+                Ok(payload.cloned())
+            }, &import_args).unwrap(), 1);
+            assert_eq!(writes.len(), 1);
+            let (method, path, payload) = &writes[0];
+            assert_eq!(
+                *method,
+                if update {
+                    reqwest::Method::PUT
+                } else {
+                    reqwest::Method::POST
+                }
+            );
+            assert_eq!(
+                path,
+                &format!(
+                    "/apis/dashboard.grafana.app/v2/namespaces/target-namespace/dashboards{}",
+                    if update { "/cpu-overview" } else { "" }
+                )
+            );
+            assert_eq!(payload["spec"], source["spec"]);
+            assert_eq!(payload["metadata"]["namespace"], "target-namespace");
+            assert_eq!(
+                payload["metadata"]["annotations"]["grafana.app/folder"],
+                "source-folder"
+            );
+            assert!(payload["metadata"].get("uid").is_none());
+            assert!(payload["metadata"].get("generation").is_none());
+            assert!(payload["metadata"]["annotations"]
+                .get("grafana.app/createdBy")
+                .is_none());
+            if update {
+                assert_eq!(payload["metadata"]["resourceVersion"], "target-version");
+            } else {
+                assert!(payload["metadata"].get("resourceVersion").is_none());
+            }
+        }
+    }
+}
+
+#[test]
+fn portable_v2_export_rejects_incompatible_selection_before_network() {
+    let temp = tempdir().unwrap();
+    for format in [
+        crate::dashboard::DashboardResourceFormat::None,
+        crate::dashboard::DashboardResourceFormat::V1,
+    ] {
+        let mut args =
+            make_history_only_export_args(temp.path().join("dashboards"), None, true, true);
+        args.portable_v2 = true;
+        args.resource_format = format;
+        let error = export_dashboards_with_request(
+            |_, _, _, _| panic!("invalid portable selection must not query Grafana"),
+            &args,
+        )
+        .unwrap_err();
+        assert!(error.to_string().contains("--portable-v2 requires"));
+        assert!(!args.output_dir.exists());
+    }
+}
+
+#[test]
+fn portable_v2_export_all_requires_served_v2_before_writing_v1() {
+    let temp = tempdir().unwrap();
+    let mut args = make_history_only_export_args(temp.path().join("dashboards"), None, false, true);
+    args.include_history = false;
+    args.without_dashboard_raw = true;
+    args.resource_format = crate::dashboard::DashboardResourceFormat::All;
+    args.resource_namespace = Some("source".to_string());
+    args.portable_v2 = true;
+    let error = export_dashboards_with_request(|method, path, _, _| {
+        assert_eq!(method, reqwest::Method::GET);
+        if path.contains("/v2/") {
+            return Err(crate::common::api_response(404, path.to_string(), "not served".to_string()));
+        }
+        Ok(Some(json!({"apiVersion":"dashboard.grafana.app/v1","kind":"DashboardList","metadata":{},"items":[{"apiVersion":"dashboard.grafana.app/v1","kind":"Dashboard","metadata":{"name":"v1","namespace":"source"},"spec":{"title":"V1","panels":[]}}]})))
+    }, &args).unwrap_err();
+    assert!(error
+        .to_string()
+        .contains("--portable-v2 requires the dashboard.grafana.app/v2 API"));
+    assert!(!args.output_dir.join("resource-v1/objects/v1.json").exists());
+}
+
+#[test]
 fn grafana_13_native_v2_nested_layout_survives_export_import() {
     let temp = tempdir().unwrap();
     let mut args = make_history_only_export_args(temp.path().join("dashboards"), None, false, true);
@@ -538,6 +693,7 @@ fn grafana_13_native_v2_nested_layout_survives_export_import() {
     args.without_dashboard_prompt = true;
     args.without_dashboard_provisioning = true;
     args.resource_format = crate::dashboard::DashboardResourceFormat::V2;
+    args.portable_v2 = true;
     args.resource_namespace = Some("default".to_string());
     // v13.2.1 v2 schema shapes; this checks JSON preservation, not server acceptance.
     let inner_tabs = json!({"kind":"TabsLayout","spec":{"tabs":[{
@@ -692,6 +848,7 @@ fn export_dashboards_mirrors_nested_folder_paths_for_raw_and_prompt() {
         without_dashboard_provisioning: false,
         include_history: false,
         native: false,
+        portable_v2: false,
         resource_format: crate::dashboard::DashboardResourceFormat::None,
         resource_namespace: None,
         provisioning_provider_name: "grafana-utils-dashboards".to_string(),
@@ -1141,6 +1298,7 @@ fn export_dashboards_with_dry_run_keeps_output_dir_empty() {
         without_dashboard_provisioning: true,
         include_history: false,
         native: false,
+        portable_v2: false,
         resource_format: crate::dashboard::DashboardResourceFormat::None,
         resource_namespace: None,
         provisioning_provider_name: "grafana-utils-dashboards".to_string(),
@@ -1194,6 +1352,7 @@ fn export_dashboards_writes_provisioning_artifacts_in_separate_lane() {
         without_dashboard_provisioning: false,
         include_history: false,
         native: false,
+        portable_v2: false,
         resource_format: crate::dashboard::DashboardResourceFormat::None,
         resource_namespace: None,
         provisioning_provider_name: "grafana-utils-dashboards".to_string(),
@@ -1313,6 +1472,7 @@ fn export_dashboards_writes_custom_provisioning_provider_settings() {
         without_dashboard_provisioning: false,
         include_history: false,
         native: false,
+        portable_v2: false,
         resource_format: crate::dashboard::DashboardResourceFormat::None,
         resource_namespace: None,
         provisioning_provider_name: "grafana-utils-prod".to_string(),

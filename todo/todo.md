@@ -2,6 +2,10 @@
 
 ## Active
 
+- [x] [2026-10-12 development follow-through](2026-10-12-development-follow-through.md) -
+  Reconcile all 51 dormant Dashboard tests, implement the ranked roadmap,
+  verify combined behavior and commit locally.
+
 - [x] [2026-10-11 development priorities and simplification](2026-10-11-development-convergence.md) -
   Verify remaining development opportunities, excess abstraction and stale or
   redundant tests; implement a bounded, evidence-backed simplification.
@@ -31,7 +35,7 @@
   Make import auto-detect Classic versus resource-v2 safely, add one native
   export shortcut, preserve Grafana 12 defaults, then review and verify.
 
-- [ ] [2026-08-12 stable Grafana compatibility plan](2026-08-12-stable-grafana-compatibility-plan.md) -
+- [x] [2026-08-12 stable Grafana compatibility plan](2026-08-12-stable-grafana-compatibility-plan.md) -
   Preserve a Grafana 12.0+ compatibility floor, migrate datasource mutation to
   UID routes, test released 12.x/13.x lanes, and capability-gate new features.
 

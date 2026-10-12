@@ -12,6 +12,10 @@ use crate::grafana_api::{
 };
 use crate::profile_config::ConnectionMergeInput;
 
+#[cfg(test)]
+#[path = "playlist_rust_tests.rs"]
+mod playlist_tests;
+
 pub(crate) fn build_client(common: &CommonCliArgs) -> Result<GrafanaApiClient> {
     let connection = GrafanaConnection::resolve(
         common.profile.as_deref(),
@@ -97,6 +101,10 @@ pub(crate) fn list_resource_items(
         ResourceKind::Orgs => {
             ensure_legacy_only_mode(kind, api_mode)?;
             client.access().list_orgs()
+        }
+        ResourceKind::Playlists => {
+            ensure_playlist_mode(api_mode)?;
+            list_app_resource(client, kind, AppPlatformApiVersion::V1, namespace)
         }
         ResourceKind::Receivers
         | ResourceKind::RoutingTrees
@@ -262,6 +270,16 @@ pub(crate) fn get_resource_item(
                 "Unexpected org payload from Grafana.",
             )?))
         }
+        ResourceKind::Playlists => {
+            ensure_playlist_mode(api_mode)?;
+            get_app_resource(
+                client,
+                selector.kind,
+                AppPlatformApiVersion::V1,
+                namespace,
+                &selector.identity,
+            )
+        }
         ResourceKind::Receivers
         | ResourceKind::RoutingTrees
         | ResourceKind::TemplateGroups
@@ -287,6 +305,7 @@ fn app_platform_resource(
     let (group, plural, resource_kind) = match kind {
         ResourceKind::Dashboards => ("dashboard.grafana.app", "dashboards", "Dashboard"),
         ResourceKind::Folders => ("folder.grafana.app", "folders", "Folder"),
+        ResourceKind::Playlists => ("playlist.grafana.app", "playlists", "Playlist"),
         ResourceKind::Receivers => (
             "notifications.alerting.grafana.app",
             "receivers",
@@ -395,6 +414,13 @@ fn ensure_legacy_only_mode(kind: ResourceKind, mode: ResourceApiMode) -> Result<
     }
 }
 
+fn ensure_playlist_mode(mode: ResourceApiMode) -> Result<()> {
+    match mode {
+        ResourceApiMode::Auto | ResourceApiMode::V1 => Ok(()),
+        _ => unsupported_mode(ResourceKind::Playlists, mode),
+    }
+}
+
 fn ensure_v1beta1_mode(kind: ResourceKind, mode: ResourceApiMode) -> Result<()> {
     if mode == ResourceApiMode::V1Beta1 {
         Ok(())
@@ -472,14 +498,14 @@ mod tests {
 
     type SequenceServer = (String, Arc<Mutex<Vec<String>>>, thread::JoinHandle<()>);
 
-    fn http_response(status: &str, body: &str) -> String {
+    pub(super) fn http_response(status: &str, body: &str) -> String {
         format!(
             "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
             body.len()
         )
     }
 
-    fn spawn_sequence_server(responses: Vec<String>) -> Option<SequenceServer> {
+    pub(super) fn spawn_sequence_server(responses: Vec<String>) -> Option<SequenceServer> {
         let listener = match TcpListener::bind("127.0.0.1:0") {
             Ok(listener) => listener,
             Err(error) if error.kind() == ErrorKind::PermissionDenied => return None,
@@ -521,7 +547,7 @@ mod tests {
         Some((format!("http://{address}"), requests, handle))
     }
 
-    fn build_test_api(base_url: String) -> GrafanaApiClient {
+    pub(super) fn build_test_api(base_url: String) -> GrafanaApiClient {
         GrafanaApiClient::from_connection(GrafanaConnection::new(
             base_url,
             vec![("Authorization".to_string(), "Bearer token".to_string())],

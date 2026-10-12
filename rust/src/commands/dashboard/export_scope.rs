@@ -48,9 +48,10 @@ use document_write::write_history_document;
 
 use super::export_resource::{
     build_resource_export_metadata, build_resource_index_entry, build_resource_output_path,
-    dashboard_resource_namespace, discover_resource_lanes_with_request,
-    fetch_dashboard_resource_with_request, list_dashboard_resources_with_request,
-    selected_resource_lanes, ResourceExportLane,
+    dashboard_resource_export_document, dashboard_resource_namespace,
+    discover_resource_lanes_with_request, fetch_dashboard_resource_with_request,
+    list_dashboard_resources_with_request, selected_resource_lanes,
+    validate_portable_v2_export_args, validate_portable_v2_served_lanes, ResourceExportLane,
 };
 
 pub(crate) struct ScopeExportResult {
@@ -155,6 +156,7 @@ where
     P: Fn(&PermissionExportTarget) -> Result<Vec<Map<String, Value>>> + Sync,
     H: Fn(&str, i64) -> Result<Map<String, Value>> + Sync,
 {
+    validate_portable_v2_export_args(args)?;
     let requested_resource_lanes = selected_resource_lanes(args.resource_format)?;
     let has_classic_export = !(args.without_dashboard_raw
         && args.without_dashboard_prompt
@@ -256,6 +258,13 @@ where
             &namespace,
             args.page_size,
         )?;
+        validate_portable_v2_served_lanes(
+            args.portable_v2,
+            &resource_exports
+                .iter()
+                .map(|(lane, _)| *lane)
+                .collect::<Vec<_>>(),
+        )?;
         if resource_exports.is_empty() {
             return Err(message(
                 "None of the requested dashboard resource API versions are served by this Grafana instance.",
@@ -274,6 +283,7 @@ where
         args.resource_format,
         &namespace,
     )?;
+    validate_portable_v2_served_lanes(args.portable_v2, &resource_lanes)?;
     if !has_classic_export && resource_lanes.is_empty() {
         return Err(message(
             "None of the requested dashboard resource API versions are served by this Grafana instance.",
@@ -461,6 +471,12 @@ where
                     lane,
                     &namespace,
                     &uid,
+                )?;
+                let resource = dashboard_resource_export_document(
+                    &resource,
+                    lane,
+                    &namespace,
+                    args.portable_v2,
                 )?;
                 let objects_dir = if lane.dir_name == RESOURCE_V2_EXPORT_SUBDIR {
                     &resource_v2_objects_dir
@@ -794,17 +810,23 @@ fn export_resource_only_dashboards_in_scope(
             fs::create_dir_all(&objects_dir)?;
         }
         for (resource_index, resource) in resources.iter().enumerate() {
+            let resource = dashboard_resource_export_document(
+                resource,
+                *lane,
+                args.resource_namespace.as_deref().unwrap_or_default(),
+                args.portable_v2,
+            )?;
             let fallback_name = format!("dashboard-{}", resource_index + 1);
             let (resource_path, resource_name, resource_title, resource_folder_path) =
                 build_resource_output_path(
                     &objects_dir,
-                    resource,
+                    &resource,
                     &fallback_name,
                     &folder_paths_by_key,
                     current_org_id,
                 );
             if !args.dry_run {
-                write_dashboard(resource, &resource_path, args.overwrite)?;
+                write_dashboard(&resource, &resource_path, args.overwrite)?;
             }
             if args.verbose {
                 println!(

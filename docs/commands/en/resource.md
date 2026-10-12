@@ -21,6 +21,7 @@ This namespace is intentionally narrower and more generic than the main operator
 - `datasources`
 - `alert-rules`
 - `orgs`
+- `playlists` (stable v1, read-only)
 - `receivers`, `routing-trees`, `template-groups`, `time-intervals`, `inhibition-rules`
 - `secure-values` (metadata only; `spec.value` is stripped defensively)
 
@@ -32,11 +33,21 @@ This namespace is intentionally narrower and more generic than the main operator
 - Dashboard `auto` tries App Platform v2, then v1, then classic endpoints, falling back only on 404. Folder `auto` tries v1 before classic. Datasource UID lookup keeps its numeric legacy fallback.
 - Notification and secure-value resources are public preview and require explicit `--api-mode v1beta1`; they are never auto-probed.
 - `--namespace` selects the App Platform namespace and defaults to `default`.
+- Playlist `auto` and `v1` read `playlist.grafana.app/v1` with continuation-token
+  pagination and strict resource identity checks. Other API modes are rejected;
+  HTTP errors, including 404, are returned without probing deprecated APIs.
 
 ## Recommended mode
 - Prefer default `auto` for stable dashboard/folder inspection. Use explicit `v1` or `v2` when a script requires one envelope, `legacy` for classic-only access, and `v1beta1` only for the documented preview resources.
 
 ## Examples
+```bash
+# Inspect rotation playlists without modifying them.
+grafana-util status resource list playlists --profile prod --namespace default --output-format table
+grafana-util status resource get playlists/ops-rotation --profile prod --namespace default
+grafana-util status resource describe playlists
+```
+
 ```bash
 # Describe the supported live resource kinds and selector patterns.
 grafana-util status resource describe

@@ -155,6 +155,10 @@ pub(crate) const STATUS_HELP_SPEC: GroupedHelpSpec = GroupedHelpSpec {
             [
                 row!("live", "Check live Grafana state."),
                 row!(
+                    "capabilities",
+                    "Check dashboard API read support in a namespace."
+                ),
+                row!(
                     "overview",
                     "Open a live or staged overview; use `overview live` first."
                 ),

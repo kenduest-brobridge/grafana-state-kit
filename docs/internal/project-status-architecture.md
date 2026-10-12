@@ -24,6 +24,20 @@ and which ones were still missing in that planning pass, see
 
 ## Purpose
 
+`status capabilities --namespace ...` is a separate bounded read observation,
+not a project-readiness producer. Its `grafana-dashboard-api-capabilities`
+schema-version-1 report records three list probes (classic/v1/v2), the selected
+namespace, relative request paths, status, optional HTTP error status and safe
+fixed explanations. It does not expose response payloads or raw server errors.
+An available list read does not establish write permission; 404 only establishes
+that the requested route/namespace was not served. Existing live/staged
+project-status documents and readiness aggregation remain unchanged.
+
+`status resource` includes stable Playlist v1 list/get/describe. It reuses the
+App Platform collection/item validators and continuation-token pagination.
+Modes `auto`/`v1` use one stable API; unsupported modes and HTTP errors are
+returned without legacy fallback or mutation.
+
 The project needs one shared status model that can answer:
 
 - what domains exist

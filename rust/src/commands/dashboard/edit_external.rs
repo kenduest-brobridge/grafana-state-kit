@@ -1,4 +1,8 @@
 #![cfg(feature = "tui")]
+
+#[cfg(test)]
+#[path = "dashboard_browse_raw_edit_rust_tests.rs"]
+mod tests;
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};

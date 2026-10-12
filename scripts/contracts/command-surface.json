@@ -30,6 +30,9 @@
       ]
     },
     "dashboard export": {
+      "--portable-v2": [
+        "remove source server metadata from resource-v2 exports"
+      ],
       "--native": [
         "shortcut for --resource-format all"
       ],
@@ -56,6 +59,10 @@
         "v1",
         "v2"
       ]
+    },
+    "status capabilities": {
+      "--namespace": ["<namespace>"],
+      "--output-format": ["text", "json", "yaml"]
     },
     "status resource list": {
       "--api-mode": [
@@ -148,6 +155,7 @@
     "resource": "resource.md",
     "snapshot": "snapshot.md",
     "status": "status.md",
+    "status capabilities": "status.md",
     "status resource": "resource.md",
     "status snapshot": "snapshot.md",
     "workspace": "workspace.md"

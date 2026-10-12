@@ -20,6 +20,7 @@ Use this when you need a local export tree for later import, review, diff, Git r
 - `--include-history`: write per-version dashboard revision-history artifacts under `history/<uid>/vN.history.json` for each exported org scope.
 - `--native`: shortcut for `--resource-format all`; add every stable native dashboard resource lane served by the target. It is mutually exclusive with an explicit `--resource-format`.
 - `--resource-format`: add native App Platform resource lanes: `none` (default), `v1`, `v2`, or `all`.
+- `--portable-v2`: remove known server metadata from the native v2 lane. Requires `--resource-format v2|all` or `--native`, and a served v2 API. Other lanes retain their normal output.
 - `--resource-namespace`: override the App Platform namespace for resource export. It is required for resource-only export; mixed exports default to `default` for Grafana OSS org 1 and `org-<id>` for other orgs.
 - `--provider-name`, `--provider-org-id`, `--provider-path`: customize the generated provisioning provider file.
 - `--provider-disable-deletion`, `--provider-allow-ui-updates`, `--provider-update-interval-seconds`: tune provisioning behavior.
@@ -29,7 +30,9 @@ Use this when you need a local export tree for later import, review, diff, Git r
 
 ## Notes
 - Writes `raw/`, `prompt/`, and `provisioning/` by default.
-- Resource-enabled exports use a family layout: classic lanes move under `classic/`, while native envelopes are written unchanged under `resource-v1/objects/` and/or `resource-v2/objects/`.
+- Resource-enabled exports use a family layout: classic lanes move under `classic/`, while native envelopes are written under `resource-v1/objects/` and/or `resource-v2/objects/`. Native envelopes are archived unchanged by default.
+- `--portable-v2` preserves the entire v2 `spec`, resource name, source namespace, folder annotation, custom labels/annotations, and ownership metadata. It removes only `status`, known server ObjectMeta fields (`uid`, `resourceVersion`, `generation`, `creationTimestamp`, `deletionTimestamp`, `deletionGracePeriodSeconds`, `managedFields`, `selfLink`), the `grafana.app/deprecatedInternalID` label, and the three server annotations `grafana.app/createdBy`, `grafana.app/updatedBy`, and `grafana.app/updatedTimestamp`. Unknown metadata remains intact.
+- Portable v2 export requires each resource to identify a stable v2 Dashboard and match the requested namespace. During resource-v2 import, `--resource-namespace` selects the destination namespace; the source namespace retained in the artifact is not a destination override. Use import's `--folder-uid` when the source folder UID is not valid at the destination. Ownership metadata remains visible; portable export does not bypass managed-destination import guards.
 - The default export remains Classic-only and keeps the existing `raw/`, `prompt/`, and `provisioning/` behavior. Use `--native` when the next step is an auto-routed import that may prefer resource-v2.
 - Before writing a resource lane, the exporter probes its collection endpoint. Explicit `v1` or `v2` requests fail if that version returns 404; `all` keeps every served lane and skips only versions that return 404. Authorization and server errors are never treated as unsupported.
 - Resource artifacts are for `/apis/dashboard.grafana.app/...`, not Grafana UI import. In particular, v2 `spec.elements` is preserved and is not rewritten as classic `panels`.
@@ -135,7 +138,13 @@ grafana-util dashboard export --profile prod --native --output-dir ./dashboards 
 grafana-util dashboard export --profile prod --without-raw --without-prompt --without-provisioning --resource-format v2 --resource-namespace stacks-123 --output-dir ./dashboards --overwrite
 ```
 
+```bash
+# Prepare native v2 artifacts for migration while retaining their spec and ownership.
+grafana-util dashboard export --profile prod --resource-format v2 --portable-v2 --output-dir ./dashboards --overwrite
+```
+
 ## Related commands
+
 - [dashboard dependencies](./dashboard-dependencies.md)
 - [dashboard import](./dashboard-import.md)
 - [dashboard diff](./dashboard-diff.md)

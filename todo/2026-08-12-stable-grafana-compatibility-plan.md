@@ -2,13 +2,22 @@
 
 ## Status
 
-- State: in progress (SGC-000 through SGC-002 complete; SGC-003 and SGC-004 remain separate slices)
+- State: implementation complete; SGC-003/004 final combined checks recorded in the 2026-10-12 follow-through
 - Date: 2026-08-12
 - Source review: `todo/2026-08-12-upstream-grafana-compatibility-review.md`
 - Scope: Grafana 12.x and 13.x using released, stable APIs and officially
   released Grafana images only
 
-Current evidence (2026-10-11): SGC-000/001/002 are implemented; the maintained
+Current evidence (2026-10-12): SGC-003/004 are implemented as bounded read-only
+Playlist v1 and opt-in native-v2 server-metadata portability. Direct isolated
+12.0.10/13.2.1 acceptance verifies floor capability errors and current-server
+list/get, preserved opaque specs, destination import and managed-resource guards.
+The original folder-stripping proposal is superseded: preserve folder/ownership
+metadata; use import's explicit destination folder override when needed. No
+datasource or ownership migration is implied. See
+[implementation and final checks](2026-10-12-development-follow-through.md).
+
+Previous evidence (2026-10-11): SGC-000/001/002 are implemented; the maintained
 five-lane matrix passed with Rust 12.0.10/12.4.9/13.2.1 and Python datasource
 12.0.10/13.2.1. Older version references below describe their original execution
 evidence. SGC-003/004 remain proposals; see
@@ -105,53 +114,52 @@ Acceptance:
 
 ### `SGC-003` - Stable playlist read support
 
-- [ ] Extend the shared resource taxonomy with
+- [x] Extend the shared resource taxonomy with
   `playlist.grafana.app/v1`.
-- [ ] Add read-only playlist list, get, and describe behavior to
+- [x] Add read-only playlist list, get, and describe behavior to
   `grafana-util status resource`.
-- [ ] Reuse the shared App Platform collection/item, namespace, pagination,
-  response-identity, and history mechanics.
-- [ ] Capability-gate playlist resource access so Grafana 12.x servers without
+- [x] Reuse the shared App Platform collection/item, namespace, pagination and
+  response-identity mechanics; history is not part of list/get/describe.
+- [x] Capability-gate playlist resource access so Grafana 12.x servers without
   the stable resource report it as unavailable without affecting other status
   commands.
-- [ ] Add parser, response-kind, pagination, text/JSON output, and error tests.
-- [ ] Update bilingual command documentation and command-surface contracts.
-- [ ] Keep playlist create/update/delete/import/sync out of this slice.
+- [x] Add parser, response-kind, pagination, text/JSON output, and error tests.
+- [x] Update bilingual command documentation and command-surface contracts.
+- [x] Keep playlist create/update/delete/import/sync out of this slice.
 
 Acceptance:
 
-- [ ] `PlaylistList` and `Playlist` responses are validated strictly.
-- [ ] Empty collections, pagination, invalid identity, `401`, `403`, `404`, and
+- [x] `PlaylistList` and `Playlist` responses are validated strictly.
+- [x] Empty collections, pagination, invalid identity, `401`, `403`, `404`, and
   `5xx` retain truthful behavior.
-- [ ] Read-only live acceptance passes where the stable resource is available,
+- [x] Read-only live acceptance passes where the stable resource is available,
   and the Grafana 12.x floor produces the documented capability result.
-- [ ] Generated docs and contract checks pass.
+- [x] Generated docs and contract checks pass.
 
 ### `SGC-004` - Explicit portable dashboard v2 export
 
-- [ ] Preserve the current archival/round-trip export behavior and folder
+- [x] Preserve the current archival/round-trip export behavior and folder
   annotations as the default.
-- [ ] Add an explicit portable/share export choice for schema-v2 resources.
-- [ ] Keep Grafana 12.x archival/classic export behavior available when schema
+- [x] Add an explicit portable/share export choice for schema-v2 resources.
+- [x] Keep Grafana 12.x archival/classic export behavior available when schema
   v2 resource export is not supported by the server.
-- [ ] Strip only documented environment/server-owned metadata in portable mode,
-  including folder annotations removed by Grafana's UI export.
-- [ ] Preserve the complete dashboard v2 `spec` without interpreting panel or
+- [x] Strip only verified server metadata in portable mode; retain source folder
+  and ownership annotations rather than copying a different UI export policy.
+- [x] Preserve the complete dashboard v2 `spec` without interpreting panel or
   visualization fields.
-- [ ] Make output mode visible in CLI help, result summaries, and generated
-  documentation.
-- [ ] Add golden/fixture coverage proving archival and portable outputs differ
+- [x] Make output mode visible in CLI help and generated documentation.
+- [x] Add golden/fixture coverage proving archival and portable outputs differ
   only in the intended metadata.
 
 Acceptance:
 
-- [ ] Existing archival export fixtures remain unchanged.
-- [ ] Portable output omits `grafana.app/folder`,
-  `grafana.app/folderTitle`, and `grafana.app/folderUrl`.
-- [ ] Portable output remains valid for the documented import/share workflow.
-- [ ] Grafana 12.x export remains functional without selecting a schema-v2
+- [x] Existing archival export fixtures remain unchanged.
+- [x] Portable output preserves folder/ownership metadata and supports explicit
+  destination namespace/folder selection through resource-v2 import.
+- [x] Portable output remains valid for the documented import/share workflow.
+- [x] Grafana 12.x export remains functional without selecting a schema-v2
   resource route.
-- [ ] CLI, generated docs, and command-surface checks pass.
+- [x] CLI, generated docs, and command-surface checks pass.
 
 ## Dependencies and sequencing
 

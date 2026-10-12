@@ -20,6 +20,7 @@
 - `--include-history`：把逐版本 dashboard 歷史成品寫到每個匯出 org 範圍下的 `history/<uid>/vN.history.json`。
 - `--native`：`--resource-format all` 的簡化寫法；加入目標實際提供的所有 stable native dashboard resource lane。不能和明確的 `--resource-format` 同時使用。
 - `--resource-format`：加入原生 App Platform resource lane，可選 `none`（預設）、`v1`、`v2`、`all`。
+- `--portable-v2`：清除 native v2 lane 已知的伺服器 metadata。須搭配 `--resource-format v2|all` 或 `--native`，且目標必須提供 v2 API；其他 lane 維持原本輸出。
 - `--resource-namespace`：覆寫 resource export 使用的 App Platform namespace。resource-only export 必填；mixed export 未指定時，Grafana OSS 的 org 1 使用 `default`，其他 org 使用 `org-<id>`。
 - `--provider-name`、`--provider-org-id`、`--provider-path`：自訂產生的 provisioning provider 檔案。
 - `--provider-disable-deletion`、`--provider-allow-ui-updates`、`--provider-update-interval-seconds`：調整 provisioning 行為。
@@ -29,7 +30,9 @@
 
 ## 說明
 - 預設會寫出 `raw/`、`prompt/`、`provisioning/`。
-- 啟用 resource lane 時會使用 family layout：classic lanes 放到 `classic/`，原生 envelope 則原樣寫到 `resource-v1/objects/` 與／或 `resource-v2/objects/`。
+- 啟用 resource lane 時會使用 family layout：classic lanes 放到 `classic/`，原生 envelope 寫到 `resource-v1/objects/` 與／或 `resource-v2/objects/`。預設會原樣封存原生 envelope。
+- `--portable-v2` 完整保留 v2 `spec`、resource name、來源 namespace、folder annotation、自訂 labels／annotations 與 ownership metadata。只移除 `status`、已知 server ObjectMeta 欄位（`uid`、`resourceVersion`、`generation`、`creationTimestamp`、`deletionTimestamp`、`deletionGracePeriodSeconds`、`managedFields`、`selfLink`）、`grafana.app/deprecatedInternalID` label，以及三個 server annotations：`grafana.app/createdBy`、`grafana.app/updatedBy`、`grafana.app/updatedTimestamp`。未知 metadata 仍會保留。
+- Portable v2 export 要求每個 resource 都有穩定的 v2 Dashboard 身分，且 namespace 與此次要求一致。Resource-v2 import 以 `--resource-namespace` 選擇目的 namespace；artifact 保留的來源 namespace 不會覆寫目的地。來源 folder UID 不適用於目的地時，可透過 import 的 `--folder-uid` 取代。Ownership metadata 仍然可見；portable export 不會繞過 managed destination 的匯入保護。
 - 預設 export 仍然只產生 Classic，保留既有 `raw/`、`prompt/` 與 `provisioning/` 行為。若下一步要讓 import 自動選擇可用的 resource-v2，請使用 `--native`。
 - 寫入前會先 probe collection endpoint。明確指定 `v1` 或 `v2` 時，404 會直接報錯；`all` 只略過回傳 404 的版本，權限與伺服器錯誤不會被誤判成 unsupported。
 - Resource artifact 是給 `/apis/dashboard.grafana.app/...` 使用，不是 Grafana UI import；v2 的 `spec.elements` 會完整保留，不會轉成 classic `panels`。
@@ -133,6 +136,11 @@ grafana-util dashboard export --profile prod --native --output-dir ./dashboards 
 ```bash
 # 使用 resource-scoped token，只匯出 Grafana Cloud App Platform v2 resource。
 grafana-util dashboard export --profile prod --without-raw --without-prompt --without-provisioning --resource-format v2 --resource-namespace stacks-123 --output-dir ./dashboards --overwrite
+```
+
+```bash
+# 為 migration 準備 native v2 artifact，同時保留 spec 與 ownership。
+grafana-util dashboard export --profile prod --resource-format v2 --portable-v2 --output-dir ./dashboards --overwrite
 ```
 
 ## 相關指令

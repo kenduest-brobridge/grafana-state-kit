@@ -5,7 +5,9 @@
 //! - Lock expected fields for text/JSON paths that power human and machine users.
 
 use super::*;
-use crate::dashboard::list::render_dashboard_summary_text;
+use crate::dashboard::dashboard_rust_tests::make_common_args;
+use crate::dashboard::test_support;
+use serde_json::json;
 
 #[test]
 fn format_dashboard_summary_line_uses_uid_name_and_folder_details() {
@@ -62,7 +64,13 @@ fn render_dashboard_summary_text_uses_line_format() {
     .clone()];
 
     let lines = render_dashboard_summary_text(&summaries);
-    assert_eq!(lines, vec![format_dashboard_summary_line(&summaries[0])]);
+    assert_eq!(
+        lines,
+        vec![
+        "uid=abc name=CPU folder=Infra folderUid=infra path=Platform / Infra org=Main Org orgId=1"
+    ]
+    );
+    assert!(render_dashboard_summary_text(&[]).is_empty());
 }
 
 #[test]
@@ -208,9 +216,6 @@ fn render_dashboard_summary_csv_includes_sources_column_when_present() {
         "abc,CPU,Infra,infra,Platform / Infra,Main Org,1,\"Prom Main,Loki Logs\",\"loki_uid,prom_uid\""
     );
 }
-
-#[path = "dashboard_browse_workflow_rust_tests.rs"]
-mod dashboard_browse_workflow_rust_tests;
 
 #[test]
 fn render_dashboard_summary_json_returns_objects() {

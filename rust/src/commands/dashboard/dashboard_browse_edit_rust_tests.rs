@@ -1,4 +1,5 @@
 use super::*;
+use crate::dashboard::browse_support::build_dashboard_browse_document;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use serde_json::{json, Map, Value};
 

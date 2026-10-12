@@ -38,6 +38,26 @@ its own stable root contract.
 - A directory containing multiple access bundles is not, by itself, an
   export-root contract.
 
+### Controlled Alert Apply
+
+- Stored plans require `grafana-util-alert-plan` and `schemaVersion: 1`.
+  Approval remains the explicit `--approve` operation; no implicit wider
+  mutation permission comes from the plan or its `reviewed` field.
+- Only ready rule updates with the existing narrow allowed-field set are
+  executable. Validate all rows and payloads, reject unknown actions and
+  duplicate update identities, then read and compare every live rule with its
+  reviewed baseline before the first write. A changed, missing or unreadable
+  baseline stops the batch with zero writes.
+- Write failures stop further execution. The existing
+  `grafana-util-alert-apply-result` envelope adds `status`, `failedCount`,
+  `notAttemptedCount` and per-result `completed`/`failed`/`not-attempted` status.
+  `appliedCount` continues to count completed results. CLI output is emitted
+  before returning failure; raw server error bodies are not included.
+- A failed request does not prove the server made no change. Retry only after
+  checking live state and rebuilding the remaining plan. These checks do not
+  supply atomic server transactions or rollback and cannot prevent changes
+  after the preflight reads.
+
 ## Current Maintainer Rules
 
 - Do not add `scopeKind`, `org-root`, `all-orgs-root`, `workspace-root`, or

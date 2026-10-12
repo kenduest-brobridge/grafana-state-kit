@@ -15,6 +15,62 @@ use clap::Parser;
 use std::path::Path;
 
 #[test]
+fn status_capabilities_accepts_namespace_and_json_format() {
+    let args = parse_cli_from([
+        "grafana-util",
+        "status",
+        "capabilities",
+        "--namespace",
+        "team-a",
+        "--output-format",
+        "json",
+        "--profile",
+        "prod",
+    ]);
+    match args.command {
+        UnifiedCommand::Status {
+            command: StatusCommand::Capabilities(inner),
+        } => {
+            assert_eq!(inner.namespace, "team-a");
+            assert_eq!(inner.common.profile.as_deref(), Some("prod"));
+        }
+        _ => panic!("expected status capabilities"),
+    }
+}
+
+#[test]
+fn resource_playlist_parser_preserves_uid_and_explicit_api_mode() {
+    let args = parse_cli_from([
+        "grafana-util",
+        "status",
+        "resource",
+        "get",
+        "playlists/ops-rotation",
+        "--api-mode",
+        "v1",
+        "--namespace",
+        "team-a",
+    ]);
+    match args.command {
+        UnifiedCommand::Status {
+            command:
+                StatusCommand::Resource {
+                    command: ResourceCommand::Get(inner),
+                },
+        } => {
+            assert_eq!(inner.selector, "playlists/ops-rotation");
+            assert_eq!(inner.api_mode, ResourceApiMode::V1);
+            assert_eq!(inner.namespace, "team-a");
+        }
+        _ => panic!("expected resource get"),
+    }
+    let args = parse_cli_from(["grafana-util", "status", "resource", "list", "playlists"]);
+    assert!(matches!(args.command, UnifiedCommand::Status {
+        command: StatusCommand::Resource {command: ResourceCommand::List(inner)}
+    } if inner.kind == ResourceKind::Playlists));
+}
+
+#[test]
 fn ambiguous_root_subcommand_prefix_stays_on_clap_error_path() {
     let args = ["grafana-util", "da", "--help"];
     assert!(super::maybe_render_unified_help_from_os_args(args, false).is_none());

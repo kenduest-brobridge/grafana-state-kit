@@ -194,6 +194,34 @@ fn native_export_shortcut_conflicts_with_explicit_resource_format() {
 }
 
 #[test]
+fn parse_cli_portable_v2_export_is_opt_in_and_accepts_native_selection() {
+    let DashboardCommand::Export(default) = parse_cli_from(["grafana-util", "export"]).command
+    else {
+        unreachable!()
+    };
+    assert!(!default.portable_v2);
+    for selection in [
+        vec!["--resource-format", "v2"],
+        vec!["--resource-format", "all"],
+        vec!["--native"],
+    ] {
+        let mut command = vec!["grafana-util", "export", "--portable-v2"];
+        command.extend(selection);
+        let DashboardCommand::Export(args) = parse_cli_from(command).command else {
+            unreachable!()
+        };
+        assert!(args.portable_v2);
+        assert!(matches!(
+            args.resource_format,
+            DashboardResourceFormat::V2 | DashboardResourceFormat::All
+        ));
+    }
+    let help = render_dashboard_subcommand_help("export");
+    assert!(help.contains("--portable-v2"));
+    assert!(help.contains("preserving spec, folder, and ownership"));
+}
+
+#[test]
 fn parse_cli_supports_prompt_password() {
     let args = parse_cli_from([
         "grafana-util",

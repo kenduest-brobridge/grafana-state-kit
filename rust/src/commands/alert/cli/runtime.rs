@@ -10,11 +10,11 @@ use super::{
     build_auth_context, build_managed_policy_edit_preview_document,
     build_new_contact_point_scaffold_document, build_new_rule_scaffold_document_with_route,
     build_policies_export_document, build_route_preview, build_stable_route_label_value,
-    contact_point_output_path_for_name, execute_alert_plan_with_request, extract_policy_spec,
-    find_existing_rule_document, init_alert_runtime_layout, load_alert_resource_file,
-    load_or_init_policy_document, path_string, require_desired_dir, require_scaffold_name,
-    require_source_name, resource_kind_to_document_kind, rule_output_path_for_name,
-    scaffold_output_path, value_to_string, write_alert_resource_file, write_contact_point_scaffold,
+    contact_point_output_path_for_name, extract_policy_spec, find_existing_rule_document,
+    init_alert_runtime_layout, load_alert_resource_file, load_or_init_policy_document, path_string,
+    require_desired_dir, require_scaffold_name, require_source_name,
+    resource_kind_to_document_kind, rule_output_path_for_name, scaffold_output_path,
+    value_to_string, write_alert_resource_file, write_contact_point_scaffold,
     write_new_contact_point_scaffold, write_new_rule_scaffold, write_new_template_scaffold,
     AlertCliArgs, AlertCommandOutputFormat, AlertResourceKind, CONTACT_POINTS_SUBDIR, RULES_SUBDIR,
     TEMPLATES_SUBDIR,
@@ -123,17 +123,18 @@ pub(super) fn run_alert_apply_cli(args: &AlertCliArgs) -> Result<()> {
     }
     let document = load_alert_resource_file(plan_file, "Alert plan")?;
     let client = build_alert_http_client(args)?;
-    let result = execute_alert_plan_with_request(
+    let outcome = super::alert_runtime_support::execute_alert_plan_report_with_request(
         |method, path, params, payload| client.request_json(method, path, params, payload),
         &document,
         args.allow_policy_reset,
     )?;
     print_alert_action_document(
         "Alert apply",
-        &result,
+        &outcome.document,
         args.command_output
             .unwrap_or(AlertCommandOutputFormat::Text),
-    )
+    )?;
+    outcome.into_result().map(|_| ())
 }
 
 pub(super) fn run_alert_delete_cli(args: &AlertCliArgs) -> Result<()> {

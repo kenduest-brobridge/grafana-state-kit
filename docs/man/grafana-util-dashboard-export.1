@@ -42,6 +42,9 @@ shortcut for \-\-resource\-format all; add every stable native dashboard resourc
 .B \-\-resource\-format
 add native App Platform resource lanes: none (default), v1, v2, or all.
 .TP
+.B \-\-portable\-v2
+remove known server metadata from the native v2 lane. Requires \-\-resource\-format v2|all or \-\-native, and a served v2 API. Other lanes retain their normal output.
+.TP
 .B \-\-resource\-namespace
 override the App Platform namespace for resource export. It is required for resource\-only export; mixed exports default to default for Grafana OSS org 1 and org\-<id> for other orgs.
 .TP

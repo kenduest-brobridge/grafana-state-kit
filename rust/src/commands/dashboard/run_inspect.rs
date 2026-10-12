@@ -118,6 +118,7 @@ pub fn execute_dashboard_inspect_live(
         without_dashboard_provisioning: true,
         include_history: false,
         native: false,
+        portable_v2: false,
         resource_format: crate::dashboard::DashboardResourceFormat::None,
         resource_namespace: None,
         provisioning_provider_name: "grafana-utils-dashboards".to_string(),

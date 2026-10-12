@@ -89,6 +89,14 @@ Retained coverage map:
 
 ## Next convergence candidates, not changed
 
+Follow-through (2026-10-12): all remaining 51 dormant Dashboard cases were
+individually classified as current, unique behavior and restored to registered
+domain owners. The obsolete router was removed. See
+[the per-case map](2026-10-12-dashboard-test-reconciliation.md) and
+[development implementation and verification](2026-10-12-development-follow-through.md)
+for this later task's roadmap work. The inventory below records the earlier
+baseline rather than new outstanding test work.
+
 An additional confirmed registration gap requires different handling from
 duplicate deletion: `dashboard_list_render_rust_tests.rs` has no incoming Rust
 module declaration. It includes the browse workflow router and six children;

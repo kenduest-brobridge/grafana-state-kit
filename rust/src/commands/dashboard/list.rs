@@ -18,6 +18,10 @@ use super::{
     DEFAULT_FOLDER_UID, DEFAULT_UNKNOWN_UID,
 };
 
+#[cfg(test)]
+#[path = "dashboard_list_render_rust_tests.rs"]
+mod tests;
+
 #[path = "list_render.rs"]
 mod list_render;
 #[path = "list/source_metadata.rs"]

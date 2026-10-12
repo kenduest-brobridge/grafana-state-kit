@@ -144,6 +144,13 @@ pub struct ExportArgs {
     )]
     pub resource_format: DashboardResourceFormat,
     #[arg(
+        long = "portable-v2",
+        default_value_t = false,
+        help = "Remove known server metadata from native v2 artifacts while preserving spec, folder, and ownership. Requires --resource-format v2|all or --native.",
+        help_heading = "Export Variant Options"
+    )]
+    pub portable_v2: bool,
+    #[arg(
         long = "resource-namespace",
         value_name = "NAMESPACE",
         help = "Override the App Platform namespace used for dashboard resource export. Required for resource-only export.",

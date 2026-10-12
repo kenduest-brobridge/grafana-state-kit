@@ -61,6 +61,12 @@ fn list_row(kind: ResourceKind, item: &Map<String, Value>) -> Vec<String> {
             string_field(item, "name", ""),
             string_field(item, "address", ""),
         ],
+        ResourceKind::Playlists => vec![
+            resource_name,
+            spec_title,
+            spec.map(|value| string_field(value, "interval", ""))
+                .unwrap_or_default(),
+        ],
         ResourceKind::Receivers
         | ResourceKind::RoutingTrees
         | ResourceKind::TemplateGroups
@@ -81,6 +87,7 @@ fn list_headers(kind: ResourceKind) -> [&'static str; 3] {
         ResourceKind::Datasources => ["uid", "name", "type"],
         ResourceKind::AlertRules => ["uid", "title", "folder_uid"],
         ResourceKind::Orgs => ["id", "name", "address"],
+        ResourceKind::Playlists => ["uid", "title", "interval"],
         ResourceKind::Receivers
         | ResourceKind::RoutingTrees
         | ResourceKind::TemplateGroups
@@ -348,6 +355,25 @@ mod tests {
         assert_eq!(
             list_row(ResourceKind::Dashboards, &item),
             vec!["cpu-main", "CPU Main", ""]
+        );
+    }
+
+    #[test]
+    fn playlist_row_shows_uid_title_and_interval() {
+        let item = json!({
+            "metadata": {"name": "ops"},
+            "spec": {"title": "Ops rotation", "interval": "5m", "items": []}
+        })
+        .as_object()
+        .unwrap()
+        .clone();
+        assert_eq!(
+            list_headers(ResourceKind::Playlists),
+            ["uid", "title", "interval"]
+        );
+        assert_eq!(
+            list_row(ResourceKind::Playlists, &item),
+            ["ops", "Ops rotation", "5m"]
         );
     }
 }

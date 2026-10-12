@@ -10,7 +10,7 @@ Description: `status` is the user-facing read-only entrypoint. Use `live` for cu
 
 ## Command groups
 
-- Live Read-Only: `live`, `overview`, `resource`, `snapshot`
+- Live Read-Only: `live`, `capabilities`, `overview`, `resource`, `snapshot`
 - Staged Review: `staged`, `overview`
 
 Open this page when you know the task is read-only but you still need to decide whether the next step is a direct health check, a generic resource lookup, a project-wide overview, or a snapshot export for later review.
@@ -132,6 +132,49 @@ Use `overall` and `domains` for readiness gates.
 ## `staged`
 
 Purpose: render a readiness gate from staged artifacts.
+
+## `capabilities`
+
+Purpose: check dashboard list-read API availability for the current credentials
+and an explicit Grafana namespace before choosing a dashboard workflow.
+
+```bash
+grafana-util status capabilities --profile prod --namespace default --output-format json
+```
+
+The command makes three GET requests, each with `limit=1`: Classic
+`/api/search?type=dash-db&page=1`, and the dashboard resource `v1` and `v2`
+collection routes under `/apis/dashboard.grafana.app/`. It does not page through
+dashboards or modify Grafana. `--namespace` is required; `--org-id` scopes the
+credentials' organization independently and does not select the namespace.
+Choose the namespace used by your Grafana instance.
+
+JSON/YAML output contains `kind: grafana-dashboard-api-capabilities`,
+`schemaVersion: 1`, `namespace`, and `probes`. Each probe has `api`, `path`,
+`status`, `detail`, and `httpStatus` when a non-success HTTP response was received.
+An empty, valid list is `available`. This establishes only a list read, not write
+permission, dashboard inventory completeness, or acceptance of a particular
+dashboard document. Probe results are observations from this run and are not cached.
+
+| Status | Meaning |
+| --- | --- |
+| `available` | The expected list contract was returned. |
+| `unauthorized` | HTTP 401; fix authentication and retry. |
+| `forbidden` | HTTP 403; check read permissions and retry. |
+| `not-served` | HTTP 404; the requested route or namespace was not found. |
+| `failed` | Another HTTP error, including 5xx, or a transport failure. |
+| `malformed-response` | Invalid JSON, no response body, or an unexpected list contract. |
+
+401/403, 404, failures, and malformed responses do not prove global API support
+or lack of support. In particular, a 404 can reflect the selected namespace or a
+proxy route. The command prints all probe observations and exits successfully
+even if a probe fails; automation should inspect each `status`. Invalid local
+arguments or connection setup still produce a command error. Reports omit
+credentials, response bodies, and transport error details.
+
+API routes and list semantics follow the official
+[Dashboard API](https://grafana.com/docs/grafana/latest/developer-resources/api-reference/http-api/dashboard/)
+and [Classic search API](https://grafana.com/docs/grafana/latest/developer-resources/api-reference/http-api/api-legacy/folder_dashboard_search/).
 
 ## `overview`
 

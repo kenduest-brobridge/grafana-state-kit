@@ -70,3 +70,43 @@ health 讀取失敗時：
 automation 如果需要 Grafana build 資訊，讀
 `discovery.instance.health.version` 與 `discovery.instance.health.commit`。
 readiness gate 仍應讀 `overall` 與 `domains`。
+
+## `capabilities`
+
+用途：在選擇 dashboard 工作流程前，確認目前憑證及指定 Grafana namespace
+可讀取哪些 dashboard 清單 API。
+
+```bash
+grafana-util status capabilities --profile prod --namespace default --output-format json
+```
+
+此命令只送出三次 GET，各帶 `limit=1`：Classic
+`/api/search?type=dash-db&page=1`，以及 `/apis/dashboard.grafana.app/` 下的
+`v1`、`v2` dashboard collection。不翻頁、不修改 Grafana。
+必須明確指定 `--namespace`；請填入該 Grafana 實例使用的 namespace。
+`--org-id` 另行限定組織，不會替你選擇 namespace。
+
+JSON/YAML 包含 `kind: grafana-dashboard-api-capabilities`、`schemaVersion: 1`、
+`namespace` 及 `probes`。每筆 probe 包含 `api`、`path`、`status`、`detail`；
+收到非成功 HTTP 回應時另有 `httpStatus`。
+有效的空清單也算 `available`，但只代表清單讀取成功，不代表有寫入權限、
+清單完整，或某份 dashboard 文件一定可匯入。結果只記錄本次觀察，不快取。
+
+| 狀態 | 意義 |
+| --- | --- |
+| `available` | 回應符合預期清單格式。 |
+| `unauthorized` | HTTP 401；修正認證後重試。 |
+| `forbidden` | HTTP 403；確認讀取權限後重試。 |
+| `not-served` | HTTP 404；指定路由或 namespace 找不到。 |
+| `failed` | 其他 HTTP 錯誤（含 5xx）或傳輸失敗。 |
+| `malformed-response` | JSON 無效、無本文，或清單格式不符。 |
+
+401/403、404、失敗及格式不符，都不能判定整個實例是否支援該 API。
+尤其 404 可能來自指定 namespace 或代理路由。命令會輸出全部 probe 結果；
+即使某次 probe 失敗，命令仍成功結束，automation 應檢查各筆 `status`。
+本機參數無效或連線設定失敗仍會回報命令錯誤。
+報告不包含憑證、回應本文或傳輸錯誤的細節。
+
+路由及清單語意參照官方
+[Dashboard API](https://grafana.com/docs/grafana/latest/developer-resources/api-reference/http-api/dashboard/)
+與 [Classic search API](https://grafana.com/docs/grafana/latest/developer-resources/api-reference/http-api/api-legacy/folder_dashboard_search/)。

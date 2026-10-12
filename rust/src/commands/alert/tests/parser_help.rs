@@ -139,6 +139,10 @@ fn apply_help_mentions_controlled_live_apply_boundary() {
     assert!(help.contains("Controlled live apply"));
     assert!(help.contains("condition, data, for, noDataState, or execErrState"));
     assert!(help.contains("fail closed"));
+    assert!(help.contains("before the first write"));
+    assert!(help.contains("zero writes"));
+    assert!(help.contains("completed/failed/not-attempted"));
+    assert!(help.contains("exits nonzero"));
 }
 
 #[test]

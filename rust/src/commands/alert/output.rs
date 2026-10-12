@@ -78,8 +78,20 @@ pub(crate) fn render_alert_action_text(title: &str, document: &Value) -> Vec<Str
         }
     }
     if let Some(results) = document.get("results").and_then(Value::as_array) {
+        let is_apply =
+            document.get("kind").and_then(Value::as_str) == Some("grafana-util-alert-apply-result");
+        if is_apply {
+            lines.push(format!(
+                "Apply: status={} completed={} failed={} not-attempted={}",
+                document["status"].as_str().unwrap_or("unknown"),
+                document["appliedCount"],
+                document["failedCount"],
+                document["notAttemptedCount"],
+            ));
+        }
         lines.push("Results:".to_string());
-        for result in results.iter().take(20) {
+        let limit = if is_apply { results.len() } else { 20 };
+        for result in results.iter().take(limit) {
             let kind = result
                 .get("kind")
                 .and_then(Value::as_str)
@@ -92,10 +104,14 @@ pub(crate) fn render_alert_action_text(title: &str, document: &Value) -> Vec<Str
                 .get("action")
                 .and_then(Value::as_str)
                 .unwrap_or("unknown");
-            lines.push(format!("- {kind} {identity} action={action}"));
+            let mut line = format!("- {kind} {identity} action={action}");
+            if let Some(status) = result.get("status").and_then(Value::as_str) {
+                line.push_str(&format!(" status={status}"));
+            }
+            lines.push(line);
         }
-        if results.len() > 20 {
-            lines.push(format!("- ... {} more results", results.len() - 20));
+        if results.len() > limit {
+            lines.push(format!("- ... {} more results", results.len() - limit));
         }
     }
     lines

@@ -17,7 +17,17 @@
 Create、delete、contact-point、mute-timing、policy、template，以及語意較不明確的 rule field 變更都會 fail closed。請用 `alert plan` 和 review output 保留這些較廣變更的可見性，不要直接 apply。
 
 第一次寫入前會驗證所有預計執行的變更與實際更新內容。允許欄位檢查會比較計畫中的 live 與 desired 規則值，不會只信任 `changedFields`。
-執行時若 API 失敗，先前已完成的合法更新仍可能保留；重試前請先確認回報結果。
+計畫文件必須使用 `schemaVersion: 1`。
+
+第一次寫入前，apply 會重新讀取所有待更新的 rule，並使用與 `alert plan` 相同的正規化比較方式，核對已審閱的 `live` 基線。
+只要任何 rule 已變更、已不存在，或讀取失敗，整份計畫就會停止，且不會寫入任何更新。這項檢查不會鎖住 Grafana；讀取完成後仍可能有其他人修改 rule。
+
+更新請求失敗時，apply 會停止後續寫入，並以狀態碼 1 結束。先前已完成的更新會保留。
+文字與 JSON 輸出會逐筆標示 `completed`（已完成）、`failed`（請求失敗）或 `not-attempted`（尚未送出）；`appliedCount` 只計算已完成的更新。
+請求失敗不代表該 rule 的 live 狀態已確定，重試前請先核對。Apply 不會自動重試或回復先前的更新。
+
+使用 `--output-format json` 時，結果會先寫入 stdout，再將失敗摘要寫入 stderr。
+結果的 `status` 為 `completed`、`partial` 或 `failed`，另包含 `failedCount`、`notAttemptedCount` 與逐筆的 `results[].status`。
 
 ## 採用前後對照
 
@@ -57,6 +67,7 @@ grafana-util alert apply --url http://localhost:3000 --token "$GRAFANA_API_TOKEN
 
 - 如果 apply 不肯執行，先確認你給的是 reviewed plan，而且有帶 `--approve`
 - 如果 live 結果和預期 plan 差很多，先核對認證、org scope，以及 reviewed plan 是否仍對應目前目標 Grafana
+- 如果基線檢查或更新失敗，先核對目前的 live rule、重建計畫，再審閱剩餘變更後重新套用
 - 如果自動化要吃輸出，建議用 `--output-format json`，並先驗證結果 shape 再判定成功
 
 ## 相關命令

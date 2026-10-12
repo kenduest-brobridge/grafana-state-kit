@@ -14,6 +14,10 @@ use super::{
 
 pub(crate) const BROWSE_EDIT_MESSAGE: &str = "Edited by grafana-utils dashboard browse";
 
+#[cfg(test)]
+#[path = "dashboard_browse_edit_rust_tests.rs"]
+mod tests;
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct DashboardEditDraft {
     pub uid: String,

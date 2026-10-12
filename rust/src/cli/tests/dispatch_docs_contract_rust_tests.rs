@@ -52,6 +52,48 @@ fn dispatch_routes_status_live_to_project_status_handler() {
 }
 
 #[test]
+fn dispatch_routes_capabilities_with_namespace_and_color() {
+    let args = parse_cli_from([
+        "grafana-util",
+        "--color",
+        "never",
+        "status",
+        "capabilities",
+        "--namespace",
+        "team-a",
+        "--output-format",
+        "json",
+    ]);
+    let invoked = RefCell::new(false);
+    dispatch_with_handlers(
+        args,
+        |_| panic!("unexpected dashboard route"),
+        |_| panic!("unexpected datasource route"),
+        |_| panic!("unexpected sync route"),
+        |_| panic!("unexpected alert route"),
+        |_| panic!("unexpected access route"),
+        |_| panic!("unexpected profile route"),
+        |_| panic!("unexpected snapshot route"),
+        |_| panic!("unexpected resource route"),
+        |_| panic!("unexpected overview route"),
+        |status| {
+            assert_eq!(status.color, crate::common::CliColorChoice::Never);
+            match status.command {
+                crate::project_status_command::ProjectStatusSubcommand::Capabilities(inner) => {
+                    assert_eq!(inner.namespace, "team-a");
+                    assert_eq!(inner.common.color, crate::common::CliColorChoice::Never);
+                    *invoked.borrow_mut() = true;
+                }
+                _ => panic!("unexpected status route"),
+            }
+            Ok(())
+        },
+    )
+    .unwrap();
+    assert!(*invoked.borrow());
+}
+
+#[test]
 fn dispatch_routes_export_dashboard_to_dashboard_handler() {
     let routed = RefCell::new(Vec::<String>::new());
     let args: CliArgs = parse_cli_from([

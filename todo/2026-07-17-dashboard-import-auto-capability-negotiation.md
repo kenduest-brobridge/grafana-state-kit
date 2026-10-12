@@ -9,6 +9,14 @@
 
 ## Reconciliation — 2026-10-11
 
+Follow-through (2026-10-12): the remaining operator diagnostic slice is now
+implemented as `status capabilities --namespace ...`: three bounded read
+probes, truthful permission/route/error classification and text/JSON/YAML output.
+Isolated 12.0.10/13.2.1 acceptance and combined verification are recorded in
+[the follow-through](2026-10-12-development-follow-through.md). The dated
+baseline below and original checklist are historical; v1 import and a generic
+capability registry are not implied by this delivery.
+
 - Import now defaults to `auto`; source classification, native-v2 probing,
   independent Classic raw fallback on 404, and routing diagnostics are shipped.
 - Explicit `resource-v2` retains its native-only, single-namespace contract.

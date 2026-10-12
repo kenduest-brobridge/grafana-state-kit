@@ -33,8 +33,8 @@ use crate::datasource::{DatasourceExportArgs, DatasourceGroupCommand};
 use crate::overview::{OverviewArgs, OverviewCommand};
 use crate::profile_cli::ProfileCliArgs;
 use crate::project_status_command::{
-    ProjectStatusLiveArgs, ProjectStatusStagedArgs, PROJECT_STATUS_LIVE_HELP_TEXT,
-    PROJECT_STATUS_STAGED_HELP_TEXT,
+    ProjectStatusLiveArgs, ProjectStatusStagedArgs, StatusCapabilitiesArgs,
+    PROJECT_STATUS_LIVE_HELP_TEXT, PROJECT_STATUS_STAGED_HELP_TEXT, STATUS_CAPABILITIES_HELP_TEXT,
 };
 use crate::resource::ResourceCommand;
 use crate::snapshot::SnapshotCommand;
@@ -56,6 +56,8 @@ const DASHBOARD_EXPORT_LAYOUT_HELP_TEXT: &str = "Examples:\n\n  Preview layout r
 #[derive(Debug, Clone, Subcommand)]
 #[allow(clippy::large_enum_variant)]
 pub enum StatusCommand {
+    #[command(about = "Check readable dashboard API capabilities in one namespace.", after_help = STATUS_CAPABILITIES_HELP_TEXT)]
+    Capabilities(StatusCapabilitiesArgs),
     #[command(
         about = "Render shared project-wide live status.",
         after_help = PROJECT_STATUS_LIVE_HELP_TEXT

@@ -51,6 +51,28 @@ Detailed requirements for the current dashboard staged export contract.
 - `schemaVersion` should bump only for real breaking changes to the dashboard
   root-manifest or staged input semantics.
 
+## Native-v2 Portable Export
+
+`dashboard export --portable-v2` is opt-in and requires a served resource-v2
+lane. Archival export is unchanged by default; classic and v1 artifacts are
+unaffected. The transform preserves the complete opaque `spec`, resource
+name/namespace, folder annotations, ownership and unknown metadata.
+
+Remove only these verified source/server fields:
+
+- ObjectMeta: `uid`, `resourceVersion`, `generation`, `creationTimestamp`,
+  `deletionTimestamp`, `deletionGracePeriodSeconds`, `managedFields`, `selfLink`.
+- Annotations: `grafana.app/createdBy`, `grafana.app/updatedBy`,
+  `grafana.app/updatedTimestamp`.
+- Label: `grafana.app/deprecatedInternalID`; top-level `status`.
+
+This is metadata portability, not datasource, folder or ownership migration.
+Import still validates the explicit namespace and retains managed-resource
+guards and destination resource-version handling. Policy evidence:
+[Kubernetes ObjectMeta](https://github.com/kubernetes/apimachinery/blob/v0.34.1/pkg/apis/meta/v1/types.go)
+and [Grafana pull processing](https://github.com/grafana/gcx/blob/main/internal/resources/process/serverfields.go).
+
+
 ## Prompt Placeholder Boundary
 
 - `prompt/` artifacts may contain both dashboard-variable references and

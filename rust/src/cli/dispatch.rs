@@ -108,6 +108,15 @@ fn wrap_project_status(
     command: StatusCommand,
 ) -> Option<ProjectStatusCliArgs> {
     match command {
+        StatusCommand::Capabilities(mut inner) => {
+            if inner.common.color == CliColorChoice::Auto {
+                inner.common.color = color;
+            }
+            Some(ProjectStatusCliArgs {
+                color,
+                command: ProjectStatusSubcommand::Capabilities(inner),
+            })
+        }
         StatusCommand::Live(inner) => Some(ProjectStatusCliArgs {
             color,
             command: ProjectStatusSubcommand::Live(inner),

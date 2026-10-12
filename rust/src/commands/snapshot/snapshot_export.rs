@@ -32,6 +32,7 @@ pub fn build_snapshot_dashboard_export_args(
         without_dashboard_provisioning: false,
         include_history: false,
         native: false,
+        portable_v2: false,
         resource_format: dashboard::DashboardResourceFormat::None,
         resource_namespace: None,
         provisioning_provider_name: "grafana-utils-dashboards".to_string(),

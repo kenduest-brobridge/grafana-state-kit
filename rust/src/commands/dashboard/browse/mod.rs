@@ -178,3 +178,7 @@ mod tests {
         assert!(uses_local_browse_source(&args));
     }
 }
+
+#[cfg(all(test, feature = "tui"))]
+#[path = "../dashboard_browse_tree_state_rust_tests.rs"]
+mod tree_state_tests;

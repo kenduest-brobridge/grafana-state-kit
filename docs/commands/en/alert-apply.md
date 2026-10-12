@@ -18,8 +18,23 @@ Create, delete, contact-point, mute-timing, policy, template, and ambiguous rule
 
 Every proposed mutation and its effective update payload are validated before the first write.
 The allowed-field check compares the plan's live and desired rule values rather
-than trusting `changedFields` alone. Runtime API failures can still leave earlier
-valid updates applied; review the reported result before retrying.
+than trusting `changedFields` alone. Stored plans must use `schemaVersion: 1`.
+
+Before the first write, apply reads every rule to be updated and compares it with
+the reviewed `live` baseline using the same normalized comparison as `alert plan`.
+A changed or missing rule, or a failed read, stops the whole apply with zero
+writes. This check does not lock Grafana against changes made after the reads.
+
+If an update request fails, apply stops later writes and exits with status 1.
+Earlier completed updates remain applied. Text and JSON output identify each
+update as `completed`, `failed`, or `not-attempted`; `appliedCount` counts only
+completed updates. A failed request does not establish the final live state of
+that rule, so verify it before retrying. Apply does not automatically retry or
+roll back updates.
+
+With `--output-format json`, the result is written to stdout before the failure
+summary on stderr. The result `status` is `completed`, `partial`, or `failed`,
+with `failedCount`, `notAttemptedCount`, and per-rule `results[].status`.
 
 ## Before / After
 
@@ -54,6 +69,7 @@ grafana-util alert apply --url http://localhost:3000 --basic-user admin --basic-
 
 - if apply refuses to run, confirm that the plan file is the reviewed artifact and that `--approve` is present
 - if the live result differs from the expected plan, re-check credentials, org scope, and whether the reviewed plan matches the current target Grafana
+- if a baseline check or update fails, inspect current live rules, rebuild the plan, and review the remaining changes before applying again
 - if automation reads the output, prefer `--output-format json` and validate the result shape before treating the apply as successful
 
 ## Related commands

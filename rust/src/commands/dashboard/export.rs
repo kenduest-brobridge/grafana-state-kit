@@ -35,6 +35,7 @@ pub use self::export_paths::{build_export_variant_dirs, build_output_path};
 use self::export_provisioning::{build_provisioning_config, write_yaml_document};
 #[allow(unused_imports)]
 pub(crate) use self::export_render::{format_export_progress_line, format_export_verbose_line};
+use self::export_resource::validate_portable_v2_export_args;
 use self::export_root_bundle::write_all_orgs_root_export_bundle;
 #[allow(unused_imports)]
 pub(crate) use self::export_scope::{
@@ -56,6 +57,7 @@ pub(crate) fn export_dashboards_with_request<F>(
 where
     F: FnMut(Method, &str, &[(String, String)], Option<&Value>) -> Result<Option<Value>>,
 {
+    validate_portable_v2_export_args(args)?;
     if args.all_orgs {
         let mut total = 0usize;
         let mut root_items = Vec::new();
@@ -98,6 +100,7 @@ where
 }
 
 pub fn export_dashboards_with_client(client: &JsonHttpClient, args: &ExportArgs) -> Result<usize> {
+    validate_portable_v2_export_args(args)?;
     if args.all_orgs {
         return export_dashboards_with_request(
             |method, path, params, payload| client.request_json(method, path, params, payload),
@@ -123,6 +126,7 @@ pub fn export_dashboards_with_client(client: &JsonHttpClient, args: &ExportArgs)
 }
 
 pub(crate) fn export_dashboards_with_org_clients(args: &ExportArgs) -> Result<usize> {
+    validate_portable_v2_export_args(args)?;
     if args.all_orgs {
         let admin_api = build_api_client(&args.common)?;
         let admin_dashboard = DashboardResourceClient::new(admin_api.http_client());
@@ -379,6 +383,7 @@ mod export_tests {
             without_dashboard_provisioning: true,
             include_history: false,
             native: false,
+            portable_v2: false,
             resource_format: crate::dashboard::DashboardResourceFormat::None,
             resource_namespace: None,
             provisioning_provider_name: "grafana-utils-dashboards".to_string(),

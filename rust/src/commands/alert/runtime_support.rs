@@ -6,7 +6,7 @@
 //! - Preserve request semantics so CLI/runtime callers receive a stable sync-ready
 //!   shape across execution paths.
 
-use crate::common::{message, tool_version, value_as_object, Result};
+use crate::common::{message, tool_version, value_as_object, GrafanaCliError, Result};
 use crate::review_contract::{review_apply_result_entry, ReviewApplyResult};
 use reqwest::Method;
 use serde_json::{json, Map, Value};
@@ -260,7 +260,15 @@ fn require_matching_rule_identity(
     Ok(())
 }
 
-fn prepare_controlled_alert_live_apply_row(row: &Map<String, Value>) -> Result<Map<String, Value>> {
+struct ControlledRuleUpdate {
+    identity: String,
+    payload: Map<String, Value>,
+    baseline: Value,
+}
+
+fn prepare_controlled_alert_live_apply_row(
+    row: &Map<String, Value>,
+) -> Result<ControlledRuleUpdate> {
     let action = row
         .get(runtime_schema::row::ACTION)
         .and_then(Value::as_str)
@@ -331,14 +339,33 @@ fn prepare_controlled_alert_live_apply_row(row: &Map<String, Value>) -> Result<M
             "controlled alert live apply changedFields does not match payload changes for {identity}."
         )));
     }
-    Ok(desired)
+    Ok(ControlledRuleUpdate {
+        identity: identity.to_string(),
+        payload: desired,
+        baseline: build_compare_document(RULE_KIND, &normalize_compare_payload(RULE_KIND, &live)),
+    })
 }
 
-pub fn execute_alert_plan_with_request<F>(
+#[derive(Debug)]
+pub(super) struct AlertPlanApplyOutcome {
+    pub(super) document: Value,
+    failure: Option<GrafanaCliError>,
+}
+
+impl AlertPlanApplyOutcome {
+    pub(super) fn into_result(self) -> Result<Value> {
+        match self.failure {
+            Some(error) => Err(error),
+            None => Ok(self.document),
+        }
+    }
+}
+
+pub(super) fn execute_alert_plan_report_with_request<F>(
     mut request_json: F,
     plan_document: &Value,
     allow_policy_reset: bool,
-) -> Result<Value>
+) -> Result<AlertPlanApplyOutcome>
 where
     F: FnMut(Method, &str, &[(String, String)], Option<&Value>) -> Result<Option<Value>>,
 {
@@ -350,49 +377,163 @@ where
     {
         return Err(message("Alert plan document kind is not supported."));
     }
+    if plan
+        .get(runtime_schema::document::SCHEMA_VERSION)
+        .and_then(Value::as_i64)
+        != Some(ALERT_PLAN_SCHEMA_VERSION)
+    {
+        return Err(message(
+            "Alert plan document schemaVersion is not supported.",
+        ));
+    }
     let rows = plan
         .get(runtime_schema::document::ROWS)
         .and_then(Value::as_array)
         .ok_or_else(|| message("Alert plan document is missing rows."))?;
 
     let mut prepared = Vec::new();
+    let mut identities = BTreeSet::new();
     for row in rows {
         let row = row_object(row, "Alert plan row")?;
         let action = row
             .get(runtime_schema::row::ACTION)
             .and_then(Value::as_str)
             .unwrap_or("");
-        if !matches!(action, "create" | "update" | "delete") {
-            continue;
+        match action {
+            "noop" | "blocked" => continue,
+            "create" | "update" | "delete" => {}
+            _ => {
+                return Err(message(format!(
+                    "Alert plan row action {action:?} is not supported."
+                )))
+            }
         }
-        let payload = prepare_controlled_alert_live_apply_row(row)?;
-        prepared.push((row, payload));
+        let update = prepare_controlled_alert_live_apply_row(row)?;
+        if !identities.insert(update.identity.clone()) {
+            return Err(message(format!(
+                "Duplicate alert plan rule identity {:?}.",
+                update.identity
+            )));
+        }
+        prepared.push(update);
+    }
+
+    for update in &prepared {
+        let fresh = fetch_live_compare_document_with_request(
+            &mut request_json,
+            RULE_KIND,
+            &update.payload,
+        )
+        .map_err(|error| {
+            let status = error
+                .status_code()
+                .map(|code| format!(" HTTP {code}"))
+                .unwrap_or_default();
+            message(format!(
+                "Alert apply could not verify live baseline for {} ({}{status}). No updates were written.",
+                update.identity,
+                error.kind()
+            ))
+        })?;
+        if fresh.as_ref() != Some(&update.baseline) {
+            return Err(message(format!(
+                "Alert rule {} baseline changed or is missing. No updates were written. Rebuild and review the plan before applying.",
+                update.identity
+            )));
+        }
     }
 
     let mut apply_result = ReviewApplyResult::new("apply");
-    for (row, payload) in prepared {
-        let kind = row
-            .get(runtime_schema::row::KIND)
-            .and_then(Value::as_str)
-            .ok_or_else(|| message("Alert plan row is missing kind."))?;
-        let identity = row
-            .get(runtime_schema::row::IDENTITY)
-            .and_then(Value::as_str)
-            .unwrap_or_default();
-        let response =
-            apply_prepared_rule_update_with_request(&mut request_json, identity, &payload)?;
-        apply_result.push_result(review_apply_result_entry(
-            kind, identity, "update", response,
-        ));
+    let mut unfinished_results = Vec::new();
+    let mut failure = None;
+    for (index, update) in prepared.iter().enumerate() {
+        match apply_prepared_rule_update_with_request(
+            &mut request_json,
+            &update.identity,
+            &update.payload,
+        ) {
+            Ok(response) => {
+                let mut result =
+                    review_apply_result_entry(RULE_KIND, &update.identity, "update", response);
+                result["status"] = Value::String("completed".to_string());
+                apply_result.push_result(result);
+            }
+            Err(error) => {
+                let mut failed =
+                    review_apply_result_entry(RULE_KIND, &update.identity, "update", Value::Null);
+                failed["status"] = Value::String("failed".to_string());
+                failed["error"] = json!({
+                    "kind": error.kind(),
+                    "statusCode": error.status_code(),
+                    "message": "Update request failed. Verify current live state before retrying.",
+                });
+                unfinished_results.push(failed);
+                for remaining in prepared.iter().skip(index + 1) {
+                    let mut result = review_apply_result_entry(
+                        RULE_KIND,
+                        &remaining.identity,
+                        "update",
+                        Value::Null,
+                    );
+                    result["status"] = Value::String("not-attempted".to_string());
+                    unfinished_results.push(result);
+                }
+                let completed = prepared[..index]
+                    .iter()
+                    .map(|item| item.identity.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                let not_attempted = prepared[index + 1..]
+                    .iter()
+                    .map(|item| item.identity.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                failure = Some(message(format!(
+                    "Alert apply stopped after an update request failed. Completed: [{completed}]; failed: [{}]; not-attempted: [{not_attempted}]. Verify current live state before retrying.",
+                    update.identity
+                )));
+                break;
+            }
+        }
     }
 
-    Ok(apply_result.into_value_with_fields([
+    let status = if failure.is_none() {
+        "completed"
+    } else if apply_result.results.is_empty() {
+        "failed"
+    } else {
+        "partial"
+    };
+    let mut document = apply_result.into_value_with_fields([
         (
             "kind",
             Value::String("grafana-util-alert-apply-result".to_string()),
         ),
         ("allowPolicyReset", Value::Bool(allow_policy_reset)),
-    ]))
+        ("status", Value::String(status.to_string())),
+        ("failedCount", json!(usize::from(failure.is_some()))),
+        (
+            "notAttemptedCount",
+            json!(unfinished_results.len().saturating_sub(1)),
+        ),
+    ]);
+    document["results"]
+        .as_array_mut()
+        .expect("apply result contains results")
+        .extend(unfinished_results);
+    Ok(AlertPlanApplyOutcome { document, failure })
+}
+
+pub fn execute_alert_plan_with_request<F>(
+    request_json: F,
+    plan_document: &Value,
+    allow_policy_reset: bool,
+) -> Result<Value>
+where
+    F: FnMut(Method, &str, &[(String, String)], Option<&Value>) -> Result<Option<Value>>,
+{
+    execute_alert_plan_report_with_request(request_json, plan_document, allow_policy_reset)?
+        .into_result()
 }
 
 pub fn init_alert_runtime_layout(root: &Path) -> Result<Value> {

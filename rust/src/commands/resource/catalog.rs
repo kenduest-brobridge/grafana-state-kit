@@ -26,13 +26,14 @@ pub(crate) struct ResourceDescribeRecord {
     pub(crate) description: &'static str,
 }
 
-pub(crate) fn supported_kinds() -> [ResourceKind; 11] {
+pub(crate) fn supported_kinds() -> [ResourceKind; 12] {
     [
         ResourceKind::Dashboards,
         ResourceKind::Folders,
         ResourceKind::Datasources,
         ResourceKind::AlertRules,
         ResourceKind::Orgs,
+        ResourceKind::Playlists,
         ResourceKind::Receivers,
         ResourceKind::RoutingTrees,
         ResourceKind::TemplateGroups,
@@ -99,6 +100,7 @@ pub(crate) fn parse_selector(input: &str) -> Result<ResourceSelector> {
         "datasources" => ResourceKind::Datasources,
         "alert-rules" => ResourceKind::AlertRules,
         "orgs" => ResourceKind::Orgs,
+        "playlists" => ResourceKind::Playlists,
         "receivers" => ResourceKind::Receivers,
         "routing-trees" => ResourceKind::RoutingTrees,
         "template-groups" => ResourceKind::TemplateGroups,
@@ -142,6 +144,17 @@ mod tests {
         let selector = parse_selector("datasources/prom-main").unwrap();
         assert_eq!(selector.kind, ResourceKind::Datasources);
         assert_eq!(selector.identity, "prom-main");
+    }
+
+    #[test]
+    fn playlist_selector_and_description_use_stable_uid_resource_api() {
+        let selector = parse_selector("playlists/ops-rotation").unwrap();
+        assert_eq!(selector.kind, ResourceKind::Playlists);
+        assert_eq!(selector.identity, "ops-rotation");
+        let records = describe_records(Some(selector.kind));
+        assert_eq!(records[0].selector, "playlists/<uid>");
+        assert!(records[0].get_endpoint.contains("playlist.grafana.app/v1"));
+        assert_eq!(supported_kind_records().len(), 12);
     }
 
     #[test]

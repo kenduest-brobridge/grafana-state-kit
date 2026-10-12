@@ -7,7 +7,10 @@
 //! - Domain-specific staged/live producer logic belongs in the owning domain
 //!   modules, not here.
 
+mod capabilities;
 mod cli;
+pub(crate) use capabilities::STATUS_CAPABILITIES_HELP_TEXT;
+pub use capabilities::{run_status_capabilities, StatusCapabilitiesArgs};
 
 use crate::common::{render_json_value, set_json_color_choice, Result as CommonResult};
 use crate::overview::{self, OverviewArgs, OverviewOutputFormat};
@@ -266,6 +269,7 @@ pub fn run_project_status_cli(args: ProjectStatusCliArgs) -> CommonResult<()> {
     // CLI boundary: parse color choice, then route to either staged or live runner.
     set_json_color_choice(args.color);
     match args.command {
+        ProjectStatusSubcommand::Capabilities(inner) => run_status_capabilities(inner),
         ProjectStatusSubcommand::Staged(inner) => run_project_status_staged(inner),
         ProjectStatusSubcommand::Live(inner) => run_project_status_live(inner),
     }

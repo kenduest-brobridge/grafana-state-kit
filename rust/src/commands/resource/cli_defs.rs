@@ -34,6 +34,7 @@ pub enum ResourceKind {
     #[value(name = "alert-rules")]
     AlertRules,
     Orgs,
+    Playlists,
     Receivers,
     #[value(name = "routing-trees")]
     RoutingTrees,
@@ -55,6 +56,7 @@ impl ResourceKind {
             Self::Datasources => "datasources",
             Self::AlertRules => "alert-rules",
             Self::Orgs => "orgs",
+            Self::Playlists => "playlists",
             Self::Receivers => "receivers",
             Self::RoutingTrees => "routing-trees",
             Self::TemplateGroups => "template-groups",
@@ -71,6 +73,7 @@ impl ResourceKind {
             Self::Datasources => "datasource",
             Self::AlertRules => "alert-rule",
             Self::Orgs => "org",
+            Self::Playlists => "playlist",
             Self::Receivers => "receiver",
             Self::RoutingTrees => "routing-tree",
             Self::TemplateGroups => "template-group",
@@ -89,6 +92,7 @@ impl ResourceKind {
                 "Grafana alert rules from /api/v1/provisioning/alert-rules and /api/v1/provisioning/alert-rules/{uid}."
             }
             Self::Orgs => "Grafana org inventory from /api/orgs and /api/orgs/{id}.",
+            Self::Playlists => "Grafana playlists from playlist.grafana.app/v1 (read-only).",
             Self::Receivers => "Grafana Alerting receivers from notifications.alerting.grafana.app/v1beta1.",
             Self::RoutingTrees => "Grafana Alerting routing trees from notifications.alerting.grafana.app/v1beta1.",
             Self::TemplateGroups => "Grafana Alerting template groups from notifications.alerting.grafana.app/v1beta1.",
@@ -105,6 +109,7 @@ impl ResourceKind {
             Self::Datasources => "datasources/<uid>",
             Self::AlertRules => "alert-rules/<uid>",
             Self::Orgs => "orgs/<id>",
+            Self::Playlists => "playlists/<uid>",
             Self::Receivers => "receivers/<name>",
             Self::RoutingTrees => "routing-trees/<name>",
             Self::TemplateGroups => "template-groups/<name>",
@@ -121,6 +126,7 @@ impl ResourceKind {
             Self::Datasources => "GET /api/datasources",
             Self::AlertRules => "GET /api/v1/provisioning/alert-rules",
             Self::Orgs => "GET /api/orgs",
+            Self::Playlists => "GET /apis/playlist.grafana.app/v1/namespaces/{namespace}/playlists",
             Self::Receivers => "GET /apis/notifications.alerting.grafana.app/v1beta1/namespaces/{namespace}/receivers",
             Self::RoutingTrees => "GET /apis/notifications.alerting.grafana.app/v1beta1/namespaces/{namespace}/routingtrees",
             Self::TemplateGroups => "GET /apis/notifications.alerting.grafana.app/v1beta1/namespaces/{namespace}/templategroups",
@@ -137,6 +143,7 @@ impl ResourceKind {
             Self::Datasources => "GET /api/datasources/uid/{uid}",
             Self::AlertRules => "GET /api/v1/provisioning/alert-rules/{uid}",
             Self::Orgs => "GET /api/orgs/{id}",
+            Self::Playlists => "GET /apis/playlist.grafana.app/v1/namespaces/{namespace}/playlists/{uid}",
             Self::Receivers => "GET /apis/notifications.alerting.grafana.app/v1beta1/namespaces/{namespace}/receivers/{name}",
             Self::RoutingTrees => "GET /apis/notifications.alerting.grafana.app/v1beta1/namespaces/{namespace}/routingtrees/{name}",
             Self::TemplateGroups => "GET /apis/notifications.alerting.grafana.app/v1beta1/namespaces/{namespace}/templategroups/{name}",

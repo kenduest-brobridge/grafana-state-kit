@@ -37,6 +37,8 @@ if apply refuses to run, confirm that the plan file is the reviewed artifact and
 .IP \(bu 2
 if the live result differs from the expected plan, re\-check credentials, org scope, and whether the reviewed plan matches the current target Grafana
 .IP \(bu 2
+if a baseline check or update fails, inspect current live rules, rebuild the plan, and review the remaining changes before applying again
+.IP \(bu 2
 if automation reads the output, prefer \-\-output\-format json and validate the result shape before treating the apply as successful
 .SH EXAMPLES
 .PP

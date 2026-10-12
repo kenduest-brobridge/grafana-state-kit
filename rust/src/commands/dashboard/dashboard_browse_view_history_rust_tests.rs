@@ -1,8 +1,16 @@
 use super::*;
+#[cfg(feature = "tui")]
+use crate::common::api_response;
+use crate::common::message;
+#[cfg(feature = "tui")]
+use crate::dashboard::browse::live_detail::fetch_dashboard_view_lines_with_request;
+#[cfg(feature = "tui")]
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use reqwest::Method;
 use serde_json::{json, Value};
 
 #[test]
+#[cfg(feature = "tui")]
 fn dashboard_view_lines_include_recent_versions_when_history_exists() {
     let node = crate::dashboard::browse_support::DashboardBrowseNode {
         kind: crate::dashboard::browse_support::DashboardBrowseNodeKind::Dashboard,
@@ -69,6 +77,7 @@ fn dashboard_view_lines_include_recent_versions_when_history_exists() {
 }
 
 #[test]
+#[cfg(feature = "tui")]
 fn dashboard_view_lines_ignore_missing_versions_endpoint() {
     let node = crate::dashboard::browse_support::DashboardBrowseNode {
         kind: crate::dashboard::browse_support::DashboardBrowseNodeKind::Dashboard,
@@ -207,6 +216,7 @@ fn dashboard_history_restore_reimports_selected_version_payload() {
 }
 
 #[test]
+#[cfg(feature = "tui")]
 fn dashboard_history_dialog_escape_and_q_close_dialog() {
     let versions = vec![crate::dashboard::history::DashboardHistoryVersion {
         version: 7,
@@ -238,6 +248,7 @@ fn dashboard_history_dialog_escape_and_q_close_dialog() {
 }
 
 #[test]
+#[cfg(feature = "tui")]
 fn dashboard_history_dialog_restore_review_uses_human_message() {
     let versions = vec![crate::dashboard::history::DashboardHistoryVersion {
         version: 7,

@@ -1,7 +1,24 @@
 # ai-status.md
 
 Current AI-maintained status only.
+- Older entry moved to [ai-status-archive-2026-10-12.md](archive/ai-status-archive-2026-10-12.md).
 - Older entries moved to [ai-status-archive-2026-10-11.md](archive/ai-status-archive-2026-10-11.md).
+
+## 2026-10-12 - Development follow-through
+
+- State: done; committed locally
+- Scope: restore all 51 remaining dormant Dashboard tests in domain owners;
+  controlled Alert pre-write drift checks and partial execution results;
+  bounded dashboard API capability diagnostics; opt-in portable native-v2
+  exports; stable read-only Playlist inventory.
+- Result: all 51 cases remain useful and unique; remove the obsolete routing
+  module, not coverage. New feature contracts retain archival defaults,
+  opaque specs, ownership guards, namespace validation and approval boundaries.
+- Evidence: per-case inventory in `todo/2026-10-12-dashboard-test-reconciliation.md`;
+  combined checks and live boundaries in `todo/2026-10-12-development-follow-through.md`.
+- Checks: Rust 2,124 passed, one ignored; fmt, Clippy, docs/contracts, generated
+  artifacts and architecture passed. Isolated 12.0.10/13.2.1 feature acceptance
+  confirms floor errors and current native/Playlist/ownership behavior.
 
 ## 2026-10-11 - Deep project review and maintainability convergence
 
@@ -82,9 +99,3 @@ Current AI-maintained status only.
 - Scope: shared App Platform client; dashboard v2 export/history; status resource v1/v2/v1beta1; notification/secret safety; Grafana 13.1 Git Sync discovery
 - Current Update: Added 404-only discovery and pagination, native v2 resource lanes, stable resource history, explicit preview inspection, secret redaction, and root-level Git Sync CRD discovery.
 - Result: Classic behavior stays default while Grafana 13 resources are available through explicit, tested read-only/export lanes.
-
-## 2026-06-11 - Shared browser detail and test split
-- State: Done
-- Scope: rust/src/common/browser/session.rs; rust/src/common/browser/detail.rs; rust/src/common/browser/session_tests.rs; rust/src/lib.rs; docs/internal/tui-architecture-roadmap.md
-- Current Update: Moved shared browser detail projection helpers and session behavior tests out of session.rs while preserving the crate::interactive_browser public-in-crate helper surface.
-- Result: `session.rs` dropped below the architecture warning threshold and `make quality-architecture` is clean.

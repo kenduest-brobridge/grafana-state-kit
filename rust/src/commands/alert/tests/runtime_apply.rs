@@ -9,6 +9,9 @@ use reqwest::Method;
 use serde_json::{json, Value};
 use std::cell::RefCell;
 
+#[path = "runtime_apply_review_rust_tests.rs"]
+mod runtime_apply_review_rust_tests;
+
 fn controlled_rule_update_row(uid: &str) -> Value {
     json!({
         "kind": RULE_KIND,
@@ -318,6 +321,9 @@ fn execute_alert_plan_with_request_allows_narrow_rule_live_update() {
                 .borrow_mut()
                 .push((method.clone(), path.to_string(), payload.cloned()));
             match (method.clone(), path) {
+                (Method::GET, "/api/v1/provisioning/alert-rules/rule-update") => {
+                    Ok(Some(plan["rows"][0]["live"].clone()))
+                }
                 (Method::PUT, "/api/v1/provisioning/alert-rules/rule-update") => {
                     Ok(Some(json!({"uid": "rule-update"})))
                 }
@@ -331,9 +337,11 @@ fn execute_alert_plan_with_request_allows_narrow_rule_live_update() {
 
     assert_eq!(result["appliedCount"], json!(1));
     let calls = calls.borrow();
-    assert_eq!(calls.len(), 1);
-    assert_eq!(calls[0].0, Method::PUT);
+    assert_eq!(calls.len(), 2);
+    assert_eq!(calls[0].0, Method::GET);
     assert_eq!(calls[0].1, "/api/v1/provisioning/alert-rules/rule-update");
+    assert_eq!(calls[1].0, Method::PUT);
+    assert_eq!(calls[1].1, "/api/v1/provisioning/alert-rules/rule-update");
 }
 
 #[test]

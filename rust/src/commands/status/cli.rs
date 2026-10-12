@@ -224,6 +224,11 @@ pub struct ProjectStatusLiveArgs {
 #[derive(Debug, Clone, Subcommand)]
 pub enum ProjectStatusSubcommand {
     #[command(
+        about = "Probe Classic and dashboard resource v1/v2 list-read APIs in an explicit namespace.",
+        after_help = super::STATUS_CAPABILITIES_HELP_TEXT
+    )]
+    Capabilities(super::StatusCapabilitiesArgs),
+    #[command(
         about = "Render staged workspace readiness from exported artifacts.",
         after_help = PROJECT_STATUS_STAGED_HELP_TEXT
     )]

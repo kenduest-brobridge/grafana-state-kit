@@ -21,6 +21,7 @@
 - `datasources`
 - `alert-rules`
 - `orgs`
+- `playlists`（stable v1，唯讀）
 - `receivers`、`routing-trees`、`template-groups`、`time-intervals`、`inhibition-rules`
 - `secure-values`（只讀 metadata；會防禦性移除 `spec.value`）
 
@@ -32,11 +33,21 @@
 - Dashboard `auto` 依序嘗試 App Platform v2、v1、classic，且只有 404 才 fallback；folder 先試 v1 再走 classic。Datasource UID lookup 保留數字 ID legacy fallback。
 - Notification 與 secure-value 是 public preview，必須明確指定 `--api-mode v1beta1`，不會由 `auto` 自動 probe。
 - `--namespace` 指定 App Platform namespace，預設 `default`。
+- Playlist 的 `auto` 與 `v1` 使用 `playlist.grafana.app/v1`，會跟隨
+  continuation token 分頁並驗證資源身分。其他 API mode 會被拒絕；
+  HTTP 錯誤（包含 404）會直接回報，不會改讀已棄用的 API。
 
 ## 建議模式
 - Stable dashboard/folder inspection 優先用 `auto`；script 需要固定 envelope 時指定 `v1` 或 `v2`，classic-only 使用 `legacy`，preview resource 才使用 `v1beta1`。
 
 ## 範例
+```bash
+# 唯讀盤點輪播清單並查看完整設定。
+grafana-util status resource list playlists --profile prod --namespace default --output-format table
+grafana-util status resource get playlists/ops-rotation --profile prod --namespace default
+grafana-util status resource describe playlists
+```
+
 ```bash
 # 說明目前支援的 live resource kinds 與 selector 格式。
 grafana-util status resource describe

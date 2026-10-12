@@ -18,6 +18,10 @@ pub(crate) use super::import_interactive_state::{
 };
 use super::import_lookup::ImportLookupCache;
 
+#[cfg(test)]
+#[path = "dashboard_browse_workflow_interactive_import_rust_tests.rs"]
+mod tests;
+
 pub(crate) fn select_import_dashboard_files<F>(
     request_json: &mut F,
     lookup_cache: &mut ImportLookupCache,

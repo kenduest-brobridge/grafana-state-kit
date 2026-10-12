@@ -154,3 +154,7 @@ use super::test_support;
 mod history_test_support {
     pub use super::*;
 }
+
+#[cfg(test)]
+#[path = "dashboard_browse_view_history_rust_tests.rs"]
+mod browse_history_tests;
