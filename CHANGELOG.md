@@ -14,6 +14,25 @@ Format rule going forward:
 - keep older tagged releases below
 - use commit/tag history as the source of truth
 
+## [0.14.0] - 2026-11-12
+
+### Added
+
+- Inspect which Classic, dashboard v1, and dashboard v2 APIs respond for the current credentials and namespace with `status capabilities`.
+- Export native dashboard v2 resources with `dashboard export --portable-v2`. This removes server-managed metadata while retaining the dashboard specification, folder reference, and ownership metadata.
+- List, get, and describe Playlists through `status resource` when Grafana serves the Playlist API.
+- Import native dashboard v2 resources, with automatic routing between Classic and v2 for supported inputs.
+
+### Changed
+
+- `alert apply` checks all planned rule baselines before its first write. If a write fails, the command stops and reports which rules were updated, failed, or remain unattempted.
+- Dashboard history and resource export use the available Grafana API and retain Git-friendly output for review.
+
+### Migration Notes
+
+- The supported Grafana floor is 12.0. Resource commands require the relevant API to be served by the instance.
+- Datasource mutations identify the target by UID. Use an explicit destination folder when moving dashboards between Grafana instances with different folder UIDs.
+
 ## [0.13.2] - 2026-05-17
 
 ### Highlights
