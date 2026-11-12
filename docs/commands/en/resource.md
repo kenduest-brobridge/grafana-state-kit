@@ -44,7 +44,9 @@ This namespace is intentionally narrower and more generic than the main operator
 ```bash
 # Inspect rotation playlists without modifying them.
 grafana-util status resource list playlists --profile prod --namespace default --output-format table
+# Read the configuration of the ops rotation playlist.
 grafana-util status resource get playlists/ops-rotation --profile prod --namespace default
+# Show the supported API and selectors for playlists.
 grafana-util status resource describe playlists
 ```
 

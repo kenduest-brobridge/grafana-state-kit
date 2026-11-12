@@ -17,7 +17,7 @@ class InstallScriptTests(unittest.TestCase):
     def test_install_script_declares_release_download_contract(self):
         content = INSTALL_SCRIPT_PATH.read_text(encoding="utf-8")
 
-        self.assertIn('REPO="${REPO:-kenduest-brobridge/grafana-util}"', content)
+        self.assertIn('REPO="${REPO:-kenduest-brobridge/grafana-state-kit}"', content)
         self.assertIn("https://api.github.com/repos/${REPO}/releases/latest", content)
         self.assertIn(
             'archive_name="grafana-utils-rust-${PLATFORM}-${release_tag}.tar.gz"',

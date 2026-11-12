@@ -42,9 +42,11 @@
 
 ## 範例
 ```bash
-# 唯讀盤點輪播清單並查看完整設定。
+# 列出輪播清單。
 grafana-util status resource list playlists --profile prod --namespace default --output-format table
+# 查看 ops 輪播清單的設定。
 grafana-util status resource get playlists/ops-rotation --profile prod --namespace default
+# 查看輪播清單支援的 API 與選取方式。
 grafana-util status resource describe playlists
 ```
 

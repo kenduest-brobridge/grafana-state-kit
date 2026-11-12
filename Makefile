@@ -1,7 +1,7 @@
 VERSIONING_TARGETS := help print-version sync-version set-release-version set-dev-version
 PYTHON_TARGETS := poetry-install poetry-lock poetry-test poetry-quality-python build-python
 DOC_TARGETS := man man-check html html-check pages-site schema schema-check quality-docs-surface docs-diff-classify
-RUST_BUILD_TARGETS := build-rust build-rust-native build-rust-host build-rust-macos-arm64 build-rust-linux-amd64 build-rust-linux-amd64-docker build-rust-linux-amd64-zig validate-rust-linux-amd64-artifact
+RUST_BUILD_TARGETS := build-rust build-rust-native build-rust-host build-rust-macos-arm64 build-rust-linux-amd64 build-rust-linux-amd64-docker build-rust-linux-amd64-zig validate-rust-linux-amd64-artifact build-rpm
 INSTALLER_TARGETS := install-local install-local-interactive test-installer-local
 QUALITY_TARGETS := test test-python test-rust fmt-rust-check lint-rust quality quality-python quality-rust quality-rust-feature-matrix quality-rust-feature-matrix-full quality-output-contracts quality-ai-workflow quality-architecture quality-docs-surface quality-alert-rust quality-sync-rust quality-workspace-noise
 REPORT_TARGETS := contract-promotion-report
@@ -15,6 +15,7 @@ PYTHON ?= python3
 PIP ?= $(PYTHON) -m pip
 POETRY ?= poetry
 CARGO ?= cargo
+NFPM ?= nfpm
 RUST_DIR ?= rust
 PYTHON_DIST_DIR ?= dist
 DEV_ITERATION ?= 1
@@ -87,6 +88,7 @@ $(NL)$(BLUE)$(BOLD)Rust build:$(RESET)
   $(GREEN)make build-rust-linux-amd64$(RESET)  Build the default Linux amd64 artifact with local zig into dist/linux-amd64/ $(CYAN)(preferred; defaults to LTO off and codegen-units=1 for cross-link stability)$(RESET)
   $(GREEN)make build-rust-linux-amd64-docker$(RESET)  Build the default Linux amd64 artifact with Docker into dist/linux-amd64/ $(CYAN)(fallback)$(RESET)
   $(GREEN)make build-rust-linux-amd64-zig$(RESET)  Alias for the preferred local zig Linux amd64 build path $(CYAN)(same as build-rust-linux-amd64)$(RESET)
+  $(GREEN)make build-rpm$(RESET)  Build the Linux x86_64 RPM with nFPM into dist/rpm/
 
 endef
 
@@ -244,6 +246,10 @@ build-rust-linux-amd64-docker:
 
 build-rust-linux-amd64-zig:
 	RUSTFLAGS="$(RUST_RELEASE_RUSTFLAGS)" bash ./scripts/build-rust-linux-amd64-zig.sh
+
+build-rpm: build-rust-linux-amd64
+	mkdir -p dist/rpm
+	GRAFANA_UTIL_RPM_VERSION="$$(cat VERSION)" $(NFPM) package --config packaging/nfpm.yaml --packager rpm --target dist/rpm/
 
 validate-rust-linux-amd64-artifact:
 	bash ./scripts/validate-rust-linux-amd64-artifact.sh --version

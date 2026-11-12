@@ -1,0 +1,20 @@
+name: grafana-util
+arch: amd64
+platform: linux
+version: ${GRAFANA_UTIL_RPM_VERSION}
+release: "1"
+homepage: https://github.com/kenduest-brobridge/grafana-state-kit
+license: Apache-2.0
+description: Review, export, and apply Grafana configuration from the command line.
+depends:
+  - glibc >= 2.34
+contents:
+  - src: dist/linux-amd64/grafana-util
+    dst: /usr/local/bin/grafana-util
+    file_info:
+      mode: 0755
+  - src: LICENSE
+    dst: /usr/local/share/licenses/grafana-util/LICENSE
+    type: licence
+    file_info:
+      mode: 0644

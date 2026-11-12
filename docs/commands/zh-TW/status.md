@@ -77,6 +77,7 @@ readiness gate 仍應讀 `overall` 與 `domains`。
 可讀取哪些 dashboard 清單 API。
 
 ```bash
+# 使用 prod 設定檔檢查 dashboard API 是否可讀取。
 grafana-util status capabilities --profile prod --namespace default --output-format json
 ```
 

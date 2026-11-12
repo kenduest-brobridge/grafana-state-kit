@@ -985,7 +985,8 @@ grafana-util status overview live --url http://localhost:3000 --basic-user admin
 <p>automation 如果需要 Grafana build 資訊，讀 <code>discovery.instance.health.version</code> 與 <code>discovery.instance.health.commit</code>。 readiness gate 仍應讀 <code>overall</code> 與 <code>domains</code>。</p>
 <h2 id="capabilities"><code>capabilities</code></h2>
 <p>用途：在選擇 dashboard 工作流程前，確認目前憑證及指定 Grafana namespace 可讀取哪些 dashboard 清單 API。</p>
-<pre><code>grafana-util status capabilities --profile prod --namespace default --output-format json</code></pre>
+<pre><code># 使用 prod 設定檔檢查 dashboard API 是否可讀取。
+grafana-util status capabilities --profile prod --namespace default --output-format json</code></pre>
 <p>此命令只送出三次 GET，各帶 <code>limit=1</code>：Classic <code>/api/search?type=dash-db&amp;page=1</code>，以及 <code>/apis/dashboard.grafana.app/</code> 下的 <code>v1</code>、<code>v2</code> dashboard collection。不翻頁、不修改 Grafana。 必須明確指定 <code>--namespace</code>；請填入該 Grafana 實例使用的 namespace。 <code>--org-id</code> 另行限定組織，不會替你選擇 namespace。</p>
 <p>JSON/YAML 包含 <code>kind: grafana-dashboard-api-capabilities</code>、<code>schemaVersion: 1</code>、 <code>namespace</code> 及 <code>probes</code>。每筆 probe 包含 <code>api</code>、<code>path</code>、<code>status</code>、<code>detail</code>； 收到非成功 HTTP 回應時另有 <code>httpStatus</code>。 有效的空清單也算 <code>available</code>，但只代表清單讀取成功，不代表有寫入權限、 清單完整，或某份 dashboard 文件一定可匯入。結果只記錄本次觀察，不快取。</p>
 <table><thead><tr><th>狀態</th><th>意義</th></tr></thead><tbody><tr><td><code>available</code></td><td>回應符合預期清單格式。</td></tr><tr><td><code>unauthorized</code></td><td>HTTP 401；修正認證後重試。</td></tr><tr><td><code>forbidden</code></td><td>HTTP 403；確認讀取權限後重試。</td></tr><tr><td><code>not-served</code></td><td>HTTP 404；指定路由或 namespace 找不到。</td></tr><tr><td><code>failed</code></td><td>其他 HTTP 錯誤（含 5xx）或傳輸失敗。</td></tr><tr><td><code>malformed-response</code></td><td>JSON 無效、無本文，或清單格式不符。</td></tr></tbody></table>

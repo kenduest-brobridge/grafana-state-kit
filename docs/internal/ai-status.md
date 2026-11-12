@@ -1,8 +1,14 @@
 # ai-status.md
 
 Current AI-maintained status only.
+- Older entry moved to [release-0.14.0-trace-archive.md](archive/release-0.14.0-trace-archive.md).
 - Older entry moved to [ai-status-archive-2026-10-12.md](archive/ai-status-archive-2026-10-12.md).
 - Older entries moved to [ai-status-archive-2026-10-11.md](archive/ai-status-archive-2026-10-11.md).
+
+## 2026-11-12 - Release 0.14.0 and RPM packaging
+
+- State: RPM packaging validated with nFPM and Rocky Linux 9.3.
+- Evidence: `todo/2026-11-12-release-0.14.0.md` records the release and package checks.
 
 ## 2026-10-12 - Development follow-through
 
@@ -93,9 +99,3 @@ Current AI-maintained status only.
 - Scope: explicit resource-v2 dashboard import lane, single-namespace `/apis` mutation contract, operator docs, and command-surface contract
 - Current Update: Review/fix wired the production client entrypoint to the native lane, added strict collection and item/write response validation, lane-specific output columns, structured dry-run JSON, contained source discovery, terminal cancel semantics, secret-safe rendering and partial failures, guarded unknown ownership, stripped server-owned labels, and enforced dry-run-only output selectors.
 - Result: The public CLI now reaches only the namespaced v2 API for resource input, rejects malformed or escaped inputs before mutation, and reports an unchanged live replay as `no_change` on Grafana 13.1.
-
-## 2026-07-12 - Grafana 13 App Platform integration
-- State: Done
-- Scope: shared App Platform client; dashboard v2 export/history; status resource v1/v2/v1beta1; notification/secret safety; Grafana 13.1 Git Sync discovery
-- Current Update: Added 404-only discovery and pagination, native v2 resource lanes, stable resource history, explicit preview inspection, secret redaction, and root-level Git Sync CRD discovery.
-- Result: Classic behavior stays default while Grafana 13 resources are available through explicit, tested read-only/export lanes.

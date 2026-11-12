@@ -1,8 +1,16 @@
 # ai-changes.md
 
 Current AI change log only.
+- Older entry moved to [release-0.14.0-trace-archive.md](archive/release-0.14.0-trace-archive.md).
 - Older entry moved to [ai-changes-archive-2026-10-12.md](archive/ai-changes-archive-2026-10-12.md).
 - Older entries moved to [ai-changes-archive-2026-10-11.md](archive/ai-changes-archive-2026-10-11.md).
+
+## 2026-11-12 - Release 0.14.0 and RPM packaging
+
+- Added `make build-rpm` and an nFPM manifest for the Linux x86_64 binary at
+  `/usr/local/bin/grafana-util`.
+- Updated the macOS release runner and aligned installer tests and command
+  examples with the release configuration.
 
 ## 2026-10-12 - Development follow-through
 
@@ -122,10 +130,3 @@ Current AI change log only.
 - Impact: `datasource/browse/support.rs` is now below the architecture warning threshold, reducing the warning list from three files to two without changing public CLI paths, help text, generated docs, or interactive behavior.
 - Rollback/Risk: Low; this is a structural move of existing review projection code covered by focused datasource browse detail/review tests and downstream datasource inspect/snapshot re-export checks.
 - Follow-up: Continue reducing the remaining shared warning-threshold files: review_contract and shared browser session.
-
-## 2026-06-11 - Datasource browse TUI chrome split
-- Summary: Moved datasource browse footer controls and search prompt rendering into a dedicated TUI chrome module while keeping the main renderer focused on frame, list, and detail layout.
-- Tests: cargo test --quiet datasource_browse --features tui; make quality-rust; make quality-architecture; cargo check --quiet --no-default-features --all-targets; python3 scripts/tui_inventory_report.py --json; make quality-ai-workflow
-- Impact: `datasource/browse/render.rs` is now below the architecture warning threshold, reducing the warning list from four files to three without changing public CLI paths, help text, generated docs, or interactive behavior.
-- Rollback/Risk: Low; this is a structural move of existing footer/search rendering covered by focused datasource browse render tests.
-- Follow-up: Continue reducing the remaining TUI/shared warning-threshold files: review_contract and shared browser session.

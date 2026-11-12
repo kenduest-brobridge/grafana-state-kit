@@ -205,6 +205,26 @@ local zig path fails or you want an isolated toolchain, use the Docker fallback:
 make build-rust-linux-amd64-docker
 ```
 
+## Linux x86_64 RPM
+
+With nFPM on PATH and the Linux amd64 build tools configured, build the RPM
+from the repository root. The RPM version comes from `VERSION`.
+
+```bash
+# Build and package grafana-util for Linux x86_64.
+make build-rpm
+```
+
+The package in `dist/rpm/` installs `/usr/local/bin/grafana-util` and
+requires glibc 2.34 or later. On Rocky Linux 9, install it with DNF.
+If you previously installed the binary with the shell installer at the
+same path, the RPM takes over that file and removes it when uninstalled.
+
+```bash
+# Install the locally built RPM.
+sudo dnf install "./dist/rpm/grafana-util-$(cat VERSION)-1.x86_64.rpm"
+```
+
 ## Grafana App Platform boundaries
 
 - Keep `/apis/<group>/<version>/namespaces/<namespace>/<plural>` construction,

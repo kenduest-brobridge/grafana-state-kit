@@ -961,9 +961,11 @@ code[class*="language-"],pre[class*="language-"]{color:#ccc;background:none;font
 <h2 id="建議模式">建議模式</h2>
 <ul><li>Stable dashboard/folder inspection 優先用 <code>auto</code>；script 需要固定 envelope 時指定 <code>v1</code> 或 <code>v2</code>，classic-only 使用 <code>legacy</code>，preview resource 才使用 <code>v1beta1</code>。</li></ul>
 <h2 id="範例">範例</h2>
-<pre><code># 唯讀盤點輪播清單並查看完整設定。
+<pre><code># 列出輪播清單。
 grafana-util status resource list playlists --profile prod --namespace default --output-format table
+# 查看 ops 輪播清單的設定。
 grafana-util status resource get playlists/ops-rotation --profile prod --namespace default
+# 查看輪播清單支援的 API 與選取方式。
 grafana-util status resource describe playlists</code></pre>
 <pre><code># 說明目前支援的 live resource kinds 與 selector 格式。
 grafana-util status resource describe</code></pre>

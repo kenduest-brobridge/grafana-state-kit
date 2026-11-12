@@ -139,6 +139,7 @@ Purpose: check dashboard list-read API availability for the current credentials
 and an explicit Grafana namespace before choosing a dashboard workflow.
 
 ```bash
+# Check dashboard API availability with the prod profile.
 grafana-util status capabilities --profile prod --namespace default --output-format json
 ```
 
